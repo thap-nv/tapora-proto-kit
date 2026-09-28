@@ -1,0 +1,28 @@
+{
+  "name": "tapora-proto-kit",
+  "description": "Studio-grade interactive HTML prototypes, from first sketch to handover: design from scratch with decision gates, extend or tweak an existing prototype without design drift, and a regression QA kit with rolling baselines. Skill instructions are written in Vietnamese.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Thap Nguyen",
+    "url": "https://github.com/thapMadison"
+  },
+  "homepage": "https://github.com/thapMadison/tapora-proto-kit",
+  "repository": "https://github.com/thapMadison/tapora-proto-kit",
+  "license": "MIT",
+  "keywords": ["prototype", "html", "design-system", "ui", "ux", "qa", "regression", "vietnamese"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Tapora Proto Kit",
+    "shortDescription": "Design, evolve and QA interactive HTML prototypes.",
+    "longDescription": "Design a website or web app from scratch as an interactive HTML prototype with five decision gates (sketch-to-site), extend it with new features without design drift (evolve-site), make small edits without ceremony (tweak-site), and run one full regression check before handover (handover-check). Includes a headless-browser QA kit with rolling baselines. Skill instructions are written in Vietnamese.",
+    "developerName": "Thap Nguyen",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/thapMadison/tapora-proto-kit",
+    "defaultPrompt": [
+      "Thiết kế website cho một quán cà phê, dùng sketch-to-site.",
+      "Thêm bộ lọc theo ngày vào trang đơn hàng của prototype.",
+      "Kiểm tổng prototype trước khi bàn giao."
+    ]
+  }
+}

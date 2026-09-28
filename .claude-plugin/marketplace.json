@@ -1,0 +1,16 @@
+{
+  "name": "tapora-proto-kit",
+  "owner": {
+    "name": "Thap Nguyen"
+  },
+  "metadata": {
+    "description": "Studio-grade interactive HTML prototypes, from first sketch to handover, with a regression QA kit."
+  },
+  "plugins": [
+    {
+      "name": "tapora-proto-kit",
+      "source": "./",
+      "description": "Design HTML prototypes from scratch, evolve and tweak them without design drift, and check them before handover."
+    }
+  ]
+}

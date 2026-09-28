@@ -1,0 +1,169 @@
+# Kiểm tổng trước bàn giao (skill handover-check). Chạy từ thư mục prototype (thư mục chứa _qa/):
+#   python _qa/handover.py run [--themes <theme1>,<theme2>]
+#       preflight + mọi bộ ở mọi theme trong qa.config.json (theme đầu có chụp ảnh) vào _qa/handover/<ngày-giờ>/,
+#       so với _qa/last-green/, gán từng khác biệt cho một dòng trong _qa/current/ledger.jsonl.
+#       Thoát mã 1 khi có lỗi hoặc có khác biệt không gán được.
+#   python _qa/handover.py promote _qa/handover/<ngày-giờ>
+#       sau khi người dùng chốt: lần chạy đó thành last-green, current làm lại từ đó, ledger chuyển vào thư mục chạy.
+#   python _qa/handover.py thumbs
+#       chụp lại ảnh Hub khai báo ở "thumbs" trong qa.config.json, mỗi theme một ảnh. Chạy TRƯỚC run.
+import argparse, datetime, json, os, shutil, subprocess, sys
+import qalib as Q
+
+
+def read_ledger():
+    p = os.path.join(Q.CUR, 'ledger.jsonl')
+    if not os.path.exists(p):
+        return []
+    return [json.loads(l) for l in open(p, encoding='utf-8') if l.strip()]
+
+
+def cmd_run(a):
+    themes = [t for t in (a.themes or ','.join(Q.THEMES)).split(',') if t]
+    out = os.path.join(Q.HERE, 'handover', datetime.datetime.now().strftime('%Y%m%d-%H%M'))
+    shutil.rmtree(out, ignore_errors=True)
+    start = Q.manifest()
+    Q.save_json(os.path.join(out, 'manifest.json'), start)
+    pf_ok, pf_line = Q.preflight()
+    res = Q.run_suites(Q.SUITE_NAMES, out, themes, shots=True)
+    if Q.manifest() != start:
+        print('CẢNH BÁO: file của site hoặc bộ kiểm đổi trong lúc chạy. Chạy lại.')
+
+    green = Q.load_json(os.path.join(Q.GREEN, 'manifest.json'))
+    ledger = read_ledger()
+    step_owner = {}
+    for i, e in enumerate(ledger):
+        for c in e.get('changed', []) + e.get('lost', []) + e.get('new', []):
+            step_owner.setdefault((c[1], c[2]), set()).add(i)
+    file_owner = {}
+    for i, e in enumerate(ledger):
+        for f in e.get('files', []):
+            file_owner.setdefault(f, set()).add(i)
+
+    bad, unattributed, attributed = [], [], {}
+    per_theme = {th: {'suites': 0, 'steps': 0, 'errors': 0, 'fails': 0, 'silent': 0, 'over': 0, 'changed': 0} for th in themes}
+    new_suites, lost_suites = [], []
+    for (th, name), r in sorted(res.items()):
+        t = per_theme[th]
+        if 'crash' in r:
+            bad.append(f'LỖI CHẠY {th}/{name}: {r["crash"][:200]}')
+            continue
+        rep = Q.load_json(os.path.join(out, th, name, 'report.json'))
+        base = Q.load_json(os.path.join(Q.GREEN, th, name, 'report.json'))
+        if green is not None and base is None:
+            new_suites.append(f'{th}/{name}')
+        d = Q.diff_report(base, rep, name)
+        t['suites'] += 1; t['steps'] += r['steps']; t['errors'] += r['errors']; t['fails'] += len(r['fails'])
+        t['silent'] += len(r['silent']); t['over'] += len(d['over_new']); t['changed'] += len(d['changed'])
+        bad += [f'console {th}/{name} · {x["step"]}: {Q.short(x["errors"][:2], 200)}' for x in rep if x['errors']]
+        bad += [f'FAIL {th}/{name} · {Q.short(f, 200)}' for f in r['fails']]
+        bad += [f'im lặng {th}/{name} · {s}' for s in r['silent']]
+        bad += [f'tràn ngang {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}' for s in d['over_new']]
+        # Bước mất hay bước mới chỉ sinh ra khi file bước đổi: gán cho lần sửa đã đổi file bước đó
+        steps_file = '_qa/steps-' + next(s[2] for s in Q.run_all.SUITES if s[0] == name) + '.json'
+        by_file = file_owner.get(steps_file, set())
+        items = [(n, set(), f'đổi check {th}/{name} · {n}: {Q.short(x)} → {Q.short(y)}') for n, x, y in d['changed']]
+        items += [(n, by_file, f'mất bước {th}/{name} · {n}') for n in d['lost']]
+        items += [(n, by_file, f'bước mới {th}/{name} · {n}') for n in d['new']]
+        for n, extra, line in items:
+            owners = step_owner.get((name, n), set()) | extra
+            if owners:
+                for i in owners:
+                    attributed.setdefault(i, []).append(line)
+            else:
+                unattributed.append(line)
+    if green is not None:
+        for th in themes:
+            gdir = os.path.join(Q.GREEN, th)
+            for name in (sorted(os.listdir(gdir)) if os.path.isdir(gdir) else []):
+                if (th, name) not in res:
+                    lost_suites.append(f'{th}/{name}')
+
+    print(f'Thư mục chạy: {os.path.relpath(out, Q.ROOT)}')
+    print(f'preflight: {pf_line}')
+    for th, t in per_theme.items():
+        print(f'{th}: {t["suites"]} bộ · {t["steps"]} bước · console {t["errors"]} · FAIL {t["fails"]} · im lặng {t["silent"]} · '
+              f'tràn mới {t["over"]} · check đổi so với last-green {t["changed"]}')
+    if green is None:
+        print('Chưa có last-green: lần chạy này là mốc đầu, không có gì để so. Tràn ngang được liệt kê để xác nhận là cố ý.')
+    else:
+        files = Q.changed_files(green, start)
+        print(f'\nFile đổi từ lần bàn giao trước ({len(files)}):')
+        for f in files:
+            print('  ' + f + ('' if f in file_owner else '   ← không có trong ledger (sửa mà không chạy quick.py)'))
+        print(f'\nCác lần sửa trong ledger ({len(ledger)}):')
+        for i, e in enumerate(ledger):
+            print(f'  [{i + 1}] {e["time"]} · {e["note"]} · {len(e.get("files", []))} file · {len(e.get("changed", []))} check đổi')
+            for line in attributed.get(i, [])[:30]:
+                print('      ' + line)
+            if len(attributed.get(i, [])) > 30:
+                print(f'      … còn {len(attributed[i]) - 30} dòng')
+        if new_suites:
+            print('\nBộ mới (chưa có trong last-green):', ', '.join(new_suites))
+        if lost_suites:
+            print('Bộ có trong last-green mà lần này không chạy:', ', '.join(lost_suites))
+        print(f'\nKhác biệt KHÔNG gán được cho lần sửa nào ({len(unattributed)}): cần xem từng dòng')
+        for line in unattributed:
+            print('  ' + line)
+    print(f'\nLỗi ({len(bad)}):')
+    for line in bad:
+        print('  ' + line)
+    Q.save_json(os.path.join(out, 'handover.json'), {'preflight': [pf_ok, pf_line], 'themes': per_theme, 'bad': bad,
+                                                      'unattributed': unattributed, 'new_suites': new_suites, 'lost_suites': lost_suites})
+    ok = pf_ok and not bad and not unattributed and not lost_suites
+    print('\nKết luận:', 'SẠCH, chờ người dùng chốt rồi promote' if ok else 'CHƯA SẠCH, xem các mục trên')
+    sys.exit(0 if ok else 1)
+
+
+def cmd_promote(a):
+    src = os.path.abspath(a.dir)
+    m = Q.load_json(os.path.join(src, 'manifest.json'))
+    if m is None:
+        print('Không thấy manifest.json trong', a.dir); sys.exit(2)
+    if m != Q.manifest():
+        print('Site hoặc bộ kiểm đã đổi sau lần chạy này:', ', '.join(Q.changed_files(m, Q.manifest())))
+        print('Chạy lại python _qa/handover.py run rồi promote thư mục mới.'); sys.exit(2)
+    pairs = [(th, n) for th in Q.THEMES if os.path.isdir(os.path.join(src, th)) for n in os.listdir(os.path.join(src, th))]
+    shutil.rmtree(Q.GREEN, ignore_errors=True)
+    Q.copy_reports(src, Q.GREEN, pairs)
+    Q.save_json(os.path.join(Q.GREEN, 'manifest.json'), m)
+    led = os.path.join(Q.CUR, 'ledger.jsonl')
+    if os.path.exists(led):
+        shutil.move(led, os.path.join(src, 'ledger.jsonl'))
+    shutil.rmtree(Q.CUR, ignore_errors=True)
+    shutil.copytree(Q.GREEN, Q.CUR)
+    print(f'last-green = {os.path.relpath(src, Q.ROOT)} ({len(pairs)} bộ). current làm lại từ last-green, ledger trống.')
+
+
+def cmd_thumbs(a):
+    # "thumbs": {"dir": "assets/shots", "items": [[trang, khoá file bước, khổ], ...]}; bước cuối của file bước có "shot"
+    th_cfg = Q.CFG.get('thumbs') or {}
+    items = th_cfg.get('items', [])
+    if not items:
+        print('qa.config.json không khai báo "thumbs". Không có gì để chụp.'); return
+    tmp = os.path.join(Q.HERE, '.thumbs')
+    shutil.rmtree(tmp, ignore_errors=True)
+    for page, steps, size in items:
+        sf = os.path.join(Q.HERE, 'steps-' + steps + '.json')
+        shot = json.load(open(sf, encoding='utf-8'))['steps'][-1]['shot']
+        for th, q in Q.THEMES.items():
+            od = os.path.join(tmp, th)
+            env = dict(os.environ, QA_QUERY=q, QA_NOSHOT='')
+            r = subprocess.run(Q.run_all.NODE + [os.path.join(Q.HERE, 'run.mjs'), os.path.join(Q.SITE, page + '.html'), sf, od] + list(Q.run_all.SIZES[size]),
+                               capture_output=True, text=True, encoding='utf-8', env=env)
+            rep = json.loads(r.stdout)
+            errs = sum(len(x['errors']) for x in rep)
+            dst = os.path.join(Q.SITE, th_cfg.get('dir', 'assets/shots'), shot + ('' if th == Q.DEFAULT_THEME else '-' + th) + '.jpg')
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.copyfile(os.path.join(od, shot + '.jpg'), dst)
+            print(f'{os.path.relpath(dst, Q.ROOT)} · console {errs}')
+    shutil.rmtree(tmp, ignore_errors=True)
+
+
+ap = argparse.ArgumentParser()
+sub = ap.add_subparsers(dest='cmd', required=True)
+p = sub.add_parser('run'); p.add_argument('--themes', default=''); p.set_defaults(f=cmd_run)
+p = sub.add_parser('promote'); p.add_argument('dir'); p.set_defaults(f=cmd_promote)
+p = sub.add_parser('thumbs'); p.set_defaults(f=cmd_thumbs)
+a = ap.parse_args()
+a.f(a)

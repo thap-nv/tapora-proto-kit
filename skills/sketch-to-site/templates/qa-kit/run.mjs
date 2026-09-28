@@ -1,0 +1,102 @@
+// Bộ chạy thử: mở 1 trang, thực hiện chuỗi bước (JS), chụp ảnh từng bước, gom lỗi console.
+// node [--experimental-websocket] run.mjs <file.html> <steps.json> <outdir> [w] [h] [mobile]
+// Node 20 cần cờ --experimental-websocket; Node 22 trở lên có sẵn WebSocket. run_all.py tự thêm cờ khi cần.
+// Trình duyệt: biến QA_BROWSER, rồi "browser" trong qa.config.json, rồi tự dò Edge/Chrome/Chromium theo hệ điều hành.
+import { spawn } from 'node:child_process';
+import { writeFileSync, readFileSync, mkdtempSync, mkdirSync, rmSync, existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve, dirname, delimiter } from 'node:path';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+
+const [file, stepsFile, outdir, w = '1440', h = '900', mobile = '0'] = process.argv.slice(2);
+const steps = JSON.parse(readFileSync(stepsFile, 'utf8'));
+mkdirSync(outdir, { recursive: true });
+const HERE = dirname(fileURLToPath(import.meta.url));
+let cfg = {};
+try { cfg = JSON.parse(readFileSync(join(HERE, 'qa.config.json'), 'utf8')); } catch {}
+
+function findBrowser() {
+  const pick = [process.env.QA_BROWSER, cfg.browser].filter(Boolean);
+  for (const p of pick) if (existsSync(p)) return p;
+  const la = process.env.LOCALAPPDATA || '';
+  const byOs = {
+    win32: ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
+      'C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+      join(la, 'Google/Chrome/Application/chrome.exe')],
+    darwin: ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+      '/Applications/Chromium.app/Contents/MacOS/Chromium'],
+  }[process.platform] || [];
+  for (const p of byOs) if (existsSync(p)) return p;
+  // Linux, hoặc cài ngoài chỗ mặc định: tìm theo PATH
+  for (const name of ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser', 'microsoft-edge', 'msedge', 'chrome']) {
+    for (const d of (process.env.PATH || '').split(delimiter)) {
+      for (const ext of process.platform === 'win32' ? ['.exe', ''] : ['']) {
+        const p = join(d, name + ext);
+        if (existsSync(p)) return p;
+      }
+    }
+  }
+  return null;
+}
+const BROWSER = findBrowser();
+if (!BROWSER) { console.error('Không tìm thấy Edge, Chrome hay Chromium. Đặt biến QA_BROWSER hoặc khoá "browser" trong _qa/qa.config.json.'); process.exit(4); }
+
+// CDP_PORT: cổng riêng khi chạy nhiều bộ song song (run_all.py); không có thì chọn ngẫu nhiên
+const port = +process.env.CDP_PORT || 9300 + Math.floor(Math.random() * 600);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+// Cổng đã có trình duyệt khác (thường là trình duyệt sót từ lần chạy trước) thì dừng hẳn: chạy tiếp là điều khiển nhầm trình duyệt đó
+try { await fetch(`http://127.0.0.1:${port}/json/version`); console.error(`Cổng ${port} đã có trình duyệt khác. Tắt trình duyệt còn sót (hồ sơ cdp-* trong thư mục tạm) rồi chạy lại.`); process.exit(3); } catch {}
+const prof = mkdtempSync(join(tmpdir(), 'cdp-'));
+const proc = spawn(BROWSER, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--remote-debugging-port=${port}`, `--user-data-dir=${prof}`, '--no-first-run', 'about:blank'], { stdio: 'ignore' });
+let target;
+for (let i = 0; i < 60 && !target; i++) { try { const l = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); target = l.find(t => t.type === 'page'); } catch {} await sleep(150); }
+if (!target) { console.error(`Không kết nối được trình duyệt ở cổng ${port}: ${BROWSER}`); proc.kill(); process.exit(2); }
+const ws = new WebSocket(target.webSocketDebuggerUrl);
+await new Promise(r => ws.addEventListener('open', r));
+let id = 0; const pend = new Map(); let errors = [];
+ws.addEventListener('message', ev => {
+  const m = JSON.parse(ev.data);
+  if (m.id && pend.has(m.id)) { pend.get(m.id)(m); pend.delete(m.id); }
+  if (m.method === 'Runtime.exceptionThrown') errors.push('EXC ' + (m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text).split('\n').slice(0, 3).join(' | '));
+  if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') errors.push('ERR ' + m.params.args.map(a => a.value ?? a.description).join(' ').slice(0, 300));
+  if (m.method === 'Log.entryAdded' && m.params.entry.level === 'error' && !/favicon/.test(m.params.entry.url || '')) errors.push('LOG ' + m.params.entry.text + ' ' + (m.params.entry.url || ''));
+});
+const send = (method, params = {}) => new Promise(r => { const i = ++id; pend.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
+await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
+await send('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, deviceScaleFactor: 1, mobile: mobile === '1' });
+// QA_QUERY: tham số thêm cho mọi bộ, ví dụ ?theme=dark để chạy lại các bộ trên một theme khác
+const extra = (process.env.QA_QUERY || '').replace(/^\?/, '');
+const qs = steps.query ? steps.query + (extra ? '&' + extra : '') : (extra ? '?' + extra : '');
+await send('Page.navigate', { url: pathToFileURL(resolve(file)).href + qs });
+await sleep(2200);
+const report = [{ step: 'load', errors: errors.slice(), check: null, dims: null }];
+for (const s of steps.steps) {
+  errors = [];
+  if (s.js) { const r = await send('Runtime.evaluate', { expression: s.js, awaitPromise: true, returnByValue: true }); if (r.result?.exceptionDetails) errors.push('STEP ' + (r.result.exceptionDetails.exception?.description || r.result.exceptionDetails.text).split('\n')[0]); }
+  await sleep(s.wait || 450);
+  let val = null;
+  if (s.check) { const r = await send('Runtime.evaluate', { expression: s.check, returnByValue: true }); val = r.result?.result?.value; }
+  const dims = (await send('Runtime.evaluate', { expression: 'JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth})', returnByValue: true })).result.result.value;
+  // QA_NOSHOT: bỏ chụp ảnh (quick.py, và các theme sau theme đầu của handover.py); bước vẫn chạy và vẫn kiểm như cũ
+  if (s.shot && !process.env.QA_NOSHOT) {
+    const opt = { format: s.jpeg ? 'jpeg' : 'png' };
+    if (s.jpeg) opt.quality = 82;
+    if (s.clip) { const r = await send('Runtime.evaluate', { expression: `JSON.stringify((function(){var b=document.querySelector(${JSON.stringify(s.clip)}).getBoundingClientRect();return {x:b.left,y:b.top,width:b.width,height:b.height}})())`, returnByValue: true }); opt.clip = Object.assign(JSON.parse(r.result.result.value), { scale: s.scale || 1 }); }
+    const sh = await send('Page.captureScreenshot', opt);
+    writeFileSync(join(outdir, s.shot + (s.jpeg ? '.jpg' : '.png')), Buffer.from(sh.result.data, 'base64'));
+  }
+  report.push({ step: s.name, errors, check: val, dims: JSON.parse(dims) });
+}
+console.log(JSON.stringify(report, null, 1));
+ws.close();
+// Đóng cả trình duyệt qua CDP. proc.kill() chỉ tắt tiến trình khởi động; trên Windows trình duyệt thật chạy tiếp, giữ cổng và hồ sơ
+try {
+  const bws = new WebSocket((await (await fetch(`http://127.0.0.1:${port}/json/version`)).json()).webSocketDebuggerUrl);
+  await new Promise(r => bws.addEventListener('open', r));
+  bws.send(JSON.stringify({ id: 1, method: 'Browser.close' }));
+  for (let i = 0; i < 20; i++) { await sleep(150); try { await fetch(`http://127.0.0.1:${port}/json/version`); } catch { break; } }
+} catch {}
+proc.kill();
+// Xoá hồ sơ trình duyệt tạm của lần chạy này; trình duyệt có lúc chưa nhả file ngay: thử lại tối đa 6 lần
+for (let i = 0; i < 6; i++) { await sleep(400); try { rmSync(prof, { recursive: true, force: true }); break; } catch {} }
+process.exit(0);

@@ -1,0 +1,20 @@
+{
+  "name": "tapora-proto-kit",
+  "interface": {
+    "displayName": "Tapora Proto Kit"
+  },
+  "plugins": [
+    {
+      "name": "tapora-proto-kit",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
