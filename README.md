@@ -53,16 +53,31 @@ The expensive checks run **once before handover**, not after every edit. After e
 
 ### Claude Code
 
+Choose where the plugin is active:
+
+| Scope | Active for | Recorded in |
+|---|---|---|
+| All your projects *(default)* | You, in every project | Your user settings |
+| One project, just you | You, in that project only | `<project>/.claude/settings.local.json`. This is a personal file: don't commit it. |
+| One project, whole team | Everyone who opens that project | `<project>/.claude/settings.json`. Commit this file. |
+
+**All your projects.** In Claude Code:
+
 ```text
 /plugin marketplace add thap-nv/tapora-proto-kit
 /plugin install tapora-proto-kit@tapora-proto-kit
 ```
 
-Skills are namespaced, for example `/tapora-proto-kit:sketch-to-site`. You can also just describe the task ("thiết kế website cho …") and the agent picks the skill.
+**One project, just you.** In a terminal, from the project folder:
 
-Third-party marketplaces do not auto-update by default. Run `/plugin`, open **Marketplaces**, select **tapora-proto-kit**, and enable auto-update.
+```bash
+claude plugin marketplace add thap-nv/tapora-proto-kit --scope local
+claude plugin install tapora-proto-kit@tapora-proto-kit --scope local
+```
 
-**For a whole team.** Add this to the project's `.claude/settings.json` and commit it. Everyone who opens the project in Claude Code and trusts the folder is asked to install the plugin.
+`claude plugin list` in another project still shows the plugin, but with the status `disabled`. To remove it from the project, run `claude plugin uninstall tapora-proto-kit@tapora-proto-kit --scope local` in the project folder.
+
+**One project, whole team.** From the project folder, run the two commands above with `--scope project` instead of `--scope local`, then commit `.claude/settings.json`. Everyone who opens the project in Claude Code and trusts the folder is asked to install the plugin. You can also add the block by hand:
 
 ```json
 {
@@ -77,7 +92,11 @@ Third-party marketplaces do not auto-update by default. Run `/plugin`, open **Ma
 }
 ```
 
-The CLI writes the same block for you: `claude plugin marketplace add thap-nv/tapora-proto-kit --scope project`, then `claude plugin install tapora-proto-kit@tapora-proto-kit --scope project`.
+Skills are namespaced, for example `/tapora-proto-kit:sketch-to-site`. You can also just describe the task ("thiết kế website cho …") and the agent picks the skill.
+
+Third-party marketplaces do not auto-update by default. Run `/plugin`, open **Marketplaces**, select **tapora-proto-kit**, and enable auto-update.
+
+If a project already has its own copies of these skills in `.claude/skills/`, don't also enable the plugin there. You would get two versions of each skill, and the agent may pick the wrong one.
 
 ### Codex
 
@@ -85,6 +104,8 @@ The CLI writes the same block for you: `claude plugin marketplace add thap-nv/ta
 codex plugin marketplace add thap-nv/tapora-proto-kit
 codex plugin add tapora-proto-kit@tapora-proto-kit
 ```
+
+To use the kit in one project only, copy the folders from `skills/` into that project's `.agents/skills/` instead (see [Manual install](#manual-install-any-agent-skills-host)).
 
 ### Manual install (any Agent Skills host)
 
