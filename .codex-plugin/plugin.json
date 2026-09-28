@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "author": {
     "name": "Thap Nguyen",
-    "url": "https://github.com/thapMadison"
+    "url": "https://github.com/thap-nv"
   },
-  "homepage": "https://github.com/thapMadison/tapora-proto-kit",
-  "repository": "https://github.com/thapMadison/tapora-proto-kit",
+  "homepage": "https://github.com/thap-nv/tapora-proto-kit",
+  "repository": "https://github.com/thap-nv/tapora-proto-kit",
   "license": "MIT",
   "keywords": ["prototype", "html", "design-system", "ui", "ux", "qa", "regression", "vietnamese"],
   "skills": "./skills/",
@@ -18,7 +18,7 @@
     "developerName": "Thap Nguyen",
     "category": "Productivity",
     "capabilities": ["Read", "Write"],
-    "websiteURL": "https://github.com/thapMadison/tapora-proto-kit",
+    "websiteURL": "https://github.com/thap-nv/tapora-proto-kit",
     "defaultPrompt": [
       "Thiết kế website cho một quán cà phê, dùng sketch-to-site.",
       "Thêm bộ lọc theo ngày vào trang đơn hàng của prototype.",

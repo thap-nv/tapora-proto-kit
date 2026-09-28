@@ -54,7 +54,7 @@ The expensive checks run **once before handover**, not after every edit. After e
 ### Claude Code
 
 ```text
-/plugin marketplace add thapMadison/tapora-proto-kit
+/plugin marketplace add thap-nv/tapora-proto-kit
 /plugin install tapora-proto-kit@tapora-proto-kit
 ```
 
@@ -62,10 +62,27 @@ Skills are namespaced, for example `/tapora-proto-kit:sketch-to-site`. You can a
 
 Third-party marketplaces do not auto-update by default. Run `/plugin`, open **Marketplaces**, select **tapora-proto-kit**, and enable auto-update.
 
+**For a whole team.** Add this to the project's `.claude/settings.json` and commit it. Everyone who opens the project in Claude Code and trusts the folder is asked to install the plugin.
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "tapora-proto-kit": {
+      "source": { "source": "github", "repo": "thap-nv/tapora-proto-kit" }
+    }
+  },
+  "enabledPlugins": {
+    "tapora-proto-kit@tapora-proto-kit": true
+  }
+}
+```
+
+The CLI writes the same block for you: `claude plugin marketplace add thap-nv/tapora-proto-kit --scope project`, then `claude plugin install tapora-proto-kit@tapora-proto-kit --scope project`.
+
 ### Codex
 
 ```bash
-codex plugin marketplace add thapMadison/tapora-proto-kit
+codex plugin marketplace add thap-nv/tapora-proto-kit
 codex plugin add tapora-proto-kit@tapora-proto-kit
 ```
 
