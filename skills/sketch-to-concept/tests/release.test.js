@@ -29,9 +29,26 @@ test('manifest plugin nói về bước concept, bỏ "five decision gates"', ()
 
 test('CHANGELOG ghi phiên bản mới của hai skill', () => {
   const md = read('CHANGELOG.md');
-  const unreleased = md.split(/^## /m).find(s => s.startsWith('Unreleased'));
-  assert.match(unreleased, /`sketch-to-concept` 1\.0/);
-  assert.match(unreleased, /`sketch-to-site` 4\.0/);
+  const unreleased = md.split(/^## /m)[1]; // mục mới nhất, ngay dưới tiêu đề
+  for (const v of ['`sketch-to-concept` 1.1', '`sketch-to-site` 4.1', '`evolve-site` 1.7', '`tweak-site` 1.1', '`handover-check` 1.1']) {
+    assert.ok(unreleased.includes(v), `CHANGELOG thiếu ${v}`);
+  }
+  assert.match(unreleased, /superpowers/);
+});
+
+test('README và CHANGELOG nói về QA_LOAD_TIMEOUT của run.mjs', () => {
+  assert.ok(read('README.md').includes('QA_LOAD_TIMEOUT'), 'README thiếu QA_LOAD_TIMEOUT');
+  const unreleased = read('CHANGELOG.md').split(/^## /m)[1];
+  assert.ok(unreleased.includes('QA_LOAD_TIMEOUT'), 'CHANGELOG thiếu QA_LOAD_TIMEOUT');
+});
+
+test('ghi nguồn superpowers, README chạy test ở cả hai thư mục, SKILL.md có ghi chú phiên bản mới', () => {
+  const lic = read('THIRD_PARTY_LICENSES.md');
+  assert.ok(lic.includes('| [obra/superpowers](https://github.com/obra/superpowers) | © 2025 Jesse Vincent |'), 'thiếu dòng ghi nguồn superpowers');
+  assert.ok(read('README.md').includes('node --test skills/sketch-to-concept/tests/ skills/sketch-to-site/tests/'), 'README thiếu lệnh test hai thư mục');
+  for (const [f, v] of [['sketch-to-site', 'v4.1'], ['sketch-to-concept', 'v1.1'], ['evolve-site', 'v1.7'], ['tweak-site', 'v1.1'], ['handover-check', 'v1.1']]) {
+    assert.ok(read(`skills/${f}/SKILL.md`).split('\n').some(l => l.startsWith(`> **${v} (`)), `${f} thiếu ghi chú ${v}`);
+  }
 });
 
 test('mọi SKILL.md: name trùng thư mục, description tối đa 1.024 ký tự', () => {
@@ -45,4 +62,9 @@ test('mọi SKILL.md: name trùng thư mục, description tối đa 1.024 ký t�
     const text = desc[1].replace(/\s+/g, ' ').trim();
     assert.ok(text.length <= 1024, `${dir}: description dài ${text.length}`);
   }
+});
+
+test('phát hành 1.1.0: hai manifest cùng phiên bản, CHANGELOG có mục 1.1.0 ở đầu', () => {
+  for (const f of ['.claude-plugin/plugin.json', '.codex-plugin/plugin.json']) assert.equal(JSON.parse(read(f)).version, '1.1.0', f);
+  assert.ok(read('CHANGELOG.md').split(/^## /m)[1].startsWith('1.1.0 ('), 'mục đầu của CHANGELOG phải là 1.1.0');
 });

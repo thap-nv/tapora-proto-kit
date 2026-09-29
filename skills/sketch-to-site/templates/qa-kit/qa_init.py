@@ -78,7 +78,7 @@ def read_site(site):
 
 
 KIT_FILES = ['run.mjs', 'run_all.py', 'qalib.py', 'quick.py', 'handover.py', 'compare.py']
-GITIGNORE = '# Kết quả chạy, sinh lại được. last-green/ nên commit để cả nhóm dùng chung một mốc\nhandover/\ncurrent/\n.quick-run/\n.recheck/\n.thumbs/\n__pycache__/\n.kit-source\n'
+GITIGNORE = '# Kết quả chạy, sinh lại được. last-green/ nên commit để cả nhóm dùng chung một mốc\nhandover/\ncurrent/\n.quick-run/\n.recheck/\n.tdd/\n.thumbs/\n__pycache__/\n.kit-source\n'
 
 ap = argparse.ArgumentParser()
 ap.add_argument('prototype')
@@ -174,10 +174,14 @@ gi = os.path.join(qa, '.gitignore')
 if not os.path.exists(gi):
     open(gi, 'w', encoding='utf-8').write(GITIGNORE); print('tạo _qa/.gitignore')
 else:
-    old = open(gi, encoding='utf-8').read()
-    if '.kit-source' not in old:
-        open(gi, 'a', encoding='utf-8').write(('' if old.endswith('\n') else '\n') + '.kit-source\n'); print('thêm .kit-source vào _qa/.gitignore')
+    for entry in ('.kit-source', '.tdd/'):                    # dòng thêm ở các bản sau: .gitignore cũ chưa có
+        old = open(gi, encoding='utf-8').read()
+        if entry not in old.split('\n'):
+            open(gi, 'a', encoding='utf-8').write(('' if not old or old.endswith('\n') else '\n') + entry + '\n'); print(f'thêm {entry} vào _qa/.gitignore')
 
-rel = os.path.relpath(proto)
+try:
+    rel = os.path.relpath(proto)
+except ValueError:  # Windows: prototype khác ổ đĩa với thư mục đang đứng, relpath lỗi; in đường dẫn đầy đủ
+    rel = proto
 print(f'\nXong. Từ {rel}:\n  python _qa/handover.py run\n  python _qa/handover.py promote _qa/handover/<ngày-giờ>\n'
       '"preflight_kind" là "site" (site giới thiệu); web app thì đổi thành "app". Thêm bộ kiểm riêng vào "suites".')

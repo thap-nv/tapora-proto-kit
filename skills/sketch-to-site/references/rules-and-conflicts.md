@@ -136,3 +136,20 @@ Khuôn ở `templates/mobile/`, luật ở `mobile-app.md`. Khác trang web ở:
 - **Chữ hoa có dấu:** kiểm `leading` đủ cho dấu mũ và dấu nặng. Chữ hoa + tracking âm dễ **cắt dấu** (`Ấ`, `Ỗ`), nên chụp kiểm.
 - **Độ dài:** tiếng Việt thường dài hơn tiếng Anh 20–30 %. Nhãn nút phải vừa **một dòng** ở desktop.
 - **Ngôn ngữ làm việc** của dự án *(glossary, thuật ngữ cấm)* đứng trên mọi gợi ý chữ của skill này.
+
+---
+
+## F. Nhận góp ý và yêu cầu sửa
+
+Dùng ở `sketch-to-site` Cổng 4 *(Sửa theo danh sách)*, `evolve-site` Cổng 3 *(Chỉnh sửa chi tiết)*, `tweak-site`, và `handover-check` *(khi người dùng chọn Sửa ở cổng nghiệm thu bàn giao)*. Rút từ `superpowers` *(receiving-code-review)*.
+
+1. **Đọc hết danh sách trước khi sửa mục nào.** Mục nào chưa rõ thì hỏi **tất cả** mục chưa rõ trong một lượt, trước khi làm. Đừng làm xong phần rõ rồi mới hỏi phần còn lại: các mục thường dính nhau.
+2. **Soát từng mục trước khi làm**, theo thứ tự ưu tiên ở mục 2 của `sketch-to-site`:
+   - Trái **sàn** *(sàn không thương lượng ở `sketch-to-site` mục 2, điểm 1)*: nói rõ vì sao, đề xuất cách đạt ý người dùng mà vẫn giữ sàn. Không làm bản trái sàn.
+   - Đụng thứ **đã khoá** ở một cổng *(concept, token, sơ đồ trang)*: nói rõ là mở lại cổng nào, hỏi trước khi làm.
+   - Trái tài liệu yêu cầu hay glossary: dẫn chỗ trái, hỏi.
+   - Còn lại: làm.
+3. **Không trả lời xuôi.** Không viết *"vâng, đã sửa hết"*. Mỗi mục báo một dòng: đã làm gì, `file:dòng`, kết quả kiểm. Mục không làm thì nêu lý do.
+4. **Thứ tự làm:** mục gây lỗi hay sai nghiệp vụ trước, rồi mục đơn giản, rồi mục phức tạp. Kiểm sau từng mục hoặc từng nhóm nhỏ, không dồn tới cuối.
+5. **Góp ý của người thứ ba** *(khách của người dùng, đồng nghiệp)*: coi là đề xuất. Đối chiếu với yêu cầu và các quyết định đã ghi; mâu thuẫn với lời người dùng thì hỏi người dùng.
+6. **Mình đã sai thì sửa**, nói ngắn đã sửa gì. Không xin lỗi dài, không bào chữa.

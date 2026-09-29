@@ -111,9 +111,10 @@ Chạy trên **phần mới thêm và trang chứa nó**, đọc code thật, m�
 
 ## 3. Cho QA lớn theo tính năng
 
-Dự án có script QA liệt kê các trạng thái chạy thật *(ví dụ script chạy trình duyệt headless qua từng trang, từng vai)* thì **thêm trạng thái của tính năng mới** vào đó: mở, đóng, rỗng, lỗi, và từng vai ở nhóm G. Rồi **bẻ thử**:
-- Tạm làm hỏng tính năng *(xoá nút, bỏ chặn quyền)*: QA phải kêu.
-- Trả lại như cũ: QA phải im.
-- Kiểm **số chỗ đã bẻ > 0** trước khi đọc kết quả. Một phép bẻ không thay được gì trông giống hệt một phép thử đạt.
+Dự án có bộ kiểm `_qa/`: bước kiểm của tính năng được viết **trước khi dựng** *(SKILL.md, B3, Kiểm trước, dựng sau)*. Bước đó đã đỏ khi chưa có code, nên đã chứng minh được là nó bắt được thiếu sót. Ở B4 còn hai việc:
+- Bộ của tính năng chạy xanh: `FAIL 0` và `im lặng 0`.
+- **Bẻ thử các bước phủ định** *(vai không được thấy, không được làm; tên bắt đầu bằng `phu-dinh-`)*: các bước này đúng sẵn khi tính năng chưa có nên chưa từng đỏ. Tạm làm hỏng *(bỏ chặn quyền)*: QA phải kêu. Trả lại như cũ: QA phải im. Kiểm **số chỗ đã bẻ > 0** trước khi đọc kết quả: một phép bẻ không thay được gì trông giống hệt một phép thử đạt.
+
+Dự án có script QA riêng *(không phải bộ kiểm `_qa/`)*: thêm trạng thái của tính năng mới vào script đó *(mở, đóng, rỗng, lỗi, và từng vai ở nhóm G)*, rồi bẻ thử như trên.
 
 Không thêm thì tính năng này không được canh: lần sửa sau làm hỏng nó cũng không ai biết.

@@ -6,6 +6,7 @@ description: >-
 
 # Sketch to Site · Thiết kế website và app từ đầu
 
+> **v4.1 (29/09/2026)** · Sổ tiến độ `BUILD-LOG.md` ở B3 *(B0 làm tiếp từ sổ)*. B4: tìm nguyên nhân gốc, không làm im bộ kiểm *(`qa-gate.md` mục 6)*, review bằng góc nhìn mới *(`qa-gate.md` mục 7)*. Luật dừng có bảng cớ bỏ cổng. Cổng 4: nhận góp ý theo `rules-and-conflicts.md` mục F.
 > **v4.0 (29/09/2026)** · Tách phần concept ra `sketch-to-concept`. Định hình dự án, nạp tham chiếu, tra design intelligence, chọn phong cách và dựng 3 phương án giờ là **Cổng 1–2** ở đó, trên một bảng concept nhìn thấy được. Skill này nhận `CONCEPT.md`, đọc đủ yêu cầu rồi thử concept trên màn khó *(B0–B1)*. Design system, dựng đầy đủ, tự kiểm đổi số thành B2, B3, B4; hai cổng cuối thành **Cổng 3** và **Cổng 4**.
 > **v3.1 (29/09/2026)** · Bộ kiểm: tự có khổ 768, bắt chữ tràn hoặc bị cắt trong khung, chụp ảnh ở mọi theme, nền sáng/tối theo `?theme=` chứ không theo máy chạy kiểm *(`templates/theme.js`)*, màn cần tham số khai báo mẫu bằng `qa-query`. Trục biến thể riêng cho app. Câu hỏi định hình dự án giữ ≤ 4 câu một lượt.
 > **v3.0 (29/09/2026)** · Thêm **app mobile iOS/Android** và **hệ thống nhiều bề mặt** *(admin web + app)*: câu hỏi định hình dự án hỏi bề mặt và nền tảng, luật ở `references/mobile-app.md`, khuôn ở `templates/mobile/`. Bước dựng đầy đủ dựng dữ liệu dùng chung bằng `templates/store.js` *(mục D.5)*. Skill tham chiếu được đọc theo đường dẫn, không gọi qua công cụ Skill.
@@ -54,6 +55,24 @@ description: >-
 - Gom câu của cổng sau vào cổng trước cho đỡ một lượt.
 - Coi im lặng là đồng ý. Người dùng không trả lời thì nhắc lại câu hỏi.
 
+<!-- luat-dung:co:bat-dau -->
+**Cớ hay gặp để bỏ cổng, và sự thật** *(rút từ `superpowers` writing-skills và brainstorming; khối này giống hệt ở `sketch-to-site` và `sketch-to-concept`, test giữ hai bản khớp nhau)*:
+
+| Cớ | Sự thật |
+|---|---|
+| "Đang chạy tự động, không ai trực, cứ chọn khuyến nghị cho nhanh" | Cổng là quyết định chỉ người dùng làm được. Dừng ở cổng không bị coi là tắc việc |
+| "Phương án khuyến nghị rõ ràng tốt nhất, hỏi chỉ tốn một lượt" | Khuyến nghị đứng đầu và ghi *(Khuyến nghị)*. Chọn vẫn là việc của người dùng |
+| "Người dùng giục: nhanh lên, gấp lắm" | Câu giục không phải lời bỏ cổng. Hỏi gọn hơn, gộp câu trong cùng cổng, không bỏ hỏi |
+| "Người dùng đã duyệt ý tưởng, coi như duyệt luôn bản dựng" | Một lần duyệt chỉ áp cho **đúng thứ đã trình**. Thứ người dùng chưa xem thì chưa được duyệt |
+| "Hỏi trước cho đỡ mất lượt, dựng sau" | Không hỏi khi chưa có gì để xem. Dựng bảng hay bản dựng trước, hỏi sau |
+| "Chỉ là sửa nhỏ sau nghiệm thu, đổi luôn token hay concept" | Đổi thứ đã khoá ở cổng nào là mở lại cổng đó |
+| "Người dùng chưa trả lời, chắc là đồng ý" | Im lặng không phải đồng ý. Nhắc lại câu hỏi |
+
+Người dùng trả lời *Tuỳ bạn* cho một câu hỏi ở cổng: đó là lời giao quyết định cho câu đó. Chọn lựa chọn khuyến nghị; câu không có khuyến nghị thì chọn lựa chọn đầu, nêu lý do một dòng. Ghi nguyên văn vào `DECISIONS.md`, không hỏi lại câu đó.
+
+**Dấu hiệu phải dừng lại:** thấy mình nghĩ *"để mình chọn luôn"*, *"chắc họ sẽ chọn A"*, *"hỏi thì mất công"*, *"trả lời sau cũng được"*, hay định viết *"tôi đã chọn … cho bạn"* khi người dùng chưa giao câu đó. Gặp một trong số đó: trình bày, hỏi, rồi kết thúc lượt.
+<!-- luat-dung:co:ket-thuc -->
+
 ---
 
 ## 2. Thứ tự ưu tiên khi các luật đụng nhau
@@ -77,7 +96,7 @@ Bảng xử từng cặp mâu thuẫn cụ thể ở `references/rules-and-confl
 - **Placeholder trung thực hơn cố làm cho có.** Không có ảnh thì để khung ghi rõ *"Ảnh: bể bơi trong nhà, 1600×1000"*, **đừng** tự vẽ SVG người hay vật.
 - **Mỗi màn hình đúng MỘT hành động chính.**
 - **Prototype phải "sống"**: tab, modal, lọc, toast, trạng thái *đang tải / rỗng / lỗi*.
-- **Viết đủ, không cắt** *(`full-output-enforcement`)*: cấm `// ...`, `// phần còn lại tương tự`, cấm bỏ khung. Sắp hết độ dài thì dừng ở chỗ ngắt sạch và ghi `[TẠM DỪNG — xong X/Y. Gõ "tiếp" để làm: <phần kế>]`.
+- **Viết đủ, không cắt** *(`full-output-enforcement`)*: cấm `// ...`, `// phần còn lại tương tự`, cấm bỏ khung. Sắp hết độ dài thì dừng ở chỗ ngắt sạch và ghi `[TẠM DỪNG — xong X/Y. Gõ "tiếp" để làm: <phần kế>]`. Ở B3 thì cập nhật `BUILD-LOG.md` cùng lúc: dòng trong chat có thể mất khi ngữ cảnh bị nén, sổ thì không.
 
 ---
 
@@ -93,6 +112,10 @@ B0 Nhận concept ─► B1 Đọc đủ yêu cầu + thử concept ─► B2 De
 
 ### B0 · Nhận concept *(không hỏi)*
 
+- **Có `BUILD-LOG.md`**: đang dựng dở, không chạy lại B1–B2. Đọc `CONCEPT.md` và `DESIGN.md`, rồi:
+  - còn trang trong phạm vi chưa `xong` → làm tiếp B3 theo luật làm tiếp của sổ;
+  - trang trong phạm vi đã `xong` hết mà `DECISIONS.md` chưa có Cổng 4 → sang B4;
+  - vẫn làm các dòng còn lại của B0 *(kiểm công cụ, đọc `references/mobile-app.md` nếu có app)*.
 - **Có `CONCEPT.md`** ở thư mục prototype: đọc hết. Những gì mục 4 của nó ghi *đã khoá* thì không hỏi lại, không tự đổi.
 - **Chưa có:** đọc `<skills>/sketch-to-concept/SKILL.md` và làm Phần A trước, trong cùng phiên. Xong Cổng 2 mới quay lại đây.
 - **Dự án đang làm dở theo quy trình trước v4.0** *(`DECISIONS.md` đã ghi một hướng được chọn trong 3 hướng dựng thử)*: coi hướng đó là concept đã chốt. Viết `CONCEPT.md` từ hướng đó theo `<skills>/sketch-to-concept/templates/CONCEPT.md`, không bắt người dùng làm lại Phần A.
@@ -127,6 +150,7 @@ B0 Nhận concept ─► B1 Đọc đủ yêu cầu + thử concept ─► B2 De
 
 Yêu cầu kỹ thuật ở `references/rules-and-conflicts.md` mục D. Tóm tắt:
 
+- **Sổ tiến độ** *(`templates/BUILD-LOG.md`)*: trước trang đầu tiên, chép khuôn thành `BUILD-LOG.md` ở thư mục prototype, mỗi trang trong phạm vi đã chốt ở Cổng 3 một dòng. Dựng xong trang nào thì chạy `preflight.py` cho trang đó; được **0 lỗi** mới đổi thành `xong` và dán dòng kết quả. **Làm tiếp** *(phiên mới, ngữ cảnh bị nén, người dùng gõ "tiếp")*: đọc sổ trước tiên, xác nhận các trang `xong` theo luật làm tiếp ở đầu sổ *(**mở file thật**, chạy lại `preflight.py`; file mất hay đã bị sửa thì xử như sổ ghi)*, ghi một dòng vào *Lần tiếp tục*. Không dựng lại trang đã `xong`.
 - Một file HTML mỗi trang, hoặc một SPA nhẹ. **Token là CSS variables**, định nghĩa ở `:root` và ghi đè cho nền tối: chép khối CSS ở `DESIGN.md` *(lấy từ `CONCEPT.md`)*. `tailwind.config` đọc lại chính các token đó.
 - **Có cả nền sáng và tối** *(Cổng 2)*: chép `templates/theme.js` vào `assets/`, nạp trong `<head>` mọi trang. `?theme=dark` ép nền tối cho cả phiên, để demo và để bộ kiểm chụp đúng nền *(D.2)*.
 - Font lấy từ Google Fonts, **đã kiểm tiếng Việt**. Icon mặc định là **Phosphor** *(Lucide được phép khi họ phong cách là *công cụ vận hành*)*. **Không emoji.**
@@ -152,8 +176,9 @@ Chi tiết ở `references/qa-gate.md`:
    - Không chạy được trình duyệt headless thì chụp tay theo `qa-gate.md` mục 2.
 3. **`laws-of-ux-checklist`** 12 điểm trên từng trang. Mỗi dòng ghi ✅ hoặc ❌ **kèm dòng code làm bằng chứng**.
 4. **Soát gu** theo loại sản phẩm *(`qa-gate.md` mục 4)*, và soát **concept còn nguyên** *(B3, dòng Giữ concept)*.
+5. **Review bằng góc nhìn mới** *(có công cụ tạo subagent và phiên cho phép)*: giao cho một subagent **chưa tham gia dựng**, prompt ở `references/qa-gate.md` mục 7. Soát từng vấn đề theo `references/rules-and-conflicts.md` mục F trước khi sửa: vấn đề đụng thứ đã khoá hay ngoài phạm vi thì không sửa, đưa lên Cổng 4. Còn lại: mức *Chặn nghiệm thu* và *Nên sửa* thì sửa rồi chạy lại các bước trên; mức *Nhỏ* thì liệt kê ở Cổng 4. Không có công cụ đó thì bỏ bước này và ghi *không có review độc lập* vào báo cáo Cổng 4.
 
-Có lỗi thì sửa rồi chạy lại. **Không** mang lỗi đã biết vào Cổng 4.
+Có lỗi thì tìm nguyên nhân gốc rồi sửa ở gốc, theo `references/qa-gate.md` mục 6, rồi chạy lại. **Không** mang lỗi đã biết vào Cổng 4, và **không làm im** bộ kiểm.
 
 ### 🛑 Cổng 4 · Nghiệm thu
 
@@ -164,6 +189,8 @@ Báo **số thật**: preflight *(n lỗi · n cảnh báo)*, UX *(n/12 mỗi tr
 - Có trang chỉ đạt **7–9/12** ở checklist.
 
 Ngoài hai trường hợp đó *(site giới thiệu đạt 10–12/12)*: vẫn đưa lựa chọn, nhưng **không** gắn khuyến nghị. **Chốt** đứng đầu. Review chấm **từng trang** và dài, nên chạy **một lần trước khi giao**, không chạy ở mỗi lượt sửa.
+
+Người dùng chọn **Sửa theo danh sách**: làm theo `references/rules-and-conflicts.md` mục F.
 
 ---
 
@@ -205,6 +232,7 @@ Mặc định `docs/prototypes/<slug>/`. Dự án có quy ước khác thì theo
 ├── CONCEPT.md            # concept chốt ở Cổng 2 (sketch-to-concept): nguồn token tới Cổng 3
 ├── concept/              # bảng concept: index.html, concepts.js, tokens.js, 3 màn then chốt, ảnh chụp
 ├── DESIGN.md             # design system đã khoá ở Cổng 3
+├── BUILD-LOG.md          # sổ tiến độ dựng ở B3 (và các đợt evolve-site Cấp 3)
 ├── site/                 # bản dựng đầy đủ; có app hoặc nhiều bề mặt: assets/ dùng chung, admin/, app/ (mobile-app.md mục 1)
 └── _qa/                  # bộ kiểm: script, qa.config.json, steps-*.json, mốc last-green/, ảnh chụp, QA.md
 ```

@@ -78,7 +78,7 @@ if ledger_new:
 for line in bad:
     print(line)
 if tot['cut']:
-    print('Chữ tràn hoặc bị cắt trong khung: xem ảnh của bước đó. Cố ý (tràn lề, marquee, slide ló) thì gắn data-clip-ok vào khung.')
+    print('Chữ tràn hoặc bị cắt trong khung: xem ảnh của bước đó. Cố ý (tràn lề, marquee, slide ló) thì gắn data-clip-ok="<lý do>" vào khung. Không cố ý thì sửa ở gốc, đừng làm im.')
 
 clean = pf_ok and not bad and tot['errors'] == 0 and tot['fails'] == 0 and tot['silent'] == 0 and tot['over'] == 0 and tot['cut'] == 0
 verdict = 'ĐẠT' if clean else 'CHƯA ĐẠT'

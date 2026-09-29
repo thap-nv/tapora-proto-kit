@@ -6,3 +6,6 @@ Thumbs.db
 # Skill cài tạm để nghiên cứu (npx skills), không thuộc bộ kit
 .agents/skills/
 skills-lock.json
+
+# Plan làm việc, không thuộc bộ kit
+plans/

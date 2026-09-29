@@ -110,7 +110,7 @@ def cmd_run(a):
     for line in bad:
         print('  ' + line)
     if any(t['cut'] for t in per_theme.values()):
-        print('Chữ tràn hoặc bị cắt trong khung: xem ảnh của bước đó. Cố ý (tràn lề, marquee, slide ló) thì gắn data-clip-ok vào khung.')
+        print('Chữ tràn hoặc bị cắt trong khung: xem ảnh của bước đó. Cố ý (tràn lề, marquee, slide ló) thì gắn data-clip-ok="<lý do>" vào khung. Không cố ý thì sửa ở gốc, đừng làm im.')
     Q.save_json(os.path.join(out, 'handover.json'), {'preflight': [pf_ok, pf_line], 'themes': per_theme, 'bad': bad,
                                                       'unattributed': unattributed, 'new_suites': new_suites, 'lost_suites': lost_suites})
     ok = pf_ok and not bad and not unattributed and not lost_suites

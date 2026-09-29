@@ -17,7 +17,7 @@
 | A *(Khuyến nghị)* | hợp nhất | | | |
 | B | chuẩn thật: <sản phẩm> | | | |
 | C | lăng kính studio: <tên> | | | |
-**Bảng:** `concept/index.html` · **Tự chấm lớp Ý:** A <n>/10 · B <n>/10 · C <n>/10
+**Bảng:** `concept/index.html` · **Chấm lớp Ý** *(review độc lập | tự chấm)*: A <n>/10 · B <n>/10 · C <n>/10
 **Đáp án concept (nguyên văn):**
 **Mã trộn (nếu có):**
 **Vòng biến thể (nếu có):**

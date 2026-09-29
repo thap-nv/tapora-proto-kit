@@ -1,8 +1,24 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 (2026-09-29)
 
-- Skills: `sketch-to-concept` 1.0 (new), `sketch-to-site` 4.0, `evolve-site` 1.6.
+- Skills: `sketch-to-concept` 1.1 (new), `sketch-to-site` 4.1, `evolve-site` 1.7, `tweak-site` 1.1, `handover-check` 1.1.
+- Working habits adapted from superpowers (see THIRD_PARTY_LICENSES.md):
+  - `BUILD-LOG.md`: `sketch-to-site` B3 and `evolve-site` level 3 log each finished page with its check result, and resume from the log after a context reset instead of rebuilding.
+  - QA failures: find the root cause first; silencing a check is forbidden (`qa-gate.md` §6). `preflight.py` P18 warns when `data-clip-ok` has no reason.
+  - The stop rules in `sketch-to-site` and `sketch-to-concept` list common excuses for skipping a gate, with the answer to each. The tests keep both copies identical.
+  - `evolve-site` writes the feature's QA steps before building, watches them fail, then builds until they pass. Negative checks are still proven by breaking them.
+  - `sketch-to-concept` can build the three concepts with three parallel subagents that do not see each other, and asks a fresh subagent to score them. `sketch-to-site` B4 adds a fresh-context review before sign-off. Without subagents, both run in sequence.
+  - Change requests: every item is checked against the quality floor and locked decisions before it is made (`rules-and-conflicts.md` §F).
+  - `qa_init.py` no longer crashes on Windows when the prototype is on another drive than the current folder.
+- QA kit, after the review:
+  - `run.mjs` waits for the page load event before running steps (up to `QA_LOAD_TIMEOUT`, default 20 s, still at least 2.2 s), and again after a step that navigates. Before, a slow `<head>` script left `document.body` empty after the fixed 2.2 s wait and the whole suite crashed. A layout that cannot be measured is now an error on that step.
+  - `preflight.py` P18 catches `data-clip-ok` without a reason also in upper case and in multi-line tags, and stays silent on comments, text and spaced `=`. Font checks ignore comments, so a comment mentioning `font-family:` no longer raises a false P15.
+  - `qa_init.py` adds `.tdd/` to `_qa/.gitignore`, also on `--update`.
+  - `evolve-site`: feature suites get one name per viewport; negative steps start with `phu-dinh-`; removing a feature also starts from a red check.
+- Fixed during a full test run of the QA flow:
+  - `BUILD-LOG.md`: the Check column holds the whole last line `preflight.py` prints, and the Notes column holds the file's modified date and time (`dd/mm/yyyy hh:mm:ss`). A shortened line made the resume check block a page that had not changed, and a time without a date let a hand edit made the next day pass as older than the log.
+  - The header of `_qa/run_all.py` describes the steps file (`query`, `name`, `js`, `wait`, `check`, `shot`, `jpeg`, `clip`, `scale`). `evolve-site` points there, and the kit's README is not copied into the prototype.
 - Concept first:
   - New `sketch-to-concept` skill. It reads only the core of the brief (overview, personas, function names), then builds a concept board in `concept/`: 3 concepts from 3 sources (best-fit style family, a real product used as a benchmark, a studio lens), each with an idea, a style tile and one real key screen with the same content. The board measures contrast, flags pairs of concepts that differ on fewer than 3 axes or share a layout skeleton, and has a mix panel that prints a mix code such as `man:A mau:B chu:A nut:A`. The chosen concept is written to `CONCEPT.md`.
   - `sketch-to-site` 4.0 starts from `CONCEPT.md`, or runs `sketch-to-concept` first. The style gate and the 3-directions step moved there, so the flow has 4 gates instead of 5: brief and concept (in `sketch-to-concept`), design system with scope, and sign-off. A new step reads the full requirements and tests the concept on the hardest screens before the design system is locked.

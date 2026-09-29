@@ -6,7 +6,7 @@ Chạy từ `<thư-mục-prototype>`, thư mục chứa `_qa/`. Cần Python 3, 
 
 - **Sau mỗi lần sửa:** `python _qa/quick.py --note "<sửa gì, ở đâu>"`.
   - Lệnh chạy preflight và chỉ các bộ của trang nạp file đã đổi, không chụp ảnh, rồi so với `_qa/current/`.
-  - Yêu cầu: 0 lỗi console, 0 FAIL, 0 tràn ngang mới, 0 chữ tràn hoặc bị cắt mới trong khung *(cố ý thì gắn `data-clip-ok` vào khung)*. Mỗi `check` đổi giá trị phải giải thích được bằng chính thay đổi vừa làm.
+  - Yêu cầu: 0 lỗi console, 0 FAIL, 0 tràn ngang mới, 0 chữ tràn hoặc bị cắt mới trong khung *(cố ý thì gắn `data-clip-ok="<lý do>"` vào khung; không dùng để làm im lỗi)*. Mỗi `check` đổi giá trị phải giải thích được bằng chính thay đổi vừa làm.
   - `--dry` để xem bộ nào sẽ chạy; `--all` để chạy mọi bộ.
 - **Trước khi bàn giao, gửi link hay commit:** skill `handover-check`.
   - `python _qa/handover.py run`: mọi bộ ở mọi theme, so với `_qa/last-green/`.

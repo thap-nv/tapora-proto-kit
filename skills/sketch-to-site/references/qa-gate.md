@@ -32,12 +32,13 @@ python <skills>/sketch-to-site/scripts/preflight.py <thư-mục> --save <file.js
 | `P15` | CẢNH BÁO | Font không tra được trong dữ liệu *(Fontshare, font tự host)*. Kiểm tay |
 | `P16` | CẢNH BÁO | Màn app *(`<html data-surface="app">`)*: viewport thiếu `viewport-fit=cover` |
 | `P17` | CẢNH BÁO | Màn app chặn phóng to *(`user-scalable=no`, `maximum-scale=1`)* |
+| `P18` | CẢNH BÁO | `data-clip-ok` không ghi lý do *(viết `data-clip-ok="<lý do>"`)* |
 
 Thoát mã `1` khi còn **LỖI**. Cảnh báo thì phải **đọc từng dòng** rồi sửa, hoặc ghi lý do giữ vào `DECISIONS.md`.
 
 **Phạm vi đọc:** trang HTML **và** CSS/JS cục bộ mà trang nạp *(`<link rel=stylesheet>`, `<script src>`)*. File dùng chung chỉ báo một lần. **Không đọc** chữ do JS sinh lúc chạy *(ví dụ emoji nằm trong chuỗi JS rồi `innerHTML` ra)*. Phần đó phải soát bằng ảnh chụp ở mục 2.
 
-⚠️ **Script đã được thử trên trang cố ý làm hỏng** *(`--selftest`: 15/15 mã kêu trên trang hỏng · im trên trang sạch · `--kind app` bỏ P11 · CSS nạp kèm báo đúng một lần · màn app kêu P16, P17 và không kêu P11 · `--compare` bỏ qua dòng xê dịch, bắt đúng lỗi mới)*. Selftest cũng đã được **bẻ thử**: tắt một phép kiểm thì selftest phải trả mã 1. Sửa script thì chạy lại `--selftest`.
+⚠️ **Script đã được thử trên trang cố ý làm hỏng** *(`--selftest`: 16/16 mã kêu trên trang hỏng · im trên trang sạch, kể cả `data-clip-ok` có lý do và selector `[data-clip-ok]` trong CSS · `--kind app` bỏ P11 · CSS nạp kèm báo đúng một lần · màn app kêu P16, P17 và không kêu P11 · `--compare` bỏ qua dòng xê dịch, bắt đúng lỗi mới)*. Selftest cũng đã được **bẻ thử**: tắt một phép kiểm thì selftest phải trả mã 1. Sửa script thì chạy lại `--selftest`.
 
 ---
 
@@ -52,7 +53,7 @@ Mỗi bước, bộ chạy tự đo:
 - **tràn ngang** của cả trang;
 - **chữ tràn hoặc bị cắt trong khung**: chữ tràn khỏi hộp của nó *(ô bảng bị ép, nút hẹp)*, hoặc chữ hay nút bị khung `overflow:hidden` cắt mất một phần *(bảng rộng hơn khung bo góc)*.
   - Phép đo tràn ngang không thấy lỗi này, vì phần tràn nằm trong khung.
-  - Cố ý *(tràn lề, marquee, slide ló)* thì gắn `data-clip-ok` vào khung.
+  - Cố ý *(tràn lề, marquee, slide ló)* thì gắn `data-clip-ok="<lý do>"` vào khung, ví dụ `data-clip-ok="marquee chạy ngang"`. Thiếu lý do thì preflight báo P18. **Không** gắn cho chỗ tràn không cố ý *(mục 6)*.
 
 Lệnh dưới đây chỉ dùng khi **không chạy được bộ kiểm**, để chụp tay.
 
@@ -147,5 +148,53 @@ Chạy trên **từng trang**, đọc code thật, mỗi điểm ✅/❌ kèm `f
 **Kiểm cơ giới:** 0 lỗi · n cảnh báo (đã xử: …)
 **Hiển thị:** 1440 ✅ · 768 ✅ · 390 ✅ — ảnh ở `_qa/`
 **UX 12 điểm:** Trang chủ 12/12 · Sản phẩm 11/12 (❌ #7: …)
+**Review độc lập:** n vấn đề (chặn nghiệm thu · nên sửa · nhỏ), đã sửa n, đưa lên cổng n · hoặc: không có review độc lập
 **Còn chờ:** 4 ảnh thật (…) · 2 số minh hoạ (…)
+```
+
+---
+
+## 6. Lỗi kiểm: tìm nguyên nhân gốc, không làm im
+
+> Rút từ `superpowers` *(systematic-debugging, verification-before-completion)*, nguồn ở `THIRD_PARTY_LICENSES.md`. Dùng ở B4 của `sketch-to-site`, B4 của `evolve-site`, bước kiểm nhanh của `tweak-site`.
+
+**Trước khi sửa, tìm nguyên nhân:**
+1. Đọc đủ lỗi: bộ, bước, khổ, theme, dòng báo. Có ảnh của bước đó thì mở ra xem.
+2. Tái hiện riêng bộ đó: `python _qa/run_all.py _qa/.recheck <tên bộ>`, hoặc mở trang ở đúng khổ và theme. Không tái hiện được thì chưa sửa gì: chạy lại lần nữa để loại nhiễu, ghi lại.
+3. Tìm chỗ gây ra: file vừa đổi *(`python _qa/quick.py --dry`, dòng nhật ký)* giao với trang có lỗi. So với trang cùng loại đang chạy đúng.
+4. Nêu **một** giả thuyết bằng một câu *(ví dụ "bảng tràn vì cột Ghi chú thiếu `min-width: 0`")*, thử thay đổi nhỏ nhất để kiểm giả thuyết đó.
+5. Sửa ở gốc, chạy lại đúng lệnh đã báo lỗi.
+
+**Cấm làm im bộ kiểm.** Mỗi cách dưới đây làm lỗi biến khỏi báo cáo mà vẫn còn trên màn:
+
+| Cách làm im | Làm thay |
+|---|---|
+| Gắn `data-clip-ok` *(dù có ghi lý do)* cho chỗ tràn không cố ý | Sửa chỗ tràn: `min-width: 0`, cho xuống dòng, bảng cuộn ngang trong khung |
+| Thêm `overflow: hidden`, `truncate` hay `line-clamp` để che chữ người dùng cần đọc | Cho chữ đủ chỗ, hoặc đổi bố cục |
+| Sửa `check` cho khớp giá trị sai, hay xoá bước kiểm | Sửa trang cho ra giá trị đúng. Bước kiểm sai thật thì nói ra, sửa bước kèm lý do |
+| Thêm vào `noisy` một bước không tự đổi giữa các lần chạy | Tìm vì sao giá trị đổi |
+| Đổi khổ, theme hay `query` của bộ để né lỗi | Sửa ở đúng khổ, theme đó |
+| Bọc code bằng `try {} catch {}` rỗng cho hết lỗi console | Sửa lỗi gốc |
+
+**Ba lần sửa chưa xong thì dừng.** Báo người dùng: lỗi gì, đã thử ba cách nào, giả thuyết còn lại. Lỗi thường nằm ở bố cục hay dữ liệu, không ở chỗ đang vá.
+
+**Nói "đã sửa", "đã qua" thì kèm bằng chứng:** dòng kết quả của lần chạy **sau** khi sửa. Không dùng kết quả lần trước, không viết "chắc là được".
+
+---
+
+## 7. Review bằng góc nhìn mới
+
+> Dùng ở B4 bước 5 của `sketch-to-site`, khi có công cụ tạo subagent và phiên cho phép. Người dựng tự soát thường sót đúng chỗ đã sót lúc dựng. Rút từ `superpowers` *(requesting-code-review)*.
+
+```text
+Bạn review prototype {tên dự án} trước khi nghiệm thu. Bạn không dựng nó. Chỉ đọc, không sửa file nào.
+
+Đọc: {thư mục prototype}/CONCEPT.md, {thư mục prototype}/DESIGN.md (sơ đồ trang ở mục 9), {thư mục prototype}/DECISIONS.md (phạm vi ở Cổng 3; thứ đã khoá ở một cổng thì chỉ nêu, không đề xuất đổi), mã nguồn trong {thư mục prototype}/site/ (để dẫn file:dòng), ảnh chụp mới nhất trong {thư mục prototype}/_qa/handover/, và {skills}/sketch-to-site/references/qa-gate.md mục 4.
+
+Trả về:
+1. Concept còn nguyên không: Ý, ẩn dụ, khoảnh khắc đọc lần hai, tương tác đặc trưng thấy ở những trang nào, mất ở trang nào.
+2. Soát gu theo qa-gate.md mục 4: mỗi vấn đề chỉ vào trang, khổ, và chỗ trên ảnh hoặc file:dòng.
+3. Chỗ trông giống khuôn chung, không thuộc về sản phẩm này.
+
+Xếp mọi vấn đề theo mức: Chặn nghiệm thu · Nên sửa · Nhỏ. Cuối cùng: danh sách những gì đã cân nhắc mà bỏ qua, mỗi dòng một lý do.
 ```
