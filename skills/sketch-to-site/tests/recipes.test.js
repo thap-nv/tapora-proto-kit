@@ -100,6 +100,50 @@ test('run.mjs: script trong <head> tải chậm thì đợi trang tải xong r�
   assert.ok(s.dims && typeof s.dims.sw === 'number', JSON.stringify(s));
 });
 
+// Chạy run.mjs trên một trang, trả { status, report, ms }
+function runPage(t, html, steps, env = {}) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'run-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(dir, 'a.html'), html);
+  fs.writeFileSync(path.join(dir, 'steps.json'), JSON.stringify({ steps }));
+  const flags = +process.versions.node.split('.')[0] < 22 ? ['--experimental-websocket'] : [];
+  const t0 = Date.now();
+  const r = spawnSync(process.execPath, [...flags, path.join(S2S, 'templates', 'qa-kit', 'run.mjs'), path.join(dir, 'a.html'), path.join(dir, 'steps.json'), path.join(dir, 'out')],
+    { encoding: 'utf8', timeout: 150000, env: { ...process.env, ...env } });
+  let report = null;
+  try { report = JSON.parse(r.stdout); } catch {}
+  return { status: r.status, stderr: r.stderr, report, ms: Date.now() - t0 };
+}
+
+test('review 1: bấm link # hay pushState không làm các bước sau đợi QA_LOAD_TIMEOUT, toast thoáng qua vẫn kiểm được', t => {
+  // Chuyển trang trong cùng tài liệu có frameStartedLoading nhưng không có loadEventFired
+  const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>A</title></head><body>
+<a id="neo" href="#s2">Mục 2</a><button id="gui" type="button">Gửi</button><div id="toast" hidden>Đã gửi</div>
+<section id="s2"><h2>Mục 2</h2></section>
+<script>document.getElementById('gui').onclick = () => { toast.hidden = false; setTimeout(() => { toast.hidden = true; }, 3000); };</script></body></html>`;
+  const r = runPage(t, html, [
+    { name: 'neo', js: "document.getElementById('neo').click()" },
+    { name: 'route', js: "history.pushState({}, '', '#dat')" },
+    { name: 'gui', js: "document.getElementById('gui').click()", check: "document.getElementById('toast').hidden ? 'FAIL: không thấy toast' : 'PASS'" },
+  ], { QA_LOAD_TIMEOUT: '15000' });
+  if (r.status === 4) return t.skip('không có trình duyệt');
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.report.find(x => x.step === 'gui').check, 'PASS');
+  assert.ok(r.ms < 15000, `cả lần chạy mất ${r.ms} ms`);
+});
+
+test('review 3: clip vào phần tử chưa có thì báo lỗi ở bước đó, không sập cả lần chạy', t => {
+  // Gặp ở pha "thấy đỏ" của evolve-site B3: bước chụp khung của tính năng chưa dựng
+  const r = runPage(t, '<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>A</title></head><body><h1>A</h1></body></html>', [
+    { name: 'chup', check: "document.querySelector('[data-chua-co]') ? 'PASS' : 'FAIL: chưa có khung'", shot: 'khung', clip: '[data-chua-co]' },
+  ]);
+  if (r.status === 4) return t.skip('không có trình duyệt');
+  assert.equal(r.status, 0, r.stderr);
+  const s = r.report.find(x => x.step === 'chup');
+  assert.equal(s.check, 'FAIL: chưa có khung');
+  assert.ok(s.errors.some(e => e.includes('[data-chua-co]')), JSON.stringify(s.errors));
+});
+
 test('qa_init.py: .gitignore của _qa bỏ qua thư mục chạy thử .tdd/, cả khi cài mới lẫn --update', t => {
   const dir = prototype(t);
   const init = spawnSync(PYTHON, [QA_INIT, dir], { cwd: dir, encoding: 'utf8' });

@@ -180,6 +180,8 @@ Chi tiết ở `references/qa-gate.md`:
 
 Có lỗi thì tìm nguyên nhân gốc rồi sửa ở gốc, theo `references/qa-gate.md` mục 6, rồi chạy lại. **Không** mang lỗi đã biết vào Cổng 4, và **không làm im** bộ kiểm.
 
+Sửa một trang đã ghi `xong` trong `BUILD-LOG.md` thì ghi lại cột Kiểm và dấu nội dung của dòng đó ngay trong lượt sửa *(luật ghi ở đầu sổ)*. Không ghi thì lần làm tiếp sau sẽ chặn trang đó để hỏi người dùng.
+
 ### 🛑 Cổng 4 · Nghiệm thu
 
 Báo **số thật**: preflight *(n lỗi · n cảnh báo)*, UX *(n/12 mỗi trang)*, ảnh chụp 3 cỡ màn hình, danh sách placeholder ảnh còn chờ, và các số minh hoạ tự đặt. Rồi hỏi: **Chốt** · **Sửa theo danh sách** · **Chạy `laws-of-ux-review` đầy đủ (0–60)** · **Đổi concept** *(về Cổng 2)*.

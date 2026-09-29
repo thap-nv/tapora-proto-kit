@@ -142,7 +142,7 @@ test('sửa sau review: xác nhận sổ khi làm tiếp có cách xử khi file
   assert.match(log, /chạy lại `preflight\.py`/);
   assert.match(log, /File không còn[^\n]*`chưa`/);
   assert.match(log, /`chặn`[^\n]*hỏi người dùng/);
-  assert.match(log, /giờ sửa file/);
+  assert.match(log, /dấu nội dung/);
   assert.match(section(read('skills/sketch-to-site/SKILL.md'), '### B3 · Dựng đầy đủ', '### B4'), /chạy lại `preflight\.py`/);
 });
 
@@ -155,12 +155,29 @@ test('chạy thử: đầu run_all.py tả đủ trường của file bước, n
   assert.match(read('skills/evolve-site/SKILL.md'), /định dạng ghi ở đầu file `_qa\/run_all\.py`/);
 });
 
-test('chạy thử: cột Kiểm là nguyên dòng cuối preflight, giờ sửa có cả ngày', () => {
-  // Dòng cắt bớt thì so nguyên văn sẽ chặn nhầm; giờ không ngày thì bản sửa tay hôm sau trông cũ hơn sổ.
+test('review 2: làm tiếp so dấu nội dung, không so giờ sửa hay nguyên văn dòng Kiểm', () => {
+  // git clone, checkout, chép thư mục đổi giờ sửa của mọi file; sửa CSS dùng chung đổi số cảnh báo của trang trước.
+  // Dấu nội dung bỏ CRLF để git autocrlf trên Windows không làm lệch dấu.
   const log = read('skills/sketch-to-site/templates/BUILD-LOG.md');
   assert.match(log, /nguyên dòng cuối `preflight\.py` in ra/);
-  assert.match(log, /`dd\/mm\/yyyy hh:mm:ss`/);
-  assert.doesNotMatch(log, /giờ ghi ở Ghi chú/);
+  assert.ok(log.includes("hashlib.sha1(open(sys.argv[1], 'rb').read().replace(b'\\r\\n', b'\\n')).hexdigest()[:10]"), 'thiếu lệnh tính dấu nội dung');
+  assert.match(log, /Dấu nội dung khác dấu ở Ghi chú[^\n]*`chặn`/);
+  assert.match(log, /[Cc]òn lỗi[^\n]*`đang`/);
+  assert.doesNotMatch(log, /giờ sửa|dd\/mm\/yyyy hh:mm:ss|Kết quả preflight khác cột Kiểm/);
+});
+
+test('review 2: trang bị chặn hỏi một lần, có lựa chọn giữ bản hiện tại', () => {
+  const log = read('skills/sketch-to-site/templates/BUILD-LOG.md');
+  assert.match(log, /`chặn` thì hỏi người dùng \*\*một lần\*\*/);
+  assert.match(log, /Giữ bản hiện tại, coi là `xong`/);
+  assert.match(log, /Xem lại trang/);
+});
+
+test('review 2: tự sửa trang đã xong thì ghi lại dòng đó ngay, ở B4 và ở evolve-site Cấp 3', () => {
+  const log = read('skills/sketch-to-site/templates/BUILD-LOG.md');
+  assert.match(log, /\*\*Tự sửa một trang đã `xong`\*\*/);
+  assert.match(section(read('skills/sketch-to-site/SKILL.md'), '### B4 · Tự kiểm', '### 🛑 Cổng 4'), /`BUILD-LOG\.md`[^\n]*dấu nội dung/);
+  assert.match(section(read('skills/evolve-site/SKILL.md'), '- **Cấp 3:** ghi tiến độ', '\n'), /dấu nội dung/);
 });
 
 test('sửa sau review: evolve-site B1 nhận đợt Cấp 3 đang dựng dở từ BUILD-LOG', () => {

@@ -128,7 +128,8 @@ ws.addEventListener('message', ev => {
   const m = JSON.parse(ev.data);
   if (m.id && pend.has(m.id)) { pend.get(m.id)(m); pend.delete(m.id); }
   if (m.method === 'Page.frameStartedLoading' && m.params.frameId === mainFrame) navigating = true;
-  if (m.method === 'Page.loadEventFired') { navigating = false; loadWaiters.splice(0).forEach(f => f()); }
+  // Chuyển trong cùng tài liệu (link #, location.hash, pushState, tel:, mailto:) chỉ có frameStoppedLoading, không có loadEventFired
+  if (m.method === 'Page.loadEventFired' || (m.method === 'Page.frameStoppedLoading' && m.params.frameId === mainFrame)) { navigating = false; loadWaiters.splice(0).forEach(f => f()); }
   if (m.method === 'Runtime.exceptionThrown') errors.push('EXC ' + (m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text).split('\n').slice(0, 3).join(' | '));
   if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') errors.push('ERR ' + m.params.args.map(a => a.value ?? a.description).join(' ').slice(0, 300));
   if (m.method === 'Log.entryAdded' && m.params.entry.level === 'error' && !/favicon/.test(m.params.entry.url || '')) errors.push('LOG ' + m.params.entry.text + ' ' + (m.params.entry.url || ''));
@@ -148,12 +149,13 @@ await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-sch
 const loaded = waitLoad(LOAD_TIMEOUT);
 await send('Page.navigate', { url: pathToFileURL(resolve(file)).href + qs });
 await Promise.all([loaded, sleep(2200)]);
+navigating = false; // tài nguyên treo không bao giờ tải xong: chỉ đợi một lần, không đợi lại ở mọi bước
 const report = [{ step: 'load', errors: errors.slice(), check: null, dims: null }];
 for (const s of steps.steps) {
   errors = [];
   if (s.js) { const r = await send('Runtime.evaluate', { expression: s.js, awaitPromise: true, returnByValue: true }); if (r.result?.exceptionDetails) errors.push('STEP ' + (r.result.exceptionDetails.exception?.description || r.result.exceptionDetails.text).split('\n')[0]); }
   await sleep(s.wait || 450);
-  if (navigating) await waitLoad(LOAD_TIMEOUT); // bước vừa chuyển trang: đợi trang mới tải xong rồi mới kiểm
+  if (navigating) { await waitLoad(LOAD_TIMEOUT); navigating = false; } // bước vừa chuyển trang: đợi trang mới tải xong rồi mới kiểm
   let val = null;
   if (s.check) { const r = await send('Runtime.evaluate', { expression: s.check, returnByValue: true }); val = r.result?.result?.value; }
   const dimsReply = await send('Runtime.evaluate', { expression: `JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,cut:(${layoutCheck})()})`, returnByValue: true });
@@ -164,9 +166,18 @@ for (const s of steps.steps) {
   if (s.shot && !process.env.QA_NOSHOT) {
     const opt = { format: s.jpeg ? 'jpeg' : 'png' };
     if (s.jpeg) opt.quality = 82;
-    if (s.clip) { const r = await send('Runtime.evaluate', { expression: `JSON.stringify((function(){var b=document.querySelector(${JSON.stringify(s.clip)}).getBoundingClientRect();return {x:b.left,y:b.top,width:b.width,height:b.height}})())`, returnByValue: true }); opt.clip = Object.assign(JSON.parse(r.result.result.value), { scale: s.scale || 1 }); }
-    const sh = await send('Page.captureScreenshot', opt);
-    writeFileSync(join(outdir, s.shot + (s.jpeg ? '.jpg' : '.png')), Buffer.from(sh.result.data, 'base64'));
+    let box = null;
+    if (s.clip) {
+      const r = await send('Runtime.evaluate', { expression: `JSON.stringify((function(){var e=document.querySelector(${JSON.stringify(s.clip)});if(!e)return null;var b=e.getBoundingClientRect();return {x:b.left,y:b.top,width:b.width,height:b.height}})())`, returnByValue: true });
+      box = JSON.parse(r.result?.result?.value ?? 'null');
+      if (box) opt.clip = Object.assign(box, { scale: s.scale || 1 });
+      // Khung chưa có (pha "thấy đỏ" của evolve-site) hay selector sai: báo lỗi ở bước này, không sập cả bộ
+      else errors.push('SHOT không thấy khung clip ' + s.clip);
+    }
+    if (!s.clip || box) {
+      const sh = await send('Page.captureScreenshot', opt);
+      writeFileSync(join(outdir, s.shot + (s.jpeg ? '.jpg' : '.png')), Buffer.from(sh.result.data, 'base64'));
+    }
   }
   report.push({ step: s.name, errors, check: val, dims: dims === undefined ? null : JSON.parse(dims) });
 }

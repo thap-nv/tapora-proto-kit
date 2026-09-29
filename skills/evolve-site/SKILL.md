@@ -250,7 +250,7 @@ Yêu cầu kỹ thuật bắt buộc khi viết code:
 - **Phân quyền là ràng buộc, không phải ẩn nút** *(cờ Q)*: vai không được thấy tính năng thì **chặn ở màn và dữ liệu** *(mở thẳng URL hay gọi hàm cũng bị chặn)*, không chỉ giấu nút hay mục menu.
 - **Thêm trang mới (Cấp 3):** lối vào phải có ở menu **mọi trang** *(hoặc nơi sinh menu chung)*, không chỉ trên trang mới.
 - **Bỏ tính năng:** bỏ sạch, gồm lối vào ở mọi nơi *(menu, thanh lệnh, phím tắt, link từ trang khác)*, code và style không còn ai dùng, trạng thái của nó trong script QA. Đếm bằng `grep`: còn **0** chỗ gọi. Dữ liệu của nó thì theo cờ D, không tự xoá.
-- **Cấp 3:** ghi tiến độ vào `BUILD-LOG.md` của prototype *(khuôn `sketch-to-site/templates/BUILD-LOG.md`; chưa có thì tạo)*, một khối cho đợt này, mỗi file hay màn một dòng. Làm tiếp sau khi ngắt: đọc sổ trước, xác nhận các dòng `xong` theo luật làm tiếp ở đầu sổ *(mở file thật, chạy lại `preflight.py`; file mất hay đã bị sửa thì xử như sổ ghi)*, không làm lại dòng đã `xong`.
+- **Cấp 3:** ghi tiến độ vào `BUILD-LOG.md` của prototype *(khuôn `sketch-to-site/templates/BUILD-LOG.md`; chưa có thì tạo)*, một khối cho đợt này, mỗi file hay màn một dòng. Làm tiếp sau khi ngắt: đọc sổ trước, xác nhận các dòng `xong` theo luật làm tiếp ở đầu sổ *(mở file thật, chạy lại `preflight.py`; file mất hay đã bị sửa thì xử như sổ ghi)*, không làm lại dòng đã `xong`. Đợt này sửa trang đã `xong` ở bảng chính *(thêm lối vào menu mọi trang)* thì ghi lại cột Kiểm và dấu nội dung của dòng đó.
 
 ---
 
