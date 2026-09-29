@@ -167,6 +167,7 @@ Chi tiết ở `references/qa-gate.md`:
 
 1. `python <skills>/sketch-to-site/scripts/preflight.py <thư-mục-site>`: bắt emoji, gạch dài trong chữ hiển thị, `h-screen`, lắng nghe scroll, `#000000`, Lorem/John Doe/Acme, font thiếu dấu tiếng Việt, ảnh thiếu `alt`, eyebrow vượt trần. **Phải 0 lỗi.**
 2. **Cài bộ kiểm rồi chạy** *(lần đầu)*:
+   - Đã có `_qa/` từ trước *(làm tiếp, dự án cũ)*: chạy `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype> --update` trước lần kiểm đầu của phiên. Lệnh chỉ chép đè script của bộ kiểm bằng bản của kit đang dùng, không đụng `qa.config.json`, file bước, mốc.
    - `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype>`. Lệnh chép script vào `_qa/`, sinh `qa.config.json` với một bộ khói cho mỗi trang ở 1440, 768, 390 *(màn app: 1440 và 390)*. Site có nền tối thì lệnh tự thêm theme `light` và `dark`.
    - Lệnh in **CẢNH BÁO** khi trang đọc tham số URL mà chưa có `qa-query`: thêm mẫu theo đúng dòng cảnh báo, nếu không bộ khói chỉ chụp được màn "không tìm thấy".
    - Sửa cấu hình: web app thì `preflight_kind` là `app`; theme khác thì khai báo ở `themes`.

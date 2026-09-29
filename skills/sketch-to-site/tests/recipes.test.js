@@ -144,6 +144,20 @@ test('review 3: clip vào phần tử chưa có thì báo lỗi ở bước đó
   assert.ok(s.errors.some(e => e.includes('[data-chua-co]')), JSON.stringify(s.errors));
 });
 
+test('run.mjs: bước bấm tải xuống không lưu file vào thư mục Downloads của máy', t => {
+  // Ví dụ nút "Xuất Excel" của một tính năng: mỗi lần chạy QA từng xả một file vào Downloads của người dùng
+  const downloads = path.join(os.homedir(), 'Downloads');
+  if (!fs.existsSync(downloads)) return t.skip('máy không có thư mục Downloads ở thư mục nhà');
+  const name = `qa-kit-test-${process.pid}-${Date.now()}.txt`;
+  t.after(() => fs.rmSync(path.join(downloads, name), { force: true }));
+  const r = runPage(t, `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>A</title></head><body><a id="tai" download="${name}" href="data:text/plain,xin%20chao">Tải</a></body></html>`, [
+    { name: 'tai', js: "document.getElementById('tai').click()", wait: 1500 },
+  ]);
+  if (r.status === 4) return t.skip('không có trình duyệt');
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(!fs.existsSync(path.join(downloads, name)), `file tải xuống rơi vào ${downloads}`);
+});
+
 test('qa_init.py: .gitignore của _qa bỏ qua thư mục chạy thử .tdd/, cả khi cài mới lẫn --update', t => {
   const dir = prototype(t);
   const init = spawnSync(PYTHON, [QA_INIT, dir], { cwd: dir, encoding: 'utf8' });

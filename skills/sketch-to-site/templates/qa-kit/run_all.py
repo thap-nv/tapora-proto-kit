@@ -12,7 +12,8 @@
 #   "check"  biểu thức trả 'PASS' khi đúng, chuỗi bắt đầu bằng "FAIL:" khi sai, ví dụ
 #            "document.querySelectorAll('#lots li').length === 2 ? 'PASS' : 'FAIL: cần 2 lô'"; không trả gì là bước im lặng
 #   "shot"   tên ảnh chụp sau bước; "jpeg": true để chụp jpg; "clip": "<css selector>" chỉ chụp khung đó, "scale" phóng ảnh clip
-# Mỗi bộ chạy trong một hồ sơ trình duyệt mới: localStorage trống lúc bắt đầu bộ.
+# Mỗi bộ chạy trong một hồ sơ trình duyệt mới: localStorage trống lúc bắt đầu bộ. File tải xuống (nút xuất) nằm trong hồ sơ đó
+# và bị xoá khi bộ chạy xong, không rơi vào thư mục Downloads của máy; bước kiểm tính năng xuất bằng giao diện (toast, trạng thái).
 import json, os, subprocess, sys
 from concurrent.futures import ThreadPoolExecutor
 sys.stdout.reconfigure(encoding='utf-8')

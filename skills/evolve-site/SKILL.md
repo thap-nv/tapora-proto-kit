@@ -165,6 +165,7 @@ B1 Hấp thụ DNA · phân cấp · dò cờ · khai báo · lưu mốc
   * Nguồn yêu cầu có ma trận phân quyền → dùng đúng danh sách vai trong đó cho cờ Q.
 - **Phân cấp, dò cờ, khai báo** theo mục 1.1–1.3.
 - **Mốc trước khi sửa** *(bắt buộc ở mọi cấp, để B4 đo được lỗi **mới**)*:
+  * **Dự án đã có `_qa/`**: trước lần kiểm đầu của phiên, chạy `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype> --update` *(`<skills>` là thư mục cha của thư mục chứa SKILL.md này)*. Lệnh chép đè script của bộ kiểm bằng bản của kit đang dùng, không đụng cấu hình, file bước, mốc, nhật ký.
   * **Dự án có mốc cuốn chiếu** *(lệnh kiểm nhanh giữ kết quả lần kiểm sạch gần nhất, ví dụ `_qa/quick.py` với `_qa/current/`)*: **không chạy mốc**. Chạy `--dry` để xem file nào đã đổi từ lần kiểm trước. Nếu có file đổi mà không phải do mình, chạy kiểm nhanh một lần trước khi sửa để mốc khớp file hiện tại.
   * Không có mốc cuốn chiếu: chạy QA sẵn có của dự án, lưu kết quả vào `_qa/truoc/`. Không có script riêng thì dùng `preflight.py --save` *(`references/regression-qa.md` mục 2)*.
   * Chụp 1440 và 390 các trang sẽ bị đụng, lưu vào `_qa/truoc/`: chỉ ở **Cấp 2–3**. Cấp 0–1 không chụp trước.

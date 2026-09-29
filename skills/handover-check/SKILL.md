@@ -23,6 +23,8 @@ Khác biệt giữa lần chạy tổng và `last-green` chỉ hợp lệ khi **
 ## 2. Quy trình
 
 ### B0 · Dự án chưa có bộ kiểm *(chỉ lần đầu)*
+Thấy `_qa/handover.py` rồi thì chỉ cập nhật script: `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype> --update` *(không đụng cấu hình, file bước, mốc, nhật ký)*, rồi sang B1.
+
 Không thấy `_qa/handover.py`:
 1. `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype>`. Lệnh chép script vào `_qa/`, sinh `qa.config.json` (mỗi trang một bộ khói ở 1440, 768, 390; màn app ở 1440 và 390) và `_qa/.gitignore`.
 2. Đọc `qa.config.json` cùng người dùng:

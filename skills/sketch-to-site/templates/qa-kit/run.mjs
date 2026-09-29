@@ -137,6 +137,8 @@ ws.addEventListener('message', ev => {
 const send = (method, params = {}) => new Promise(r => { const i = ++id; pend.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
 const waitLoad = ms => new Promise(r => { const t = setTimeout(r, ms); loadWaiters.push(() => { clearTimeout(t); r(); }); });
 await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
+// File tải xuống (nút xuất) lưu trong hồ sơ tạm, xoá cùng hồ sơ khi chạy xong; mặc định headless lưu vào Downloads của máy
+await send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: join(prof, 'downloads') });
 mainFrame = (await send('Page.getFrameTree')).result?.frameTree?.frame?.id ?? null;
 await send('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, deviceScaleFactor: 1, mobile: mobile === '1' });
 // QA_QUERY: tham số thêm cho mọi bộ, ví dụ ?theme=dark để chạy lại các bộ trên một theme khác

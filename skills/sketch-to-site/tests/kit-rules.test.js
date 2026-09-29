@@ -155,6 +155,15 @@ test('chạy thử: đầu run_all.py tả đủ trường của file bước, n
   assert.match(read('skills/evolve-site/SKILL.md'), /định dạng ghi ở đầu file `_qa\/run_all\.py`/);
 });
 
+test('dự án đã có _qa/ chạy qa_init.py --update trước lần kiểm đầu của phiên, ở cả bốn skill dùng bộ kiểm', () => {
+  // Dự án cài bộ kiểm từ kit cũ vẫn chạy run.mjs cũ (lỗi sập, đợi 20 s) cho tới khi có người chạy --update
+  const cmd = /qa_init\.py <thư-mục-prototype> --update/;
+  assert.match(section(read('skills/sketch-to-site/SKILL.md'), '### B4 · Tự kiểm', '3. **`laws-of-ux-checklist`**'), cmd);
+  assert.match(section(read('skills/evolve-site/SKILL.md'), '- **Mốc trước khi sửa**', '* **Lỗi có sẵn'), cmd);
+  assert.match(section(read('skills/tweak-site/SKILL.md'), '4. **Kiểm nhanh**', '5. **Cấp 1'), cmd);
+  assert.match(section(read('skills/handover-check/SKILL.md'), '### B0', '### B1'), cmd);
+});
+
 test('review 2: làm tiếp so dấu nội dung, không so giờ sửa hay nguyên văn dòng Kiểm', () => {
   // git clone, checkout, chép thư mục đổi giờ sửa của mọi file; sửa CSS dùng chung đổi số cảnh báo của trang trước.
   // Dấu nội dung bỏ CRLF để git autocrlf trên Windows không làm lệch dấu.

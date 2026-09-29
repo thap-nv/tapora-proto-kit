@@ -46,6 +46,7 @@ Người dùng gọi thẳng `/evolve-site` cho một việc lọt bảng trên 
 3. **Sửa.**
 4. **Kiểm nhanh** bằng lệnh của dự án (`AGENTS.md` hoặc `CLAUDE.md`, mục kiểm thử). Với bộ kiểm của `sketch-to-site`:
    `python _qa/quick.py --note "tweak: <một dòng: sửa gì, ở đâu>"`, chạy từ thư mục prototype (thư mục chứa `_qa/`).
+   - Lần kiểm đầu của phiên: chạy `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype> --update` trước, để script kiểm là bản của kit đang dùng *(không đụng cấu hình, file bước, mốc)*.
    - Lệnh chọn bộ theo file đã đổi, không chụp ảnh, so với mốc cuốn chiếu `_qa/current/`.
    - `ĐẠT` → xong. `CHƯA ĐẠT` → tìm nguyên nhân gốc, sửa ở gốc rồi chạy lại *(`<skills>/sketch-to-site/references/qa-gate.md` mục 6; không làm im bộ kiểm)*. Lỗi nằm ngoài chỗ vừa sửa và có từ trước → không sửa, báo.
    - Mỗi dòng `đổi check` phải giải thích được bằng chính thay đổi vừa làm. Không giải thích được là lỗi lan: sửa.
