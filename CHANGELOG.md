@@ -2,7 +2,14 @@
 
 ## Unreleased
 
-- Skills: `sketch-to-site` 3.1, `evolve-site` 1.6.
+- Skills: `sketch-to-concept` 1.0 (new), `sketch-to-site` 4.0, `evolve-site` 1.6.
+- Concept first:
+  - New `sketch-to-concept` skill. It reads only the core of the brief (overview, personas, function names), then builds a concept board in `concept/`: 3 concepts from 3 sources (best-fit style family, a real product used as a benchmark, a studio lens), each with an idea, a style tile and one real key screen with the same content. The board measures contrast, flags pairs of concepts that differ on fewer than 3 axes or share a layout skeleton, and has a mix panel that prints a mix code such as `man:A mau:B chu:A nut:A`. The chosen concept is written to `CONCEPT.md`.
+  - `sketch-to-site` 4.0 starts from `CONCEPT.md`, or runs `sketch-to-concept` first. The style gate and the 3-directions step moved there, so the flow has 4 gates instead of 5: brief and concept (in `sketch-to-concept`), design system with scope, and sign-off. A new step reads the full requirements and tests the concept on the hardest screens before the design system is locked.
+  - `tokens.js` turns the concept data (colour roles named after the columns of `ui-ux-pro-max/data/colors.csv`) into the kit's CSS variables: `--bg`, `--surface`, `--ink`, `--muted`, `--line`, `--accent`, `--brand-font`, plus `--primary`, `--on-primary` and the other roles. `app.css` reads them directly.
+  - `preflight.py` checks the fonts declared in `concepts.js` (P07) and lists `sketch-to-concept` in `--deps`.
+  - Tests: `node --test skills/sketch-to-concept/tests/`.
+  - `concept-method.md` adapts material from `huashu-design` and taste-skill's `brandkit` (see THIRD_PARTY_LICENSES.md).
 - Mobile apps and multi-surface systems:
   - `sketch-to-site` now designs iOS/Android app prototypes, and systems with several surfaces such as an admin web portal plus a customer app. Gate 1 asks for the surfaces and the app platform. The rules live in the new `references/mobile-app.md`, read only when the project has an app.
   - New templates in `sketch-to-site/templates/mobile/`: `app.css` and `app.js` for the phone frame, fake status bar, navigation bar, tab bar, back stack, bottom sheet and toast in iOS and Android styles; `screen.html`, `detail.html` and `overview.html` as starting screens. One file shows a phone frame on a computer and runs full-screen on a phone. `?platform=android` switches the platform.
@@ -34,7 +41,7 @@
 - `sketch-to-site` 3.1:
   - `style-catalogue.md` has variation axes for app screens: how the root screen is organised, how the main content is laid out, the root screen header, the entry to the main action, and the one accent per screen.
   - `mobile-app.md` warns that `search.py --design-system` returns landing-page patterns, fonts without Vietnamese and `#000000` for app queries. For apps, take only the palette.
-  - Gate 1 stays within 4 questions of up to 4 options. With an app and an unknown product type, the platform question moves to a short second round.
+  - The project gate stays within 4 questions of up to 4 options. With an app and an unknown product type, the platform question moves to a short second round.
 - `huashu-design` no longer triggers on prototype requests. Website, web-app and mobile-app prototypes go to `sketch-to-site`.
 - README: Linux server and container setup under Troubleshooting.
 - `preflight.py` no longer crashes on Windows when the site and the current folder are on different drives. It prints full paths in that case.

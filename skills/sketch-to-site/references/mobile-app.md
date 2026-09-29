@@ -1,6 +1,6 @@
 # App mobile · Hệ thống nhiều bề mặt
 
-> Đọc ngay sau Cổng 1 khi loại sản phẩm là **App mobile** hoặc **Hệ thống nhiều bề mặt** có app *(ví dụ admin web + app cho khách)*.
+> Đọc ngay sau Cổng 1 *(`sketch-to-concept`)* và ở B0 của `sketch-to-site` khi loại sản phẩm là **App mobile** hoặc **Hệ thống nhiều bề mặt** có app *(ví dụ admin web + app cho khách)*.
 > Luật ở đây **đè** luật bố cục web của `style-catalogue.md` và `design-taste-frontend` khi hai bên đụng nhau. Sàn không thương lượng *(SKILL.md mục 2)* vẫn đứng trên cùng.
 
 ---
@@ -86,7 +86,7 @@ site/
 
 ## 5. Phong cách
 
-- Họ phong cách *(Cổng 2)* quyết **token**: màu, chữ thương hiệu, bo góc, không khí, cách dùng ảnh.
+- Concept *(Cổng 2)* quyết **token**: màu, chữ thương hiệu, bo góc, không khí, cách dùng ảnh.
 - Luật bố cục web của họ **không áp** cho màn app: màn đầu kiểu hero, AIDA, bento trang trí, marquee, eyebrow, ảnh nền điện ảnh.
 - **Dial:** M ≤ 5, chuyển động chỉ để phản hồi và chuyển màn *(200–350 ms)*. D theo loại app: tiêu dùng 4–6, công cụ và tài chính 6–8.
 - Mỗi màn **một** điểm nhấn thị giác *(ảnh sản phẩm, con số chính, thẻ trạng thái)*; phần còn lại theo hệ thống.
@@ -97,11 +97,11 @@ site/
 
 ## 6. Hệ thống nhiều bề mặt
 
-- **Một lượt `sketch-to-site` cho mọi bề mặt.** Không chạy riêng từng bề mặt: sẽ ra hai bộ token lệch nhau và hai kho dữ liệu không thấy nhau.
+- **Một lượt `sketch-to-concept` + `sketch-to-site` cho mọi bề mặt.** Không chạy riêng từng bề mặt: sẽ ra hai bộ token lệch nhau và hai kho dữ liệu không thấy nhau.
 - **Cổng 1:** liệt kê bề mặt, người dùng của từng bề mặt, nền tảng của app.
-- **Cổng 2:** một họ phong cách cho cả hệ thống. Mật độ khác nhau theo bề mặt *(admin D 6–8, app theo loại)*.
-- **B4:** mỗi hướng dựng **màn chủ chốt của mọi bề mặt** *(ví dụ dashboard admin + trang chủ app)*, để thấy một hướng áp lên cả hệ thống ra sao.
-- **B5:**
+- **Cổng 2:** một concept cho cả hệ thống. Mật độ khác nhau theo bề mặt *(admin D 6–8, app theo loại)*.
+- **A3** *(`sketch-to-concept`)*: mỗi concept dựng **màn then chốt của mọi bề mặt** *(ví dụ dashboard admin + trang chủ app)*, để thấy một concept áp lên cả hệ thống ra sao.
+- **B2:**
   - một `DESIGN.md`, mục 10 ghi phần riêng của từng bề mặt;
   - sơ đồ màn chia theo bề mặt;
   - bảng **luồng xuyên bề mặt**: hành động ở bề mặt A → thứ thay đổi ở bề mặt B.
@@ -123,13 +123,13 @@ site/
 
 ## 8. Tự kiểm
 
-- **B3 · tra luật app:**
+- **B1 · tra luật app:**
   ```bash
   python <skills>/ui-ux-pro-max/scripts/search.py "<chủ đề: tab bar, form, onboarding…>" --domain web -n 5
   python <skills>/ui-ux-pro-max/scripts/search.py "<chủ đề>" --domain ux -n 5
   ```
   Domain `web` đọc `app-interface.csv`: luật iOS/Android về chạm, điều hướng, trợ năng.
-- **B3 · `--design-system` viết cho landing page.** Thử ngày 29/09 với truy vấn *"coffee shop ordering mobile app"*, kết quả vẫn là:
+- **A2 *(`sketch-to-concept`)* · `--design-system` viết cho landing page.** Thử ngày 29/09 với truy vấn *"coffee shop ordering mobile app"*, kết quả vẫn là:
   - Pattern *Hero + Features + CTA* và checklist có hover, `cursor-pointer`;
   - font Outfit, không có dấu tiếng Việt *(Fredoka cũng hay được gợi ý, cũng không có)*;
   - `#000000` cho chữ trên màu nhấn *(P05)*.

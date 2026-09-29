@@ -1,4 +1,4 @@
-# Nạp tham chiếu của người dùng — B2
+# Nạp tham chiếu của người dùng — `sketch-to-concept` A2
 
 > Mục tiêu: biến input của người dùng (concept, design system, ảnh, URL, brand, codebase) thành **`REFERENCE-READ.md`**, một bản đọc máy và người đều kiểm được. Mọi thứ trích ra phải có **nguồn** *(file, số dòng, vùng ảnh)*. Thứ đoán thì ghi là **đoán**.
 
@@ -8,9 +8,9 @@
 
 | Mức | Nghĩa | Hệ quả |
 |---|---|---|
-| **Bám sát 100 %** | Tham chiếu là luật | Token, bố cục, chữ viết giữ nguyên. Cổng 2 chỉ hỏi phần tham chiếu **bỏ trống**. Cổng 3: ba hướng chỉ khác ở phần bỏ trống, hoặc bỏ qua nếu tham chiếu đã đủ *(ghi lý do vào `DECISIONS.md`)* |
-| **Làm nền, được biến tấu** | Giữ ngôn ngữ, được đổi chi tiết | Giữ bảng màu, chữ, bo góc. Bố cục và chuyển động được đề xuất. Cổng 2 hỏi **cách hiểu** |
-| **Chỉ lấy cảm hứng** | Lấy không khí, không lấy token | Trích **không khí và 3–5 đặc điểm nhận diện**. Chạy Cổng 2 như bình thường |
+| **Bám sát 100 %** | Tham chiếu là luật | Token, bố cục, chữ viết giữ nguyên. Phần A dựng **một** concept từ tham chiếu; Cổng 2 hỏi *Duyệt · Sửa* và chỉ hỏi phần tham chiếu **bỏ trống** *(ghi lý do vào `DECISIONS.md`)* |
+| **Làm nền, được biến tấu** | Giữ ngôn ngữ, được đổi chi tiết | Giữ bảng màu, chữ, bo góc. Bố cục và chuyển động được đề xuất: 3 concept khác nhau ở phần được biến tấu, Cổng 2 hỏi **cách hiểu** |
+| **Chỉ lấy cảm hứng** | Lấy không khí, không lấy token | Trích **không khí và 3–5 đặc điểm nhận diện**. Làm 3 concept như bình thường |
 
 Không rõ mức bám thì **hỏi**, đừng đoán. Sai mức bám là sai toàn bộ phần sau.
 
@@ -84,7 +84,7 @@ Không rõ mức bám thì **hỏi**, đừng đoán. Sai mức bám là sai to�
 
 ---
 
-## 4. Chống trôi khi dựng *(B4, B6)*
+## 4. Chống trôi khi dựng *(`sketch-to-concept` A3, `sketch-to-site` B3)*
 
 Lỗi hay gặp: tham chiếu đẹp, dựng ra lại thành khuôn chung. Khi dựng:
 - **Không** gộp các section đặc trưng thành hàng lặp giống nhau.

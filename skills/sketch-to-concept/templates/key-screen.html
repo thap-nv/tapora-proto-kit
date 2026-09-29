@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Màn then chốt · concept A</title>
+<!-- Mẫu từ sketch-to-concept/templates/key-screen.html. Mỗi concept một file: a.html, b.html, c.html.
+     Đổi data-concept cho khớp id trong concepts.js. Giữ thứ tự nạp: theme.js, concepts.js, tokens.js (đều trong <head>, không defer).
+     Ba màn cùng MỘT nội dung (CONCEPTS.content), khác nhau ở khung bố cục và token. Thay <body> bằng màn thật.
+     Màn app: dựng trên sketch-to-site/templates/mobile/screen.html, giữ khối <head> dưới đây thay cho token của khuôn app. -->
+<script src="theme.js"></script>
+<script src="concepts.js"></script>
+<script src="tokens.js" data-concept="a"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Tên biến theo rules-and-conflicts.md D.2 của sketch-to-site (--bg, --surface, --ink, --muted, --line, --accent) + vai trò thêm của colors.csv -->
+<script>tailwind.config={theme:{extend:{colors:{bg:'var(--bg)',surface:'var(--surface)',ink:'var(--ink)',muted:'var(--muted)','muted-bg':'var(--muted-bg)',line:'var(--line)',primary:'var(--primary)','on-primary':'var(--on-primary)',accent:'var(--accent)','on-accent':'var(--on-accent)',destructive:'var(--destructive)',ring:'var(--ring)'},fontFamily:{display:'var(--font-display)',body:'var(--font-body)',mono:'var(--font-mono)'},borderRadius:{sm:'var(--radius-sm)',DEFAULT:'var(--radius)',lg:'var(--radius-lg)'},boxShadow:{DEFAULT:'var(--shadow)'}}}}</script>
+<style>
+  body{margin:0;min-height:100dvh;background-color:var(--bg);background-image:var(--texture);background-size:var(--texture-size);color:var(--ink);font-family:var(--font-body)}
+  h1,h2,h3{font-family:var(--font-display)}
+  .btn{transition:transform .15s ease}
+  .btn:active{transform:scale(.98)}
+  :focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<main class="mx-auto max-w-3xl px-6 py-16">
+  <p class="inline-block rounded-sm bg-muted-bg px-3 py-1 text-sm text-muted" data-slot="badge"></p>
+  <h1 class="mt-6 text-4xl leading-tight md:text-6xl" data-slot="headline"></h1>
+  <p class="mt-6 max-w-[65ch] text-lg text-muted" data-slot="body"></p>
+  <p class="mt-6 font-mono text-sm" data-slot="numbers"></p>
+  <div class="mt-10 flex flex-wrap gap-3">
+    <button type="button" class="btn rounded bg-primary px-6 py-3 font-medium text-on-primary" data-slot="cta"></button>
+    <button type="button" class="btn rounded border border-line px-6 py-3 font-medium" data-slot="secondary"></button>
+  </div>
+</main>
+<script>
+  // Chỉ để khuôn chạy được. Màn thật viết thẳng nội dung vào HTML và bỏ đoạn này.
+  for (const el of document.querySelectorAll('[data-slot]')) el.textContent = window.CONCEPTS.content[el.dataset.slot] || '';
+</script>
+</body>
+</html>

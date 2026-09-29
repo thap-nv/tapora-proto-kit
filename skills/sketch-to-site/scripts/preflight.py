@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Kiểm cơ giới cho prototype HTML của sketch-to-site (bước B7).
+"""Kiểm cơ giới cho prototype HTML của sketch-to-site (bước B4) và bảng concept của sketch-to-concept (A3).
 
 Cách dùng:
     python preflight.py <file.html | thư-mục> [...] [--kind site|app]
@@ -74,6 +74,7 @@ ERROR, WARN = "LỖI", "CẢNH BÁO"
 
 # Đồng bộ với SKILL.md mục 9. (mức, skill, file bắt buộc phải có bên trong)
 DEPS = [
+    ("🔴 bắt buộc", "sketch-to-concept", ["SKILL.md", "templates/concept-board.html"]),
     ("🔴 bắt buộc", "ui-ux-pro-max", ["scripts/search.py", "data/google-fonts.csv"]),
     ("🟠 nên chép", "laws-of-ux-checklist", ["SKILL.md"]),
     ("🟠 nên chép", "laws-of-ux-review", ["SKILL.md"]),
@@ -564,7 +565,7 @@ def selftest():
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Kiểm cơ giới prototype HTML (sketch-to-site B7)")
+    ap = argparse.ArgumentParser(description="Kiểm cơ giới prototype HTML (sketch-to-site B4, sketch-to-concept A3)")
     ap.add_argument("paths", nargs="*")
     ap.add_argument("--kind", choices=["site", "app"], default="site")
     ap.add_argument("--font", nargs="+", metavar="TÊN")

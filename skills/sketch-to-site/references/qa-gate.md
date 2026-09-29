@@ -1,4 +1,4 @@
-# Tự kiểm — B7 (phải qua trước Cổng 5)
+# Tự kiểm — B4 (phải qua trước Cổng 4)
 
 > **Nói "đã xong" thì phải có số thật dán kèm.** Không dựa vào "đã rà mắt".
 
@@ -43,7 +43,7 @@ Thoát mã `1` khi còn **LỖI**. Cảnh báo thì phải **đọc từng dòng
 
 ## 2. Kiểm hiển thị — chụp 3 khổ
 
-**Bộ kiểm tự chụp** *(B7: `qa_init.py` rồi `handover.py run`)*:
+**Bộ kiểm tự chụp** *(B4: `qa_init.py` rồi `handover.py run`)*:
 - Trang web ở 1440, 768, 390; màn app ở 1440 *(khung máy)* và 390.
 - Chụp ở **mọi theme** trong `qa.config.json`, ảnh ở `_qa/handover/<ngày-giờ>/<theme>/<bộ>/`.
 - Nền sáng/tối theo `?theme=` của từng theme, không theo máy đang chạy: bộ chạy ép `prefers-color-scheme` theo tham số đó.
@@ -102,7 +102,7 @@ Chạy trên **từng trang**, đọc code thật, mỗi điểm ✅/❌ kèm `f
 
 **Kết luận:** 12/12 → giao · 10–11 → giao kèm ghi chú · 7–9 → sửa trước · ≤ 6 → chặn.
 
-**Soát sâu `laws-of-ux-review`** *(đủ 30 luật, thang 0–60, xếp hạng A–F)* là một lựa chọn ở Cổng 5, **không** chạy trong B7. Gắn *(Khuyến nghị)* khi sản phẩm là **web app** hoặc có trang chỉ đạt **7–9/12**. Luật đầy đủ ở SKILL.md, Cổng 5. Review cần `laws-of-ux/references/ux-laws-complete.md`, nên ba skill `laws-of-ux*` phải đi cùng nhau.
+**Soát sâu `laws-of-ux-review`** *(đủ 30 luật, thang 0–60, xếp hạng A–F)* là một lựa chọn ở Cổng 4, **không** chạy trong B4. Gắn *(Khuyến nghị)* khi sản phẩm là **web app** hoặc có trang chỉ đạt **7–9/12**. Luật đầy đủ ở SKILL.md, Cổng 4. Review cần `laws-of-ux/references/ux-laws-complete.md`, nên ba skill `laws-of-ux*` phải đi cùng nhau.
 
 ---
 
@@ -141,7 +141,7 @@ Chạy trên **từng trang**, đọc code thật, mỗi điểm ✅/❌ kèm `f
 
 ---
 
-## 5. Báo cáo ở Cổng 5 — khuôn
+## 5. Báo cáo ở Cổng 4 — khuôn
 
 ```markdown
 **Kiểm cơ giới:** 0 lỗi · n cảnh báo (đã xử: …)

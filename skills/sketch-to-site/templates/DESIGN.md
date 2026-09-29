@@ -1,17 +1,19 @@
 # Design System: <Tên dự án>
 
-> Khoá ở **Cổng 4** ngày <dd/mm/yyyy>. Sửa sau ngày này thì ghi vào `DECISIONS.md` và cập nhật bảng *Lịch sử* cuối file.
+> Khoá ở **Cổng 3** ngày <dd/mm/yyyy>. Sửa sau ngày này thì ghi vào `DECISIONS.md` và cập nhật bảng *Lịch sử* cuối file.
 > Viết theo khuôn ngữ nghĩa của `stitch-design-taste`: **tên mô tả + giá trị chính xác + vai trò**. Viết *"Than chì (#18181B), chữ chính"*, đừng chỉ viết *"chữ tối"*.
 
 ## 0. Bản đọc thiết kế
 **Đọc là:** <loại sản phẩm> cho <người dùng>, trên <thiết bị>, giọng <…>, nghiêng về <họ phong cách>.
-**Họ phong cách:** <tên, từ `style-catalogue.md`> · **Hướng đã chọn:** <A/B/C/trộn> · **Mức bám tham chiếu:** <…>
+**Concept:** <tên> *(`CONCEPT.md`, chốt ở Cổng 2)* · **Họ phong cách:** <tên, từ `style-catalogue.md`> · **Mã trộn:** <… | không> · **Mức bám tham chiếu:** <…>
 **Dial:** VARIANCE <n> · MOTION <n> · DENSITY <n> · **Nền:** <sáng | tối | theo hệ thống>
 
 ## 1. Không khí
 <2–3 câu gợi hình: cảm giác, mật độ, nhịp. Ví dụ: "Sáng, thoáng như một phòng trưng bày kiến trúc; bố cục lệch tự tin; chuyển động nặng và chậm.">
 
 ## 2. Màu và vai trò
+> Mục 2–4 lấy từ `CONCEPT.md` mục 3 *(màu, chữ, hình khối, khối CSS)*. Tên biến giữ nguyên như ở đó.
+
 | Tên | Sáng | Tối | Vai trò |
 |---|---|---|---|
 | Nền | #… | #… | Nền trang |

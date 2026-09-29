@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
+
+# Skill cài tạm để nghiên cứu (npx skills), không thuộc bộ kit
+.agents/skills/
+skills-lock.json
