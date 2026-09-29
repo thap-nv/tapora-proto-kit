@@ -35,7 +35,7 @@ test('SKILL.md có frontmatter đúng quy ước', () => {
 });
 
 test('mọi đường dẫn trong SKILL.md và concept-method.md đều có thật', () => {
-  for (const f of ['SKILL.md', 'references/concept-method.md']) {
+  for (const f of ['SKILL.md', 'references/concept-method.md', 'references/subagent-prompts.md']) {
     const missing = paths(read(path.join(SKILL, f)), SKILL).filter(p => !fs.existsSync(p));
     assert.deepEqual(missing.map(p => path.relative(REPO, p)), [], `${f} trỏ tới file không có`);
   }
@@ -89,4 +89,34 @@ test('concept-method.md ghi nguồn, THIRD_PARTY_LICENSES.md có dòng cho phầ
   assert.match(md, /huashu-design/);
   const lic = read(path.join(REPO, 'THIRD_PARTY_LICENSES.md'));
   assert.match(lic, /sketch-to-concept/);
+});
+
+test('A3: dựng song song bằng subagent có đường tuần tự, review bằng góc nhìn mới trước Cổng 2', () => {
+  const md = read(path.join(SKILL, 'SKILL.md'));
+  const a3 = md.slice(md.indexOf('### A3 · Dựng 3 concept'), md.indexOf('### 🛑 Cổng 2'));
+  assert.match(a3, /`references\/subagent-prompts\.md` mục 1/);
+  assert.match(a3, /`references\/subagent-prompts\.md` mục 2/);
+  assert.match(a3, /dựng tuần tự/);
+  const p = read(path.join(SKILL, 'references', 'subagent-prompts.md'));
+  const one = p.slice(p.indexOf('## 1. Dựng một concept'), p.indexOf('## 2.'));
+  assert.match(one, /không đọc và không đoán/);
+  assert.match(one, /Không sửa concepts\.js, index\.html, tokens\.js/);
+  assert.match(one, /Trả về đúng các phần sau/);
+  const two = p.slice(p.indexOf('## 2. Review các concept bằng góc nhìn mới'));
+  assert.match(two, /Chỉ đọc, không sửa file nào/);
+  assert.match(two, /bỏ qua vì ngoài phạm vi/);
+});
+
+test('sửa sau review: đường subagent không để concepts.js lộ concept khác; mỗi subagent ghi file riêng', () => {
+  const md = read(path.join(SKILL, 'SKILL.md'));
+  const a3 = md.slice(md.indexOf('### A3 · Dựng 3 concept'), md.indexOf('### 🛑 Cổng 2'));
+  assert.match(a3, /đường subagent[^\n]*chỉ ghi brief và nội dung dùng chung/);
+  const p = read(path.join(SKILL, 'references', 'subagent-prompts.md'));
+  const one = p.slice(p.indexOf('## 1. Dựng một concept'), p.indexOf('## 2.'));
+  assert.match(one, /\{thư mục prototype\}\/concept\/\{id\}\.concept\.js/);
+  assert.match(one, /CONCEPTS\.concepts\.push/);
+  assert.match(one, /sau concepts\.js, trước tokens\.js/);
+  assert.match(one, /khoá không đặt trong ngoặc kép/);
+  assert.match(one, /Dự án có app/);
+  assert.match(p, /xoá các file \{id\}\.concept\.js/);
 });

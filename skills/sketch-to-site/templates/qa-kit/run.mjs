@@ -119,40 +119,69 @@ if (!target) {
 const ws = new WebSocket(target.webSocketDebuggerUrl);
 await new Promise(r => ws.addEventListener('open', r));
 let id = 0; const pend = new Map(); let errors = [];
+// Theo dõi lúc trang tải xong (Page.loadEventFired) để không đo khi trang chưa dựng xong hay đang chuyển trang.
+// QA_LOAD_TIMEOUT: trần đợi một lần tải, tính bằng ms (mặc định 20000)
+let navigating = false, mainFrame = null;
+const loadWaiters = [];
+const LOAD_TIMEOUT = +process.env.QA_LOAD_TIMEOUT || 20000;
 ws.addEventListener('message', ev => {
   const m = JSON.parse(ev.data);
   if (m.id && pend.has(m.id)) { pend.get(m.id)(m); pend.delete(m.id); }
+  if (m.method === 'Page.frameStartedLoading' && m.params.frameId === mainFrame) navigating = true;
+  // Chuyển trong cùng tài liệu (link #, location.hash, pushState, tel:, mailto:) chỉ có frameStoppedLoading, không có loadEventFired
+  if (m.method === 'Page.loadEventFired' || (m.method === 'Page.frameStoppedLoading' && m.params.frameId === mainFrame)) { navigating = false; loadWaiters.splice(0).forEach(f => f()); }
   if (m.method === 'Runtime.exceptionThrown') errors.push('EXC ' + (m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text).split('\n').slice(0, 3).join(' | '));
   if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') errors.push('ERR ' + m.params.args.map(a => a.value ?? a.description).join(' ').slice(0, 300));
   if (m.method === 'Log.entryAdded' && m.params.entry.level === 'error' && !/favicon/.test(m.params.entry.url || '')) errors.push('LOG ' + m.params.entry.text + ' ' + (m.params.entry.url || ''));
 });
 const send = (method, params = {}) => new Promise(r => { const i = ++id; pend.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
+const waitLoad = ms => new Promise(r => { const t = setTimeout(r, ms); loadWaiters.push(() => { clearTimeout(t); r(); }); });
 await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
+// File tải xuống (nút xuất) lưu trong hồ sơ tạm, xoá cùng hồ sơ khi chạy xong; mặc định headless lưu vào Downloads của máy
+await send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: join(prof, 'downloads') });
+mainFrame = (await send('Page.getFrameTree')).result?.frameTree?.frame?.id ?? null;
 await send('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, deviceScaleFactor: 1, mobile: mobile === '1' });
 // QA_QUERY: tham số thêm cho mọi bộ, ví dụ ?theme=dark để chạy lại các bộ trên một theme khác
 const extra = (process.env.QA_QUERY || '').replace(/^\?/, '');
 const qs = steps.query ? steps.query + (extra ? '&' + extra : '') : (extra ? '?' + extra : '');
 // Nền sáng/tối không theo máy đang chạy: ép prefers-color-scheme theo tham số của lần chạy (có theme=dark thì tối, còn lại sáng)
 await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: /[?&]theme=dark(&|$)/.test(qs) ? 'dark' : 'light' }] });
+// Đợi trang tải xong rồi mới chạy bước: script trong <head> tải chậm (CDN) chặn dựng trang, đo sớm thì document.body còn null.
+// Vẫn đợi tối thiểu 2,2 giây như trước để font và CSS nạp muộn kịp áp.
+const loaded = waitLoad(LOAD_TIMEOUT);
 await send('Page.navigate', { url: pathToFileURL(resolve(file)).href + qs });
-await sleep(2200);
+await Promise.all([loaded, sleep(2200)]);
+navigating = false; // tài nguyên treo không bao giờ tải xong: chỉ đợi một lần, không đợi lại ở mọi bước
 const report = [{ step: 'load', errors: errors.slice(), check: null, dims: null }];
 for (const s of steps.steps) {
   errors = [];
   if (s.js) { const r = await send('Runtime.evaluate', { expression: s.js, awaitPromise: true, returnByValue: true }); if (r.result?.exceptionDetails) errors.push('STEP ' + (r.result.exceptionDetails.exception?.description || r.result.exceptionDetails.text).split('\n')[0]); }
   await sleep(s.wait || 450);
+  if (navigating) { await waitLoad(LOAD_TIMEOUT); navigating = false; } // bước vừa chuyển trang: đợi trang mới tải xong rồi mới kiểm
   let val = null;
   if (s.check) { const r = await send('Runtime.evaluate', { expression: s.check, returnByValue: true }); val = r.result?.result?.value; }
-  const dims = (await send('Runtime.evaluate', { expression: `JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,cut:(${layoutCheck})()})`, returnByValue: true })).result.result.value;
+  const dimsReply = await send('Runtime.evaluate', { expression: `JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,cut:(${layoutCheck})()})`, returnByValue: true });
+  const dims = dimsReply.result?.result?.value;
+  // Không đo được (trang chưa có body, đang chuyển trang): báo lỗi ở bước này, không làm sập cả bộ
+  if (dims === undefined) errors.push('EVAL không đo được bố cục: ' + String(dimsReply.result?.exceptionDetails?.exception?.description || dimsReply.error?.message || 'không có giá trị').split('\n')[0]);
   // QA_NOSHOT: bỏ chụp ảnh (quick.py); bước vẫn chạy và vẫn kiểm như cũ
   if (s.shot && !process.env.QA_NOSHOT) {
     const opt = { format: s.jpeg ? 'jpeg' : 'png' };
     if (s.jpeg) opt.quality = 82;
-    if (s.clip) { const r = await send('Runtime.evaluate', { expression: `JSON.stringify((function(){var b=document.querySelector(${JSON.stringify(s.clip)}).getBoundingClientRect();return {x:b.left,y:b.top,width:b.width,height:b.height}})())`, returnByValue: true }); opt.clip = Object.assign(JSON.parse(r.result.result.value), { scale: s.scale || 1 }); }
-    const sh = await send('Page.captureScreenshot', opt);
-    writeFileSync(join(outdir, s.shot + (s.jpeg ? '.jpg' : '.png')), Buffer.from(sh.result.data, 'base64'));
+    let box = null;
+    if (s.clip) {
+      const r = await send('Runtime.evaluate', { expression: `JSON.stringify((function(){var e=document.querySelector(${JSON.stringify(s.clip)});if(!e)return null;var b=e.getBoundingClientRect();return {x:b.left,y:b.top,width:b.width,height:b.height}})())`, returnByValue: true });
+      box = JSON.parse(r.result?.result?.value ?? 'null');
+      if (box) opt.clip = Object.assign(box, { scale: s.scale || 1 });
+      // Khung chưa có (pha "thấy đỏ" của evolve-site) hay selector sai: báo lỗi ở bước này, không sập cả bộ
+      else errors.push('SHOT không thấy khung clip ' + s.clip);
+    }
+    if (!s.clip || box) {
+      const sh = await send('Page.captureScreenshot', opt);
+      writeFileSync(join(outdir, s.shot + (s.jpeg ? '.jpg' : '.png')), Buffer.from(sh.result.data, 'base64'));
+    }
   }
-  report.push({ step: s.name, errors, check: val, dims: JSON.parse(dims) });
+  report.push({ step: s.name, errors, check: val, dims: dims === undefined ? null : JSON.parse(dims) });
 }
 console.log(JSON.stringify(report, null, 1));
 ws.close();

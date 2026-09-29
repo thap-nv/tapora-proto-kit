@@ -189,7 +189,7 @@ A `check` that returns a string starting with `FAIL` is a failure. For suites wh
   - text that spills out of its own box, such as a squeezed table cell or a narrow button;
   - text or a control partly cut off by an `overflow: hidden` container, such as a table wider than its rounded card.
 
-  Elements that are hidden, fully outside their container, or inside a horizontal scroller are skipped. Mark intentional cases, such as bleeding type, marquees or a peeking slide, with `data-clip-ok` on the container.
+  Elements that are hidden, fully outside their container, or inside a horizontal scroller are skipped. Mark intentional cases, such as bleeding type, marquees or a peeking slide, with `data-clip-ok="<reason>"` on the container. `preflight.py` warns (P18) when the reason is missing.
 - **Light and dark.** The runner sets `prefers-color-scheme` from the run's URL: `theme=dark` means dark, anything else means light. Screenshots never follow the dark mode of the machine that runs the QA. For sites that switch themes with `data-theme`, copy `sketch-to-site/templates/theme.js` into `assets/`. It handles `?theme=light`, `?theme=dark` and `?theme=system`, and remembers the choice made with `theme.toggle()`.
 - **Pages that need a URL parameter.** A detail page that reads `?id=` shows only "not found" without one. Declare a sample in `<head>`, for example `<meta name="qa-query" content="?id=1042">`. `qa_init.py` copies it into the smoke suite's `query`, and warns about pages that read parameters without a sample.
 
@@ -200,6 +200,7 @@ For app screens (`<html data-surface="app">`), `qa_init.py` adds a `tap-targets`
 - Exit code 2 means the browser started but did not answer. The message ends with the browser's last error line. To pass extra flags to the browser, set `QA_BROWSER_ARGS`, for example `QA_BROWSER_ARGS="--no-sandbox"`.
 - Exit code 3 means another browser already holds the debugging port. Close the leftover headless browsers (their profiles are named `cdp-*` in the temp folder) and run again.
 - Exit code 4 means no browser was found. Set `QA_BROWSER`.
+- `run.mjs` waits for each page to finish loading (up to 20 seconds, at least 2.2 seconds) before it runs the steps, and waits again when a step navigates. Pages with a slow CDN script in `<head>` need this. To wait longer, set `QA_LOAD_TIMEOUT` in milliseconds. A step whose layout cannot be measured is reported as an error instead of stopping the suite.
 - **Linux servers and containers** (Docker, Codespaces, VPS):
   - Debian: `apt-get install -y chromium`.
   - Ubuntu: the `chromium` and `chromium-browser` apt packages only install a snap, and snaps do not run in containers. Install Playwright's build instead, then point `QA_BROWSER` at it:
@@ -220,10 +221,10 @@ For app screens (`<html data-surface="app">`), `qa_init.py` adds a `tap-targets`
   - Every `SKILL.md` frontmatter must be strict YAML (Codex parses it strictly). Write long descriptions as `>-` blocks.
   - Every `description` must be at most 1,024 characters, and each `name` must equal its folder name.
   - `python skills/sketch-to-site/scripts/preflight.py --selftest` must pass.
-  - `node --test skills/sketch-to-concept/tests/` must pass. It checks `tokens.js`, the concept board in Edge or Chrome, the docs of both skills and this README. Without a browser, the board tests are skipped.
+  - `node --test skills/sketch-to-concept/tests/ skills/sketch-to-site/tests/` must pass. It checks `tokens.js`, the concept board in Edge or Chrome, the shared rules in the docs of every skill, the test-first recipe on a sample prototype, and this README. Without a browser, the browser tests are skipped.
 - **Rules kept in two places.** Change both copies together:
   - The 12-point UX table: `sketch-to-site/references/qa-gate.md` §3 and `evolve-site/references/regression-qa.md` group F.
-  - The stop rules: `sketch-to-site` §1 and `sketch-to-concept` §1.
+  - The stop rules: `sketch-to-site` §1 and `sketch-to-concept` §1. The excuses table between the `luat-dung:co` markers must stay identical; the tests check it.
   - The quality floor and full-output rules: `sketch-to-site` §2–3, `sketch-to-concept` §2 and `evolve-site` §2.
   - The token variable names: `rules-and-conflicts.md` §D.2, `VARS` in `sketch-to-concept/templates/tokens.js`, and `sketch-to-site/templates/mobile/app.css`.
   - The dependency list: `sketch-to-site` §9 and `DEPS` in `preflight.py`.

@@ -107,6 +107,9 @@ RAW_RULES = [
     ("P05", ERROR, re.compile(r"#000000\b|#000(?![0-9a-fA-F])|rgb\(\s*0\s*,\s*0\s*,\s*0\s*\)|\bbg-black\b|\btext-black\b"), "Đen thuần; dùng off-black (#0A0A0A, zinc-950)"),
     ("P13", WARN, re.compile(r"href\s*=\s*['\"]#['\"]"), "Link trơn href=\"#\"; trỏ tới đích thật hoặc aria-disabled"),
     ("P14", WARN, re.compile(r"z-\[9999\]|z-index\s*:\s*9999"), "z-index tuỳ tiện; dùng thang lớp của hệ thống"),
+    # Chỉ thuộc tính nằm trong thẻ HTML (kể cả thẻ nhiều dòng, viết hoa); nhóm 1 là vị trí báo. Selector, chú thích, chữ thường thì im
+    ("P18", WARN, re.compile(r"<[a-z][^<>]*?\s(data-clip-ok)(?![\w-])(?!\s*=\s*(?:\"\s*[^\"\s][^\"]*\"|'\s*[^'\s][^']*'|[^\s\"'=<>`]+))", re.I),
+     "data-clip-ok phải ghi lý do cố ý, ví dụ data-clip-ok=\"marquee chạy ngang\". Không dùng để làm im lỗi tràn hay cắt chữ (qa-gate.md mục 6)"),
 ]
 MOTION = re.compile(r"@keyframes|\banimation\s*:|\btransition\s*:|\btransition(-\w+)?\b|\banimate-\w+|gsap|\.animate\(")
 REDUCED = re.compile(r"prefers-reduced-motion|motion-reduce:|motion-safe:")
@@ -203,6 +206,10 @@ def font_names(src):
         for part in re.findall(r"family=([^&]+)", q):
             for fam in part.split("|"):
                 names.add(("google", unquote_plus(fam.split(":")[0]).strip()))
+    # Chú thích nhắc "font-family:" không phải khai báo: bỏ chú thích HTML, khối /* */ và // một dòng trước khi dò.
+    # // chỉ tính là chú thích khi đứng đầu dòng hay sau khoảng trắng ; { } , (không đụng https://, url(//…))
+    src = re.sub(r"<!--[\s\S]*?-->|/\*[\s\S]*?\*/", " ", src)
+    src = re.sub(r"(^|[\s;{},])//[^\n]*", r"\1", src, flags=re.M)
     # Chuỗi trong ngoặc không được vượt < >: style="font-family:system-ui" không có ; thì dấu " đóng thuộc tính
     # không được ghép với dấu " kế tiếp trong HTML thành một "tên font"
     for m in re.finditer(r"font-family\s*:\s*((?:\"[^\"<>]*\"|'[^'<>]*'|[^;}\"'<>])+)", src):
@@ -263,13 +270,14 @@ def check_file(path, kind, fonts, seen_assets):
             add("P12", WARN, line, "Sáo ngữ AI", CLICHES.search(t).group(0))
 
     for code, level, rx, msg in RAW_RULES:
+        g = 1 if rx.groups else 0                  # luật có nhóm (P18) báo ở vị trí nhóm 1, không ở đầu thẻ
         for m in rx.finditer(src):
-            add(code, level, line_of(src, m.start()), msg, m.group(0))
+            add(code, level, line_of(src, m.start(g)), msg, m.group(g))
         for a, text in assets:                      # file dùng chung chỉ báo một lần
             if a in seen_assets:
                 continue
             for m in rx.finditer(text):
-                add(code, level, line_of(text, m.start()), msg, m.group(0), where=a)
+                add(code, level, line_of(text, m.start(g)), msg, m.group(g), where=a)
     seen_assets.update(a for a, _ in assets)
 
     for line in p.img_no_alt:
@@ -462,7 +470,7 @@ BAD_PAGE = """<!doctype html><html><head>
 <section><p class="uppercase tracking-widest">Giới thiệu</p><h2>Bơi cùng chúng tôi 🏊</h2>
 <p>Nâng tầm trải nghiệm — học bơi liền mạch cho John Doe</p><img src="a.jpg"><a href="#">Xem</a></section>
 <section><span class="uppercase tracking-[0.2em]">Khoá học</span><h2>Lịch học</h2></section>
-<section><h2>Lorem ipsum</h2></section>
+<section><h2>Lorem ipsum</h2><div data-clip-ok><p>Chạy ngang</p></div></section>
 <script>window.addEventListener('scroll', () => {});</script>
 </body></html>"""
 
@@ -471,11 +479,12 @@ CLEAN_PAGE = """<!doctype html><html lang="vi"><head>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;700&display=swap" rel="stylesheet">
 <script>tailwind.config={theme:{extend:{fontFamily:{sans:['"Be Vietnam Pro"', 'system-ui']}}}}</script>
 <style>.hero{min-height:100dvh;transition: opacity .3s} body{color:#18181B;font-family:'Be Vietnam Pro',system-ui,sans-serif} code{font-family:var(--mono, monospace)} .b{font-family:var(--brand, var(--app))}
+[data-clip-ok]{overflow:visible}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}</style>
 </head><body>
 <section><p class="uppercase tracking-widest">Giới thiệu</p><h2>Bơi cùng Trần Minh Khoa</h2>
 <p>Lớp 4 học viên, 45 phút mỗi buổi. Giá 1.250.000 ₫ cho 12 buổi.</p><img src="a.jpg" alt="Bể bơi trong nhà"><a href="/lich">Xem lịch</a></section>
-<section><h2>Lịch học</h2><p>Ca 08:00-09:00, thứ Hai đến thứ Sáu.</p></section>
+<section><h2>Lịch học</h2><p>Ca 08:00-09:00, thứ Hai đến thứ Sáu.</p><div data-clip-ok="dải lịch chạy ngang có chủ đích"><p>Ca sáng</p></div></section>
 <section><h2>Đăng ký</h2><img src="b.jpg" alt=""></section>
 </body></html>"""
 
@@ -494,7 +503,7 @@ def selftest():
         print(f"THIẾU PHỤ THUỘC: không thấy {FONTS_CSV}\n"
               "sketch-to-site cần skill ui-ux-pro-max nằm cùng thư mục skills (P07 tra dấu tiếng Việt từ đó).")
         return 1
-    expected = {"P01", "P02", "P03", "P04", "P05", "P06", "P07", "P08", "P09", "P10", "P11", "P12", "P13", "P14", "P15"}
+    expected = {"P01", "P02", "P03", "P04", "P05", "P06", "P07", "P08", "P09", "P10", "P11", "P12", "P13", "P14", "P15", "P18"}
     with tempfile.TemporaryDirectory() as d:
         bad, clean = os.path.join(d, "bad.html"), os.path.join(d, "clean.html")
         with open(bad, "w", encoding="utf-8") as fh:
@@ -540,6 +549,23 @@ def selftest():
         with open(page, "w", encoding="utf-8") as fh:
             fh.write("\n\n" + BAD_PAGE.replace("<h2>Lịch học</h2>", "<h2>Lịch học ⭐</h2>"))
         c_new, n_new = compare_baseline([base_dir_], "site", mark, quiet=True)
+    # P18 trên từng mẩu: thiếu lý do thì kêu (kể cả viết hoa, xuống dòng trong thẻ); có lý do, selector, chú thích, chữ thường thì im
+    p18 = next(rx for code, _, rx, _ in RAW_RULES if code == "P18")
+    clip_cases = [
+        ('<div data-clip-ok>', True), ('<div data-clip-ok="">', True), ("<div data-clip-ok=' '>", True),
+        ('<DIV DATA-CLIP-OK>', True), ('<div\n  data-clip-ok\n  class="x">', True), ('<div class="x" data-clip-ok/>', True),
+        ('<div data-clip-ok="marquee">', False), ('<div data-clip-ok = "marquee">', False), ('<div data-clip-ok=\n  "marquee">', False),
+        ("<div data-clip-ok='slide ló'>", False), ('.x[data-clip-ok]{overflow:visible}', False),
+        ("document.querySelector('[data-clip-ok]')", False), ('// gắn data-clip-ok khi cố ý', False), ('<p>Gắn data-clip-ok khi cố ý</p>', False),
+    ]
+    clip_bad = [s for s, want in clip_cases if bool(p18.search(s)) != want]
+    # Dò tên font: chú thích nhắc "font-family:" không phải khai báo; khai báo xuống dòng vẫn đọc được
+    font_cases = [
+        ("// app.css: font-family: var(--brand-font, var(--app-font))\nconst s = c.shape || {};", set()),
+        ("a{font-family:\n  'Syne',\n  sans-serif}", {("css", "Syne"), ("css", "sans-serif")}),
+        ("/* font-family: Foo */ b{font-family:'Bar'}", {("css", "Bar")}),
+    ]
+    font_bad = [s for s, want in font_cases if font_names(s) != want]
     linked_codes = [x[2] for x in f_linked]
     app_codes = {x[2] for x in f_app}
     app_rules_ok = not f_app_clean and {"P16", "P17"} <= app_codes and "P11" not in app_codes
@@ -559,9 +585,11 @@ def selftest():
           f"KHÔNG — sạch kêu {sorted({x[2] for x in f_app_clean})}, hỏng kêu {sorted(app_codes)}"))
     print("Mốc --save/--compare (dòng xê dịch không tính; emoji mới = 1 lỗi mới): " + ("✓" if mark_ok else
           f"KHÔNG — giữ nguyên: mã {c_same}, {len(n_same)} mới; thêm emoji: mã {c_new}, {[x[2] for x in n_new]}"))
+    print("P18 trên từng mẩu (thiếu lý do thì kêu; có lý do, selector, chú thích thì im): " + ("✓" if not clip_bad else f"KHÔNG — sai ở {clip_bad}"))
+    print("Dò tên font bỏ qua chú thích, đọc được khai báo xuống dòng: " + ("✓" if not font_bad else f"KHÔNG — sai ở {font_bad}"))
     for x in f_clean:
         print("  nhầm:", x[2], x[4], x[5])
-    return 0 if not missing and not noisy and app_ok and linked_ok and app_rules_ok and mark_ok else 1
+    return 0 if not missing and not noisy and app_ok and linked_ok and app_rules_ok and mark_ok and not clip_bad and not font_bad else 1
 
 
 def main():

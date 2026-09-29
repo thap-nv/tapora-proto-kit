@@ -6,6 +6,7 @@ description: >-
 
 # Evolve Site · Mở rộng & Cập nhật Prototype có sẵn
 
+> **v1.7 (29/09/2026)** · B3: kiểm trước, dựng sau; Cấp 3 ghi `BUILD-LOG.md`. B4: bẻ thử bước phủ định, lỗi mới tìm nguyên nhân gốc. Cổng 3: nhận góp ý theo `sketch-to-site/references/rules-and-conflicts.md` mục F.
 > **v1.6 (29/09/2026)** · Màn app mobile và hệ thống nhiều bề mặt: B1 nhận màn app, B2 có mẫu tích hợp cho app, thêm bề mặt là Cấp 3. Prototype có `assets/store.js`: đổi cấu trúc bản ghi thì tăng phiên bản `KEY` *(luật 2)*. `design-taste-frontend` đọc theo đường dẫn *(mục 4)*.
 >
 > **v1.5 (28/09/2026)** · Bớt kiểm lặp ở việc nhỏ:
@@ -122,7 +123,7 @@ Cấp <n> · cờ: <Q, L… | không> · vì <một dòng lý do>
    * Tuyệt đối không dùng comment cắt xén kiểu `<!-- giữ nguyên code cũ -->`, `<!-- ... -->`, `// ... existing code ...`, `/* ... */`, `// TODO`. Khi sửa file lớn, dùng thao tác thay thế chính xác hoặc viết đầy đủ khối chức năng.
    * Cấm các kiểu làm tắt: chỉ viết phần đầu và phần cuối rồi bỏ đoạn giữa · viết một mẫu rồi tả bằng lời phần còn lại · **tả** code sẽ làm gì thay vì **viết** code · dùng câu né việc thay cho phần chưa làm *("cho gọn", "phần còn lại tương tự", "bạn có muốn tôi làm tiếp không?")*.
    * **Đếm trước khi dựng** số file, component và trạng thái phải thêm theo phương án đã chốt *(Cổng 2 ở Cấp 2–3; câu lệnh và câu trả lời của cờ ở Cấp 0–1)*. Dựng xong **đếm lại**. Thiếu thì làm tiếp, chưa sang B4.
-   * Sắp hết độ dài thì **không nén** các phần sau cho vừa: dừng ở chỗ ngắt sạch và ghi `[TẠM DỪNG — xong X/Y. Gõ "tiếp" để làm: <phần kế>]`. Gõ "tiếp" thì làm đúng từ chỗ dừng, không tóm tắt lại.
+   * Sắp hết độ dài thì **không nén** các phần sau cho vừa: dừng ở chỗ ngắt sạch và ghi `[TẠM DỪNG — xong X/Y. Gõ "tiếp" để làm: <phần kế>]`. Gõ "tiếp" thì làm đúng từ chỗ dừng, không tóm tắt lại. Cấp 3 thì cập nhật `BUILD-LOG.md` cùng lúc *(B3)*.
 
 **Sàn không thương lượng** *(cùng sàn với `sketch-to-site` mục 2; áp cho mọi phần mới thêm)*:
 - Chuyển động mới gói trong `prefers-reduced-motion`, chỉ animate `transform` và `opacity`.
@@ -150,6 +151,7 @@ B1 Hấp thụ DNA · phân cấp · dò cờ · khai báo · lưu mốc
 
 ### B1 · Hấp thụ DNA & Lập bản đồ tác động *(không hỏi)*
 
+- **Đợt Cấp 3 đang dựng dở** *(có `BUILD-LOG.md` với khối của đợt này còn dòng chưa `xong`)*: đọc khối đó và `FEATURE-DECISIONS.md`, không khai báo lại cấp, không hỏi lại cổng đã có đáp án, bỏ bước mốc trước khi sửa *(bộ của tính năng đang đỏ là đúng)*. Làm tiếp B3 theo luật làm tiếp của sổ.
 - **Quét hệ thống hiện hữu** *(chi tiết: `references/dna-extractor.md`)*:
   * Đọc `DESIGN.md` hoặc kiểm tra `:root` trong `<style>`: bảng màu, font, radius, spacing.
   * Đọc ghi chú kiến trúc của prototype và dự án (README, file ghi chú của prototype, `CLAUDE.md`, cấu trúc `assets/`). Ghi chú có mục *bẫy* hay *đừng làm* thì đọc kỹ: đó là chỗ bản cũ đã vấp.
@@ -163,6 +165,7 @@ B1 Hấp thụ DNA · phân cấp · dò cờ · khai báo · lưu mốc
   * Nguồn yêu cầu có ma trận phân quyền → dùng đúng danh sách vai trong đó cho cờ Q.
 - **Phân cấp, dò cờ, khai báo** theo mục 1.1–1.3.
 - **Mốc trước khi sửa** *(bắt buộc ở mọi cấp, để B4 đo được lỗi **mới**)*:
+  * **Dự án đã có `_qa/`**: trước lần kiểm đầu của phiên, chạy `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype> --update` *(`<skills>` là thư mục cha của thư mục chứa SKILL.md này)*. Lệnh chép đè script của bộ kiểm bằng bản của kit đang dùng, không đụng cấu hình, file bước, mốc, nhật ký.
   * **Dự án có mốc cuốn chiếu** *(lệnh kiểm nhanh giữ kết quả lần kiểm sạch gần nhất, ví dụ `_qa/quick.py` với `_qa/current/`)*: **không chạy mốc**. Chạy `--dry` để xem file nào đã đổi từ lần kiểm trước. Nếu có file đổi mà không phải do mình, chạy kiểm nhanh một lần trước khi sửa để mốc khớp file hiện tại.
   * Không có mốc cuốn chiếu: chạy QA sẵn có của dự án, lưu kết quả vào `_qa/truoc/`. Không có script riêng thì dùng `preflight.py --save` *(`references/regression-qa.md` mục 2)*.
   * Chụp 1440 và 390 các trang sẽ bị đụng, lưu vào `_qa/truoc/`: chỉ ở **Cấp 2–3**. Cấp 0–1 không chụp trước.
@@ -220,6 +223,15 @@ Cờ T bật thì hỏi thêm câu của cờ T *(bảng mục 1.2)*. Chưa đư
 
 ### B3 · Dựng tính năng (Code Implementation)
 
+**Kiểm trước, dựng sau** *(Cấp 2–3, và Cấp 1 khi có cờ Q, D hoặc L; dự án đã có bộ kiểm `_qa/`. Rút từ `superpowers` test-driven-development)*:
+1. **Viết bước kiểm trước khi viết code:** tạo `_qa/steps-<tên>.json` theo định dạng ghi ở đầu file `_qa/run_all.py` *(bản đủ ở README của kit, mục The QA kit)*. Mỗi điều tính năng phải làm được là một bước có `check`: lối vào mở được, lối thoát chạy, trạng thái rỗng và lỗi, dữ liệu còn sau F5, từng vai ở cờ Q.
+   - `check` trả `'PASS'` khi đúng, trả chuỗi bắt đầu bằng `FAIL:` khi sai **và khi chưa có phần tử**. Dùng `?.` để bước không ném lỗi, ví dụ `js`: `document.querySelector('[data-export]')?.click()`, `check`: `document.querySelector('[data-export-modal]')?.open ? 'PASS' : 'FAIL: chưa mở được modal xuất'`.
+   - Khai báo bộ trong `suites` của `_qa/qa.config.json`, mỗi khổ một dòng với **tên khác nhau** *(trùng tên thì kết quả khổ sau đè khổ trước mà không báo)*: `["tinh-nang-<tên>-1440", "<trang>", "<tên>", "desktop"]`, và `["tinh-nang-<tên>-390", "<trang>", "<tên>", "mobile"]` nếu tính năng có ở 390. Lệnh chạy dưới lọc theo `tinh-nang-<tên>` nên chạy cả hai.
+2. **Chạy, thấy đỏ:** `python _qa/run_all.py _qa/.tdd tinh-nang-<tên>`. Dòng kết quả phải có `FAIL n` với n bằng số bước kiểm điều tính năng làm được, và `im lặng 0`. `im lặng` lớn hơn 0 là `check` viết sai: sửa `check` rồi chạy lại. Bước nào `PASS` khi chưa có code thì không kiểm được gì, **trừ bước phủ định** *(vai không được thấy nút: đúng sẵn khi tính năng chưa có)*. Bước phủ định đặt tên bắt đầu bằng `phu-dinh-`, để B4 tìm lại được trong file bước kể cả khi ngữ cảnh đã bị nén.
+3. **Dựng** theo các yêu cầu dưới.
+4. **Chạy lại cùng lệnh tới khi xanh:** `FAIL 0` và `im lặng 0`. Rồi mới sang B4.
+5. **Bỏ tính năng:** bước kiểm khẳng định lối vào đã mất *(`check` trả `FAIL:` khi còn thấy nút, mục menu, phím tắt)*. Chạy thấy đỏ khi chưa bỏ, bỏ xong thì xanh.
+
 Yêu cầu kỹ thuật bắt buộc khi viết code:
 - **Tái sử dụng 100% token:** Gọi `var(--accent)`, `var(--surface)`, `var(--ink)`... Không viết mã màu riêng.
 - **Tái sử dụng cấu trúc Component cũ:**
@@ -239,6 +251,7 @@ Yêu cầu kỹ thuật bắt buộc khi viết code:
 - **Phân quyền là ràng buộc, không phải ẩn nút** *(cờ Q)*: vai không được thấy tính năng thì **chặn ở màn và dữ liệu** *(mở thẳng URL hay gọi hàm cũng bị chặn)*, không chỉ giấu nút hay mục menu.
 - **Thêm trang mới (Cấp 3):** lối vào phải có ở menu **mọi trang** *(hoặc nơi sinh menu chung)*, không chỉ trên trang mới.
 - **Bỏ tính năng:** bỏ sạch, gồm lối vào ở mọi nơi *(menu, thanh lệnh, phím tắt, link từ trang khác)*, code và style không còn ai dùng, trạng thái của nó trong script QA. Đếm bằng `grep`: còn **0** chỗ gọi. Dữ liệu của nó thì theo cờ D, không tự xoá.
+- **Cấp 3:** ghi tiến độ vào `BUILD-LOG.md` của prototype *(khuôn `sketch-to-site/templates/BUILD-LOG.md`; chưa có thì tạo)*, một khối cho đợt này, mỗi file hay màn một dòng. Làm tiếp sau khi ngắt: đọc sổ trước, xác nhận các dòng `xong` theo luật làm tiếp ở đầu sổ *(mở file thật, chạy lại `preflight.py`; file mất hay đã bị sửa thì xử như sổ ghi)*, không làm lại dòng đã `xong`. Đợt này sửa trang đã `xong` ở bảng chính *(thêm lối vào menu mọi trang)* thì ghi lại cột Kiểm và dấu nội dung của dòng đó.
 
 ---
 
@@ -253,10 +266,10 @@ Trước khi mở Cổng 3 *(Cấp 0: trước khi báo cáo)*, làm các bướ
 | 3 | Đủ 5 trạng thái cho thành phần mới *(nhóm C)* | — | ✓ | ✓ |
 | 4 | Responsive 1440 và 390 *(nhóm D)* | khi đụng kích thước, bố cục | ✓ | ✓ |
 | 5 | Console 0 lỗi; dữ liệu lưu đúng, F5 và chuyển trang không gãy *(nhóm E)* | ✓ | ✓ | ✓ |
-| 6 | Chạy lại QA, so với mốc ở B1 *(mục 2)*: chỉ lỗi **mới** phải sửa; lỗi cũ **không tự sửa**, liệt kê ở Cổng 3. Có lệnh kiểm nhanh thì chạy nó kèm `--note`, không chạy mọi bộ | ✓ | ✓ | ✓ |
+| 6 | Chạy lại QA, so với mốc ở B1 *(mục 2)*: chỉ lỗi **mới** phải sửa; lỗi cũ **không tự sửa**, liệt kê ở Cổng 3. Lỗi mới: tìm nguyên nhân gốc, không làm im *(`sketch-to-site/references/qa-gate.md` mục 6)*. Có lệnh kiểm nhanh thì chạy nó kèm `--note`, không chạy mọi bộ | ✓ | ✓ | ✓ |
 | 7 | Soát UX 12 điểm *(nhóm F)*: ✅/❌ kèm `file:dòng`; **7–9/12 thì sửa trước** khi mở Cổng 3 | — | trên thành phần mới *(dự án dùng `handover-check`: dồn sang đó)* | trên phần mới và trang chứa nó |
 | 8 | Phân quyền hai chiều: vai không được thấy thì bị chặn, vai được thấy thì không bị chặn oan; thêm trang thì đếm lối vào ở mọi trang *(nhóm G)* | — | khi có cờ Q | ✓ |
-| 9 | Cho QA lớn theo tính năng: thêm trạng thái mới vào script QA của dự án, rồi **bẻ thử** *(mục 3)* | — | khi có cờ Q, D hoặc L | ✓ |
+| 9 | Bộ kiểm của tính năng *(viết ở B3, Kiểm trước, dựng sau)* chạy xanh; **bẻ thử** các bước phủ định *(mục 3)*. Dự án chưa có bộ kiểm `_qa/`: thêm trạng thái vào script QA sẵn có rồi bẻ thử | — | khi có cờ Q, D hoặc L | ✓ |
 | 10 | Cập nhật ghi chú của prototype *(trang, trạng thái, số chỗ gọi component dùng chung: **đếm bằng `grep`**, không sửa số theo trí nhớ)*, và `DESIGN.md` nếu cờ T được duyệt | — | ✓ | ✓ |
 
 **Kiểm thêm theo cờ** *(cộng vào bảng trên, ở mọi cấp)*: cờ D → bước 5 trên **mọi trang** đọc dữ liệu đó · cờ C → bước 1 và 6 trên **mọi trang dùng thứ đã sửa** *(lệnh kiểm nhanh tự chọn các trang nạp file đó; không có thì đếm bằng `grep`)* · bỏ tính năng → còn **0** chỗ gọi.
@@ -281,6 +294,8 @@ Báo cáo cho người dùng bằng **số liệu và bằng chứng thật**:
 Hỏi:
 - **Cấp 1:** **Chốt tích hợp** · **Chỉnh sửa chi tiết** *(nói rõ điểm cần sửa)* · **Đổi vị trí** *(nói chỗ mới)*.
 - **Cấp 2–3:** **Chốt tích hợp** · **Chỉnh sửa chi tiết** *(nói rõ điểm cần sửa)* · **Đổi phương án bố cục** *(về Cổng 2)*.
+
+Người dùng chọn **Chỉnh sửa chi tiết**: làm theo `sketch-to-site/references/rules-and-conflicts.md` mục F.
 
 ---
 

@@ -6,6 +6,7 @@ description: >-
 
 # Sketch to Concept · Chốt concept trước khi dựng prototype
 
+> **v1.1 (29/09/2026)** · Luật dừng có bảng cớ bỏ cổng. A3: dựng 3 concept bằng 3 subagent song song khi có, chấm lớp Ý bằng một subagent chưa tham gia dựng *(`references/subagent-prompts.md`)*.
 > **v1.0 (29/09/2026)** · Phần A của quy trình hai phần. Phần B là `sketch-to-site`, đọc `CONCEPT.md` mà skill này viết ra.
 > **Đường dẫn:** `<skills>` là thư mục cha của thư mục chứa SKILL.md này. Skill tham chiếu đọc theo đường dẫn, không gọi qua công cụ Skill *(quy ước ở đầu `sketch-to-site`)*.
 > Việc của skill: đưa người dùng tới một concept **là của họ**. Người không làm thiết kế khó tả concept, nhưng phản ứng tốt với phương án nhìn thấy được. Vì vậy skill dựng 3 concept thật, rồi **dừng lại** để người dùng chọn.
@@ -33,6 +34,24 @@ Phương pháp cho từng lớp: `references/concept-method.md`.
 4. **Ghi** đáp án **nguyên văn** vào `DECISIONS.md` *(khuôn `<skills>/sketch-to-site/templates/DECISIONS.md`)*.
 
 **Chỉ được qua cổng mà không hỏi khi:** người dùng nói rõ **trong phiên này** là bỏ qua đúng cổng đó *(ghi nguyên văn)* · đáp án **đã có trong input** *(ghi nguồn)*.
+
+<!-- luat-dung:co:bat-dau -->
+**Cớ hay gặp để bỏ cổng, và sự thật** *(rút từ `superpowers` writing-skills và brainstorming; khối này giống hệt ở `sketch-to-site` và `sketch-to-concept`, test giữ hai bản khớp nhau)*:
+
+| Cớ | Sự thật |
+|---|---|
+| "Đang chạy tự động, không ai trực, cứ chọn khuyến nghị cho nhanh" | Cổng là quyết định chỉ người dùng làm được. Dừng ở cổng không bị coi là tắc việc |
+| "Phương án khuyến nghị rõ ràng tốt nhất, hỏi chỉ tốn một lượt" | Khuyến nghị đứng đầu và ghi *(Khuyến nghị)*. Chọn vẫn là việc của người dùng |
+| "Người dùng giục: nhanh lên, gấp lắm" | Câu giục không phải lời bỏ cổng. Hỏi gọn hơn, gộp câu trong cùng cổng, không bỏ hỏi |
+| "Người dùng đã duyệt ý tưởng, coi như duyệt luôn bản dựng" | Một lần duyệt chỉ áp cho **đúng thứ đã trình**. Thứ người dùng chưa xem thì chưa được duyệt |
+| "Hỏi trước cho đỡ mất lượt, dựng sau" | Không hỏi khi chưa có gì để xem. Dựng bảng hay bản dựng trước, hỏi sau |
+| "Chỉ là sửa nhỏ sau nghiệm thu, đổi luôn token hay concept" | Đổi thứ đã khoá ở cổng nào là mở lại cổng đó |
+| "Người dùng chưa trả lời, chắc là đồng ý" | Im lặng không phải đồng ý. Nhắc lại câu hỏi |
+
+Người dùng trả lời *Tuỳ bạn* cho một câu hỏi ở cổng: đó là lời giao quyết định cho câu đó. Chọn lựa chọn khuyến nghị; câu không có khuyến nghị thì chọn lựa chọn đầu, nêu lý do một dòng. Ghi nguyên văn vào `DECISIONS.md`, không hỏi lại câu đó.
+
+**Dấu hiệu phải dừng lại:** thấy mình nghĩ *"để mình chọn luôn"*, *"chắc họ sẽ chọn A"*, *"hỏi thì mất công"*, *"trả lời sau cũng được"*, hay định viết *"tôi đã chọn … cho bạn"* khi người dùng chưa giao câu đó. Gặp một trong số đó: trình bày, hỏi, rồi kết thúc lượt.
+<!-- luat-dung:co:ket-thuc -->
 
 ---
 
@@ -114,8 +133,9 @@ Trình brief *(echo-back)*, rồi hỏi **chỉ những dòng trống hoặc đo
    | `<skills>/sketch-to-site/templates/theme.js` | `concept/theme.js`: đổi `KEY` thành `<slug>-concept`, để nền sáng/tối chọn ở bảng này không lan sang bảng của dự án khác cũng mở bằng `file://` |
    | `<skills>/sketch-to-site/templates/mobile/app.css`, `app.js` *(chỉ khi có app)* | `concept/app.css`, `concept/app.js`. Màn app dựng theo `mobile/screen.html` nhưng lấy `<head>` token của `key-screen.html`; `tokens.js` xuất đúng tên biến mà `app.css` đọc *(`--bg`, `--ink`, `--accent`, `--brand-font`…)* |
 
-2. **Viết `concept/concepts.js`:** thay **toàn bộ** dữ liệu mẫu *(nhà rang Hạt Mây)* bằng brief, nội dung dùng chung và 3 concept của dự án. **Xoá `example: true`**. `id` chỉ gồm chữ thường a-z, số, dấu gạch ngang. Mọi màu viết hex; font khai trong `fontFamily: { … }`. App muốn thân chữ theo font nền tảng *(SF Pro, Roboto)* thì ghi `body: 'system-ui'`. Bảng tự kiểm dữ liệu và báo lỗi nếu sai quy ước.
-3. **Dựng 3 màn then chốt** *(`concept-method.md` mục 6)*:
+2. **Viết `concept/concepts.js`:** thay **toàn bộ** dữ liệu mẫu *(nhà rang Hạt Mây)* bằng brief, nội dung dùng chung và 3 concept của dự án. **Xoá `example: true`**. Đi đường subagent *(bước 3)* thì lúc này chỉ ghi brief và nội dung dùng chung, để `concepts: []`: mỗi subagent ghi concept của mình ra file riêng, agent chính ghép sau. `id` chỉ gồm chữ thường a-z, số, dấu gạch ngang. Mọi màu viết hex; font khai trong `fontFamily: { … }`. App muốn thân chữ theo font nền tảng *(SF Pro, Roboto)* thì ghi `body: 'system-ui'`. Bảng tự kiểm dữ liệu và báo lỗi nếu sai quy ước.
+3. **Dựng 3 concept** *(dữ liệu trong `concepts.js` và màn then chốt; `concept-method.md` mục 6)*:
+   - **ai dựng:** có công cụ tạo subagent **và** phiên cho phép thì 3 subagent **song song**, mỗi subagent một concept, theo prompt ở `references/subagent-prompts.md` mục 1. Mỗi subagent chỉ nhận brief, nội dung dùng chung và phần giao của concept mình *(nguồn, họ phong cách, trục đã chọn ở A2)*, không thấy hai concept kia: tránh ba bản tụ về một lối. Agent chính ghép ba khối vào `concepts.js` rồi xoá các file `{id}.concept.js` và dòng nạp chúng trong `{id}.html` *(prompt mục 1)*. Không có công cụ đó thì **dựng tuần tự**: trước mỗi concept chỉ đọc lại brief và phần giao của concept đó, chưa mở màn của concept khác cho tới khi xong cả ba;
    - **cùng một màn, cùng nội dung** *(`CONCEPTS.content`)*: người dùng so concept, không so nội dung;
    - **khác khung bố cục**, đúng như `axes.khung` đã khai;
    - tương tác đặc trưng **bấm được**;
@@ -125,7 +145,7 @@ Trình brief *(echo-back)*, rồi hỏi **chỉ những dòng trống hoặc đo
    - `python <skills>/sketch-to-site/scripts/preflight.py concept/` → **0 lỗi**;
    - mở `concept/index.html`: không còn dải *dữ liệu mẫu*; mục **So trục** không có cảnh báo; mọi dòng tương phản ≥ AA;
    - chụp `index.html` và từng màn ở 1440 và 390 vào `concept/shots/` *(lệnh ở `<skills>/sketch-to-site/references/qa-gate.md` mục 2)*, rồi **mở ảnh ra xem**;
-   - **tự chấm lớp Ý** *(`concept-method.md` mục 7)*. Concept nào ≤ 5/10 thì làm lại concept đó.
+   - **chấm lớp Ý bằng góc nhìn mới:** có công cụ tạo subagent và phiên cho phép thì giao cho một subagent **chưa tham gia dựng**, prompt ở `references/subagent-prompts.md` mục 2; không có thì tự chấm theo `concept-method.md` mục 7. Concept nào ≤ 5/10 thì làm lại concept đó. Ghi điểm và ai chấm vào `DECISIONS.md` *(Cổng 2)*.
 
 ### 🛑 Cổng 2 · Chọn concept
 
@@ -187,4 +207,4 @@ Mặc định `docs/prototypes/<slug>/`, dự án có quy ước khác thì theo
 | 🔴 | `ui-ux-pro-max` | A2 tra màu và chữ · dữ liệu font cho `preflight.py` | **Hỏng**: không tra được, P07 thành P15 |
 | 🟠 **Nên chép** | `huashu-design` | Concept B *(`design-styles.md`)* · brand có thật *(`brand-asset-protocol.md`)* · tự chấm *(`critique-guide.md`)* | Nhẹ: phần cốt lõi đã rút vào `references/concept-method.md` |
 
-**Không phải skill mà vẫn cần:** Python 3 · Node 20+ và Edge/Chrome để chụp và chạy test *(`node --test <skills>/sketch-to-concept/tests/`)* · mạng *(Google Fonts, Tailwind CDN)* · `WebSearch` cho concept B.
+**Không phải skill mà vẫn cần:** Python 3 · Node 20+ và Edge/Chrome để chụp và chạy test *(`node --test <skills>/sketch-to-concept/tests/`)* · mạng *(Google Fonts, Tailwind CDN)* · `WebSearch` cho concept B · công cụ tạo subagent *(tuỳ chọn, A3)*.

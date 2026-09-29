@@ -6,6 +6,7 @@ description: >-
 
 # Handover Check · Kiểm tổng trước bàn giao
 
+> **v1.1 (29/09/2026)** · B7: soát danh sách sửa theo `sketch-to-site/references/rules-and-conflicts.md` mục F trước khi sửa.
 > **v1.0 (28/09/2026)** · Đi cùng `tweak-site` và `evolve-site`. Mỗi lần sửa chỉ kiểm nhanh các bộ bị ảnh hưởng; skill này bắt phần còn lại một lần: lỗi lan sang trang mà lần kiểm nhanh không chạy, theme thứ hai, UX, tài liệu.
 > Lệnh dưới đây là của bộ kiểm trong `<skills>/sketch-to-site/templates/qa-kit/` (`<skills>` là thư mục cha của thư mục chứa SKILL.md này). Chạy từ thư mục prototype, tức thư mục chứa `_qa/`. Dự án ghi lệnh riêng trong `AGENTS.md` hoặc `CLAUDE.md` thì theo đó.
 
@@ -22,6 +23,8 @@ Khác biệt giữa lần chạy tổng và `last-green` chỉ hợp lệ khi **
 ## 2. Quy trình
 
 ### B0 · Dự án chưa có bộ kiểm *(chỉ lần đầu)*
+Thấy `_qa/handover.py` rồi thì chỉ cập nhật script: `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype> --update` *(không đụng cấu hình, file bước, mốc, nhật ký)*, rồi sang B1.
+
 Không thấy `_qa/handover.py`:
 1. `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype>`. Lệnh chép script vào `_qa/`, sinh `qa.config.json` (mỗi trang một bộ khói ở 1440, 768, 390; màn app ở 1440 và 390) và `_qa/.gitignore`.
 2. Đọc `qa.config.json` cùng người dùng:
@@ -83,6 +86,6 @@ Không có công cụ `AskUserQuestion` *(ví dụ Codex)*: viết câu hỏi v�
 ### B7 · Sau khi người dùng trả lời
 - Ghi lời người dùng **nguyên văn** vào `DECISIONS.md`, bảng "Lặp lại sau nghiệm thu".
 - **Chốt** → `python _qa/handover.py promote _qa/handover/<ngày-giờ>`. Lần chạy đó thành mốc bàn giao mới, nhật ký chuyển vào thư mục chạy, `current` làm lại từ đầu.
-- **Sửa** → sửa bằng `tweak-site` hoặc `evolve-site` tuỳ cấp, rồi quay lại **B3** (chạy tổng lại, vì `promote` cần một lần chạy khớp với file hiện tại).
+- **Sửa** → soát danh sách theo `sketch-to-site/references/rules-and-conflicts.md` mục F, sửa bằng `tweak-site` hoặc `evolve-site` tuỳ cấp, rồi quay lại **B3** (chạy tổng lại, vì `promote` cần một lần chạy khớp với file hiện tại).
 - Không tự commit. Có thể gợi ý commit sau khi promote.
 - Thư mục `_qa/handover/` cũ hơn lần vừa chốt có thể xoá cho nhẹ đĩa. Hỏi người dùng trước khi xoá.

@@ -8,6 +8,7 @@ description: >-
 
 > **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này.
 >
+> **v1.1 (29/09/2026)** · Kiểm nhanh chưa đạt: tìm nguyên nhân gốc, không làm im bộ kiểm. Danh sách sửa: soát từng mục trước khi làm.
 > **v1.0 (28/09/2026)** · Đường nhẹ của `evolve-site`. Cùng luật bảo toàn, bỏ phần nghi thức: không cổng, không mốc trước, không soát UX, không viết bộ kiểm mới. Phần kiểm nặng dồn về `handover-check`, chạy một lần trước khi bàn giao.
 
 ## 1. Có nhận việc này không
@@ -34,6 +35,7 @@ Người dùng gọi thẳng `/evolve-site` cho một việc lọt bảng trên 
 - Theo quy ước viết mã và danh sách cấm của dự án (`AGENTS.md`, `DESIGN.md` mục cấm). Chỉ tra đúng mục cần, không đọc lại cả `DESIGN.md`.
 - Viết trọn: không `// ...`, không "phần còn lại tương tự".
 - Lỗi có sẵn gặp trên đường: không tự sửa, nêu trong báo cáo.
+- Người dùng đưa một danh sách sửa: soát từng mục theo `<skills>/sketch-to-site/references/rules-and-conflicts.md` mục F trước khi làm. Mục nào lộ cờ thì chuyển `evolve-site` như mục 1. Mục chưa rõ thì hỏi, gộp một lượt, trước khi làm: đây là ngoại lệ duy nhất của "không hỏi" ở skill này.
 
 ## 3. Quy trình
 
@@ -44,8 +46,9 @@ Người dùng gọi thẳng `/evolve-site` cho một việc lọt bảng trên 
 3. **Sửa.**
 4. **Kiểm nhanh** bằng lệnh của dự án (`AGENTS.md` hoặc `CLAUDE.md`, mục kiểm thử). Với bộ kiểm của `sketch-to-site`:
    `python _qa/quick.py --note "tweak: <một dòng: sửa gì, ở đâu>"`, chạy từ thư mục prototype (thư mục chứa `_qa/`).
+   - Lần kiểm đầu của phiên: chạy `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype> --update` trước, để script kiểm là bản của kit đang dùng *(không đụng cấu hình, file bước, mốc)*.
    - Lệnh chọn bộ theo file đã đổi, không chụp ảnh, so với mốc cuốn chiếu `_qa/current/`.
-   - `ĐẠT` → xong. `CHƯA ĐẠT` → sửa rồi chạy lại. Lỗi nằm ngoài chỗ vừa sửa và có từ trước → không sửa, báo.
+   - `ĐẠT` → xong. `CHƯA ĐẠT` → tìm nguyên nhân gốc, sửa ở gốc rồi chạy lại *(`<skills>/sketch-to-site/references/qa-gate.md` mục 6; không làm im bộ kiểm)*. Lỗi nằm ngoài chỗ vừa sửa và có từ trước → không sửa, báo.
    - Mỗi dòng `đổi check` phải giải thích được bằng chính thay đổi vừa làm. Không giải thích được là lỗi lan: sửa.
    - Dự án chưa có `_qa/quick.py`: chạy preflight *(`<skills>/sketch-to-site/scripts/preflight.py <thư-mục-site>`)* cho lần sửa này, rồi đề xuất cài bộ kiểm *(`handover-check`, B0)*. Không tự cài giữa một lần sửa nhỏ.
 5. **Cấp 1: xem một ảnh** màn vừa sửa, ở khổ chính của trang (màn app mobile hay trang cho điện thoại 390, trang quản trị 1440). Không chụp đủ khổ. Màn app làm cả iOS và Android: sửa phần chung thì xem ảnh của nền tảng mặc định; sửa phần `data-only` thì xem đúng nền tảng đó.

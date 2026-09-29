@@ -222,6 +222,22 @@ test('concept dùng font nền tảng: bảng ghi rõ, preflight không cảnh b
   assert.match(step(r, 'label').check, /font nền tảng/);
 });
 
+test('đường subagent: màn then chốt nhận concept từ file riêng {id}.concept.js', t => {
+  const dir = fixture();
+  const ctx = { window: {} };
+  require('node:vm').runInNewContext(fs.readFileSync(path.join(SKILL, 'templates', 'concepts.js'), 'utf8'), ctx);
+  const data = ctx.window.CONCEPTS;
+  const a = data.concepts.find(c => c.id === 'a');
+  fs.writeFileSync(path.join(dir, 'concepts.js'), `window.CONCEPTS = ${JSON.stringify({ project: data.project, brief: data.brief, content: data.content, concepts: [] })};\n`);
+  fs.writeFileSync(path.join(dir, 'a.concept.js'), `CONCEPTS.concepts.push(${JSON.stringify(a)});\n`);
+  const html = fs.readFileSync(path.join(dir, 'a.html'), 'utf8').replace('<script src="concepts.js"></script>', '<script src="concepts.js"></script>\n<script src="a.concept.js"></script>');
+  fs.writeFileSync(path.join(dir, 'a.html'), html);
+  const r = run(dir, 'a.html', [{ name: 'part', check: `getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()` }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  assert.equal(step(r, 'part').check.toUpperCase(), a.colors.light.primary.toUpperCase());
+});
+
 test('preflight: thư mục concept dựng từ khuôn không có lỗi, không có cảnh báo', () => {
   const r = spawnSync(PYTHON, [PREFLIGHT, fixture()], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stdout + r.stderr);
