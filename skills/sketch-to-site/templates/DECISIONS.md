@@ -1,38 +1,36 @@
 # Nhật ký quyết định — <Tên dự án>
 
-> Mỗi cổng một khối. **Đáp án ghi nguyên văn** lời người dùng. Cổng bị bỏ qua thì vẫn ghi: ai cho phép bỏ qua, và nguyên văn câu cho phép.
+> Mỗi cổng một khối, Cổng 1–2 do `sketch-to-concept` ghi, Cổng 3–4 do `sketch-to-site` ghi. **Đáp án ghi nguyên văn** lời người dùng. Cổng bị bỏ qua thì vẫn ghi: ai cho phép bỏ qua, và nguyên văn câu cho phép.
 
-## 🛑 Cổng 1 · Định hình dự án — <dd/mm/yyyy>
+## 🛑 Cổng 1 · Brief concept — <dd/mm/yyyy> *(sketch-to-concept)*
 | Câu hỏi | Đáp án (nguyên văn) | Ghi chú |
 |---|---|---|
 | Loại sản phẩm *(nhiều bề mặt: liệt kê từng bề mặt)* | | |
 | Nền tảng app *(nếu có app)* | | |
 | Người dùng chính + thiết bị | | |
-| Phạm vi | | |
 | Tham chiếu + mức bám | | |
+| Khác biệt · Định hướng *(nếu brief còn trống)* | | |
 
-## 🛑 Cổng 2 · Phong cách — <dd/mm/yyyy>
-| Câu hỏi | Lựa chọn đưa ra | Đáp án (nguyên văn) |
-|---|---|---|
-| Họ phong cách | 1. … (Khuyến nghị) · 2. … · 3. … | |
-| Cách hiểu *(nếu người dùng tự nêu)* | | |
-| Nền | | |
-| Nhịp | | |
+## 🛑 Cổng 2 · Concept — <dd/mm/yyyy> *(sketch-to-concept)*
+| Concept | Nguồn | Ý *(một câu)* | Họ phong cách | Màn then chốt · khung |
+|---|---|---|---|---|
+| A *(Khuyến nghị)* | hợp nhất | | | |
+| B | chuẩn thật: <sản phẩm> | | | |
+| C | lăng kính studio: <tên> | | | |
+**Bảng:** `concept/index.html` · **Tự chấm lớp Ý:** A <n>/10 · B <n>/10 · C <n>/10
+**Đáp án concept (nguyên văn):**
+**Mã trộn (nếu có):**
+**Vòng biến thể (nếu có):**
+**Nền:** · **Nhịp:**
 
-## 🛑 Cổng 3 · Hướng — <dd/mm/yyyy>
-| Hướng | Trục khác biệt | Chọn? |
-|---|---|---|
-| A · an toàn | | |
-| B · cân bằng | | |
-| C · táo bạo | | |
-**Đáp án (nguyên văn):**
-**Trộn (nếu có):** lấy <…> từ <…>
-
-## 🛑 Cổng 4 · Design system + sơ đồ trang — <dd/mm/yyyy>
-**Đáp án (nguyên văn):**
+## 🛑 Cổng 3 · Design system, sơ đồ trang, phạm vi — <dd/mm/yyyy> *(sketch-to-site)*
+**Thử concept ở B1:** giữ được ở <…> · gãy ở <… | không>
+**Đáp án design system và sơ đồ trang (nguyên văn):**
+**Phạm vi (nguyên văn):**
+**Chỗ concept gãy (nếu có, nguyên văn):**
 **Sửa theo yêu cầu:**
 
-## 🛑 Cổng 5 · Nghiệm thu — <dd/mm/yyyy>
+## 🛑 Cổng 4 · Nghiệm thu — <dd/mm/yyyy> *(sketch-to-site)*
 **Số kiểm lúc trình:** preflight <…> · UX <…> · hiển thị <…>
 **Đáp án (nguyên văn):**
 

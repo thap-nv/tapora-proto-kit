@@ -10,12 +10,13 @@ Works with **Claude Code**, **Codex**, and other hosts that support [Agent Skill
 
 | Skill | Use it when | What it does |
 |---|---|---|
-| `sketch-to-site` | You need a new prototype from scratch: a website, a web app, an iOS/Android app, or a system with several surfaces | A 7-step flow with 5 decision gates. The agent builds 3 directions, then locks a design system with you. It builds the full prototype and checks it itself, then installs the QA kit and takes the first baseline. App screens follow iOS or Android conventions, show in a phone frame on a computer and full-screen on a phone, and switch between iOS and Android with `?platform=android`. |
+| `sketch-to-concept` | You want to settle the concept before anything is built, or show a client options before the requirements are detailed | Reads only the core of the brief, then builds a concept board: 3 concepts from 3 different sources, each with an idea, a style tile and one real key screen. You compare them in the browser, mix layers from different concepts, and pick one at 2 decision gates. The result is `CONCEPT.md`. |
+| `sketch-to-site` | You need a new prototype from scratch: a website, a web app, an iOS/Android app, or a system with several surfaces | Starts from `CONCEPT.md`, and runs `sketch-to-concept` first when there is none. Reads the full requirements, tests the concept on the hardest screens, then locks a design system with you. It builds the full prototype and checks it itself, then installs the QA kit and takes the first baseline. App screens follow iOS or Android conventions, show in a phone frame on a computer and full-screen on a phone, and switch between iOS and Android with `?platform=android`. |
 | `evolve-site` | You add, change or remove a feature in an existing prototype | It sizes the change (levels 0–3) and flags risks: permissions, data, logic, requirements, tokens, shared code. The level and flags decide which of the 3 gates to stop at. It reuses the existing design system and data contract, so the new part looks like it shipped on day one. |
 | `tweak-site` | The change is small: copy, spacing, one component, no risk flag | No questions and no baseline run. It runs the quick check, then writes one log line. Anything bigger goes to `evolve-site`. |
 | `handover-check` | Before you hand over, share a link or commit | Runs every suite on every theme once, and matches every difference to a logged change. Also runs a 12-point UX check on the screens you touched and updates the docs once. After your sign-off, it sets the new baseline. |
 
-**Bundled supporting skills.** One install gives you everything the four skills above use. All are MIT-licensed; see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+**Bundled supporting skills.** One install gives you everything the five skills above use. All are MIT-licensed; see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 | Group | Skills | Used for |
 |---|---|---|
@@ -23,14 +24,16 @@ Works with **Claude Code**, **Codex**, and other hosts that support [Agent Skill
 | UX audits | `laws-of-ux`, `laws-of-ux-checklist`, `laws-of-ux-review` | 12-point checklist, full 30-law review |
 | Layout and style families | `design-taste-frontend`, `high-end-visual-design`, `minimalist-ui`, `industrial-brutalist-ui`, `gpt-taste` | Layout rules and deeper reading per style family |
 | References and templates | `stitch-design-taste`, `redesign-existing-projects`, `full-output-enforcement` | `DESIGN.md` template, auditing an old site, complete code output |
-| Brand and directions | `huashu-design` (trimmed) | Brand-asset protocol, three-directions workflow, 60-style library, device frames. Slides, animation, video and audio were removed. |
+| Brand and concepts | `huashu-design` (trimmed) | Brand-asset protocol, 60-style library and concept self-review used by `sketch-to-concept`, device frames. Slides, animation, video and audio were removed. |
 
 The five layout and style skills, `stitch-design-taste` and `full-output-enforcement` are **reference-only**. The agent reads them when the main skills need them, but never picks them on its own. This keeps them from competing with `sketch-to-site` for requests like "make a landing page". You can still call one yourself, for example `/tapora-proto-kit:minimalist-ui` in Claude Code or `$minimalist-ui` in Codex.
 
 ## How the pieces fit
 
 ```
-sketch-to-site ──► prototype/ + _qa/ (QA kit, first baseline)
+sketch-to-concept ──► concept/ board + CONCEPT.md (gates 1–2)
+        │
+sketch-to-site ──► prototype/ + _qa/ (QA kit, first baseline; gates 3–4)
                         │
         ┌───────────────┴────────────────┐
     tweak-site                       evolve-site
@@ -118,12 +121,12 @@ Copy or symlink **every** folder in `skills/` into **one** skills directory:
 | Claude Code | `.claude/skills/` | `~/.claude/skills/` |
 | Codex and other Agent Skills hosts | `.agents/skills/` | `~/.agents/skills/` |
 
-Keep the folders side by side. `sketch-to-site` calls `ui-ux-pro-max` and its own scripts by relative path.
+Keep the folders side by side. `sketch-to-site` calls `ui-ux-pro-max` and its own scripts by relative path, and `sketch-to-concept` reads the references, templates and `preflight.py` of `sketch-to-site`.
 
 ## Quick start
 
-1. Ask for a prototype, for example *"Thiết kế website cho một quán cà phê, dùng sketch-to-site"* or *"Thiết kế hệ thống đặt món: admin web cho quán và app iOS/Android cho khách"*. Answer the 5 gates.
-2. After you sign off, the prototype folder (default `docs/prototypes/<slug>/`) contains `site/`, `DESIGN.md`, `DECISIONS.md` and `_qa/` with the first baseline. With an app, `site/app/index.html` shows every main screen side by side in phone frames, with an iOS/Android switch.
+1. Ask for a prototype, for example *"Thiết kế website cho một quán cà phê, dùng sketch-to-site"* or *"Thiết kế hệ thống đặt món: admin web cho quán và app iOS/Android cho khách"*. Answer the 4 gates: 2 on the concept board, then 2 while the prototype is built. To stop at the concept, ask *"Lên concept cho website quán cà phê, dùng sketch-to-concept"*.
+2. After you sign off, the prototype folder (default `docs/prototypes/<slug>/`) contains `concept/` (the board), `CONCEPT.md`, `site/`, `DESIGN.md`, `DECISIONS.md` and `_qa/` with the first baseline. With an app, `site/app/index.html` shows every main screen side by side in phone frames, with an iOS/Android switch.
 3. Ask for changes in plain words. The agent routes small edits to `tweak-site` and features to `evolve-site`.
 4. Before you share or commit, ask for a handover check (*"kiểm tổng trước bàn giao"*).
 
@@ -217,9 +220,12 @@ For app screens (`<html data-surface="app">`), `qa_init.py` adds a `tap-targets`
   - Every `SKILL.md` frontmatter must be strict YAML (Codex parses it strictly). Write long descriptions as `>-` blocks.
   - Every `description` must be at most 1,024 characters, and each `name` must equal its folder name.
   - `python skills/sketch-to-site/scripts/preflight.py --selftest` must pass.
+  - `node --test skills/sketch-to-concept/tests/` must pass. It checks `tokens.js`, the concept board in Edge or Chrome, the docs of both skills and this README. Without a browser, the board tests are skipped.
 - **Rules kept in two places.** Change both copies together:
   - The 12-point UX table: `sketch-to-site/references/qa-gate.md` §3 and `evolve-site/references/regression-qa.md` group F.
-  - The quality floor and full-output rules: `sketch-to-site` §2–3 and `evolve-site` §2.
+  - The stop rules: `sketch-to-site` §1 and `sketch-to-concept` §1.
+  - The quality floor and full-output rules: `sketch-to-site` §2–3, `sketch-to-concept` §2 and `evolve-site` §2.
+  - The token variable names: `rules-and-conflicts.md` §D.2, `VARS` in `sketch-to-concept/templates/tokens.js`, and `sketch-to-site/templates/mobile/app.css`.
   - The dependency list: `sketch-to-site` §9 and `DEPS` in `preflight.py`.
   - The shared data store: `sketch-to-site/templates/store.js`, `rules-and-conflicts.md` §D.5, and `evolve-site` §2 law 2.
   - The theme parameter: `?theme=` in `sketch-to-site/templates/theme.js`, the `prefers-color-scheme` rule in `run.mjs`, and the themes that `qa_init.py` generates.

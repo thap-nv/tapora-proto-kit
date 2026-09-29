@@ -65,14 +65,14 @@ Nhãn **ở trên** ô nhập · chữ gợi ý (tuỳ chọn) · lỗi **ở d�
 | 10 | **Nền trơn** | `design-taste`, `redesign`, `minimalist`: section không được trơn phẳng, thêm ảnh/grain/gradient | Họ *Công cụ vận hành*, *Tin cậy* | Áp cho site giới thiệu. **Không áp** cho web app. Trang trí nền ở web app là nhiễu |
 | 11 | **Dark mode** | `design-taste` §6.C: bắt buộc hai chế độ cho trang tiêu dùng | Cổng 2 câu 2 | Người dùng quyết ở Cổng 2. Mặc định *theo hệ thống* với site tiêu dùng |
 | 12 | **Ảnh** | `design-taste` §4.8: **bắt buộc** dùng công cụ sinh ảnh nếu có | `huashu-design`: ảnh thật > sinh ảnh > placeholder trung thực | Thứ tự ở SKILL.md mục 6: **ảnh thật của người dùng trước**, sinh ảnh thứ hai |
-| 13 | **Ngẫu nhiên bố cục** | `gpt-taste`: *giả lập Python random* để chọn bố cục | `huashu-design`: đưa 3 hướng cho **người dùng** chọn | Không bốc ngẫu nhiên. Dùng **động cơ biến thể** để 3 hướng khác nhau, rồi **người dùng** chọn ở Cổng 3 |
-| 14 | **Hỏi bao nhiêu** | `design-taste` §0.C: hỏi **đúng 1** câu, suy được thì đừng hỏi | Yêu cầu của skill này: dừng ở 5 cổng | Hai điều cùng đúng: **5 cổng là bắt buộc**, còn **trong mỗi cổng** chỉ hỏi thứ không suy ra được |
-| 15 | **Stack** | `design-taste`, `gpt-taste`: React / Next / Motion | Prototype một file mở bằng trình duyệt | Mặc định **HTML + Tailwind CDN + JS thuần**. Người dùng muốn React/Next thì hỏi ở Cổng 4 và theo `design-taste` §3 |
+| 13 | **Ngẫu nhiên bố cục** | `gpt-taste`: *giả lập Python random* để chọn bố cục | `huashu-design`: đưa 3 hướng cho **người dùng** chọn | Không bốc ngẫu nhiên. Dùng **ba nguồn concept** và **động cơ biến thể** để 3 concept khác nhau, rồi **người dùng** chọn ở Cổng 2 *(`sketch-to-concept`)* |
+| 14 | **Hỏi bao nhiêu** | `design-taste` §0.C: hỏi **đúng 1** câu, suy được thì đừng hỏi | Yêu cầu của bộ kit: dừng ở 4 cổng *(2 ở `sketch-to-concept`, 2 ở skill này)* | Hai điều cùng đúng: **4 cổng là bắt buộc**, còn **trong mỗi cổng** chỉ hỏi thứ không suy ra được |
+| 15 | **Stack** | `design-taste`, `gpt-taste`: React / Next / Motion | Prototype một file mở bằng trình duyệt | Mặc định **HTML + Tailwind CDN + JS thuần**. Người dùng muốn React/Next thì hỏi ở Cổng 3 và theo `design-taste` §3 |
 | 16 | **Font app mobile** | Quy ước nền tảng: SF Pro *(iOS)*, Roboto *(Android)* | Dòng 3: không dùng Inter làm mặc định | Có font thương hiệu *(đã kiểm tiếng Việt)* thì dùng cho mọi bề mặt. Không có thì font nền tảng: iOS `-apple-system`, **Inter chỉ để thay SF Pro** khi xem trên máy không phải Apple; Android Roboto. Cả hai có subset `vietnamese` |
 
 ---
 
-## D. Yêu cầu kỹ thuật — B6
+## D. Yêu cầu kỹ thuật — B3
 
 ### D.1 `<head>`
 ```html
@@ -96,7 +96,7 @@ Nhãn **ở trên** ô nhập · chữ gợi ý (tuỳ chọn) · lỗi **ở d�
 </style>
 <script>tailwind.config={theme:{extend:{colors:{bg:'var(--bg)',surface:'var(--surface)',ink:'var(--ink)',muted:'var(--muted)',line:'var(--line)',accent:'var(--accent)'},borderRadius:{DEFAULT:'var(--radius)'},fontFamily:{sans:['<Font>','system-ui','sans-serif']}}}}</script>
 ```
-Giá trị trong ví dụ chỉ là **khuôn**. Lấy giá trị thật từ `DESIGN.md`.
+Giá trị trong ví dụ chỉ là **khuôn**, còn **tên biến là hợp đồng chung của kit**: `templates/mobile/app.css` đọc đúng `--bg`, `--surface`, `--ink`, `--muted`, `--line`, `--accent`, `--brand-font`. Lấy giá trị thật từ `DESIGN.md`. Khối CSS ở `CONCEPT.md` *(do `sketch-to-concept/templates/tokens.js` sinh)* đã theo đúng các tên này, và thêm `--primary`, `--on-primary`, `--on-accent`, `--muted-bg`, `--ring`, `--font-display`, `--font-body`, `--radius-sm`, `--radius-lg`.
 
 **Có cả nền sáng và tối:** chép `templates/theme.js` vào `assets/`, nạp trong `<head>` của mọi trang, không `defer`.
 - Mặc định theo máy.
@@ -117,7 +117,7 @@ Giá trị trong ví dụ chỉ là **khuôn**. Lấy giá trị thật từ `DE
 - Mọi trang đọc và ghi qua `assets/store.js`, chép từ `templates/store.js`: `store.get(k)` · `store.set(k, v)` · `store.update(k, fn)` · `store.on(fn)`. Đổi `KEY` trong file thành slug của dự án.
 - Trang **không** giữ bản dữ liệu riêng. Danh sách, số đếm, tổng tiền đều tính từ store: tạo đơn ở `form.html` thì `orders.html` và số trên dashboard phải đổi theo.
 - Ghi xong thì vẽ lại phần liên quan, hoặc đăng ký `store.on` để tự vẽ lại.
-- Muốn demo lại từ đầu: thêm `?reset` vào URL. Ghi cách này vào báo cáo Cổng 5.
+- Muốn demo lại từ đầu: thêm `?reset` vào URL. Ghi cách này vào báo cáo Cổng 4.
 - Trang đọc tham số URL *(chi tiết theo `?id=`)*: khai báo mẫu trong `<head>` bằng `<meta name="qa-query" content="?id=<mã có trong data.js>">`. `qa_init.py` đọc thẻ này để bộ khói mở trang có nội dung; thiếu thì lệnh in CẢNH BÁO.
 - Kiểm luồng xuyên trang trong **một** bộ kiểm: bước `js` ghi dữ liệu rồi `location.href = 'orders.html'`, `wait` ≥ 1500, rồi `check` trên trang mới. Mỗi bộ chạy với hồ sơ trình duyệt mới nên luôn bắt đầu từ dữ liệu mẫu, mốc không trôi.
 

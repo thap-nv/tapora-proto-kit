@@ -1,4 +1,4 @@
-# Kho họ phong cách — dùng ở Cổng 2 và B4
+# Kho họ phong cách — dùng ở `sketch-to-concept` (A2, A3, Cổng 2)
 
 > Kho này là **giàn giáo**, không phải thực đơn bắt buộc. Có brand, concept hay dữ liệu thật thì thiết kế mọc từ đó; kho chỉ giúp đặt tên và đưa lựa chọn cho người dùng.
 > **Dial** ghi theo thứ tự **V/M/D**: `DESIGN_VARIANCE` (1 đối xứng → 10 phá lưới) · `MOTION_INTENSITY` (1 tĩnh → 10 điện ảnh) · `VISUAL_DENSITY` (1 phòng tranh → 10 buồng lái). Định nghĩa đủ ở `design-taste-frontend` §7.
@@ -7,12 +7,12 @@
 
 ---
 
-## Chọn 3 họ cho Cổng 2
+## Chọn họ cho 3 concept
 
 1. Lấy **loại sản phẩm** (Cổng 1) → cột *Hợp với*.
 2. Lấy **từ khoá không khí** của người dùng và của tham chiếu → cột *Nhận diện qua từ*.
-3. Chọn 3 họ hợp nhất, **xếp theo độ hợp**. Họ hợp nhất đặt đầu, ghi *(Khuyến nghị)*, và lý do khuyến nghị phải nêu được bằng **dữ kiện của dự án**, không phải bằng gu.
-4. Preview mỗi lựa chọn viết theo khuôn 5 dòng: **Không khí** · **Màu** · **Chữ** · **Bố cục** · **Giống kiểu**.
+3. Họ hợp nhất là nguồn của **concept A** *(`sketch-to-concept/references/concept-method.md` mục 3)*. Concept B và C có thể thuộc họ khác. Concept khuyến nghị đặt đầu, ghi *(Khuyến nghị)*, và lý do khuyến nghị phải nêu được bằng **dữ kiện của dự án**, không phải bằng gu.
+4. Ở Cổng 2, `preview` mỗi lựa chọn viết theo khuôn 5 dòng: **Ý** · **Màu** · **Chữ** · **Màn then chốt** · **Giống kiểu**.
 
 ---
 
@@ -145,9 +145,11 @@
 
 ---
 
-## Động cơ biến thể — dựng 3 hướng ở B4
+## Động cơ biến thể — làm 3 concept khác nhau
 
-Ba hướng **cùng họ** nhưng phải khác nhau trên **≥ 3 trục** dưới đây. Ghi lựa chọn của từng hướng vào đầu mỗi file HTML (comment) và vào bảng so sánh.
+Dùng ở hai chỗ:
+- **Giữa 3 concept** *(A2)*: mỗi cặp khác nhau **≥ 3 trục**, trong đó **bắt buộc có khung bố cục** *(các trục màn đầu, hệ section; web app và app dùng trục riêng bên dưới)*. Ghi vào `axes` của `concepts.js`; bảng concept tự đếm và cảnh báo.
+- **Vòng biến thể** *(Cổng 2, khi người dùng phân vân)*: 2 bản của cùng một concept, giữ màu và chữ, khác nhau ở các trục **bố cục**: kiến trúc màn đầu, cỡ màn đầu, hệ section *(web app, app: trục riêng bên dưới)*.
 
 | Trục | Lựa chọn *(chọn 1)* |
 |---|---|
@@ -160,11 +162,11 @@ Ba hướng **cùng họ** nhưng phải khác nhau trên **≥ 3 trục** dư�
 | **Trục ý tưởng** | Hiện vật quý · Hành trình · Dụng cụ chính xác · Hệ sống · Sân khấu · Hồ sơ lưu trữ |
 | **Khoảnh khắc đọc lần hai** *(đúng 1)* | Tràn lề có chủ đích · Một con số/dấu câu khổng lồ làm cấu trúc · Đổi chất liệu một lần · Ghi chú dọc lề · Cắt cận ảnh mang màu brand |
 
-**Luật xếp ba hướng:** A = **an toàn**, đúng khuôn của họ phong cách · B = **cân bằng**, một điểm lạ · C = **táo bạo**, đẩy tới mép họ phong cách mà vẫn đúng brief.
+**Luật xếp ba concept:** A = **hợp nhất**, đúng khuôn của họ phong cách · B = **cân bằng**, một điểm lạ · C = **táo bạo**, đẩy tới mép mà vẫn đúng brief.
 
 **Web app / công cụ vận hành:** thay các trục *màn đầu / hệ section / khoảnh khắc đọc lần hai* bằng: **Điều hướng** *(sidebar · top bar · thanh lệnh)* · **Mật độ** *(thoáng · vừa · dày)* · **Trục tổ chức màn chính** *(theo thời gian · theo người · theo việc · theo địa điểm)*.
 
-**App mobile:** luật bố cục web không áp cho màn app *(`mobile-app.md` mục 5)*. Thay các trục *màn đầu / cỡ màn đầu / hệ section / khoảnh khắc đọc lần hai* bằng các trục dưới, ba hướng khác nhau trên ≥ 3 trục:
+**App mobile:** luật bố cục web không áp cho màn app *(`mobile-app.md` mục 5)*. Thay các trục *màn đầu / cỡ màn đầu / hệ section / khoảnh khắc đọc lần hai* bằng các trục dưới, ba concept khác nhau trên ≥ 3 trục:
 
 | Trục | Lựa chọn *(chọn 1)* |
 |---|---|
@@ -174,5 +176,5 @@ Ba hướng **cùng họ** nhưng phải khác nhau trên **≥ 3 trục** dư�
 | **Lối vào hành động chính** | Nút đáy cố định · Nút tạo mới của nền tảng *(`+` trên thanh ở iOS, FAB ở Android)* · Một chạm từ thẻ đầu màn · Mở sheet tại chỗ |
 | **Điểm nhấn** *(đúng 1 mỗi màn)* | Ảnh sản phẩm · Con số chính · Thẻ trạng thái · Giá hoặc nhãn có kiểu riêng |
 
-- **Không phải trục biến thể:** thanh tab, nút quay lại, vùng chạm, sheet. Cả ba hướng theo quy ước nền tảng *(`mobile-app.md` mục 2)*.
-- **Hệ thống nhiều bề mặt:** mỗi hướng chọn trục cho từng bề mặt *(admin theo trục web app, app theo trục trên)*. Bảng so sánh có một dòng cho mỗi bề mặt, và một dòng cho vai dùng cả hai bề mặt *(ví dụ chủ quán xem quầy trên điện thoại)*.
+- **Không phải trục biến thể:** thanh tab, nút quay lại, vùng chạm, sheet. Cả ba concept theo quy ước nền tảng *(`mobile-app.md` mục 2)*.
+- **Hệ thống nhiều bề mặt:** mỗi concept chọn trục cho từng bề mặt *(admin theo trục web app, app theo trục trên)*. Bảng so sánh có một dòng cho mỗi bề mặt, và một dòng cho vai dùng cả hai bề mặt *(ví dụ chủ quán xem quầy trên điện thoại)*.

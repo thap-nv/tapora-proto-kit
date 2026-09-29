@@ -31,12 +31,12 @@ The bundled copies are frozen and do not follow upstream updates. To refresh one
 
 ## Adapted material
 
-`sketch-to-site`, `evolve-site`, `tweak-site` and `handover-check` are original work. Some of their rules, checklists and summaries are adapted from:
+`sketch-to-concept`, `sketch-to-site`, `evolve-site`, `tweak-site` and `handover-check` are original work. Some of their rules, checklists and summaries are adapted from:
 
 | Source | Copyright | What was adapted |
 |---|---|---|
-| [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | © 2026 Leonxlnx | Layout rules, anti-pattern lists, style-family notes and the full-output rules (from `taste-skill`, `soft-skill`, `minimalist-skill`, `brutalist-skill`, `gpt-tasteskill`, `stitch-skill`, `redesign-skill`, `output-skill`, `image-to-code-skill`) |
-| [alchaincyf/huashu-design](https://github.com/alchaincyf/huashu-design) | © 2026 alchaincyf (花叔 · 花生) | The three-directions workflow and references to its brand-asset protocol and style library |
+| [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | © 2026 Leonxlnx | Layout rules, anti-pattern lists, style-family notes and the full-output rules (from `taste-skill`, `soft-skill`, `minimalist-skill`, `brutalist-skill`, `gpt-tasteskill`, `stitch-skill`, `redesign-skill`, `output-skill`, `image-to-code-skill`). In `sketch-to-concept/references/concept-method.md`: the core-principle questions, industry-to-symbol table, tagline, colour-discipline and logo-concept notes (from `brandkit`), and the app design-bible checklist (from `imagegen-frontend-mobile`), rewritten in Vietnamese |
+| [alchaincyf/huashu-design](https://github.com/alchaincyf/huashu-design) | © 2026 alchaincyf (花叔 · 花生) | The three-directions workflow and references to its brand-asset protocol and style library. In `sketch-to-concept`: the three concept sources, the rule that directions differ in layout skeleton, the five form questions, the colour-derivation protocol and chroma table, the concept score from its critique guide, and the idea of an on-page tweak panel, rewritten in Vietnamese |
 | [keysjoao/laws-of-ux-skills](https://github.com/keysjoao/laws-of-ux-skills) | © 2026 keysjoao | The 12-point UX checklist, copied into `sketch-to-site/references/qa-gate.md` and `evolve-site/references/regression-qa.md` |
 | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | © 2024 Next Level Builder | Design-system lookup commands. `preflight.py` reads its Google Fonts data to check Vietnamese glyph coverage |
 
