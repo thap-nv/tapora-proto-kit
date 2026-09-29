@@ -1,6 +1,6 @@
 # Kiểm tổng trước bàn giao (skill handover-check). Chạy từ thư mục prototype (thư mục chứa _qa/):
 #   python _qa/handover.py run [--themes <theme1>,<theme2>]
-#       preflight + mọi bộ ở mọi theme trong qa.config.json (theme đầu có chụp ảnh) vào _qa/handover/<ngày-giờ>/,
+#       preflight + mọi bộ ở mọi theme trong qa.config.json (chụp ảnh ở mọi theme) vào _qa/handover/<ngày-giờ>/,
 #       so với _qa/last-green/, gán từng khác biệt cho một dòng trong _qa/current/ledger.jsonl.
 #       Thoát mã 1 khi có lỗi hoặc có khác biệt không gán được.
 #   python _qa/handover.py promote _qa/handover/<ngày-giờ>
@@ -41,7 +41,7 @@ def cmd_run(a):
             file_owner.setdefault(f, set()).add(i)
 
     bad, unattributed, attributed = [], [], {}
-    per_theme = {th: {'suites': 0, 'steps': 0, 'errors': 0, 'fails': 0, 'silent': 0, 'over': 0, 'changed': 0} for th in themes}
+    per_theme = {th: {'suites': 0, 'steps': 0, 'errors': 0, 'fails': 0, 'silent': 0, 'over': 0, 'cut': 0, 'changed': 0} for th in themes}
     new_suites, lost_suites = [], []
     for (th, name), r in sorted(res.items()):
         t = per_theme[th]
@@ -54,11 +54,12 @@ def cmd_run(a):
             new_suites.append(f'{th}/{name}')
         d = Q.diff_report(base, rep, name)
         t['suites'] += 1; t['steps'] += r['steps']; t['errors'] += r['errors']; t['fails'] += len(r['fails'])
-        t['silent'] += len(r['silent']); t['over'] += len(d['over_new']); t['changed'] += len(d['changed'])
+        t['silent'] += len(r['silent']); t['over'] += len(d['over_new']); t['cut'] += len(d['cut_new']); t['changed'] += len(d['changed'])
         bad += [f'console {th}/{name} · {x["step"]}: {Q.short(x["errors"][:2], 200)}' for x in rep if x['errors']]
         bad += [f'FAIL {th}/{name} · {Q.short(f, 200)}' for f in r['fails']]
         bad += [f'im lặng {th}/{name} · {s}' for s in r['silent']]
         bad += [f'tràn ngang {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}' for s in d['over_new']]
+        bad += [f'trong khung {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}: {c}' for s, c in d['cut_new']]
         # Bước mất hay bước mới chỉ sinh ra khi file bước đổi: gán cho lần sửa đã đổi file bước đó
         steps_file = '_qa/steps-' + next(s[2] for s in Q.run_all.SUITES if s[0] == name) + '.json'
         by_file = file_owner.get(steps_file, set())
@@ -80,10 +81,10 @@ def cmd_run(a):
                     lost_suites.append(f'{th}/{name}')
 
     print(f'Thư mục chạy: {os.path.relpath(out, Q.ROOT)}')
-    print(f'preflight: {pf_line}')
+    print(f'preflight: {pf_line}' + (f'  ({Q.shown(Q.PREFLIGHT)})' if Q.PREFLIGHT else ''))
     for th, t in per_theme.items():
         print(f'{th}: {t["suites"]} bộ · {t["steps"]} bước · console {t["errors"]} · FAIL {t["fails"]} · im lặng {t["silent"]} · '
-              f'tràn mới {t["over"]} · check đổi so với last-green {t["changed"]}')
+              f'tràn mới {t["over"]} · cắt mới {t["cut"]} · check đổi so với last-green {t["changed"]}')
     if green is None:
         print('Chưa có last-green: lần chạy này là mốc đầu, không có gì để so. Tràn ngang được liệt kê để xác nhận là cố ý.')
     else:
@@ -108,6 +109,8 @@ def cmd_run(a):
     print(f'\nLỗi ({len(bad)}):')
     for line in bad:
         print('  ' + line)
+    if any(t['cut'] for t in per_theme.values()):
+        print('Chữ tràn hoặc bị cắt trong khung: xem ảnh của bước đó. Cố ý (tràn lề, marquee, slide ló) thì gắn data-clip-ok vào khung.')
     Q.save_json(os.path.join(out, 'handover.json'), {'preflight': [pf_ok, pf_line], 'themes': per_theme, 'bad': bad,
                                                       'unattributed': unattributed, 'new_suites': new_suites, 'lost_suites': lost_suites})
     ok = pf_ok and not bad and not unattributed and not lost_suites

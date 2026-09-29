@@ -1,0 +1,59 @@
+<!doctype html>
+<!-- Trang tổng quan: mọi màn chính xếp cạnh nhau trong khung máy, màn nào cũng bấm được. Đổi iOS/Android ở góc trên.
+     Mẫu từ sketch-to-site/templates/mobile/overview.html. Đặt ở site/app/index.html; sửa SCREENS và <title>.
+     Các màn dùng chung store.js nên bấm ở một khung thì khung khác cập nhật theo. -->
+<html lang="vi" data-surface="overview" data-platform="ios">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Các màn app · Cà phê Mộc</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<script src="../assets/theme.js"></script>
+<style>
+  body { margin: 0; background: color-mix(in srgb, var(--ink) 7%, var(--bg)); color: var(--ink); font-family: system-ui, sans-serif; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 24px 32px 8px; }
+  h1 { margin: 0; font-size: 20px; font-weight: 600; }
+  .switch { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--line); }
+  .switch button { min-height: 36px; padding: 0 16px; border: 0; border-radius: 8px; background: none; color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
+  .switch button[aria-pressed="true"] { background: var(--surface, var(--bg)); font-weight: 600; }
+  .switch button:hover:not([aria-pressed="true"]) { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+  .switch button:focus-visible, figcaption a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  main { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 40px 36px; padding: 16px 32px 56px; }
+  figure { margin: 0; }
+  figcaption { margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+  figcaption a { color: inherit; }
+  .device { zoom: .62; width: 393px; height: 852px; overflow: hidden; border-radius: 54px;
+    box-shadow: 0 0 0 10px #1C1C1E, 0 0 0 11px color-mix(in srgb, var(--ink) 28%, #1C1C1E), 0 40px 80px -24px rgba(12, 12, 14, .45); }
+  [data-platform="android"] .device { width: 412px; height: 915px; border-radius: 34px; }
+  .device iframe { display: block; width: 100%; height: 100%; border: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cà phê Mộc · các màn app</h1>
+  <div class="switch" role="group" aria-label="Nền tảng">
+    <button type="button" data-p="ios">iOS</button><button type="button" data-p="android">Android</button>
+  </div>
+</header>
+<main id="screens"></main>
+<script>
+  // [file màn (không .html), tên hiển thị]: 4–6 màn chính, mỗi màn một chức năng lõi
+  const SCREENS = [['orders', 'Đơn hàng'], ['order', 'Chi tiết đơn', '?id=1042']];
+  const root = document.documentElement;
+  let saved = null;
+  try { saved = sessionStorage.getItem('app-platform'); } catch {}
+  const show = p => {
+    root.dataset.platform = p;
+    try { sessionStorage.setItem('app-platform', p); } catch {}
+    document.querySelectorAll('.switch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === p)));
+    document.getElementById('screens').innerHTML = SCREENS.map(([f, name, q = '']) => {
+      const src = `${f}.html${q ? q + '&' : '?'}platform=${p}`;
+      return `<figure><figcaption>${name} · <a href="${src}">mở riêng</a></figcaption>
+        <div class="device"><iframe src="${src}" title="${name}"></iframe></div></figure>`;
+    }).join('');
+  };
+  document.querySelectorAll('.switch button').forEach(b => b.addEventListener('click', () => show(b.dataset.p)));
+  show(saved === 'android' || saved === 'ios' ? saved : root.dataset.platform);
+</script>
+</body>
+</html>

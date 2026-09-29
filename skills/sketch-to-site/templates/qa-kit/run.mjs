@@ -38,6 +38,56 @@ function findBrowser() {
   }
   return null;
 }
+
+// Chạy trong trang ở mỗi bước. Bắt phần tràn nằm TRONG trang mà phép đo tràn ngang của cả trang không thấy, theo chiều ngang:
+//   chữ tràn ra ngoài hộp của nó (ô bảng, nút, thẻ bị ép hẹp: chữ đè lên ô bên cạnh);
+//   chữ hoặc nút bị khung overflow:hidden cắt mất một phần (bảng rộng hơn khung bo góc).
+// Bỏ qua: chữ có dấu ba chấm, phần tử ẩn, trong suốt hoặc 1px (.sr-only), phần tử nằm hẳn ngoài khung (ngăn kéo đang đóng, slide khác),
+// phần khuất trong khung cuộn ngang (overflow auto/scroll), và vùng gắn data-clip-ok (cố ý tràn lề, marquee, slide ló).
+function layoutCheck() {
+  const out = [], seen = new Set(), range = document.createRange();
+  const name = e => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
+  const label = e => (e.getAttribute('aria-label') || e.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 24);
+  const faded = e => { for (let p = e; p; p = p.parentElement) if (getComputedStyle(p).opacity === '0') return true; return false; };
+  // Hộp tí hon giấu phần tràn là .sr-only: bỏ qua. Hộp bị ép về 0 mà chữ vẫn hiện ra ngoài (cột lưới minmax(0, 1fr) hết chỗ) thì vẫn đo
+  const tiny = (w, h, s) => (w < 2 || h < 2) && s.overflowX !== 'visible';
+  const add = (e, msg) => { if (!seen.has(e) && !faded(e)) { seen.add(e); out.push(`${name(e)} "${label(e)}": ${msg}`); } };
+  for (const e of document.body.querySelectorAll('*')) {
+    if (out.length >= 8) break;
+    if (e.closest('[data-clip-ok], [aria-hidden="true"], [inert], svg, script, style, template, noscript')) continue;
+    const cs = getComputedStyle(e);
+    if (cs.display === 'none' || cs.display === 'contents' || cs.visibility !== 'visible') continue;
+    const r = e.getBoundingClientRect();
+    if ((!r.width && !r.height) || tiny(r.width, r.height, cs)) continue;
+    let lo = Infinity, hi = -Infinity;
+    for (const n of e.childNodes) {
+      if (n.nodeType !== 3 || !n.textContent.trim()) continue;
+      range.selectNodeContents(n);
+      for (const q of range.getClientRects()) if (q.width) { lo = Math.min(lo, q.left); hi = Math.max(hi, q.right); }
+    }
+    const text = hi > lo;
+    if (text && !/^(INPUT|TEXTAREA|SELECT|OPTION)$/.test(e.tagName)) {
+      // Chữ của phần tử inline thuộc hộp của khối gần nhất chứa nó
+      let box = e, bs = cs;
+      while (bs.display === 'inline' && box.parentElement) { box = box.parentElement; bs = getComputedStyle(box); }
+      const b = box === e ? r : box.getBoundingClientRect();
+      const over = Math.max(hi - (b.right - parseFloat(bs.borderRightWidth)), (b.left + parseFloat(bs.borderLeftWidth)) - lo);
+      if (over > 2 && !tiny(b.width, b.height, bs) && bs.textOverflow !== 'ellipsis') add(box, `chữ tràn khung ${Math.round(over)}px`);
+    }
+    if (text || e.matches('a[href], button, input:not([type=hidden]), select, textarea, [role=button], [role=tab]')) {
+      for (let p = e.parentElement; p && p !== document.documentElement; p = p.parentElement) {
+        const ox = getComputedStyle(p).overflowX;
+        if (ox === 'visible') continue;
+        if (ox !== 'hidden' && ox !== 'clip') break;
+        const pr = p.getBoundingClientRect();
+        if (tiny(pr.width, pr.height, getComputedStyle(p)) || r.right <= pr.left || r.left >= pr.right) break;
+        const cut = Math.max(r.right - pr.right, pr.left - r.left);
+        if (cut > 2) { add(e, `bị cắt ${Math.round(cut)}px (khung ${name(p)})`); break; }
+      }
+    }
+  }
+  return out;
+}
 const BROWSER = findBrowser();
 if (!BROWSER) { console.error('Không tìm thấy Edge, Chrome hay Chromium. Đặt biến QA_BROWSER hoặc khoá "browser" trong _qa/qa.config.json.'); process.exit(4); }
 
@@ -47,10 +97,25 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // Cổng đã có trình duyệt khác (thường là trình duyệt sót từ lần chạy trước) thì dừng hẳn: chạy tiếp là điều khiển nhầm trình duyệt đó
 try { await fetch(`http://127.0.0.1:${port}/json/version`); console.error(`Cổng ${port} đã có trình duyệt khác. Tắt trình duyệt còn sót (hồ sơ cdp-* trong thư mục tạm) rồi chạy lại.`); process.exit(3); } catch {}
 const prof = mkdtempSync(join(tmpdir(), 'cdp-'));
-const proc = spawn(BROWSER, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--remote-debugging-port=${port}`, `--user-data-dir=${prof}`, '--no-first-run', 'about:blank'], { stdio: 'ignore' });
+// Linux: /dev/shm của container thường chỉ 64 MB nên trình duyệt dễ sập; chạy bằng root (Docker, VPS) thì Chrome không khởi động nếu thiếu --no-sandbox.
+// QA_BROWSER_ARGS: cờ thêm cho trình duyệt, ví dụ "--no-sandbox" khi container không cho dùng sandbox dù không chạy bằng root
+const linux = process.platform === 'linux';
+const extraArgs = [...(linux ? ['--disable-dev-shm-usage'] : []), ...(linux && process.getuid?.() === 0 ? ['--no-sandbox'] : []),
+  ...(process.env.QA_BROWSER_ARGS || '').split(/\s+/).filter(Boolean)];
+const proc = spawn(BROWSER, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--remote-debugging-port=${port}`, `--user-data-dir=${prof}`, '--no-first-run', ...extraArgs, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+// Giữ phần cuối stderr của trình duyệt: không kết nối được thì in ra để biết lý do
+let berr = '';
+proc.stderr.on('data', d => { berr = (berr + d).slice(-2000); });
+proc.on('error', e => { berr += '\n' + e.message; });
 let target;
 for (let i = 0; i < 60 && !target; i++) { try { const l = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); target = l.find(t => t.type === 'page'); } catch {} await sleep(150); }
-if (!target) { console.error(`Không kết nối được trình duyệt ở cổng ${port}: ${BROWSER}`); proc.kill(); process.exit(2); }
+if (!target) {
+  const why = berr.trim().split('\n').filter(l => l.trim()).slice(-2).join(' | ').slice(-300);
+  console.error(`Không kết nối được trình duyệt ở cổng ${port}: ${BROWSER}` + (why ? `\n  ${why}` : ''));
+  proc.kill();
+  try { rmSync(prof, { recursive: true, force: true }); } catch {}
+  process.exit(2);
+}
 const ws = new WebSocket(target.webSocketDebuggerUrl);
 await new Promise(r => ws.addEventListener('open', r));
 let id = 0; const pend = new Map(); let errors = [];
@@ -67,6 +132,8 @@ await send('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, device
 // QA_QUERY: tham số thêm cho mọi bộ, ví dụ ?theme=dark để chạy lại các bộ trên một theme khác
 const extra = (process.env.QA_QUERY || '').replace(/^\?/, '');
 const qs = steps.query ? steps.query + (extra ? '&' + extra : '') : (extra ? '?' + extra : '');
+// Nền sáng/tối không theo máy đang chạy: ép prefers-color-scheme theo tham số của lần chạy (có theme=dark thì tối, còn lại sáng)
+await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: /[?&]theme=dark(&|$)/.test(qs) ? 'dark' : 'light' }] });
 await send('Page.navigate', { url: pathToFileURL(resolve(file)).href + qs });
 await sleep(2200);
 const report = [{ step: 'load', errors: errors.slice(), check: null, dims: null }];
@@ -76,8 +143,8 @@ for (const s of steps.steps) {
   await sleep(s.wait || 450);
   let val = null;
   if (s.check) { const r = await send('Runtime.evaluate', { expression: s.check, returnByValue: true }); val = r.result?.result?.value; }
-  const dims = (await send('Runtime.evaluate', { expression: 'JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth})', returnByValue: true })).result.result.value;
-  // QA_NOSHOT: bỏ chụp ảnh (quick.py, và các theme sau theme đầu của handover.py); bước vẫn chạy và vẫn kiểm như cũ
+  const dims = (await send('Runtime.evaluate', { expression: `JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,cut:(${layoutCheck})()})`, returnByValue: true })).result.result.value;
+  // QA_NOSHOT: bỏ chụp ảnh (quick.py); bước vẫn chạy và vẫn kiểm như cũ
   if (s.shot && !process.env.QA_NOSHOT) {
     const opt = { format: s.jpeg ? 'jpeg' : 'png' };
     if (s.jpeg) opt.quality = 82;

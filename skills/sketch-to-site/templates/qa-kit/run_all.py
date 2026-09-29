@@ -2,7 +2,7 @@
 # Chạy từ thư mục prototype (thư mục chứa _qa/):  python _qa/run_all.py <thư-mục-ra> [lọc]
 #   ví dụ: python _qa/run_all.py _qa/.recheck             (mọi bộ)
 #          python _qa/run_all.py _qa/.recheck cash        (chỉ các bộ có chữ "cash" trong tên)
-# In một dòng tóm tắt mỗi bộ: số bước, lỗi console, tràn ngang, bước FAIL, bước có check mà không trả giá trị.
+# In một dòng tóm tắt mỗi bộ: số bước, lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung, bước FAIL, bước có check mà không trả giá trị.
 # Bộ kiểm: [tên, trang, khoá file bước, khổ] trong "suites"; file bước là _qa/steps-<khoá>.json; khổ lấy từ "sizes".
 # Bước trả chuỗi bắt đầu bằng "FAIL" là lỗi. Bộ có tên bắt đầu bằng "scan" thì mọi chuỗi khác rỗng là lỗi (bộ quét chữ).
 import json, os, subprocess, sys
@@ -48,12 +48,13 @@ def run(s, out):
     has_check = {x['name'] for x in steps_def if x.get('check')}
     errs = sum(len(x['errors']) for x in rep)
     over = sum(1 for x in rep if x['dims'] and x['dims']['sw'] > x['dims']['cw'])
+    cut = sum(len(x['dims'].get('cut') or []) for x in rep if x['dims'])
     fails = [x['step'] for x in rep if isinstance(x.get('check'), str) and x['check'].startswith('FAIL')]
     # Bộ quét chữ trả chuỗi rỗng khi đạt; chuỗi khác rỗng là lỗi chữ
     if name.startswith('scan'):
         fails += [x['step'] + ': ' + x['check'] for x in rep if isinstance(x.get('check'), str) and x['check']]
     silent = [x['step'] for x in rep if x['step'] in has_check and x.get('check') is None]
-    return name, {'steps': len(rep) - 1, 'errors': errs, 'overflow': over, 'fails': fails, 'silent': silent}
+    return name, {'steps': len(rep) - 1, 'errors': errs, 'overflow': over, 'cut': cut, 'fails': fails, 'silent': silent}
 
 
 if __name__ == '__main__':
@@ -72,6 +73,6 @@ if __name__ == '__main__':
         if 'crash' in r:
             print(f'{name}: LỖI CHẠY {r["crash"]}')
         else:
-            print(f'{name}: {r["steps"]} bước · console {r["errors"]} · tràn {r["overflow"]} · FAIL {len(r["fails"])} {r["fails"] or ""} · im lặng {len(r["silent"])} {r["silent"] or ""}')
+            print(f'{name}: {r["steps"]} bước · console {r["errors"]} · tràn {r["overflow"]} · cắt {r["cut"]} · FAIL {len(r["fails"])} {r["fails"] or ""} · im lặng {len(r["silent"])} {r["silent"] or ""}')
     os.makedirs(out, exist_ok=True)
     json.dump(summary, open(os.path.join(out, 'summary.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)

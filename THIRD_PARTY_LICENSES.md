@@ -10,8 +10,8 @@ These skills are included in `skills/` so the kit works out of the box. Each fol
 |---|---|---|---|
 | `ui-ux-pro-max` | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | © 2024 Next Level Builder | Script paths in `SKILL.md` changed from `.claude/skills/ui-ux-pro-max/` to `<this-skill-dir>/`, with a note explaining the placeholder, so the skill works when installed as a plugin |
 | `laws-of-ux`, `laws-of-ux-checklist`, `laws-of-ux-review` | [keysjoao/laws-of-ux-skills](https://github.com/keysjoao/laws-of-ux-skills) | © 2026 keysjoao | None |
-| `design-taste-frontend` | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) (`skills/taste-skill`) | © 2026 Leonxlnx | None |
-| `high-end-visual-design`, `minimalist-ui`, `industrial-brutalist-ui`, `gpt-taste`, `stitch-design-taste`, `redesign-existing-projects`, `full-output-enforcement` | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill). Upstream folders: `soft-skill`, `minimalist-skill`, `brutalist-skill`, `gpt-tasteskill`, `stitch-skill`, `redesign-skill`, `output-skill` | © 2026 Leonxlnx | Folders renamed to match each skill's `name` field. Content unchanged |
+| `design-taste-frontend` | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) (`skills/taste-skill`) | © 2026 Leonxlnx | Reference-only: `disable-model-invocation: true` added to the frontmatter, and `agents/openai.yaml` added with `allow_implicit_invocation: false` |
+| `high-end-visual-design`, `minimalist-ui`, `industrial-brutalist-ui`, `gpt-taste`, `stitch-design-taste`, `redesign-existing-projects`, `full-output-enforcement` | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill). Upstream folders: `soft-skill`, `minimalist-skill`, `brutalist-skill`, `gpt-tasteskill`, `stitch-skill`, `redesign-skill`, `output-skill` | © 2026 Leonxlnx | Folders renamed to match each skill's `name` field. All except `redesign-existing-projects` are reference-only, with the same two additions as `design-taste-frontend`. Content otherwise unchanged |
 | `huashu-design` | [alchaincyf/huashu-design](https://github.com/alchaincyf/huashu-design) | © 2026 alchaincyf (花叔 · 花生) | Trimmed to the prototyping parts. See the list below |
 
 **`huashu-design` changes:**
@@ -22,6 +22,7 @@ These skills are included in `skills/` so the kit works out of the box. Each fol
   - demos, README files, `SECURITY.md`, `test-prompts.json` and the TTS `.env.example`.
 - `SKILL.md`:
   - The description, routing table, workflow, starter-component table and reference table no longer point at removed files.
+  - The description drops the prototype triggers (做原型, App原型, 做个HTML页面, UI mockup, 做个好看的) and sends website, web-app and iOS/Android app prototypes to `sketch-to-site` and `evolve-site`.
   - The self-update check against upstream is removed.
   - A note at the top says the copy is trimmed.
 - `references/design-styles.md` and `references/verification.md` no longer mention removed assets and scripts, and the `verify.py` path is relative.

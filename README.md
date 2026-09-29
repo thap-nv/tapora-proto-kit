@@ -1,6 +1,6 @@
 # Tapora Proto Kit
 
-Agent skills for building studio-grade, interactive HTML prototypes, from the first sketch to handover. The kit also keeps a prototype consistent as it grows, and checks it with a headless-browser regression kit.
+Agent skills for building studio-grade, interactive HTML prototypes of websites, web apps and iOS/Android apps, from the first sketch to handover. One prototype can cover a whole system, such as an admin web portal plus a customer app, with shared branding and shared data. The kit also keeps a prototype consistent as it grows, and checks it with a headless-browser regression kit.
 
 Works with **Claude Code**, **Codex**, and other hosts that support [Agent Skills](https://agentskills.io).
 
@@ -10,7 +10,7 @@ Works with **Claude Code**, **Codex**, and other hosts that support [Agent Skill
 
 | Skill | Use it when | What it does |
 |---|---|---|
-| `sketch-to-site` | You need a new website or web app prototype, from scratch | A 7-step flow with 5 decision gates. The agent builds 3 directions, then locks a design system with you. It builds the full prototype and checks it itself, then installs the QA kit and takes the first baseline. |
+| `sketch-to-site` | You need a new prototype from scratch: a website, a web app, an iOS/Android app, or a system with several surfaces | A 7-step flow with 5 decision gates. The agent builds 3 directions, then locks a design system with you. It builds the full prototype and checks it itself, then installs the QA kit and takes the first baseline. App screens follow iOS or Android conventions, show in a phone frame on a computer and full-screen on a phone, and switch between iOS and Android with `?platform=android`. |
 | `evolve-site` | You add, change or remove a feature in an existing prototype | It sizes the change (levels 0–3) and flags risks: permissions, data, logic, requirements, tokens, shared code. The level and flags decide which of the 3 gates to stop at. It reuses the existing design system and data contract, so the new part looks like it shipped on day one. |
 | `tweak-site` | The change is small: copy, spacing, one component, no risk flag | No questions and no baseline run. It runs the quick check, then writes one log line. Anything bigger goes to `evolve-site`. |
 | `handover-check` | Before you hand over, share a link or commit | Runs every suite on every theme once, and matches every difference to a logged change. Also runs a 12-point UX check on the screens you touched and updates the docs once. After your sign-off, it sets the new baseline. |
@@ -24,6 +24,8 @@ Works with **Claude Code**, **Codex**, and other hosts that support [Agent Skill
 | Layout and style families | `design-taste-frontend`, `high-end-visual-design`, `minimalist-ui`, `industrial-brutalist-ui`, `gpt-taste` | Layout rules and deeper reading per style family |
 | References and templates | `stitch-design-taste`, `redesign-existing-projects`, `full-output-enforcement` | `DESIGN.md` template, auditing an old site, complete code output |
 | Brand and directions | `huashu-design` (trimmed) | Brand-asset protocol, three-directions workflow, 60-style library, device frames. Slides, animation, video and audio were removed. |
+
+The five layout and style skills, `stitch-design-taste` and `full-output-enforcement` are **reference-only**. The agent reads them when the main skills need them, but never picks them on its own. This keeps them from competing with `sketch-to-site` for requests like "make a landing page". You can still call one yourself, for example `/tapora-proto-kit:minimalist-ui` in Claude Code or `$minimalist-ui` in Codex.
 
 ## How the pieces fit
 
@@ -46,7 +48,7 @@ The expensive checks run **once before handover**, not after every edit. After e
 - Claude Code, Codex, or another Agent Skills host
 - Python 3.8+ (standard library only)
 - Node.js 20+. Node 20 needs `--experimental-websocket`, and the kit adds it automatically.
-- Microsoft Edge, Google Chrome or Chromium. The kit finds it on Windows, macOS and Linux; override with the `QA_BROWSER` environment variable.
+- Microsoft Edge, Google Chrome or Chromium. The kit finds it on Windows, macOS and Linux; override with the `QA_BROWSER` environment variable. For Linux servers and containers, see Troubleshooting under [The QA kit](#the-qa-kit).
 - Internet access for Google Fonts and the CDNs the prototypes use
 
 ## Install
@@ -120,8 +122,8 @@ Keep the folders side by side. `sketch-to-site` calls `ui-ux-pro-max` and its ow
 
 ## Quick start
 
-1. Ask for a prototype, for example *"Thiết kế website cho một quán cà phê, dùng sketch-to-site"*. Answer the 5 gates.
-2. After you sign off, the prototype folder (default `docs/prototypes/<slug>/`) contains `site/`, `DESIGN.md`, `DECISIONS.md` and `_qa/` with the first baseline.
+1. Ask for a prototype, for example *"Thiết kế website cho một quán cà phê, dùng sketch-to-site"* or *"Thiết kế hệ thống đặt món: admin web cho quán và app iOS/Android cho khách"*. Answer the 5 gates.
+2. After you sign off, the prototype folder (default `docs/prototypes/<slug>/`) contains `site/`, `DESIGN.md`, `DECISIONS.md` and `_qa/` with the first baseline. With an app, `site/app/index.html` shows every main screen side by side in phone frames, with an iOS/Android switch.
 3. Ask for changes in plain words. The agent routes small edits to `tweak-site` and features to `evolve-site`.
 4. Before you share or commit, ask for a handover check (*"kiểm tổng trước bàn giao"*).
 
@@ -144,21 +146,21 @@ python _qa/handover.py promote _qa/handover/<date-time>
 |---|---|---|
 | `python _qa/quick.py --note "<what changed>"` | After every change | Runs preflight and the suites of pages that load the changed files, without screenshots. Compares against `_qa/current/`. If the run is clean, it saves the result and appends a line to `ledger.jsonl`. |
 | `python _qa/quick.py --dry` | Any time | Shows the changed files and the suites that would run |
-| `python _qa/handover.py run` | Before handover | Runs every suite on every theme, with screenshots on the first theme. Compares against `_qa/last-green/` and matches each difference to a ledger line. |
+| `python _qa/handover.py run` | Before handover | Runs every suite on every theme, with screenshots on every theme. Compares against `_qa/last-green/` and matches each difference to a ledger line. |
 | `python _qa/handover.py promote _qa/handover/<date-time>` | After sign-off | Makes that run the new baseline and starts a fresh ledger |
 | `python _qa/handover.py thumbs` | Before `run`, when overview screenshots changed | Re-captures the thumbnails listed in `thumbs` |
 | `python _qa/run_all.py <out> [filter]` | Debugging | Runs suites without any baseline |
 | `python _qa/compare.py <a> <b>` | Debugging | Compares two runs step by step |
 
-A run is clean when it has 0 console errors, 0 failed steps, 0 silent steps and 0 new horizontal overflows, and preflight passes. A step is silent when it has a `check` but returns no value.
+A run is clean when it has 0 console errors, 0 failed steps, 0 silent steps, 0 new horizontal overflows and 0 new clipped items, and preflight passes. A step is silent when it has a `check` but returns no value.
 
 **Configuration: `_qa/qa.config.json`**
 
 | Key | Meaning |
 |---|---|
 | `site` | Folder with the pages, relative to the prototype folder (default `site`) |
-| `pages` | HTML page names without `.html` |
-| `themes` | `{name: "?url-param"}`. The first theme is the default. Other themes are checked by `handover.py`, and by `quick.py` when a `.css` file changes. |
+| `pages` | HTML page names without `.html`, relative to `site`. Pages in subfolders keep the folder, for example `admin/orders` or `app/home` |
+| `themes` | `{name: "?url-param"}`. The first theme is the default. Other themes are checked by `handover.py`, and by `quick.py` when a `.css` file changes. `qa_init.py` adds `light` and `dark` when the site has a dark theme. For an app built for both platforms, add `"android": "?platform=android"`. |
 | `sizes` | Named viewports `[width, height, mobile]` |
 | `suites` | `[name, page, steps-key, size]`. Steps are read from `_qa/steps-<steps-key>.json`. |
 | `noisy` | `[suite, step]` pairs whose value changes between runs by design, such as a live clock. They are ignored when comparing. |
@@ -176,13 +178,37 @@ A run is clean when it has 0 console errors, 0 failed steps, 0 silent steps and 
 ]}
 ```
 
-A `check` that returns a string starting with `FAIL` is a failure. For suites whose name starts with `scan`, any non-empty string is a failure. The runner records console errors and page overflow for every step automatically.
+A `check` that returns a string starting with `FAIL` is a failure. For suites whose name starts with `scan`, any non-empty string is a failure. The runner records console errors, page overflow and clipped items for every step automatically.
+
+`qa_init.py` creates one smoke suite per page at 1440, 768 and 390 px. App screens get 1440 and 390 only, because at 768 they still sit in the phone frame.
+
+- **Clipped items** are overflow that stays inside the page, so the page-level overflow check cannot see it:
+  - text that spills out of its own box, such as a squeezed table cell or a narrow button;
+  - text or a control partly cut off by an `overflow: hidden` container, such as a table wider than its rounded card.
+
+  Elements that are hidden, fully outside their container, or inside a horizontal scroller are skipped. Mark intentional cases, such as bleeding type, marquees or a peeking slide, with `data-clip-ok` on the container.
+- **Light and dark.** The runner sets `prefers-color-scheme` from the run's URL: `theme=dark` means dark, anything else means light. Screenshots never follow the dark mode of the machine that runs the QA. For sites that switch themes with `data-theme`, copy `sketch-to-site/templates/theme.js` into `assets/`. It handles `?theme=light`, `?theme=dark` and `?theme=system`, and remembers the choice made with `theme.toggle()`.
+- **Pages that need a URL parameter.** A detail page that reads `?id=` shows only "not found" without one. Declare a sample in `<head>`, for example `<meta name="qa-query" content="?id=1042">`. `qa_init.py` copies it into the smoke suite's `query`, and warns about pages that read parameters without a sample.
+
+For app screens (`<html data-surface="app">`), `qa_init.py` adds a `tap-targets` step to the smoke suite. At 390 px it fails when a control is smaller than 44 px on iOS or 48 px on Android. At 1440 px the screen sits in a scaled-down phone frame, so the step is skipped there.
 
 **Troubleshooting**
 
+- Exit code 2 means the browser started but did not answer. The message ends with the browser's last error line. To pass extra flags to the browser, set `QA_BROWSER_ARGS`, for example `QA_BROWSER_ARGS="--no-sandbox"`.
 - Exit code 3 means another browser already holds the debugging port. Close the leftover headless browsers (their profiles are named `cdp-*` in the temp folder) and run again.
 - Exit code 4 means no browser was found. Set `QA_BROWSER`.
+- **Linux servers and containers** (Docker, Codespaces, VPS):
+  - Debian: `apt-get install -y chromium`.
+  - Ubuntu: the `chromium` and `chromium-browser` apt packages only install a snap, and snaps do not run in containers. Install Playwright's build instead, then point `QA_BROWSER` at it:
+
+    ```bash
+    npx playwright install --with-deps chromium
+    export QA_BROWSER="$(find ~/.cache/ms-playwright -type f -name chrome | head -1)"
+    ```
+
+  - On Linux the kit always adds `--disable-dev-shm-usage`, because containers often have a 64 MB `/dev/shm`. When it runs as root, it also adds `--no-sandbox`, because Chrome refuses to start as root without it. If a container blocks the sandbox for a non-root user, set `QA_BROWSER_ARGS="--no-sandbox"`.
 - `preflight: BỎ QUA` means `preflight.py` was not found, so preflight was skipped. Set `QA_PREFLIGHT` or the `preflight` key in the config.
+- `handover.py` prints the path of the `preflight.py` it used, and `quick.py` prints it at the top. The kit prefers the copy in the skill that installed it, which is recorded in `_qa/.kit-source` (git-ignored). This matters when several copies of the kit are installed, for example a repo checkout and an older plugin. `QA_PREFLIGHT` and the `preflight` key still take priority.
 
 ## Maintaining this repository
 
@@ -195,6 +221,10 @@ A `check` that returns a string starting with `FAIL` is a failure. For suites wh
   - The 12-point UX table: `sketch-to-site/references/qa-gate.md` §3 and `evolve-site/references/regression-qa.md` group F.
   - The quality floor and full-output rules: `sketch-to-site` §2–3 and `evolve-site` §2.
   - The dependency list: `sketch-to-site` §9 and `DEPS` in `preflight.py`.
+  - The shared data store: `sketch-to-site/templates/store.js`, `rules-and-conflicts.md` §D.5, and `evolve-site` §2 law 2.
+  - The theme parameter: `?theme=` in `sketch-to-site/templates/theme.js`, the `prefers-color-scheme` rule in `run.mjs`, and the themes that `qa_init.py` generates.
+  - The minimum tap sizes (44 on iOS, 48 on Android): `--tap` in `sketch-to-site/templates/mobile/app.css`, `TAP_CHECK` in `qa_init.py`, and `mobile-app.md` §2 and §4.
+  - The reference-only list: each skill's `disable-model-invocation` flag and `agents/openai.yaml`, the note at the top of `sketch-to-site`, the note under the `evolve-site` §4 table, and the paragraph under "Bundled supporting skills" in this README.
 - **Bundled third-party skills are frozen copies.** They do not follow upstream updates. To refresh one, replace its folder, keep its `LICENSE`, and re-apply the changes listed in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). `huashu-design` is trimmed, so refreshing it also means removing the slide, animation, video and audio parts again.
 - **QA kit changes.** Test on a small sample site with `qa_init.py`: run `handover.py run`, `promote`, then edit one file and run `quick.py`. Existing projects upgrade with `qa_init.py <dir> --update`, which replaces the scripts but not the config, steps or baselines.
 - **Releases.** Bump `version` in both `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`, then add an entry to [CHANGELOG.md](CHANGELOG.md).

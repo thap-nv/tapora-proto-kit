@@ -6,6 +6,8 @@ description: >-
 
 # Evolve Site · Mở rộng & Cập nhật Prototype có sẵn
 
+> **v1.6 (29/09/2026)** · Màn app mobile và hệ thống nhiều bề mặt: B1 nhận màn app, B2 có mẫu tích hợp cho app, thêm bề mặt là Cấp 3. Prototype có `assets/store.js`: đổi cấu trúc bản ghi thì tăng phiên bản `KEY` *(luật 2)*. `design-taste-frontend` đọc theo đường dẫn *(mục 4)*.
+>
 > **v1.5 (28/09/2026)** · Bớt kiểm lặp ở việc nhỏ:
 > - Cấp 0 và Cấp 1 không cờ chuyển sang `tweak-site` *(mục 1.3)*.
 > - Dùng mốc cuốn chiếu thay cho chạy mốc trước khi sửa *(B1)*.
@@ -51,7 +53,7 @@ Skill này có tối đa **3 CỔNG QUYẾT ĐỊNH (🛑)**. Phải đi bao nhi
 | 🟢 **0 · Vi chỉnh** | Chỉ đổi **cách hiển thị**; không đổi hành vi, dữ liệu, quyền hay nghĩa. **Không dính cờ nào.** | Sửa lỗi chính tả, câu chữ không đổi nghĩa · chỉnh khoảng cách · đổi màu, icon sang token và bộ icon sẵn có mà **không đổi nghĩa trạng thái** · chỉnh style của trạng thái đã có *(hover, focus, disabled)* | **0** |
 | 🟡 **1 · Cục bộ** | Thêm, sửa hoặc bỏ **một thành phần** trong một màn, không mở lớp mới | Thêm nút trên dòng · thêm hoặc bỏ cột · thêm bộ lọc · đổi thứ tự trường trong form | **1** *(Cổng 3)*, thêm 🛑1 rút gọn nếu có cờ cần hỏi |
 | 🟠 **2 · Lớp phủ, luồng con** | Thêm, sửa hoặc bỏ lớp nổi hay luồng nhiều bước **trong trang** | Modal · drawer · popover · wizard trong trang | **3** |
-| 🔴 **3 · Cấu trúc** | Thêm hoặc bỏ **trang**, đổi điều hướng chính | Trang `.html` mới · tab hoặc mục menu chính · wizard tách thành trang riêng | **3**, cộng lối vào ở **mọi trang** |
+| 🔴 **3 · Cấu trúc** | Thêm hoặc bỏ **trang**, đổi điều hướng chính, thêm **bề mặt** | Trang `.html` mới · tab hoặc mục menu chính · wizard tách thành trang riêng · thêm app mobile cho prototype admin có sẵn | **3**, cộng lối vào ở **mọi trang** |
 
 **Phân cấp:**
 - Phân vân giữa hai cấp → lấy **cấp cao hơn**.
@@ -112,6 +114,7 @@ Cấp <n> · cờ: <Q, L… | không> · vì <một dòng lý do>
    * Đọc kỹ file data (ví dụ `assets/data.js`, `app.js` hoặc store toàn cục).
    * Dùng đúng các hàm helper sẵn có (ví dụ: `store.get()`, một hàm `today()` đã gộp và lọc dữ liệu theo ngữ cảnh, `formatMoney()`). Cấm đọc tắt hoặc bỏ qua logic nghiệp vụ đã đóng gói.
    * Mở rộng dữ liệu theo nguyên tắc **bổ sung trường (additive)**, không được xoá hoặc đổi tên trường cũ làm gãy các trang khác. Cần đổi hoặc bỏ trường đang dùng: đó là cờ D, hỏi trước.
+   * Prototype dùng `assets/data.js` + `assets/store.js` *(khuôn `sketch-to-site/templates/store.js`)*: thêm bộ dữ liệu mới vào `SEED` là đủ, store tự bổ sung. Đổi cấu trúc bản ghi đã có *(cờ D được duyệt)* thì **tăng phiên bản trong `KEY`**, không thì trình duyệt đã mở prototype trước đó vẫn giữ dữ liệu cũ. Prototype chưa có store mà cần dữ liệu xuyên trang: đề xuất thêm theo `sketch-to-site/references/rules-and-conflicts.md` D.5, tính là cờ C.
 3. **Double Exit Rule (Thoát hiểm hai chiều):**
    * Mọi modal, drawer, popup hoặc màn hình con mở ra **phải luôn có ít nhất 2 cách để thoát ra**: nút Đóng/Huỷ (`X` / `Huỷ bỏ`) VÀ bấm ra ngoài (backdrop click) hoặc nhấn phím `Esc`.
    * Khi đóng, focus bàn phím phải quay lại đúng phần tử đã kích hoạt nó.
@@ -151,7 +154,9 @@ B1 Hấp thụ DNA · phân cấp · dò cờ · khai báo · lưu mốc
   * Đọc `DESIGN.md` hoặc kiểm tra `:root` trong `<style>`: bảng màu, font, radius, spacing.
   * Đọc ghi chú kiến trúc của prototype và dự án (README, file ghi chú của prototype, `CLAUDE.md`, cấu trúc `assets/`). Ghi chú có mục *bẫy* hay *đừng làm* thì đọc kỹ: đó là chỗ bản cũ đã vấp.
   * Xác định bộ icon đang nạp trong `<head>` (Phosphor, Lucide, SVG nội dòng...).
-  * Đọc cơ chế lưu trữ dữ liệu (LocalStorage, In-memory object `DATA`, Store pub/sub).
+  * **Màn app mobile** *(`<html data-surface="app">`)*: đọc `sketch-to-site/references/mobile-app.md`, ghi nền tảng đang làm *(`data-platform`, theme `android` trong `_qa/qa.config.json`)*. Phần mới theo quy ước của **mọi** nền tảng đang làm.
+  * **Thêm bề mặt mới** *(ví dụ app cho khách bên cạnh admin có sẵn)*: Cấp 3. Dựng theo `mobile-app.md` mục 1 và 6: token của bản cũ tách ra `assets/tokens.css` dùng chung *(cờ C)*, dữ liệu đi qua store chung, thêm bảng luồng xuyên bề mặt vào `DESIGN.md`.
+  * Đọc cơ chế lưu trữ dữ liệu (LocalStorage, In-memory object `DATA`, Store pub/sub; prototype dựng bằng `sketch-to-site` từ v2.3 dùng `assets/data.js` + `assets/store.js`).
 - **Đối chiếu nguồn yêu cầu**, dạng nào cũng được: PRD, user story, ticket, use case, business rule, acceptance criteria, brief thiết kế, biên bản họp. Tìm theo từ khoá **và** theo màn hình, không chỉ theo mã. Ghi lại tính năng phục vụ yêu cầu nào.
   * Không tìm thấy, hoặc thấy nó **trái** nguồn → **cờ Y**, không tự dựng.
   * Dự án **không có** tài liệu yêu cầu nào → câu lệnh của người dùng là nguồn; ghi rõ vậy ở báo cáo. Cờ Y không áp.
@@ -187,7 +192,7 @@ Sau khi người dùng trả lời: Ghi nhận vào `FEATURE-DECISIONS.md`.
 
 > ⚡ **Cấp 0–1:** bỏ bước này và Cổng 2. Cần thứ DNA chưa có thì đó là cờ T, hỏi ở 🛑1 rút gọn.
 
-Tra cứu hướng dẫn tại `references/integration-patterns.md`. Chọn 2 phương án bố cục phù hợp nhất:
+Tra cứu hướng dẫn tại `references/integration-patterns.md`. **Màn app mobile** chọn từ bảng mục 3 của file đó *(sheet, màn đi sâu, luồng toàn màn, alert)*, không dùng drawer hay modal kiểu web. Chọn 2 phương án bố cục phù hợp nhất:
 1. **Tại chỗ (Inline / Expandable):** Thao tác nhanh, không muốn gián đoạn việc quan sát bảng/danh sách.
 2. **Ngăn trượt (Drawer / Slide-over):** Thao tác vừa phải, cần đối chiếu dữ liệu nền, form từ 4–10 trường.
 3. **Hộp thoại (Modal Dialog):** Xác nhận hành động nguy hiểm, form ngắn (< 5 trường), tác vụ tập trung cao độ.
@@ -291,6 +296,8 @@ Hỏi:
 | 🟡 **Song hành** | `handover-check` | B4 | Kiểm tổng một lần trước bàn giao; nhận các bước Cấp 1 được dồn sang. |
 
 `full-output-enforcement` và `laws-of-ux-checklist` **không cần chép kèm**: phần dùng được đã chép vào mục 2 luật 4 và `references/regression-qa.md` nhóm F.
+
+`design-taste-frontend` là skill tham chiếu, đã tắt tự kích hoạt: mở `<skills>/design-taste-frontend/SKILL.md` bằng công cụ đọc file *(`<skills>` là thư mục cha của thư mục chứa SKILL.md này)*, không gọi qua công cụ Skill. File dài khoảng 87 KB: tìm dòng tiêu đề của mục cần *(`grep -n "^#.* 4\.7 "`)* rồi chỉ đọc đoạn ấy.
 
 ---
 

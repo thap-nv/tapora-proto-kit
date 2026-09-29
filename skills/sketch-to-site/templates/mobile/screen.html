@@ -1,0 +1,80 @@
+<!doctype html>
+<!-- Màn gốc của một tab. Mẫu từ sketch-to-site/templates/mobile/screen.html; màn đi sâu (chi tiết, form) theo detail.html.
+     Đặt ở site/app/<tên-màn>.html. Đổi: data-platform (nền tảng mặc định), <title>, data-tab, nội dung .app-body, các tab.
+     data-surface="app" báo cho preflight.py và qa_init.py đây là màn app: kiểm viewport-fit, kiểm vùng chạm. -->
+<html lang="vi" data-surface="app" data-platform="ios">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Đơn hàng · Cà phê Mộc</title>
+<!-- Font: font thương hiệu nếu DESIGN.md có (đặt --brand-font trong tokens.css). Không có thì font nền tảng: Inter thay SF Pro khi xem trên máy không phải Apple, Roboto cho Android -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<link rel="stylesheet" href="../assets/tokens.css">
+<script src="../assets/tw.js"></script>
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="../assets/app.css">
+<script src="../assets/app.js"></script>
+</head>
+<body data-tab="orders">
+<div class="app">
+  <header class="app-nav">
+    <div class="app-title" aria-hidden="true">Đơn hàng</div>
+    <div class="app-nav-end">
+      <button class="app-icon-btn" data-sheet-open="filter" aria-label="Lọc đơn"><i class="ph ph-funnel-simple"></i></button>
+    </div>
+  </header>
+
+  <main class="app-body">
+    <h1 class="app-large-title">Đơn hàng</h1>
+    <p class="app-section" id="count"></p>
+    <ul class="app-list" id="orders" aria-labelledby="count"></ul>
+    <p class="px-4 py-10 text-center text-muted" id="empty" hidden>Chưa có đơn nào ở trạng thái này. Đổi bộ lọc để xem đơn khác.</p>
+  </main>
+
+  <!-- 3–5 tab. Màn nào trong cùng tab thì giữ nguyên thanh này; luồng toàn màn (thanh toán, soạn mới) thì bỏ -->
+  <nav class="app-tabs" aria-label="Điều hướng chính">
+    <a href="home.html" data-tab="home"><i class="ph ph-house"></i><span>Trang chủ</span></a>
+    <a href="menu.html" data-tab="menu"><i class="ph ph-coffee"></i><span>Thực đơn</span></a>
+    <a href="orders.html" data-tab="orders"><i class="ph ph-receipt"></i><span>Đơn hàng</span></a>
+    <a href="account.html" data-tab="account"><i class="ph ph-user-circle"></i><span>Tài khoản</span></a>
+  </nav>
+
+  <div class="app-sheet" id="filter" role="dialog" aria-modal="true" aria-labelledby="filter-title">
+    <div class="app-sheet-panel">
+      <div class="app-sheet-grab" aria-hidden="true"></div>
+      <h2 id="filter-title" class="text-lg font-semibold mb-3">Lọc đơn</h2>
+      <ul class="app-list mb-4" style="margin:0 0 16px">
+        <li><label class="app-row"><span>Chỉ đơn đang giao</span><span class="app-row-end"><input type="checkbox" class="app-switch" id="only-active"></span></label></li>
+      </ul>
+      <button class="app-btn" data-sheet-close>Xong</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/data.js"></script>
+<script src="../assets/store.js"></script>
+<script>
+  // Vẽ từ store (rules-and-conflicts.md D.5): đơn tạo ở màn khác hay ở trang quản trị đều hiện ở đây
+  const money = n => n.toLocaleString('vi-VN') + ' ₫';
+  const onlyActive = document.getElementById('only-active');
+  const draw = () => {
+    const all = store.get('orders') || [];
+    const list = onlyActive.checked ? all.filter(o => o.status === 'Đang giao') : all;
+    document.getElementById('count').textContent = `${list.length} đơn`;
+    document.getElementById('empty').hidden = list.length > 0;
+    document.getElementById('orders').innerHTML = list.map(o => `
+      <li><a class="app-row" href="order.html?id=${o.id}">
+        <span class="min-w-0"><span class="block font-medium truncate">${o.items}</span>
+          <span class="block text-sm text-muted">#${o.id} · ${o.status}</span></span>
+        <span class="app-row-end tabular-nums">${money(o.total)}<i class="ph ph-caret-right" data-only="ios"></i></span>
+      </a></li>`).join('');
+  };
+  onlyActive.addEventListener('change', draw);
+  store.on(draw);
+  draw();
+</script>
+</body>
+</html>

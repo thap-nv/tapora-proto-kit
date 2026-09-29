@@ -3,6 +3,8 @@
 
 Cách dùng:
     python preflight.py <file.html | thư-mục> [...] [--kind site|app]
+    python preflight.py <thư-mục> --save _qa/truoc/preflight.json      # lưu mốc trước khi sửa (evolve-site B1)
+    python preflight.py <thư-mục> --compare _qa/truoc/preflight.json   # chỉ in lỗi mới so với mốc (evolve-site B4)
     python preflight.py --font "Be Vietnam Pro" "Outfit"
     python preflight.py --selftest
     python preflight.py --deps          # skill phụ thuộc có đủ chưa (SKILL.md mục 9)
@@ -12,8 +14,11 @@ Chỉ dùng thư viện chuẩn. Duyệt thư mục bằng os.walk, không glob 
 dấu [ ] như "[Tool]" làm glob trả rỗng mà không báo gì).
 """
 import argparse
+import collections
+import contextlib
 import csv
 import io
+import json
 import math
 import os
 import re
@@ -136,6 +141,8 @@ class PageParser(HTMLParser):
         self.eyebrows = []       # line
         self.html_lang = False
         self.viewport = False
+        self.viewport_content = ""
+        self.surface = ""        # data-surface của <html>: "app" là màn app mobile (references/mobile-app.md)
         self.stack = []
         self.candidate = None    # (tag, depth, line)
         self.pending = None      # line của eyebrow vừa đóng, chờ xem thẻ kế là heading
@@ -151,8 +158,11 @@ class PageParser(HTMLParser):
             self.skip += 1
         if tag == "html" and a.get("lang"):
             self.html_lang = True
+        if tag == "html":
+            self.surface = (a.get("data-surface") or "").lower()
         if tag == "meta" and (a.get("name") or "").lower() == "viewport":
             self.viewport = True
+            self.viewport_content = a.get("content") or ""
         if tag == "section":
             self.sections += 1
         if tag == "img":
@@ -192,8 +202,12 @@ def font_names(src):
         for part in re.findall(r"family=([^&]+)", q):
             for fam in part.split("|"):
                 names.add(("google", unquote_plus(fam.split(":")[0]).strip()))
-    for m in re.finditer(r"font-family\s*:\s*((?:\"[^\"]*\"|'[^']*'|[^;}\"'<>])+)", src):
-        for fam in m.group(1).split(","):
+    # Chuỗi trong ngoặc không được vượt < >: style="font-family:system-ui" không có ; thì dấu " đóng thuộc tính
+    # không được ghép với dấu " kế tiếp trong HTML thành một "tên font"
+    for m in re.finditer(r"font-family\s*:\s*((?:\"[^\"<>]*\"|'[^'<>]*'|[^;}\"'<>])+)", src):
+        # var(--x, dự phòng) không phải tên font: bỏ cả cụm, kể cả var lồng nhau, trước khi tách theo dấu phẩy
+        value = re.sub(r"var\([^)]*\)+", "", m.group(1))
+        for fam in value.split(","):
             names.add(("css", fam.strip().strip("'\"").strip()))
     for m in re.finditer(r"fontFamily\s*:\s*\{([^}]*)\}", src):
         for a, b in re.findall(r"'([^']*)'|\"([^\"]*)\"", m.group(1)):   # ['"Be Vietnam Pro"', 'system-ui']
@@ -271,7 +285,15 @@ def check_file(path, kind, fonts, seen_assets):
     if not p.viewport:
         add("P10", ERROR, 1, "Thiếu <meta name=\"viewport\">")
 
-    if kind == "site":
+    app_screen = p.surface == "app"
+    if app_screen and p.viewport:
+        vp = p.viewport_content.lower().replace(" ", "")
+        if "viewport-fit=cover" not in vp:
+            add("P16", WARN, 1, "Màn app thiếu viewport-fit=cover trong viewport: safe-area không chạy trên iPhone thật", p.viewport_content)
+        if re.search(r"user-scalable=(no|0)|maximum-scale=1(\.0*)?(,|$)", vp):
+            add("P17", WARN, 1, "Màn app chặn phóng to; người nhìn kém không phóng được", p.viewport_content)
+
+    if kind == "site" and not app_screen:            # eyebrow là luật của site giới thiệu, không áp cho màn app
         limit = max(1, math.ceil(max(p.sections, 1) / 3))
         if len(p.eyebrows) > limit:
             add("P11", WARN, p.eyebrows[limit], f"Eyebrow {len(p.eyebrows)} cái > trần {limit} (= ⌈{p.sections} section / 3⌉)")
@@ -305,6 +327,14 @@ def collect(paths):
     return files
 
 
+def shown(path):
+    # Đường dẫn tương đối cho gọn. Windows: file khác ổ đĩa với thư mục hiện tại thì relpath lỗi, in đường dẫn đầy đủ
+    try:
+        return os.path.relpath(path)
+    except ValueError:
+        return os.path.abspath(path)
+
+
 def run(paths, kind, quiet=False):
     fonts = load_fonts()
     files = collect(paths)
@@ -324,11 +354,65 @@ def run(paths, kind, quiet=False):
         for path, line, code, level, msg, snip in sorted(findings, key=lambda x: (x[0], x[1], x[2])):
             snip = " ".join(str(snip).split())
             tail = f"  «{snip}»" if snip else ""
-            print(f"{os.path.relpath(path)}:{line}  {code}  {level:8}  {msg}{tail}")
+            print(f"{shown(path)}:{line}  {code}  {level:8}  {msg}{tail}")
         n_err = sum(1 for x in findings if x[3] == ERROR)
         n_warn = len(findings) - n_err
         print(f"\n{len(files)} file · {n_err} lỗi · {n_warn} cảnh báo · kiểu kiểm: {kind}")
     return (1 if any(x[3] == ERROR for x in findings) else 0), findings
+
+
+def base_dir(paths):
+    ab = [os.path.abspath(p) for p in paths]
+    try:
+        d = os.path.commonpath(ab)
+    except ValueError:                                  # khác ổ đĩa: không có gốc chung
+        return None
+    return d if os.path.isdir(d) else os.path.dirname(d)
+
+
+def finding_key(x, base):
+    # Khớp theo file + mã + đoạn trích, bỏ số dòng: sửa file làm dòng xê dịch mà lỗi cũ vẫn là lỗi cũ
+    path, _, code, _, _, snip = x
+    try:
+        rel = os.path.relpath(os.path.abspath(path), base) if base else os.path.abspath(path)
+    except ValueError:
+        rel = os.path.abspath(path)
+    return rel.replace("\\", "/"), code, " ".join(str(snip).split())
+
+
+def save_baseline(paths, findings, out):
+    base = base_dir(paths)
+    rows = [dict(zip(("file", "code", "snip"), finding_key(x, base)), level=x[3], msg=x[4]) for x in findings]
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    with open(out, "w", encoding="utf-8") as fh:
+        json.dump(sorted(rows, key=lambda r: (r["file"], r["code"], r["snip"])), fh, ensure_ascii=False, indent=1)
+    n_err = sum(1 for r in rows if r["level"] == ERROR)
+    print(f"Đã lưu mốc: {len(rows)} mục ({n_err} lỗi có sẵn) → {out}")
+
+
+def compare_baseline(paths, kind, baseline, quiet=False):
+    # Chỉ in mục MỚI so với mốc; thoát mã 1 khi có lỗi mới. Lỗi cũ không tính, kể cả khi dòng đã xê dịch
+    with open(baseline, encoding="utf-8") as fh:
+        old = collections.Counter((r["file"], r["code"], r["snip"]) for r in json.load(fh))
+    code, findings = run(paths, kind, quiet=True)
+    if code == 2:
+        return 2, []
+    base, left, new = base_dir(paths), old.copy(), []
+    for x in sorted(findings, key=lambda x: (x[0], x[1], x[2])):
+        k = finding_key(x, base)
+        if left[k] > 0:
+            left[k] -= 1
+        else:
+            new.append(x)
+    gone = sum(left.values())
+    if not quiet:
+        for path, line, c, level, msg, snip in new:
+            snip = " ".join(str(snip).split())
+            print(f"{shown(path)}:{line}  {c}  {level:8}  {msg}" + (f"  «{snip}»" if snip else ""))
+        n_err = sum(1 for x in new if x[3] == ERROR)
+        print(f"\nSo với mốc {baseline}: {n_err} lỗi mới · {len(new) - n_err} cảnh báo mới · "
+              f"{sum(old.values()) - gone} mục cũ còn · {gone} mục cũ đã hết")
+    return (1 if any(x[3] == ERROR for x in new) else 0), new
 
 
 def font_lookup(names):
@@ -385,13 +469,22 @@ CLEAN_PAGE = """<!doctype html><html lang="vi"><head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;700&display=swap" rel="stylesheet">
 <script>tailwind.config={theme:{extend:{fontFamily:{sans:['"Be Vietnam Pro"', 'system-ui']}}}}</script>
-<style>.hero{min-height:100dvh;transition: opacity .3s} body{color:#18181B;font-family:'Be Vietnam Pro',system-ui,sans-serif}
+<style>.hero{min-height:100dvh;transition: opacity .3s} body{color:#18181B;font-family:'Be Vietnam Pro',system-ui,sans-serif} code{font-family:var(--mono, monospace)} .b{font-family:var(--brand, var(--app))}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}</style>
 </head><body>
 <section><p class="uppercase tracking-widest">Giới thiệu</p><h2>Bơi cùng Trần Minh Khoa</h2>
 <p>Lớp 4 học viên, 45 phút mỗi buổi. Giá 1.250.000 ₫ cho 12 buổi.</p><img src="a.jpg" alt="Bể bơi trong nhà"><a href="/lich">Xem lịch</a></section>
 <section><h2>Lịch học</h2><p>Ca 08:00-09:00, thứ Hai đến thứ Sáu.</p></section>
 <section><h2>Đăng ký</h2><img src="b.jpg" alt=""></section>
+</body></html>"""
+
+
+APP_PAGE = """<!doctype html><html lang="vi" data-surface="app" data-platform="ios"><head>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{color:#18181B;font-family:-apple-system,system-ui,sans-serif}</style>
+</head><body>
+<section><p class="uppercase tracking-widest">Hôm nay</p><h2>Đơn của bạn</h2><p>3 đơn đang giao, tổng 485.000 ₫.</p></section>
+<section><p class="uppercase tracking-widest">Gợi ý</p><h2>Món quen</h2></section>
 </body></html>"""
 
 
@@ -421,7 +514,35 @@ def selftest():
                          .replace(".hero{min-height:100dvh;transition: opacity .3s}", "")
                          .replace("</head>", '<link rel="stylesheet" href="app.css"></head>'))
         _, f_linked = run([linked_dir], "site", quiet=True)
+        # Màn app: 2 eyebrow trên 2 section vẫn không kêu P11; viewport thiếu viewport-fit và chặn phóng to thì kêu P16, P17
+        app_dir = os.path.join(d, "app")
+        os.makedirs(app_dir)
+        with open(os.path.join(app_dir, "clean.html"), "w", encoding="utf-8") as fh:
+            fh.write(APP_PAGE)
+        _, f_app_clean = run([app_dir], "site", quiet=True)
+        with open(os.path.join(app_dir, "bad.html"), "w", encoding="utf-8") as fh:
+            fh.write(APP_PAGE.replace("viewport-fit=cover", "maximum-scale=1, user-scalable=no"))
+        _, f_app = run([os.path.join(app_dir, "bad.html")], "site", quiet=True)
+        # Mốc: dòng xê dịch không thành lỗi mới; thêm một emoji thì đúng 1 lỗi mới
+        base_dir_ = os.path.join(d, "base")
+        os.makedirs(base_dir_)
+        page = os.path.join(base_dir_, "p.html")
+        with open(page, "w", encoding="utf-8") as fh:
+            fh.write(BAD_PAGE)
+        _, f_base = run([base_dir_], "site", quiet=True)
+        mark = os.path.join(d, "mark", "preflight.json")
+        with contextlib.redirect_stdout(io.StringIO()):
+            save_baseline([base_dir_], f_base, mark)
+        with open(page, "w", encoding="utf-8") as fh:
+            fh.write("\n\n" + BAD_PAGE)
+        c_same, n_same = compare_baseline([base_dir_], "site", mark, quiet=True)
+        with open(page, "w", encoding="utf-8") as fh:
+            fh.write("\n\n" + BAD_PAGE.replace("<h2>Lịch học</h2>", "<h2>Lịch học ⭐</h2>"))
+        c_new, n_new = compare_baseline([base_dir_], "site", mark, quiet=True)
     linked_codes = [x[2] for x in f_linked]
+    app_codes = {x[2] for x in f_app}
+    app_rules_ok = not f_app_clean and {"P16", "P17"} <= app_codes and "P11" not in app_codes
+    mark_ok = c_same == 0 and not n_same and c_new == 1 and [x[2] for x in n_new] == ["P01"]
     linked_ok = linked_codes.count("P09") == 1 and linked_codes.count("P05") == 1
     got = {x[2] for x in f_bad}
     missing = sorted(expected - got)
@@ -433,9 +554,13 @@ def selftest():
     if not app_ok:
         print("  (P11 vẫn kêu ở chế độ app)")
     print("CSS nạp kèm (P09, P05 báo đúng 1 lần cho file dùng chung): " + ("✓" if linked_ok else f"KHÔNG — được {linked_codes}"))
+    print("Màn app (P16, P17 kêu; màn sạch im; không P11): " + ("✓" if app_rules_ok else
+          f"KHÔNG — sạch kêu {sorted({x[2] for x in f_app_clean})}, hỏng kêu {sorted(app_codes)}"))
+    print("Mốc --save/--compare (dòng xê dịch không tính; emoji mới = 1 lỗi mới): " + ("✓" if mark_ok else
+          f"KHÔNG — giữ nguyên: mã {c_same}, {len(n_same)} mới; thêm emoji: mã {c_new}, {[x[2] for x in n_new]}"))
     for x in f_clean:
         print("  nhầm:", x[2], x[4], x[5])
-    return 0 if not missing and not noisy and app_ok and linked_ok else 1
+    return 0 if not missing and not noisy and app_ok and linked_ok and app_rules_ok and mark_ok else 1
 
 
 def main():
@@ -445,6 +570,8 @@ def main():
     ap.add_argument("--font", nargs="+", metavar="TÊN")
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--deps", action="store_true", help="kiểm các skill mà sketch-to-site phụ thuộc")
+    ap.add_argument("--save", metavar="FILE.json", help="lưu kết quả làm mốc; lỗi có sẵn không làm thoát mã 1")
+    ap.add_argument("--compare", metavar="FILE.json", help="so với mốc đã lưu, chỉ in và chỉ tính lỗi mới")
     a = ap.parse_args()
     if a.selftest:
         sys.exit(selftest())
@@ -455,7 +582,12 @@ def main():
     if not a.paths:
         ap.print_help()
         sys.exit(2)
-    code, _ = run(a.paths, a.kind)
+    if a.compare:
+        sys.exit(compare_baseline(a.paths, a.kind, a.compare)[0])
+    code, findings = run(a.paths, a.kind)
+    if a.save and code != 2:
+        save_baseline(a.paths, findings, a.save)
+        code = 0
     sys.exit(code)
 
 

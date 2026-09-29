@@ -1,0 +1,193 @@
+/* Khung app mobile dùng chung cho mọi màn: iOS (HIG) hoặc Android (Material 3), chọn bằng <html data-platform>.
+   Mẫu từ sketch-to-site/templates/mobile/app.css. Chép vào site/assets/app.css, nạp SAU token của dự án, cùng app.js.
+   Màu lấy từ token --bg --surface --ink --muted --line --accent (rules-and-conflicts.md D.2).
+   Font thương hiệu: đặt --brand-font trong token. Không có thì dùng font nền tảng --app-font (SF Pro/Inter, Roboto).
+   app.js gắn <html data-device>: "frame" khi xem trên màn rộng (vẽ khung máy), "embed" khi nằm trong trang tổng quan,
+   không gắn khi mở trên điện thoại thật (full màn hình, thanh trạng thái thật). Chi tiết: references/mobile-app.md. */
+
+:root {
+  --app-w: 393px; --app-h: 852px;               /* iPhone 15/16 */
+  --tap: 44px;                                   /* vùng chạm tối thiểu: iOS 44pt */
+  --nav-h: 44px; --tab-h: 49px;
+  --app-font: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+  --sat: env(safe-area-inset-top, 0px);          /* safe area của máy thật; khung giả đặt số riêng bên dưới */
+  --sab: env(safe-area-inset-bottom, 0px);
+  --app-soft: color-mix(in srgb, var(--accent, #0F766E) 16%, transparent);
+  --bezel: #1C1C1E;
+}
+[data-platform="android"] {
+  --app-w: 412px; --app-h: 915px;               /* Pixel 8 */
+  --tap: 48px;                                   /* Material: 48dp */
+  --nav-h: 64px; --tab-h: 80px;
+  --app-font: "Roboto", system-ui, sans-serif;
+}
+/* Phần chỉ có ở một nền tảng: <i data-only="ios">…</i> */
+[data-platform="ios"] [data-only="android"], [data-platform="android"] [data-only="ios"] { display: none !important; }
+
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--brand-font, var(--app-font));
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+}
+/* transform: position:fixed bên trong bám theo .app, nên lớp phủ nằm gọn trong khung máy */
+.app { position: relative; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; background: var(--bg); transform: translateZ(0); }
+.app-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 24px; }
+.app:not(:has(.app-tabs)) .app-body { padding-bottom: calc(24px + var(--sab)); }
+.app [hidden] { display: none !important; }      /* class có display (.app-btn, .app-row) không được đè hidden */
+
+/* ---------- Khung máy và thanh trạng thái giả ---------- */
+.app-status { display: none; }
+[data-device] .app { --sat: 54px; --sab: 34px; }
+[data-device][data-platform="android"] .app { --sat: 36px; --sab: 20px; }
+[data-device] .app-status {
+  display: flex; position: absolute; z-index: 50; inset: 0 0 auto; height: var(--sat); box-sizing: border-box;
+  align-items: center; justify-content: space-between; padding: 0 28px 0 46px;
+  font: 600 16px/1 var(--app-font); color: var(--status-ink, var(--ink)); pointer-events: none;   /* đầu màn nền tối: đặt --status-ink sáng */
+}
+[data-device][data-platform="android"] .app-status { padding: 0 20px; font: 500 14px/1 var(--app-font); }
+.app-status-icons { display: flex; align-items: center; gap: 6px; }
+[data-device] .app::before {                   /* Dynamic Island; Android: lỗ camera */
+  content: ""; position: absolute; z-index: 60; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px;
+  border-radius: 20px; background: #0A0A0B; pointer-events: none;
+}
+[data-device][data-platform="android"] .app::before { top: 12px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; }
+[data-device] .app::after {                    /* thanh home */
+  content: ""; position: absolute; z-index: 60; bottom: 8px; left: 50%; width: 134px; height: 5px; margin-left: -67px;
+  border-radius: 3px; background: var(--ink); opacity: .85; pointer-events: none;
+}
+[data-device][data-platform="android"] .app::after { bottom: 7px; width: 108px; height: 4px; margin-left: -54px; opacity: .55; }
+
+[data-device="frame"] body {
+  display: grid; place-items: center; min-height: 100dvh; padding: 24px 0; box-sizing: border-box;
+  background: color-mix(in srgb, var(--ink) 7%, var(--bg));
+}
+[data-device="frame"] .app {
+  flex: none; width: var(--app-w); height: var(--app-h); border-radius: 54px;
+  box-shadow: 0 0 0 10px var(--bezel), 0 0 0 11px color-mix(in srgb, var(--ink) 28%, var(--bezel)), 0 40px 80px -24px rgba(12, 12, 14, .45);
+}
+[data-device="frame"][data-platform="android"] .app { border-radius: 34px; }
+/* Màn máy tính thấp: thu cả khung lại cho vừa, không bắt cuộn trang */
+@media (max-height: 960px) { [data-device="frame"] .app { zoom: .88; } }
+@media (max-height: 840px) { [data-device="frame"] .app { zoom: .78; } }
+@media (max-height: 740px) { [data-device="frame"] .app { zoom: .68; } }
+
+/* ---------- Thanh điều hướng trên ---------- */
+.app-nav {
+  flex: none; position: relative; z-index: 20; display: flex; align-items: center; gap: 4px;
+  height: var(--nav-h); padding: var(--sat) 8px 0; box-sizing: content-box;
+  background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: saturate(1.8) blur(20px);
+  border-bottom: 1px solid var(--line);
+}
+.app-title {
+  position: absolute; left: 22%; right: 22%; bottom: 0; height: var(--nav-h); margin: 0;
+  line-height: var(--nav-h); text-align: center; font-size: 17px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.app-nav-end { margin-left: auto; display: flex; }
+[data-platform="android"] .app-nav { border-bottom: 0; background: var(--bg); padding-left: 4px; }
+[data-platform="android"] .app-title { position: static; flex: 1; min-width: 0; text-align: left; font-size: 22px; font-weight: 400; padding-left: 4px; }
+
+/* Tiêu đề lớn ở màn gốc của tab: cuộn qua thì tiêu đề nhỏ hiện trên thanh (app.js, IntersectionObserver) */
+.app-large-title { margin: 6px 16px 12px; font-size: 34px; line-height: 41px; font-weight: 700; }
+[data-platform="android"] .app-large-title { margin: 8px 16px 16px; font-size: 28px; line-height: 36px; font-weight: 400; }
+.app-nav.has-large .app-title { opacity: 0; transition: opacity .15s; }
+.app-nav.has-large.is-collapsed .app-title { opacity: 1; }
+.app-nav.has-large:not(.is-collapsed) { border-bottom-color: transparent; background: var(--bg); }
+
+.app-back, .app-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center; min-width: var(--tap); height: var(--tap);
+  border: 0; background: none; color: var(--accent); font: inherit; font-size: 17px; text-decoration: none; cursor: pointer;
+}
+.app-back { gap: 2px; padding: 0 8px 0 2px; position: relative; z-index: 1; }
+.app-back i { font-size: 28px; }
+.app-icon-btn { border-radius: 50%; font-size: 24px; }
+[data-platform="android"] .app-back { padding: 0; color: var(--ink); }
+[data-platform="android"] .app-back i { font-size: 24px; }
+[data-platform="android"] .app-icon-btn { color: var(--ink); }
+
+/* ---------- Thanh tab dưới: 3–5 mục ---------- */
+.app-tabs {
+  flex: none; display: flex; padding-bottom: var(--sab);
+  background: color-mix(in srgb, var(--surface, var(--bg)) 90%, transparent); backdrop-filter: saturate(1.8) blur(20px);
+  border-top: 1px solid var(--line);
+}
+.app-tabs a {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  height: var(--tab-h); color: var(--muted); text-decoration: none; font-size: 10px; font-weight: 500;
+}
+.app-tabs i { font-size: 26px; }
+.app-tabs [aria-current="page"] { color: var(--accent); }
+[data-platform="android"] .app-tabs { border-top: 0; background: color-mix(in srgb, var(--accent) 5%, var(--surface, var(--bg))); }
+[data-platform="android"] .app-tabs a { gap: 4px; font-size: 12px; }
+[data-platform="android"] .app-tabs i { display: grid; place-items: center; width: 64px; height: 32px; border-radius: 16px; font-size: 24px; }
+[data-platform="android"] .app-tabs [aria-current="page"] { color: var(--ink); font-weight: 600; }
+[data-platform="android"] .app-tabs [aria-current="page"] i { background: var(--app-soft); }
+
+/* ---------- Danh sách: iOS nhóm bo góc, Android danh sách phẳng ---------- */
+.app-section { margin: 20px 32px 6px; font-size: 13px; color: var(--muted); }
+.app-list { margin: 0 16px; padding: 0; list-style: none; background: var(--surface, var(--bg)); border-radius: 12px; overflow: hidden; }
+.app-list > * + * { border-top: 1px solid var(--line); }
+.app-row { display: flex; align-items: center; gap: 12px; min-height: var(--tap); padding: 10px 16px; box-sizing: border-box; color: inherit; text-decoration: none; }
+.app-row-end { flex: none; margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--muted); white-space: nowrap; }
+[data-platform="android"] .app-section { margin: 16px 16px 4px; font-size: 14px; font-weight: 500; color: var(--accent); }
+[data-platform="android"] .app-list { margin: 0; border-radius: 0; background: transparent; }
+[data-platform="android"] .app-list > * + * { border-top: 0; }
+[data-platform="android"] .app-row { min-height: 56px; padding: 8px 16px; }
+
+/* ---------- Nút ---------- */
+.app-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 50px; padding: 0 20px;
+  border: 0; border-radius: 12px; background: var(--accent); color: var(--bg); font: inherit; font-size: 17px; font-weight: 600; cursor: pointer;
+}
+.app-btn.is-quiet { background: var(--app-soft); color: var(--accent); }
+[data-platform="android"] .app-btn { width: auto; min-height: 48px; border-radius: 24px; font-size: 14px; font-weight: 500; }
+
+/* ---------- Công tắc: <input type="checkbox" class="app-switch"> ---------- */
+.app-switch {
+  appearance: none; position: relative; flex: none; width: 51px; height: 31px; margin: 0; border-radius: 16px;
+  background: var(--line); cursor: pointer; transition: background .2s;
+}
+.app-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 2px 6px rgba(12, 12, 14, .2); transition: transform .2s; }
+.app-switch:checked { background: var(--accent); }
+.app-switch:checked::after { transform: translateX(20px); }
+[data-platform="android"] .app-switch { width: 52px; height: 32px; border: 2px solid var(--muted); box-sizing: border-box; background: transparent; }
+[data-platform="android"] .app-switch::after { top: 6px; left: 6px; width: 16px; height: 16px; background: var(--muted); box-shadow: none; }
+[data-platform="android"] .app-switch:checked { border-color: var(--accent); background: var(--accent); }
+[data-platform="android"] .app-switch:checked::after { transform: translate(18px, -4px); width: 24px; height: 24px; background: var(--bg); }
+
+/* ---------- Bottom sheet: <div class="app-sheet" id="…" role="dialog" aria-modal="true"> ---------- */
+.app-sheet {
+  position: absolute; inset: 0; z-index: 40; display: flex; align-items: flex-end;
+  background: rgba(12, 12, 14, .36); visibility: hidden; opacity: 0; transition: opacity .25s ease, visibility 0s linear .25s;
+}
+.app-sheet.is-open { visibility: visible; opacity: 1; transition: opacity .25s ease; }
+.app-sheet-panel {
+  width: 100%; max-height: calc(100% - var(--sat) - 12px); overflow-y: auto; box-sizing: border-box;
+  padding: 8px 16px calc(16px + var(--sab)); background: var(--surface, var(--bg)); border-radius: 14px 14px 0 0;
+  transform: translateY(100%); transition: transform .32s cubic-bezier(.32, .72, 0, 1);
+}
+.app-sheet.is-open .app-sheet-panel { transform: none; }
+.app-sheet-grab { width: 36px; height: 5px; margin: 0 auto 12px; border-radius: 3px; background: var(--line); }
+[data-platform="android"] .app-sheet-panel { border-radius: 28px 28px 0 0; }
+[data-platform="android"] .app-sheet-grab { width: 32px; height: 4px; margin: 14px auto 18px; background: var(--muted); opacity: .4; }
+
+/* ---------- Toast (iOS) · Snackbar (Android): app.toast("…") ---------- */
+.app-toast {
+  position: absolute; z-index: 35; left: 16px; right: 16px; bottom: calc(var(--tab-h) + var(--sab) + 12px);   /* dưới sheet (40): không đè nút trong sheet */
+  padding: 14px 16px; border-radius: 14px; background: var(--ink); color: var(--bg); font-size: 15px;
+  opacity: 0; transform: translateY(12px); transition: opacity .2s, transform .2s; pointer-events: none;
+}
+.app:not(:has(.app-tabs)) .app-toast { bottom: calc(var(--sab) + 16px); }
+.app-toast.is-on { opacity: 1; transform: none; }
+[data-platform="android"] .app-toast { border-radius: 4px; font-size: 14px; }
+
+/* ---------- Chuyển màn: vào sâu trượt từ phải, quay lại trượt từ trái (app.js gắn data-enter) ---------- */
+@keyframes app-push { from { transform: translateX(28px); opacity: 0; } }
+@keyframes app-pop { from { transform: translateX(-28px); opacity: 0; } }
+[data-enter="push"] .app-body { animation: app-push .28s cubic-bezier(.2, .8, .2, 1); }
+[data-enter="pop"] .app-body { animation: app-pop .28s cubic-bezier(.2, .8, .2, 1); }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .app *, .app *::before, .app *::after { animation: none !important; transition-duration: .01ms !important; }
+}

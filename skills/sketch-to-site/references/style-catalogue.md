@@ -3,6 +3,7 @@
 > Kho này là **giàn giáo**, không phải thực đơn bắt buộc. Có brand, concept hay dữ liệu thật thì thiết kế mọc từ đó; kho chỉ giúp đặt tên và đưa lựa chọn cho người dùng.
 > **Dial** ghi theo thứ tự **V/M/D**: `DESIGN_VARIANCE` (1 đối xứng → 10 phá lưới) · `MOTION_INTENSITY` (1 tĩnh → 10 điện ảnh) · `VISUAL_DENSITY` (1 phòng tranh → 10 buồng lái). Định nghĩa đủ ở `design-taste-frontend` §7.
 > **Font** trong bảng đều đã kiểm là **có subset `vietnamese`** trên Google Fonts, trừ chỗ ghi ⚠️. Kiểm lại bằng `scripts/preflight.py --font "<tên>"`.
+> **App mobile:** họ phong cách chỉ quyết **token** *(màu, chữ, bo góc, không khí, ảnh)*. Phần bố cục của họ *(màn đầu, section, bento, marquee)* không áp cho màn app; theo `mobile-app.md` mục 5.
 
 ---
 
@@ -162,3 +163,16 @@ Ba hướng **cùng họ** nhưng phải khác nhau trên **≥ 3 trục** dư�
 **Luật xếp ba hướng:** A = **an toàn**, đúng khuôn của họ phong cách · B = **cân bằng**, một điểm lạ · C = **táo bạo**, đẩy tới mép họ phong cách mà vẫn đúng brief.
 
 **Web app / công cụ vận hành:** thay các trục *màn đầu / hệ section / khoảnh khắc đọc lần hai* bằng: **Điều hướng** *(sidebar · top bar · thanh lệnh)* · **Mật độ** *(thoáng · vừa · dày)* · **Trục tổ chức màn chính** *(theo thời gian · theo người · theo việc · theo địa điểm)*.
+
+**App mobile:** luật bố cục web không áp cho màn app *(`mobile-app.md` mục 5)*. Thay các trục *màn đầu / cỡ màn đầu / hệ section / khoảnh khắc đọc lần hai* bằng các trục dưới, ba hướng khác nhau trên ≥ 3 trục:
+
+| Trục | Lựa chọn *(chọn 1)* |
+|---|---|
+| **Tổ chức màn gốc** | Theo danh mục · Theo thói quen *(món quen, dùng gần đây lên đầu)* · Theo thời gian · Theo trạng thái · Theo địa điểm |
+| **Cách bày nội dung chính** | Danh sách dòng, ảnh nhỏ · Lưới 2 cột, ảnh lớn · Thẻ lớn một cột · Chữ là chính, ảnh phụ |
+| **Đầu màn gốc** | Tiêu đề lớn của nền tảng · Khối màu thương hiệu đặc · Ô tìm kiếm là chính · Thẻ tóm tắt *(đơn đang chạy, số dư)* |
+| **Lối vào hành động chính** | Nút đáy cố định · Nút tạo mới của nền tảng *(`+` trên thanh ở iOS, FAB ở Android)* · Một chạm từ thẻ đầu màn · Mở sheet tại chỗ |
+| **Điểm nhấn** *(đúng 1 mỗi màn)* | Ảnh sản phẩm · Con số chính · Thẻ trạng thái · Giá hoặc nhãn có kiểu riêng |
+
+- **Không phải trục biến thể:** thanh tab, nút quay lại, vùng chạm, sheet. Cả ba hướng theo quy ước nền tảng *(`mobile-app.md` mục 2)*.
+- **Hệ thống nhiều bề mặt:** mỗi hướng chọn trục cho từng bề mặt *(admin theo trục web app, app theo trục trên)*. Bảng so sánh có một dòng cho mỗi bề mặt, và một dòng cho vai dùng cả hai bề mặt *(ví dụ chủ quán xem quầy trên điện thoại)*.

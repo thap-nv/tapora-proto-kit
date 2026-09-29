@@ -1,7 +1,7 @@
 ---
 name: huashu-design
 description: >-
-  花叔Design（tapora-proto-kit 精简版）——用HTML做高保真交互原型、设计变体、信息图与专家评审。任何新设计100%先出三个方向初稿给用户选（指定风格/品牌也不豁免），选定后才执行。触发词：做原型、App原型、设计风格、评审、做个HTML页面、UI mockup、做个好看的。幻灯片、动画、视频、配音不在本精简版内。生产级Web App/需后端的系统不适用。
+  花叔Design（tapora-proto-kit 精简版）——用HTML做设计变体、信息图与专家评审。任何新设计100%先出三个方向初稿给用户选（指定风格/品牌也不豁免），选定后才执行。触发词：信息图、设计风格、设计评审。网站、Web App、iOS/Android App原型或「admin + App」多端系统用 sketch-to-site，修改已有原型用 evolve-site，不用本技能。幻灯片、动画、视频、配音不在本精简版内。生产级Web App/需后端的系统不适用。
 ---
 
 # 花叔Design · Huashu-Design

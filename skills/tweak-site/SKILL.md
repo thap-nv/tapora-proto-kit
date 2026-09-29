@@ -48,7 +48,7 @@ Người dùng gọi thẳng `/evolve-site` cho một việc lọt bảng trên 
    - `ĐẠT` → xong. `CHƯA ĐẠT` → sửa rồi chạy lại. Lỗi nằm ngoài chỗ vừa sửa và có từ trước → không sửa, báo.
    - Mỗi dòng `đổi check` phải giải thích được bằng chính thay đổi vừa làm. Không giải thích được là lỗi lan: sửa.
    - Dự án chưa có `_qa/quick.py`: chạy preflight *(`<skills>/sketch-to-site/scripts/preflight.py <thư-mục-site>`)* cho lần sửa này, rồi đề xuất cài bộ kiểm *(`handover-check`, B0)*. Không tự cài giữa một lần sửa nhỏ.
-5. **Cấp 1: xem một ảnh** màn vừa sửa, ở khổ chính của trang (app 390, trang quản trị 1440). Không chụp đủ khổ.
+5. **Cấp 1: xem một ảnh** màn vừa sửa, ở khổ chính của trang (màn app mobile hay trang cho điện thoại 390, trang quản trị 1440). Không chụp đủ khổ. Màn app làm cả iOS và Android: sửa phần chung thì xem ảnh của nền tảng mặc định; sửa phần `data-only` thì xem đúng nền tảng đó.
 6. **Sửa lỗi người dùng báo** mà không bước kiểm nào bắt được: ghi *chưa có bước kiểm* vào dòng nhật ký, để `handover-check` thêm bước.
 7. **Ghi một dòng** vào bảng *Nhật ký thay đổi nhỏ* của `FEATURE-DECISIONS.md`: ngày · khai báo · `file:dòng` · thay đổi · nguồn yêu cầu *(mã, hoặc "câu lệnh")* · kết quả kiểm nhanh · lời người dùng **nguyên văn**. Không viết mục mới trong `QA.md`.
 8. **Báo cáo, không hỏi**: dòng khai báo, `file:dòng` đã sửa, dòng kết quả cuối của lệnh kiểm nhanh, từng `check` đổi kèm lý do, lỗi có sẵn nếu gặp, link mở trang. Người dùng muốn chỉnh thì nói tiếp.

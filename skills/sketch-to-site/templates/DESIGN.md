@@ -57,8 +57,21 @@
 - <ví dụ: không dùng từ "Chi nhánh" (glossary) · không đỏ cho giá · …>
 
 ## 9. Sơ đồ trang
-| Trang / màn | Section theo thứ tự | Hành động chính | Dữ liệu cần |
+| Bề mặt | Trang / màn | Section theo thứ tự | Hành động chính | Dữ liệu cần |
+|---|---|---|---|---|
+
+**App:** tab *(3–5)* · màn đi sâu từ màn nào · luồng toàn màn. **Nhiều bề mặt:** luồng xuyên bề mặt:
+| Hành động | Ở bề mặt | Thấy thay đổi ở | Dữ liệu đổi |
 |---|---|---|---|
+
+## 10. Bề mặt và nền tảng *(bỏ mục này nếu chỉ có một website)*
+| Bề mặt | Người dùng · thiết bị | Nền tảng | Mật độ | Khác phần chung ở đâu |
+|---|---|---|---|---|
+| <admin web> | <nhân viên, máy tính cả ngày> | Web | D 7 | <bảng dày, sidebar> |
+| <app khách> | <khách, điện thoại> | iOS · Android | D 5 | <tab bar, vùng chạm 44/48, font nền tảng> |
+
+- **Kích thước app** ghi theo pt *(iOS)* / dp *(Android)*; trong prototype 1 CSS px = 1 pt = 1 dp.
+- **Lưu ý cho đội dựng app thật** *(tra `search.py --stack <swiftui | jetpack-compose | react-native | flutter>`)*: <…>
 
 ## Lịch sử
 | Ngày | Đổi gì | Vì sao |

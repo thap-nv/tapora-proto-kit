@@ -1,0 +1,71 @@
+<!doctype html>
+<!-- Màn đi sâu (chi tiết, form). Mẫu từ sketch-to-site/templates/mobile/detail.html.
+     Nút quay lại: <a data-back href="<màn cha>">. app.js đưa về đúng màn trước trong phiên; mở thẳng màn này thì về href.
+     iOS: chevron + tên màn trước. Android: mũi tên, không chữ. Hành động chính đặt ở nửa dưới, trong tầm ngón cái.
+     Màn đọc ?id=: meta qa-query ghi một mã có thật trong data.js, để bộ kiểm khói mở màn có nội dung, không phải màn "không tìm thấy". -->
+<html lang="vi" data-surface="app" data-platform="ios">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chi tiết đơn · Cà phê Mộc</title>
+<meta name="qa-query" content="?id=1042">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<link rel="stylesheet" href="../assets/tokens.css">
+<script src="../assets/tw.js"></script>
+<script src="../assets/theme.js"></script>
+<link rel="stylesheet" href="../assets/app.css">
+<script src="../assets/app.js"></script>
+</head>
+<body data-tab="orders">
+<div class="app">
+  <header class="app-nav">
+    <a class="app-back" href="orders.html" data-back aria-label="Quay lại Đơn hàng">
+      <i class="ph ph-caret-left" data-only="ios"></i><i class="ph ph-arrow-left" data-only="android"></i><span data-only="ios">Đơn hàng</span>
+    </a>
+    <h1 class="app-title" id="title">Đơn</h1>
+  </header>
+
+  <main class="app-body">
+    <p class="app-section">Món</p>
+    <ul class="app-list" id="lines"></ul>
+    <p class="app-section">Trạng thái</p>
+    <ul class="app-list"><li class="app-row"><span id="status"></span><span class="app-row-end tabular-nums" id="total"></span></li></ul>
+    <div class="px-4 pt-8">
+      <button class="app-btn" id="received">Đã nhận đơn</button>
+    </div>
+  </main>
+
+  <nav class="app-tabs" aria-label="Điều hướng chính">
+    <a href="home.html" data-tab="home"><i class="ph ph-house"></i><span>Trang chủ</span></a>
+    <a href="menu.html" data-tab="menu"><i class="ph ph-coffee"></i><span>Thực đơn</span></a>
+    <a href="orders.html" data-tab="orders"><i class="ph ph-receipt"></i><span>Đơn hàng</span></a>
+    <a href="account.html" data-tab="account"><i class="ph ph-user-circle"></i><span>Tài khoản</span></a>
+  </nav>
+</div>
+
+<script src="../assets/data.js"></script>
+<script src="../assets/store.js"></script>
+<script>
+  const id = Number(new URLSearchParams(location.search).get('id'));
+  const money = n => n.toLocaleString('vi-VN') + ' ₫';
+  const draw = () => {
+    const o = (store.get('orders') || []).find(x => x.id === id);
+    if (!o) { document.querySelector('.app-body').innerHTML = '<p class="px-4 py-10 text-center text-muted">Không tìm thấy đơn này. Quay lại danh sách để chọn đơn khác.</p>'; return; }
+    document.getElementById('title').textContent = `Đơn #${o.id}`;
+    document.getElementById('lines').innerHTML = o.items.split(', ').map(x => `<li class="app-row">${x}</li>`).join('');
+    document.getElementById('status').textContent = o.status;
+    document.getElementById('total').textContent = money(o.total);
+    document.getElementById('received').hidden = o.status !== 'Đang giao';
+  };
+  document.getElementById('received').addEventListener('click', () => {
+    store.update('orders', list => list.map(o => o.id === id ? { ...o, status: 'Đã nhận' } : o));
+    app.toast('Đã xác nhận nhận đơn');
+  });
+  store.on(draw);
+  draw();
+</script>
+</body>
+</html>

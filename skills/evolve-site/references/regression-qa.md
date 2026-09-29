@@ -39,12 +39,18 @@ Kiểm tra trên 2 độ phân giải chuẩn:
   * Không xuất hiện thanh cuộn ngang ngoài ý muốn (`overflow-x: hidden`).
   * Modal/Drawer trên mobile nên tự động chuyển thành Bottom Sheet (trượt từ đáy lên) hoặc chiếm toàn màn hình để dễ thao tác bằng ngón cái.
   * Chiều cao vùng bấm nút ≥ 44px (Fitts's Law).
-- [ ] **Nền tối** *(nếu site có `data-theme="dark"` hoặc `prefers-color-scheme`)*: phần mới đọc được ở cả hai nền, không có màu viết cứng.
+- [ ] **Nền tối** *(nếu site có `data-theme="dark"` hoặc `prefers-color-scheme`)*: phần mới đọc được ở cả hai nền, không có màu viết cứng. Xem ảnh trong thư mục theme `dark` của lần chạy.
+- [ ] **Trang mới:** thêm bộ khói ở 1440, 768, 390 *(màn app: 1440 và 390)*. Trang đọc `?id=` thì có `<meta name="qa-query">` và `"query"` trong file bước *(`rules-and-conflicts.md` D.5)*.
+- [ ] **Màn app mobile** *(`<html data-surface="app">`)*:
+  * Bước `tap-targets` **PASS** ở 390 trên mọi nền tảng đang làm *(theme `android` nếu có)*. Màn mới thêm thì thêm bước đó vào bộ khói của nó *(chép từ bộ khói của màn cũ)*.
+  * Phần mới theo quy ước của từng nền tảng *(`mobile-app.md` mục 2)*; ảnh 1440 là khung máy: không lọt dưới thanh trạng thái hay thanh home.
+  * Lớp phủ là sheet hoặc màn đi sâu, không phải drawer hay modal kiểu web *(`integration-patterns.md` mục 3)*.
 
 ### Nhóm E: Tính toàn vẹn Dữ liệu (Data Contract Check)
 - [ ] Dữ liệu mới tạo có được lưu trữ đúng chỗ không?
 - [ ] Tải lại trang (F5) hoặc chuyển qua trang khác rồi quay lại, dữ liệu có bị mất hay gây lỗi `Cannot read properties of undefined` trên console không?
 - [ ] Mở Console trình duyệt: **Bắt buộc 0 thông báo lỗi (0 Errors).**
+- [ ] **Hệ thống nhiều bề mặt:** dữ liệu đổi ở bề mặt này hiện đúng ở **mọi** bề mặt đọc nó *(bảng luồng xuyên bề mặt trong `DESIGN.md`)*. Luồng mới thì thêm dòng vào bảng và thêm một bộ kiểm đi xuyên bề mặt.
 
 ### Nhóm F: Kiểm UX 12 điểm *(chép từ `laws-of-ux-checklist`, không cần mở skill gốc)*
 

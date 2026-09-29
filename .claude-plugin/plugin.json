@@ -1,6 +1,6 @@
 {
   "name": "tapora-proto-kit",
-  "description": "Studio-grade interactive HTML prototypes, from first sketch to handover: design from scratch with decision gates, extend or tweak an existing prototype without design drift, and a regression QA kit with rolling baselines. Skill instructions are written in Vietnamese.",
+  "description": "Studio-grade interactive HTML prototypes of websites, web apps and iOS/Android apps, from first sketch to handover: design from scratch with decision gates, extend or tweak an existing prototype without design drift, and a regression QA kit with rolling baselines. Skill instructions are written in Vietnamese.",
   "version": "1.0.0",
   "author": {
     "name": "Thap Nguyen",

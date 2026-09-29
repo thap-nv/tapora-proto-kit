@@ -68,6 +68,7 @@ Nhãn **ở trên** ô nhập · chữ gợi ý (tuỳ chọn) · lỗi **ở d�
 | 13 | **Ngẫu nhiên bố cục** | `gpt-taste`: *giả lập Python random* để chọn bố cục | `huashu-design`: đưa 3 hướng cho **người dùng** chọn | Không bốc ngẫu nhiên. Dùng **động cơ biến thể** để 3 hướng khác nhau, rồi **người dùng** chọn ở Cổng 3 |
 | 14 | **Hỏi bao nhiêu** | `design-taste` §0.C: hỏi **đúng 1** câu, suy được thì đừng hỏi | Yêu cầu của skill này: dừng ở 5 cổng | Hai điều cùng đúng: **5 cổng là bắt buộc**, còn **trong mỗi cổng** chỉ hỏi thứ không suy ra được |
 | 15 | **Stack** | `design-taste`, `gpt-taste`: React / Next / Motion | Prototype một file mở bằng trình duyệt | Mặc định **HTML + Tailwind CDN + JS thuần**. Người dùng muốn React/Next thì hỏi ở Cổng 4 và theo `design-taste` §3 |
+| 16 | **Font app mobile** | Quy ước nền tảng: SF Pro *(iOS)*, Roboto *(Android)* | Dòng 3: không dùng Inter làm mặc định | Có font thương hiệu *(đã kiểm tiếng Việt)* thì dùng cho mọi bề mặt. Không có thì font nền tảng: iOS `-apple-system`, **Inter chỉ để thay SF Pro** khi xem trên máy không phải Apple; Android Roboto. Cả hai có subset `vietnamese` |
 
 ---
 
@@ -97,6 +98,11 @@ Nhãn **ở trên** ô nhập · chữ gợi ý (tuỳ chọn) · lỗi **ở d�
 ```
 Giá trị trong ví dụ chỉ là **khuôn**. Lấy giá trị thật từ `DESIGN.md`.
 
+**Có cả nền sáng và tối:** chép `templates/theme.js` vào `assets/`, nạp trong `<head>` của mọi trang, không `defer`.
+- Mặc định theo máy.
+- `?theme=light` hoặc `?theme=dark` ép một nền cho cả phiên, để demo và để bộ kiểm chụp đúng nền.
+- Nút đổi nền gọi `theme.toggle()`.
+
 ### D.3 Tương tác tối thiểu *(JS thuần, không thư viện)*
 - Tab `[data-tab-target]` · modal/drawer `[data-modal-open]` `[data-modal-close]` + `Esc` + trả focus về nút mở · lọc/tìm trên bảng · toast `role="status"` · menu di động.
 - Hiện dần khi cuộn: **`IntersectionObserver`**, so le bằng `--i`. **Cấm** `window.addEventListener('scroll')`.
@@ -105,6 +111,18 @@ Giá trị trong ví dụ chỉ là **khuôn**. Lấy giá trị thật từ `DE
 
 ### D.4 Ngữ nghĩa và SEO *(site giới thiệu)*
 `<header> <nav> <main> <section aria-labelledby> <footer>` · một `<h1>` · link *"Bỏ qua tới nội dung"* · `alt` mô tả thật · favicon · `og:title` `og:description` `og:image`.
+
+### D.5 Dữ liệu dùng chung *(web app, hoặc từ 2 trang cùng đọc một loại dữ liệu)*
+- Dữ liệu mẫu ở `assets/data.js`: `window.SEED = {…}`, nạp bằng `<script>`. **Không** `fetch('data.json')`: trang mở bằng `file://` thì trình duyệt chặn.
+- Mọi trang đọc và ghi qua `assets/store.js`, chép từ `templates/store.js`: `store.get(k)` · `store.set(k, v)` · `store.update(k, fn)` · `store.on(fn)`. Đổi `KEY` trong file thành slug của dự án.
+- Trang **không** giữ bản dữ liệu riêng. Danh sách, số đếm, tổng tiền đều tính từ store: tạo đơn ở `form.html` thì `orders.html` và số trên dashboard phải đổi theo.
+- Ghi xong thì vẽ lại phần liên quan, hoặc đăng ký `store.on` để tự vẽ lại.
+- Muốn demo lại từ đầu: thêm `?reset` vào URL. Ghi cách này vào báo cáo Cổng 5.
+- Trang đọc tham số URL *(chi tiết theo `?id=`)*: khai báo mẫu trong `<head>` bằng `<meta name="qa-query" content="?id=<mã có trong data.js>">`. `qa_init.py` đọc thẻ này để bộ khói mở trang có nội dung; thiếu thì lệnh in CẢNH BÁO.
+- Kiểm luồng xuyên trang trong **một** bộ kiểm: bước `js` ghi dữ liệu rồi `location.href = 'orders.html'`, `wait` ≥ 1500, rồi `check` trên trang mới. Mỗi bộ chạy với hồ sơ trình duyệt mới nên luôn bắt đầu từ dữ liệu mẫu, mốc không trôi.
+
+### D.6 Màn app mobile
+Khuôn ở `templates/mobile/`, luật ở `mobile-app.md`. Khác trang web ở: `<html data-surface="app" data-platform="…">` · viewport có `viewport-fit=cover` · token nạp từ `assets/tokens.css` và `assets/tw.js` · `app.css` + `app.js` *(trong `<head>`)* · khung `.app` › `.app-nav` · `.app-body` · `.app-tabs`. Tương tác tối thiểu D.3 vẫn áp; lớp phủ dùng sheet của khuôn.
 
 ---
 

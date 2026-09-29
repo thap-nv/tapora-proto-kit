@@ -49,3 +49,20 @@
   * Thêm lối vào ở menu **mọi trang** *(hoặc nơi sinh menu chung)*, rồi đánh dấu trạng thái Active trên trang mới. Đếm bằng `grep`: số trang có lối vào = số trang có menu.
   * Trang mới có giới hạn vai thì **chặn ở chính trang đó**, không chỉ ẩn mục menu *(xem `regression-qa.md` nhóm G)*.
 
+---
+
+## 3. Trên màn app mobile *(`<html data-surface="app">`)*
+
+Drawer và modal kiểu web **không dùng** trên màn app. Chọn trong bảng này, theo quy ước nền tảng ở `sketch-to-site/references/mobile-app.md` mục 2–3.
+
+| Mẫu | Khi nào dùng | Khi nào không | iOS · Android |
+|---|---|---|---|
+| **Tại chỗ** | Bật tắt, đổi số lượng, thao tác một chạm trên dòng | Cần nhập quá 1 trường | Công tắc, stepper · công tắc Material |
+| **Sheet** *(`.app-sheet`)* | Lọc, chọn, xác nhận có tuỳ chọn, form ngắn ≤ 4 trường; cần thấy màn nền | Luồng nhiều bước, form dài | Sheet có tay nắm · bottom sheet bo 28 |
+| **Màn đi sâu** *(push)* | Xem chi tiết, sửa một đối tượng, danh sách con | Tác vụ chỉ 1 chạm | Chevron + tên màn trước · mũi tên |
+| **Luồng toàn màn** | Tạo mới nhiều bước, thanh toán, onboarding; thanh tab ẩn | Xem nhanh | Nút *Huỷ* góc trên · nút *Đóng* (X) |
+| **Alert / dialog** | Xác nhận hành động phá huỷ hoặc không hoàn tác | Thông báo thường *(dùng toast)* | Alert giữa màn, nút phá huỷ màu đỏ · dialog bo 28 |
+| **Tab mới** | Chức năng lõi dùng hằng ngày, còn chỗ *(tổng ≤ 5 tab)* | Chức năng phụ *(đưa vào tab Tài khoản)* | Tab bar · navigation bar |
+
+- Lối vào mới phải có ở **đúng một** chỗ hợp lý trên mỗi nền tảng *(ví dụ nút `+` trên thanh trên ở iOS, FAB ở Android)*, không rải nhiều nút cùng việc.
+- Thêm tab là **Cấp 3**: sửa thanh tab ở **mọi** màn có thanh tab. Đếm bằng `grep`: số màn có mục mới = số màn có `.app-tabs`.

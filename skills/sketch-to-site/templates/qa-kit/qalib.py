@@ -24,8 +24,13 @@ NOISY = {tuple(x) for x in CFG.get('noisy', [])}
 
 
 def find_preflight():
-    # preflight.py nằm trong skill sketch-to-site; skill có thể cài ở dự án, ở thư mục người dùng hoặc trong plugin
+    # preflight.py nằm trong skill sketch-to-site; skill có thể cài ở dự án, ở thư mục người dùng hoặc trong plugin.
+    # Sau biến QA_PREFLIGHT và khoá "preflight" là skill đã cài bộ kiểm này (qa_init.py ghi vào _qa/.kit-source):
+    # máy có nhiều bản skill thì dùng đúng bản đã sinh bộ kiểm, không phải bản plugin cũ tìm thấy trước
     cands = [os.environ.get('QA_PREFLIGHT'), CFG.get('preflight')]
+    src = os.path.join(HERE, '.kit-source')
+    if os.path.exists(src):
+        cands.append(os.path.join(open(src, encoding='utf-8').read().strip(), 'scripts', 'preflight.py'))
     rel = os.path.join('sketch-to-site', 'scripts', 'preflight.py')
     d = ROOT
     while True:
@@ -43,6 +48,17 @@ def find_preflight():
 
 
 PREFLIGHT = find_preflight()
+
+
+def shown(p):
+    # Đường dẫn để in: tương đối với thư mục prototype nếu nằm trong đó, không thì rút gọn thư mục người dùng thành ~
+    p = os.path.abspath(p)
+    home = os.path.expanduser('~')
+    if p.startswith(ROOT + os.sep):
+        p = os.path.relpath(p, ROOT)
+    elif p.startswith(home + os.sep):
+        p = '~' + p[len(home):]
+    return p.replace(os.sep, '/')
 
 
 def sha(p):
@@ -110,11 +126,11 @@ def affected_suites(changed):
 
 
 def run_suites(names, out_root, themes, shots):
-    # Theme sau theme mặc định bỏ các bộ tự đổi theme, giống run_all.py khi có QA_QUERY
+    # Theme sau theme mặc định bỏ các bộ tự đổi theme, giống run_all.py khi có QA_QUERY. shots: chụp ảnh ở mọi theme
     res = {}
     for th in themes:
         os.environ['QA_QUERY'] = THEMES[th]
-        os.environ['QA_NOSHOT'] = '' if (shots and th == themes[0]) else '1'
+        os.environ['QA_NOSHOT'] = '' if shots else '1'
         todo = [s for s in run_all.SUITES if s[0] in names and not (th != DEFAULT_THEME and s[0].startswith(run_all.THEME_PREFIX))]
         with ThreadPoolExecutor(4) as ex:
             for name, r in ex.map(lambda s: run_all.run(s, os.path.join(out_root, th)), todo):
@@ -129,9 +145,20 @@ def over_steps(rep):
     return {x['step'] for x in rep if x.get('dims') and x['dims']['sw'] > x['dims']['cw']}
 
 
+def cut_items(rep):
+    # Chữ tràn khung hoặc bị khung cắt (run.mjs, layoutCheck), từng bước: {(bước, khoá): dòng gốc}.
+    # Khoá bỏ số px: lệch vài px giữa hai lần chạy không tính là khác
+    return {(x['step'], re.sub(r'\d+px', 'px', c)): c for x in rep if x.get('dims') for c in x['dims'].get('cut') or []}
+
+
+def new_cuts(rep, base):
+    cur, old = cut_items(rep), (cut_items(base) if base is not None else {})
+    return sorted((k[0], cur[k]) for k in cur.keys() - old.keys())
+
+
 def diff_report(base, rep, suite):
     # So từng bước với mốc. base None: bộ mới, không có gì để so
-    out = {'lost': [], 'new': [], 'changed': [], 'over_new': []}
+    out = {'lost': [], 'new': [], 'changed': [], 'over_new': [], 'cut_new': new_cuts(rep, base)}
     if base is None:
         out['over_new'] = sorted(over_steps(rep))
         return out

@@ -5,7 +5,8 @@
 ## 🛑 Cổng 1 · Định hình dự án — <dd/mm/yyyy>
 | Câu hỏi | Đáp án (nguyên văn) | Ghi chú |
 |---|---|---|
-| Loại sản phẩm | | |
+| Loại sản phẩm *(nhiều bề mặt: liệt kê từng bề mặt)* | | |
+| Nền tảng app *(nếu có app)* | | |
 | Người dùng chính + thiết bị | | |
 | Phạm vi | | |
 | Tham chiếu + mức bám | | |

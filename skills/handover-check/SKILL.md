@@ -23,16 +23,17 @@ Khác biệt giữa lần chạy tổng và `last-green` chỉ hợp lệ khi **
 
 ### B0 · Dự án chưa có bộ kiểm *(chỉ lần đầu)*
 Không thấy `_qa/handover.py`:
-1. `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype>`. Lệnh chép script vào `_qa/`, sinh `qa.config.json` (mỗi trang một bộ khói ở 1440 và 390) và `_qa/.gitignore`.
+1. `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype>`. Lệnh chép script vào `_qa/`, sinh `qa.config.json` (mỗi trang một bộ khói ở 1440, 768, 390; màn app ở 1440 và 390) và `_qa/.gitignore`.
 2. Đọc `qa.config.json` cùng người dùng:
    - web app thì `preflight_kind` là `app`;
-   - site có nhiều theme thì khai báo ở `themes`, mỗi theme kèm tham số URL bật nó, theme đầu là mặc định;
+   - site có nền tối thì lệnh đã tự thêm theme `light` và `dark`; theme khác thì khai báo ở `themes`, mỗi theme kèm tham số URL bật nó, theme đầu là mặc định;
+   - lệnh in CẢNH BÁO cho trang đọc tham số URL mà chưa có mẫu: thêm `<meta name="qa-query">` theo dòng đó;
    - bước tự đổi giá trị giữa các lần chạy (đồng hồ, số ngẫu nhiên) ghi vào `noisy`.
 3. Chạy B3. Chưa có mốc nên mọi thứ là "bộ mới"; tràn ngang được liệt kê để người dùng xác nhận là cố ý.
 4. Qua cổng như bình thường. Chốt thì `promote` thành mốc đầu.
 5. Thêm khối lệnh kiểm vào `AGENTS.md` hoặc `CLAUDE.md` của dự án, theo mẫu `<skills>/sketch-to-site/templates/AGENTS-qa.md`.
 
-Bộ kiểm khói chỉ bắt lỗi console, tràn ngang và chụp ảnh. Kiểm hành vi (bấm, lọc, phân quyền) thì viết thêm file `_qa/steps-<tên>.json` rồi khai báo ở `suites`.
+Bộ kiểm khói chỉ bắt lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung, và chụp ảnh. Kiểm hành vi (bấm, lọc, phân quyền) thì viết thêm file `_qa/steps-<tên>.json` rồi khai báo ở `suites`.
 
 ### B1 · Đọc nhật ký *(không chạy gì)*
 - `_qa/current/ledger.jsonl`, và các dòng trong `FEATURE-DECISIONS.md` từ lần bàn giao trước.
@@ -46,13 +47,13 @@ Bộ kiểm khói chỉ bắt lỗi console, tràn ngang và chụp ảnh. Kiể
 - Sau bước này, nếu có đổi file → `python _qa/quick.py --note "handover: <việc>"`.
 
 ### B3 · Chạy tổng
-`python _qa/handover.py run`, chạy nền vì mất nhiều phút. Lệnh chạy preflight và mọi bộ ở mọi theme khai báo trong `qa.config.json`; theme đầu có chụp ảnh. Kết quả nằm trong `_qa/handover/<ngày-giờ>/`.
+`python _qa/handover.py run`, chạy nền vì mất nhiều phút. Lệnh chạy preflight và mọi bộ ở mọi theme khai báo trong `qa.config.json`, chụp ảnh ở mọi theme. Kết quả nằm trong `_qa/handover/<ngày-giờ>/`.
 
 ### B4 · Đọc kết quả
 
 | Mục trong kết quả | Làm gì |
 |---|---|
-| **Lỗi**: console, FAIL, im lặng, tràn ngang mới, preflight | Lỗi thật. Ghi lại, tìm lần sửa gây ra, **không tự sửa** |
+| **Lỗi**: console, FAIL, im lặng, tràn ngang mới, chữ tràn hoặc bị cắt mới trong khung, preflight | Lỗi thật. Ghi lại, tìm lần sửa gây ra, **không tự sửa** |
 | **Khác biệt đã gán** cho một lần sửa | Đọc lướt: giá trị mới có khớp ghi chú của lần sửa đó không. Không khớp → coi như chưa gán |
 | **Khác biệt không gán được** | Chạy lại riêng bộ đó một lần để loại nhiễu: `python _qa/run_all.py _qa/.recheck <tên bộ>`. Còn lệch → lỗi lan. Tìm lần sửa gây ra: file đổi của trang đó giao với nhật ký. Nếu các lần sửa đã commit riêng thì chạy bộ đó trên commit cũ bằng `git worktree` |
 | **File không có trong ledger** | Có người sửa ngoài quy trình. Xem `git diff` của file đó rồi xếp vào một trong hai loại trên |
@@ -61,11 +62,13 @@ Bộ kiểm khói chỉ bắt lỗi console, tràn ngang và chụp ảnh. Kiể
 ### B5 · UX 12 điểm, một lần
 Bảng ở `evolve-site/references/regression-qa.md`, nhóm F. Chấm trên các màn đã đụng từ lần bàn giao trước, **trừ** màn đã chấm trong một đợt `evolve-site` Cấp 2–3. Mỗi điểm ✅ hoặc ❌, kèm `file:dòng`. Kết quả 7–9/12: đưa vào danh sách cần sửa.
 
+Màn app mobile *(`<html data-surface="app">`)*: soát thêm mục *App mobile* ở `sketch-to-site/references/qa-gate.md` mục 4 trên các màn đó. Hệ thống nhiều bề mặt: đi lại mọi dòng của bảng luồng xuyên bề mặt có dính tới màn đã đụng.
+
 ### B6 · Tài liệu, một lần
 - `DESIGN.md`: số chỗ gọi component dùng chung, **đếm bằng `grep`**; token mới đã duyệt mà chưa ghi.
 - `_qa/QA.md`: **một** mục "Bàn giao <ngày>" gồm:
   - thư mục chạy;
-  - bảng số cho từng theme: bộ, bước, console, FAIL, tràn, `check` đổi;
+  - bảng số cho từng theme: bộ, bước, console, FAIL, tràn, cắt, `check` đổi;
   - danh sách lần sửa lấy từ nhật ký, mỗi lần kèm các `check` đổi;
   - kết quả UX;
   - lỗi còn lại.
