@@ -9,6 +9,7 @@ Cách dùng:
     python preflight.py --selftest
     python preflight.py --deps          # skill phụ thuộc có đủ chưa (SKILL.md mục 9)
 
+P19–P21: biến CSS chưa định nghĩa, màu viết cứng, themes.css cũ (qa-gate.md mục 1).
 Thoát mã 1 khi còn LỖI. Mã kiểm và ý nghĩa: references/qa-gate.md mục 1.
 Chỉ dùng thư viện chuẩn. Duyệt thư mục bằng os.walk, không glob (đường dẫn có
 dấu [ ] như "[Tool]" làm glob trả rỗng mà không báo gì).
@@ -17,6 +18,7 @@ import argparse
 import collections
 import contextlib
 import csv
+import hashlib
 import io
 import json
 import math
@@ -111,6 +113,49 @@ RAW_RULES = [
     ("P18", WARN, re.compile(r"<[a-z][^<>]*?\s(data-clip-ok)(?![\w-])(?!\s*=\s*(?:\"\s*[^\"\s][^\"]*\"|'\s*[^'\s][^']*'|[^\s\"'=<>`]+))", re.I),
      "data-clip-ok phải ghi lý do cố ý, ví dụ data-clip-ok=\"marquee chạy ngang\". Không dùng để làm im lỗi tràn hay cắt chữ (qa-gate.md mục 6)"),
 ]
+# P19: var(--x) không có giá trị dự phòng mà cả trang (kể cả CSS/JS nạp kèm) không định nghĩa --x: trình duyệt dùng giá trị mặc định
+VAR_REF = re.compile(r"var\(\s*(--[A-Za-z0-9_-]+)\s*\)")
+VAR_DEF = re.compile(r"(--[A-Za-z0-9_-]+)\s*:(?!:)|setProperty\(\s*['\"](--[A-Za-z0-9_-]+)")
+# P20: màu viết cứng trong khai báo CSS (thẻ <style>, file .css nạp kèm) và lớp màu thô của Tailwind, thay vì token.
+# Bỏ qua: định nghĩa biến (--x: …), giá trị dự phòng trong var(…), file token (tokens.css, themes.css), dòng có /* color-ok: <lý do> */.
+# Không đọc JS: biểu đồ hay tự tính màu lúc chạy
+COLOR_VALUE = re.compile(r"#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|lab|lch)\(")
+CSS_DECL = re.compile(r"(?<![\w-])([a-z-]+)\s*:\s*([^;{}]+)")
+VAR_CALL = re.compile(r"var\((?:[^()]|\([^()]*\))*\)")
+TW_COLOR = re.compile(r"(?<![\w-])(?:bg|text|border|ring|fill|stroke|from|via|to|divide|outline|decoration|accent|caret|placeholder|shadow)-"
+                      r"(?:\[(?:#|rgb|hsl|oklch)[^\]]*\]|(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan"
+                      r"|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(?:50|100|200|300|400|500|600|700|800|900|950))(?![\w-])")
+COLOR_OK = re.compile(r"/\*\s*color-ok:\s*\S")
+TOKEN_FILES = {"tokens.css", "themes.css"}
+P20_MSG = "Màu viết cứng thay vì token (rules-and-conflicts.md D.2). Cố ý thì ghi /* color-ok: <lý do> */ cùng dòng"
+
+
+def hardcoded_colors(text, base_line=1):
+    # [(dòng, đoạn trích)]: chỉ khai báo nằm trong khối {…}, để selector như #add-btn không bị đọc thành mã màu
+    lines = text.split("\n")
+    bare = re.sub(r"/\*[\s\S]*?\*/", lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)   # bỏ chú thích, giữ số dòng
+    out = []
+    for blk in re.finditer(r"\{([^{}]*)\}", bare):
+        for m in CSS_DECL.finditer(blk.group(1)):
+            prop, val = m.group(1), m.group(2)
+            if prop.startswith("--") or not COLOR_VALUE.search(VAR_CALL.sub("", val)):
+                continue
+            ln = line_of(bare, blk.start(1) + m.start())
+            if COLOR_OK.search(lines[ln - 1]):
+                continue
+            out.append((base_line + ln - 1, f"{prop}:{val.strip()}"[:60]))
+    return out
+
+
+def themes_stale(css_path):
+    # themes.css do scripts/themes.mjs sinh mang băm của themes.json cùng thư mục ở dòng đầu; lệch là đã sửa json mà chưa sinh lại
+    js = os.path.join(os.path.dirname(css_path), "themes.json")
+    if not os.path.isfile(js):
+        return False
+    h = hashlib.sha1(read(js).replace("\r\n", "\n").encode("utf-8")).hexdigest()[:10]
+    return f"(băm {h})" not in read(css_path).split("\n", 1)[0]
+
+
 MOTION = re.compile(r"@keyframes|\banimation\s*:|\btransition\s*:|\btransition(-\w+)?\b|\banimate-\w+|gsap|\.animate\(")
 REDUCED = re.compile(r"prefers-reduced-motion|motion-reduce:|motion-safe:")
 GENERIC_FONTS = {
@@ -279,6 +324,32 @@ def check_file(path, kind, fonts, seen_assets):
             for m in rx.finditer(text):
                 add(code, level, line_of(text, m.start(g)), msg, m.group(g), where=a)
     seen_assets.update(a for a, _ in assets)
+
+    # P19 bỏ qua trang nạp tokens.js (bảng concept, màn then chốt): token ở đó sinh lúc chạy
+    if not any(os.path.basename(a).lower() == "tokens.js" for a, _ in assets):
+        defined = {m.group(1) or m.group(2) for m in VAR_DEF.finditer(bundle)}
+        told = set()
+        for where, text in [(path, src)] + assets:
+            for m in VAR_REF.finditer(text):
+                name = m.group(1)
+                if name in defined or (where, name) in told:
+                    continue
+                told.add((where, name))
+                add("P19", WARN, line_of(text, m.start()), "Biến CSS chưa định nghĩa ở trang này (kể cả CSS/JS nạp kèm): trình duyệt dùng giá trị mặc định", name, where=where)
+
+    for m in re.finditer(r"<style\b[^>]*>([\s\S]*?)</style>", src, re.I):
+        for ln, snip in hardcoded_colors(m.group(1), line_of(src, m.start(1))):
+            add("P20", WARN, ln, P20_MSG, snip)
+    for a, text in assets:
+        name = os.path.basename(a).lower()
+        if name.endswith(".css") and name not in TOKEN_FILES:
+            for ln, snip in hardcoded_colors(text):
+                add("P20", WARN, ln, P20_MSG, snip, where=a)
+        if name == "themes.css" and themes_stale(a):
+            add("P21", ERROR, 1, "themes.css cũ hơn themes.json: chạy node <skills>/sketch-to-site/scripts/themes.mjs <thư-mục-prototype>", where=a)
+    for m in re.finditer(r"class\s*=\s*[\"']([^\"']*)[\"']", src):
+        for t in TW_COLOR.finditer(m.group(1)):
+            add("P20", WARN, line_of(src, m.start()), "Lớp màu thô của Tailwind thay vì token (bg-surface, text-ink…)", t.group(0))
 
     for line in p.img_no_alt:
         add("P08", ERROR, line, "<img> thiếu thuộc tính alt")
@@ -465,7 +536,7 @@ def check_deps():
 
 BAD_PAGE = """<!doctype html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
-<style>.hero{height:100vh;transition: opacity .3s} body{color:#000} .x{font-family:'Satoshi',sans-serif} .m{z-index:9999}</style>
+<style>.hero{height:100vh;transition: opacity .3s} body{color:#000} .x{font-family:'Satoshi',sans-serif} .m{z-index:9999} .card{background:#F4F4F5} .x{color:var(--khong-co)}</style>
 </head><body>
 <section><p class="uppercase tracking-widest">Giới thiệu</p><h2>Bơi cùng chúng tôi 🏊</h2>
 <p>Nâng tầm trải nghiệm — học bơi liền mạch cho John Doe</p><img src="a.jpg"><a href="#">Xem</a></section>
@@ -478,7 +549,8 @@ CLEAN_PAGE = """<!doctype html><html lang="vi"><head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;700&display=swap" rel="stylesheet">
 <script>tailwind.config={theme:{extend:{fontFamily:{sans:['"Be Vietnam Pro"', 'system-ui']}}}}</script>
-<style>.hero{min-height:100dvh;transition: opacity .3s} body{color:#18181B;font-family:'Be Vietnam Pro',system-ui,sans-serif} code{font-family:var(--mono, monospace)} .b{font-family:var(--brand, var(--app))}
+<style>.hero{min-height:100dvh;transition: opacity .3s} :root{--ink:#18181B;--app:system-ui} body{color:var(--ink);font-family:'Be Vietnam Pro',system-ui,sans-serif} code{font-family:var(--mono, monospace)} .b{font-family:var(--brand, var(--app))}
+.u{color:var(--mau, #333333)} .v{border-color:#E4E4E7} /* color-ok: viền ảnh chụp màn hình giữ màu gốc */
 [data-clip-ok]{overflow:visible}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}</style>
 </head><body>
@@ -491,7 +563,7 @@ CLEAN_PAGE = """<!doctype html><html lang="vi"><head>
 
 APP_PAGE = """<!doctype html><html lang="vi" data-surface="app" data-platform="ios"><head>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>body{color:#18181B;font-family:-apple-system,system-ui,sans-serif}</style>
+<style>:root{--ink:#18181B} body{color:var(--ink);font-family:-apple-system,system-ui,sans-serif}</style>
 </head><body>
 <section><p class="uppercase tracking-widest">Hôm nay</p><h2>Đơn của bạn</h2><p>3 đơn đang giao, tổng 485.000 ₫.</p></section>
 <section><p class="uppercase tracking-widest">Gợi ý</p><h2>Món quen</h2></section>
@@ -503,7 +575,7 @@ def selftest():
         print(f"THIẾU PHỤ THUỘC: không thấy {FONTS_CSV}\n"
               "sketch-to-site cần skill ui-ux-pro-max nằm cùng thư mục skills (P07 tra dấu tiếng Việt từ đó).")
         return 1
-    expected = {"P01", "P02", "P03", "P04", "P05", "P06", "P07", "P08", "P09", "P10", "P11", "P12", "P13", "P14", "P15", "P18"}
+    expected = {"P01", "P02", "P03", "P04", "P05", "P06", "P07", "P08", "P09", "P10", "P11", "P12", "P13", "P14", "P15", "P18", "P19", "P20"}
     with tempfile.TemporaryDirectory() as d:
         bad, clean = os.path.join(d, "bad.html"), os.path.join(d, "clean.html")
         with open(bad, "w", encoding="utf-8") as fh:
@@ -549,6 +621,29 @@ def selftest():
         with open(page, "w", encoding="utf-8") as fh:
             fh.write("\n\n" + BAD_PAGE.replace("<h2>Lịch học</h2>", "<h2>Lịch học ⭐</h2>"))
         c_new, n_new = compare_baseline([base_dir_], "site", mark, quiet=True)
+        # P21: themes.css mang băm của themes.json; khớp thì im, lệch thì LỖI
+        th = os.path.join(d, "themes")
+        os.makedirs(os.path.join(th, "assets"))
+        with open(os.path.join(th, "assets", "themes.json"), "w", encoding="utf-8") as fh:
+            fh.write('{"themes": {}}\n')
+        good = hashlib.sha1('{"themes": {}}\n'.encode("utf-8")).hexdigest()[:10]
+        th_page = os.path.join(th, "index.html")
+        with open(th_page, "w", encoding="utf-8") as fh:
+            fh.write(CLEAN_PAGE.replace("</head>", '<link rel="stylesheet" href="assets/themes.css"></head>'))
+
+        def has_p21(head):
+            with open(os.path.join(th, "assets", "themes.css"), "w", encoding="utf-8") as fh:
+                fh.write(head + "\n:root{--ink:#18181B}\n")
+            return "P21" in {x[2] for x in run([th_page], "site", quiet=True)[1]}
+        p21_ok = not has_p21(f"/* Sinh bởi themes.mjs từ themes.json (băm {good}). */") and has_p21("/* Sinh bởi themes.mjs từ themes.json (băm 0000000000). */")
+        # P19 bỏ qua trang nạp tokens.js (bảng concept, màn then chốt): token sinh lúc chạy
+        rt = os.path.join(d, "runtime")
+        os.makedirs(rt)
+        with open(os.path.join(rt, "tokens.js"), "w", encoding="utf-8") as fh:
+            fh.write("// token sinh lúc chạy\n")
+        with open(os.path.join(rt, "index.html"), "w", encoding="utf-8") as fh:
+            fh.write(CLEAN_PAGE.replace("</head>", '<script src="tokens.js"></script><style>.z{color:var(--chua-co)}</style></head>'))
+        p19_skip_ok = "P19" not in {x[2] for x in run([rt], "site", quiet=True)[1]}
     # P18 trên từng mẩu: thiếu lý do thì kêu (kể cả viết hoa, xuống dòng trong thẻ); có lý do, selector, chú thích, chữ thường thì im
     p18 = next(rx for code, _, rx, _ in RAW_RULES if code == "P18")
     clip_cases = [
@@ -577,6 +672,8 @@ def selftest():
     app_ok = "P11" not in {x[2] for x in f_bad_app}
     print(f"Trang hỏng: {len(got)}/{len(expected)} mã kêu" + (f" — THIẾU {missing}" if missing else " ✓"))
     print("Trang sạch: " + (f"kêu nhầm {noisy}" if noisy else "im ✓"))
+    print("P21 (themes.css cũ hơn themes.json thì kêu, khớp thì im): " + ("✓" if p21_ok else "KHÔNG"))
+    print("P19 bỏ qua trang nạp tokens.js (token sinh lúc chạy): " + ("✓" if p19_skip_ok else "KHÔNG"))
     print("--kind app bỏ P11: " + ("✓" if app_ok else "KHÔNG"))
     if not app_ok:
         print("  (P11 vẫn kêu ở chế độ app)")
@@ -589,7 +686,7 @@ def selftest():
     print("Dò tên font bỏ qua chú thích, đọc được khai báo xuống dòng: " + ("✓" if not font_bad else f"KHÔNG — sai ở {font_bad}"))
     for x in f_clean:
         print("  nhầm:", x[2], x[4], x[5])
-    return 0 if not missing and not noisy and app_ok and linked_ok and app_rules_ok and mark_ok and not clip_bad and not font_bad else 1
+    return 0 if not missing and not noisy and app_ok and linked_ok and app_rules_ok and mark_ok and not clip_bad and not font_bad and p21_ok and p19_skip_ok else 1
 
 
 def main():

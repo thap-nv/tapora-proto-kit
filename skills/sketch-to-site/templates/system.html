@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design system</title>
+<!-- Trang design system sống. Mẫu từ sketch-to-site/templates/system.html; B2 chép thành site/_system.html.
+     Màu, Chữ, Hình khối, Chuyển động: tự vẽ từ CSS variables của theme đang bật, đo mọi cặp bằng color.js.
+     Component: thay khối data-system-demo bằng component THẬT của dự án (cùng CSS với các trang). Còn data-system-demo thì
+     bước system-demo của bộ khói FAIL.
+     Trạng thái tĩnh dùng thuộc tính thật (disabled, aria-busy, aria-invalid, aria-selected, aria-pressed) và gắn
+     data-demo-state="<trạng thái>" để lượt kiểm sâu không bấm thử. Hover, focus, nhấn để sống: bộ kiểm đo bằng chuột và bàn phím thật. -->
+<script src="assets/theme.js"></script>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/themes.css">
+<!-- CSS component của dự án đặt ở đây, ví dụ: <link rel="stylesheet" href="assets/app.css"> -->
+<script src="assets/color.js"></script>
+<style>
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body, system-ui, sans-serif);font-size:var(--text-base);line-height:var(--leading-normal)}
+  .sys{max-width:1180px;margin:0 auto;padding:40px 16px 80px}
+  .sys h1{font-family:var(--font-display, inherit);font-size:var(--text-3xl);line-height:var(--leading-tight);margin:0 0 8px}
+  .sys h2{font-family:var(--font-display, inherit);font-size:var(--text-xl);line-height:var(--leading-tight);margin:48px 0 16px}
+  .sys p{max-width:65ch;margin:0 0 12px;color:var(--muted)}
+  .sys-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0}
+  .sys-bar button{font:inherit;padding:6px 12px;border-radius:var(--radius-sm);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer}
+  .sys-bar button[aria-pressed="true"]{background:var(--selected);border-color:var(--ring)}
+  .sys-bar button:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  .sys-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr));gap:12px}
+  .sys-sw{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+  .sys-sw i{display:block;height:56px;border-bottom:1px solid var(--line)}
+  .sys-sw span{display:block;padding:8px 10px;font-size:var(--text-sm);color:var(--ink)}
+  .sys-sw code{display:block;padding:0 10px 10px;font:var(--text-xs)/1.4 var(--font-mono, ui-monospace, monospace);color:var(--muted);overflow-wrap:anywhere}
+  .sys-scroll{overflow-x:auto}
+  .sys-table{width:100%;border-collapse:collapse;font-size:var(--text-sm);background:var(--surface);border:1px solid var(--line)}
+  .sys-table th,.sys-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  .sys-table .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .sys-table [data-verdict="khong"] td:last-child{color:var(--danger-text);font-weight:600}
+  .sys-table [data-verdict="sat"] td:last-child{color:var(--warning);font-weight:600}
+  .sys-type > div{display:grid;grid-template-columns:minmax(0,160px) minmax(0,1fr);gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line)}
+  .sys-type code{font:var(--text-xs)/1.4 var(--font-mono, ui-monospace, monospace);color:var(--muted)}
+  .sys-shape{display:flex;flex-wrap:wrap;gap:16px}
+  .sys-shape div{width:140px;height:88px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;text-align:center;font-size:var(--text-sm)}
+  .sys-move{display:inline-block;padding:10px 16px;background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius);transition:transform var(--dur-base) var(--ease-out)}
+  .sys-move:hover{transform:translateX(24px)}
+  .sys-move:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  [data-sys-missing]:empty{display:none}
+  .sys [data-sys-missing]{padding:12px;border-radius:var(--radius);background:var(--danger-soft);color:var(--danger-text)}
+  /* Component mẫu: THAY bằng component thật của dự án */
+  .demo-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;margin:12px 0}
+  .demo-btn{font:inherit;font-weight:600;padding:10px 16px;border-radius:var(--radius);border:1px solid transparent;cursor:pointer;
+    background:var(--primary);color:var(--on-primary);transition:background-color var(--dur-fast) var(--ease-out)}
+  .demo-btn:hover{background:var(--primary-hover)}
+  .demo-btn:active{background:var(--primary-pressed)}
+  .demo-btn:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  .demo-btn.is-secondary{background:transparent;color:var(--ink);border-color:var(--line-strong)}
+  .demo-btn.is-secondary:hover{background:var(--hover)}
+  .demo-btn.is-danger{background:var(--destructive);color:var(--on-destructive)}
+  .demo-btn.is-danger:hover{background:var(--destructive-hover)}
+  .demo-btn:disabled{opacity:var(--disabled-opacity);cursor:not-allowed}
+  .demo-field{display:grid;gap:6px;width:min(100%,320px)}
+  .demo-field label{font-size:var(--text-sm);font-weight:600;color:var(--ink)}
+  .demo-field input{font:inherit;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+  .demo-field input::placeholder{color:var(--muted)}
+  .demo-field input:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+  .demo-field input[aria-invalid="true"]{border-color:var(--destructive)}
+  .demo-field small{font-size:var(--text-sm);color:var(--muted)}
+  .demo-field .err{color:var(--danger-text)}
+  .sys .demo-note{margin:0;padding:12px 14px;border-radius:var(--radius);font-size:var(--text-sm)}
+  .sys .demo-note.ok{background:var(--success-soft);color:var(--success)}
+  .sys .demo-note.warn{background:var(--warning-soft);color:var(--warning)}
+  .sys .demo-note.info{background:var(--info-soft);color:var(--info)}
+  .sys .demo-note.bad{background:var(--danger-soft);color:var(--danger-text)}
+  .demo-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+  .demo-tabs [role="tab"]{padding:8px 12px;color:var(--muted);border-bottom:2px solid transparent}
+  .demo-tabs [aria-selected="true"]{color:var(--ink);border-bottom-color:var(--primary)}
+  .demo-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow-1);padding:16px;max-width:360px}
+  .demo-card h3{margin:0 0 8px;font-size:var(--text-lg)}
+  .sys .demo-card p{color:var(--ink);overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<main class="sys">
+  <h1>Design system</h1>
+  <p>Trang sống của design system: màu, chữ, hình khối và chuyển động đọc thẳng từ token của theme đang bật. Đổi theme bằng các nút dưới đây, hoặc thêm <code>?theme=&lt;tên&gt;</code> vào địa chỉ.</p>
+  <div class="sys-bar" data-sys-themes></div>
+
+  <section aria-labelledby="h-mau">
+    <h2 id="h-mau">Màu</h2>
+    <p data-sys-missing></p>
+    <div class="sys-grid" data-sys-swatches></div>
+    <h2>Tương phản</h2>
+    <div class="sys-scroll"><table class="sys-table"><thead><tr><th>Cặp</th><th>Biến</th><th class="num">Tỉ lệ</th><th>Mức</th></tr></thead><tbody data-sys-pairs></tbody></table></div>
+  </section>
+
+  <section aria-labelledby="h-chu"><h2 id="h-chu">Chữ</h2><div class="sys-type" data-sys-type></div></section>
+  <section aria-labelledby="h-hinh"><h2 id="h-hinh">Hình khối</h2><div class="sys-shape" data-sys-shape></div></section>
+  <section aria-labelledby="h-chuyen"><h2 id="h-chuyen">Chuyển động</h2><p data-sys-motion></p><span class="sys-move" tabindex="0">Di chuột vào đây</span></section>
+
+  <section aria-labelledby="h-comp" data-system="components">
+    <h2 id="h-comp">Component</h2>
+    <div data-system-demo>
+      <p>Khối mẫu. Thay bằng component thật của dự án, mỗi component đủ trạng thái, kèm một biến thể nội dung khó: chuỗi dài, số lớn, danh sách rỗng.</p>
+      <div class="demo-row">
+        <button type="button" class="demo-btn">Lưu thay đổi</button>
+        <button type="button" class="demo-btn is-secondary">Xem trước</button>
+        <button type="button" class="demo-btn is-danger">Xoá đơn hàng</button>
+        <button type="button" class="demo-btn" disabled data-demo-state="disabled">Đã gửi</button>
+        <button type="button" class="demo-btn" aria-busy="true" data-demo-state="loading">Đang lưu</button>
+      </div>
+      <div class="demo-row">
+        <div class="demo-field"><label for="d1">Tên khách hàng</label><input id="d1" placeholder="Ví dụ: Trần Minh Khoa"><small>Tên in trên hoá đơn.</small></div>
+        <div class="demo-field"><label for="d2">Số điện thoại</label><input id="d2" value="090 12" aria-invalid="true" aria-describedby="d2e" data-demo-state="error"><small class="err" id="d2e">Số điện thoại cần đủ 10 chữ số.</small></div>
+      </div>
+      <div class="demo-tabs" role="tablist" aria-label="Mẫu tab" data-demo-state="selected"><span role="tab" aria-selected="true">Đang giao</span><span role="tab" aria-selected="false">Đã xong</span></div>
+      <div class="demo-row">
+        <p class="demo-note ok">Đã lưu 3 thay đổi.</p><p class="demo-note warn">Còn 2 đơn chưa xác nhận.</p>
+        <p class="demo-note info">Giá đã gồm thuế.</p><p class="demo-note bad">Không gửi được vì mất kết nối. Thử lại sau vài giây.</p>
+      </div>
+      <div class="demo-card"><h3>Công ty Trách nhiệm Hữu hạn Thương mại Dịch vụ Kỹ thuật Xây dựng Miền Nam</h3><p>Mã giao dịch TXN20261001987654321ABCDEF</p><p>Tổng 987.654.321 ₫</p></div>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+  const C = window.ColorKit, root = document.documentElement;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const v = k => getComputedStyle(root).getPropertyValue('--' + k).trim();
+  const $ = s => document.querySelector(s);
+  function render() {
+    if (!C) { $('[data-sys-missing]').textContent = 'Thiếu assets/color.js: chép từ sketch-to-site/templates/color.js.'; return; }
+    const cur = window.theme ? theme.get() : '';
+    const list = window.theme ? theme.list() : [];
+    $('[data-sys-themes]').innerHTML = list.length
+      ? list.map(n => `<button type="button" data-set="${esc(n)}" aria-pressed="${n === cur}">${esc(n)}</button>`).join('')
+      : '<span>Chưa có themes.css: chạy scripts/themes.mjs.</span>';
+    const names = C.SEEDS.concat(C.DERIVED.filter(k => !C.SEEDS.includes(k)));
+    const vars = {}, missing = [];
+    for (const k of names) { const x = v(k); if (x) vars[k] = x; else missing.push('--' + k); }
+    for (let i = 1; v('chart-' + i); i++) vars['chart-' + i] = v('chart-' + i);
+    $('[data-sys-missing]').textContent = missing.join(' ');
+    $('[data-sys-swatches]').innerHTML = Object.keys(vars).map(k =>
+      `<div class="sys-sw"><i style="background:var(--${esc(k)})"></i><span>--${esc(k)}</span><code>${esc(vars[k])}</code></div>`).join('');
+    const pairs = C.PAIRS.concat(Object.keys(vars).filter(k => k.startsWith('chart-')).map(k => [k, 'surface', 3, `Màu biểu đồ ${k.slice(6)} trên thẻ`]));
+    const TEXT = { dat: 'Đạt', sat: 'Sát ngưỡng', khong: 'Không đạt' };
+    $('[data-sys-pairs]').innerHTML = C.measure(vars, pairs).map(r =>
+      `<tr data-pair="${esc(r.fg)}/${esc(r.bg)}" data-verdict="${r.verdict}"><td>${esc(r.label)}</td>`
+      + `<td><code>--${esc(r.fg)}</code> trên <code>--${esc(r.bg)}</code>${r.under ? ` phủ <code>--${esc(r.under)}</code>` : ''}</td>`
+      + `<td class="num">${r.ratio.toFixed(2).replace('.', ',')}:1</td><td>${TEXT[r.verdict]} (cần ${String(r.need).replace('.', ',')})</td></tr>`).join('');
+    const sizes = ['4xl', '3xl', '2xl', 'xl', 'lg', 'base', 'sm', 'xs'].filter(k => v('text-' + k));
+    const rootPx = parseFloat(getComputedStyle(root).fontSize);
+    const px = k => { const x = v('text-' + k); return parseFloat(x) * (x.endsWith('rem') ? rootPx : 1); };
+    const base = sizes.includes('base') ? px('base') : 16;
+    $('[data-sys-type]').innerHTML = sizes.map(k => `<div><code>--text-${k} · ${Math.round(px(k))}px · ×${(px(k) / base).toFixed(2)}</code>`
+      + `<span style="font-size:var(--text-${k});line-height:var(--leading-tight)">Chữ Việt có dấu: Ấn tượng ở Đà Lạt</span></div>`).join('');
+    root.dataset.scaleRatio = sizes.length ? (px(sizes[0]) / base).toFixed(2) : '';
+    $('[data-sys-shape]').innerHTML = ['radius-sm', 'radius', 'radius-lg'].map(k => `<div style="border-radius:var(--${k})">--${k}<br>${esc(v(k))}</div>`).join('')
+      + [1, 2, 3, 4].map(i => `<div style="border-radius:var(--radius);box-shadow:var(--shadow-${i})">--shadow-${i}</div>`).join('');
+    $('[data-sys-motion]').textContent = ['dur-fast', 'dur-base', 'dur-slow', 'ease-out', 'ease-in', 'ease-emphasis'].map(k => `--${k}: ${v(k) || 'chưa khai'}`).join(' · ');
+  }
+  document.addEventListener('click', e => { const b = e.target.closest('[data-set]'); if (b) { theme.set(b.dataset.set); render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

@@ -7,13 +7,16 @@
 # --update: chép đè script của bộ kiểm bằng bản trong skill; không đụng qa.config.json, file bước, mốc, ledger.
 # Bộ khói: trang web ở 1440, 768, 390; màn app ở 1440 (khung máy) và 390. Trang cần tham số mới có nội dung (chi tiết theo ?id=)
 # khai báo mẫu bằng <meta name="qa-query" content="?id=..."> trong <head>. Site có nền tối thì tự thêm theme light và dark.
+# Có site/assets/themes.json: mỗi theme trong đó là một theme của bộ kiểm (theme mặc định sáng đứng đầu, không tham số).
+# Có site/_system.html: bộ khói của nó kiểm thêm component mẫu đã thay và mọi cặp màu đạt ngưỡng.
+# Trang nạp store.js: thêm bộ du-lieu-rong-<trang> (?data=empty) và du-lieu-dai-<trang> (?data=stress).
 # _qa/.kit-source ghi thư mục skill đã cài bộ kiểm, để bộ kiểm gọi đúng preflight.py của bản skill đó.
 import argparse, filecmp, json, os, re, shutil, sys
 sys.stdout.reconfigure(encoding='utf-8')
 KIT = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(os.path.dirname(KIT))
 # Tham số dùng chung của khuôn, không phải dữ liệu của trang: không cần mẫu
-SHARED_PARAMS = {'theme', 'platform', 'reset', 'state'}
+SHARED_PARAMS = {'theme', 'platform', 'reset', 'state', 'data'}
 # Màn app mobile (<html data-surface="app">): mọi phần tử bấm được phải đủ vùng chạm của nền tảng, iOS 44, Android 48.
 # Chỉ đo khi chạy full màn hình như trên điện thoại; có khung máy (khổ rộng) thì khung bị thu nhỏ, đo sẽ sai.
 TAP_CHECK = r"""(() => {
@@ -32,6 +35,33 @@ TAP_CHECK = r"""(() => {
   });
   return bad.length ? 'FAIL: ' + bad.length + ' vùng chạm < ' + min + 'px: ' + bad.slice(0, 6).join(' · ') : 'PASS ' + min + 'px';
 })()"""
+# Trang design system sống (site/_system.html, khuôn templates/system.html): còn component mẫu thì FAIL; có cặp màu dưới ngưỡng
+# hoặc thiếu biến token thì FAIL. Chạy ở mọi theme, nên mọi theme đều được đo đủ cặp
+SYSTEM_STEPS = [
+    {'name': 'system-demo', 'wait': 100, 'check': "document.querySelector('[data-system-demo]') ? "
+     "'FAIL: còn component mẫu (data-system-demo): thay bằng component thật của dự án' : 'PASS'"},
+    {'name': 'system-pairs', 'wait': 100, 'check': "(() => { const bad = [...document.querySelectorAll('[data-pair][data-verdict=\"khong\"]')]"
+     ".map(e => e.dataset.pair); const miss = ((document.querySelector('[data-sys-missing]') || {}).textContent || '').trim(); "
+     "return bad.length ? 'FAIL: ' + bad.length + ' cặp dưới ngưỡng: ' + bad.slice(0, 6).join(', ') : miss ? 'FAIL: thiếu biến ' + miss "
+     ": 'PASS ' + document.querySelectorAll('[data-pair]').length + ' cặp'; })()"},
+]
+
+
+def theme_names(site):
+    # site/assets/themes.json (scripts/themes.mjs): theme mặc định cho máy sáng đứng đầu, không tham số; theme khác ép bằng ?theme=<tên>
+    p = os.path.join(site, 'assets', 'themes.json')
+    if not os.path.exists(p):
+        return None
+    data = json.load(open(p, encoding='utf-8'))
+    names = list((data.get('themes') or {}).keys())
+    first = (data.get('default') or {}).get('light') or (names[0] if names else None)
+    if not first:
+        return None
+    return {n: ('' if n == first else f'?theme={n}') for n in [first] + [n for n in names if n != first]}
+
+
+def uses_store(html):
+    return bool(re.search(r'<script\b[^>]*\bsrc\s*=\s*["\'][^"\']*store\.js', html, re.I))
 
 
 def find_pages(site):
@@ -77,7 +107,9 @@ def read_site(site):
     return out
 
 
-KIT_FILES = ['run.mjs', 'run_all.py', 'qalib.py', 'quick.py', 'handover.py', 'compare.py']
+KIT_FILES = ['run.mjs', 'run_all.py', 'qalib.py', 'quick.py', 'handover.py', 'compare.py', 'probes.js', 'qadiff.py', 'deep.mjs']
+# Lõi màu dùng chung nằm ở templates/ của skill (bảng concept, themes.mjs, _system.html cùng dùng), không ở qa-kit/
+SHARED_FILES = [('color.js', os.path.join(SKILL, 'templates', 'color.js'))]
 GITIGNORE = '# Kết quả chạy, sinh lại được. last-green/ nên commit để cả nhóm dùng chung một mốc\nhandover/\ncurrent/\n.quick-run/\n.recheck/\n.tdd/\n.thumbs/\n__pycache__/\n.kit-source\n'
 
 ap = argparse.ArgumentParser()
@@ -94,8 +126,8 @@ if not os.path.isdir(site) or a.site in ('.', ''):
     sys.exit(2)
 os.makedirs(qa, exist_ok=True)
 
-for f in KIT_FILES:
-    src, dst = os.path.join(KIT, f), os.path.join(qa, f)
+for f, src in [(f, os.path.join(KIT, f)) for f in KIT_FILES] + SHARED_FILES:
+    dst = os.path.join(qa, f)
     if not os.path.exists(dst):
         shutil.copyfile(src, dst); print('chép', f)
     elif filecmp.cmp(src, dst, shallow=False):
@@ -108,6 +140,15 @@ for f in KIT_FILES:
 cfg_path = os.path.join(qa, 'qa.config.json')
 if os.path.exists(cfg_path):
     print('giữ qa.config.json')
+    cfg = json.load(open(cfg_path, encoding='utf-8'))
+    tn = theme_names(site) or {}
+    miss = [n for n in tn if n not in cfg.get('themes', {})]
+    if miss:
+        print('themes.json có theme chưa khai trong qa.config.json: ' + ', '.join(miss) + '. Thêm vào "themes": '
+              + ', '.join(f'"{n}": "{tn[n] or "?theme=" + n}"' for n in miss))
+    if os.path.exists(os.path.join(site, '_system.html')) and '_system' not in cfg.get('pages', []):
+        print('Có site/_system.html mà qa.config.json chưa có trang _system: thêm "_system" vào "pages", các bộ smoke-_system-<khổ> vào "suites", '
+              'và _qa/steps-smoke-_system.json với các bước system-demo, system-pairs (chép từ SYSTEM_STEPS trong qa_init.py).')
 else:
     pages = find_pages(site)
     if not pages:
@@ -128,19 +169,32 @@ else:
             steps = {'steps': [{'name': 'view', 'wait': 600, 'check': 'document.title', 'shot': key, 'jpeg': True}]}
             if app:
                 steps['steps'].append({'name': 'tap-targets', 'wait': 100, 'check': TAP_CHECK})
+            if p == '_system':
+                steps['steps'] += SYSTEM_STEPS
             q = qa_query(html)
             if q:
                 steps = {'query': q, **steps}
             elif url_params(html):
                 need_query.append((p, key, url_params(html)))
             json.dump(steps, open(sf, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+        # Kịch bản dữ liệu (store.js ?data=): danh sách rỗng ở khổ rộng, dữ liệu dài ở khổ điện thoại
+        if uses_store(html):
+            q = qa_query(html)
+            for scen, data, size in (('rong', 'empty', 'mobile' if app else 'desktop'), ('dai', 'stress', 'mobile')):
+                k2 = f'du-lieu-{scen}-{key}'
+                suites.append([k2, p, k2, size])
+                sf2 = os.path.join(qa, f'steps-{k2}.json')
+                if not os.path.exists(sf2):
+                    json.dump({'query': (q + '&' if q else '?') + 'data=' + data,
+                               'steps': [{'name': 'view', 'wait': 600, 'check': 'document.title', 'shot': k2, 'jpeg': True}]},
+                              open(sf2, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     # Nền tối: CSS có prefers-color-scheme: dark, [data-theme="dark"] hoặc lớp dark: của Tailwind (mặc định theo prefers-color-scheme).
     # run.mjs ép prefers-color-scheme theo ?theme= nên ảnh không đi theo máy đang chạy
     src = read_site(site)
     text = '\n'.join(src.values())
     dark_media = re.search(r'prefers-color-scheme\s*:\s*dark', text) or re.search(r'class="[^"]*\bdark:[a-z]', text)
     dark_attr = re.search(r'data-theme\s*=\s*["\']?dark', text)
-    themes = {'light': '?theme=light', 'dark': '?theme=dark'} if (dark_media or dark_attr) else {'default': ''}
+    themes = theme_names(site) or ({'light': '?theme=light', 'dark': '?theme=dark'} if (dark_media or dark_attr) else {'default': ''})
     cfg = {
         'site': a.site,
         'pages': pages,

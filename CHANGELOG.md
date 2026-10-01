@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.2.0 (2026-10-01)
+
+- Skills: `sketch-to-site` 4.2, `sketch-to-concept` 1.2, `evolve-site` 1.8, `tweak-site` 1.2, `handover-check` 1.2.
+- Ideas adapted from `plugin87/ux-ui-agent-skills` (see THIRD_PARTY_LICENSES.md), rewritten for the kit's CDP runner. No new dependencies.
+- Theme-based design system:
+  - `site/assets/themes.json` holds the seed colours of every theme. `scripts/themes.mjs` derives hover, pressed, soft backgrounds, control borders, focus ring, link and status colours, measures 26 required pairs per theme, and writes `themes.css`. It refuses to write when a pair fails, and flags pairs within 0.3 of the threshold.
+  - Every theme is a `data-theme` value: light, dark and brand themes are equal. Adding a theme is one entry in `themes.json`. `theme.js` reads the theme list from `themes.css`; `?theme=<name>` forces any theme.
+  - `templates/tokens.css`: type scale, four elevation levels, radii, motion, z-index and disabled opacity as tokens.
+  - `templates/color.js`: one colour core for the concept board, `themes.mjs`, the design-system page and the QA probes. It reads hex, rgb, hsl, oklch, oklab and `color(srgb …)`.
+- Living design-system page: `templates/system.html` becomes `site/_system.html` at B2. It draws the tokens of the active theme, measures every pair, and holds the project's real components in all states. Gate 3 reviews screenshots of it in every theme.
+- QA kit:
+  - Every step now measures contrast on the real background (transparent layers, gradients, sibling layers, placeholders) and action intent (a destructive label painted with the primary colour, an affirmative label painted with the danger colour). The label lists are Vietnamese and English.
+  - `handover.py run` adds a deep pass (`QA_DEEP=1`, `deep.mjs`) on each page's desktop smoke suite, or on the page's first desktop suite when the project has no smoke suites: hover and focus contrast, Tab reachability, arrow keys in roving widgets, Enter and Space on custom controls, and a real click on every control that declares a state.
+  - New measurements block only new issues against the baseline. Baselines recorded by an older kit report existing issues as debt: printed, not blocking, and `handover-check` asks whether to fix them or accept them into the baseline. A new suite inherits as debt the issues already in another suite's baseline, and deep-pass console errors are compared with the baseline. Debt is printed grouped, once per issue.
+  - `qa_init.py` reads themes from `themes.json`, adds `system-demo` and `system-pairs` checks to the `_system` page, and adds empty-data and long-data suites for pages that load `store.js` (`?data=empty`, `?data=stress`).
+  - `preflight.py`: P19 undefined CSS variables, P20 hardcoded colours (`/* color-ok: <reason> */` marks intentional ones), P21 `themes.css` older than `themes.json`.
+- Docs: B1 records content-reality assumptions with the cost if wrong; eight component states; UI copy rules (A.5); dashboard rules (D.7); the fresh-eyes review now renders first, needs evidence per finding and ends with a verdict and what it could not judge.
+
 ## 1.1.0 (2026-09-29)
 
 - Skills: `sketch-to-concept` 1.1 (new), `sketch-to-site` 4.1, `evolve-site` 1.7, `tweak-site` 1.1, `handover-check` 1.1.

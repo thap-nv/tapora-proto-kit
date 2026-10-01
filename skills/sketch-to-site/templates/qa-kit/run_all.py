@@ -2,7 +2,7 @@
 # Chạy từ thư mục prototype (thư mục chứa _qa/):  python _qa/run_all.py <thư-mục-ra> [lọc]
 #   ví dụ: python _qa/run_all.py _qa/.recheck             (mọi bộ)
 #          python _qa/run_all.py _qa/.recheck cash        (chỉ các bộ có chữ "cash" trong tên)
-# In một dòng tóm tắt mỗi bộ: số bước, lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung, bước FAIL, bước có check mà không trả giá trị.
+# In một dòng tóm tắt mỗi bộ: số bước, lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung, tương phản dưới ngưỡng, màu sai ý định, bước FAIL, bước có check mà không trả giá trị.
 # Bộ kiểm: [tên, trang, khoá file bước, khổ] trong "suites"; file bước là _qa/steps-<khoá>.json; khổ lấy từ "sizes".
 # Bước trả chuỗi bắt đầu bằng "FAIL" là lỗi. Bộ có tên bắt đầu bằng "scan" thì mọi chuỗi khác rỗng là lỗi (bộ quét chữ).
 # File bước:  {"query": "?id=XT07", "steps": [ {bước}, ... ]}   ("query" không bắt buộc, nối vào URL của trang)
@@ -38,15 +38,17 @@ def node_cmd():
 NODE = node_cmd()
 
 
-def run(s, out):
+def run(s, out, deep=False):
     name, page, steps, size = s
     sf = os.path.join(HERE, 'steps-' + steps + '.json')
     if not os.path.exists(sf):
         return name, None
     od = os.path.join(out, name)
     os.makedirs(od, exist_ok=True)
-    # Mỗi bộ một cổng gỡ lỗi riêng: trùng cổng thì bộ này điều khiển nhầm trình duyệt của bộ kia
-    env = dict(os.environ, CDP_PORT=str(9300 + 3 * SUITES.index(s)))
+    # Không đặt CDP_PORT: run.mjs để hệ điều hành chọn cổng gỡ lỗi cho từng bộ, nên không bao giờ trùng cổng với bộ khác (CDP_PORT chỉ là ép tay, tuỳ chọn)
+    env = dict(os.environ)
+    # Lượt kiểm sâu (deep.mjs): handover.py bật, qalib.py chọn bộ (DEEP_SUITES: mỗi trang một bộ khổ desktop); ở đây chỉ nhận quyết định
+    env['QA_DEEP'] = '1' if deep else ''
     r = subprocess.run(NODE + [os.path.join(HERE, 'run.mjs'), os.path.join(SITE, page + '.html'), sf, od] + list(size), capture_output=True, text=True, encoding='utf-8', env=env)
     try:
         rep = json.loads(r.stdout)
@@ -55,7 +57,8 @@ def run(s, out):
     json.dump(rep, open(os.path.join(od, 'report.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     steps_def = json.load(open(sf, encoding='utf-8'))['steps']
     has_check = {x['name'] for x in steps_def if x.get('check')}
-    errs = sum(len(x['errors']) for x in rep)
+    # Lỗi console của lượt sâu tính vào "sâu" (handover.py so với mốc), không vào "console"
+    errs = sum(len(x['errors']) for x in rep if x['step'] != 'deep')
     over = sum(1 for x in rep if x['dims'] and x['dims']['sw'] > x['dims']['cw'])
     cut = sum(len(x['dims'].get('cut') or []) for x in rep if x['dims'])
     fails = [x['step'] for x in rep if isinstance(x.get('check'), str) and x['check'].startswith('FAIL')]
@@ -63,7 +66,13 @@ def run(s, out):
     if name.startswith('scan'):
         fails += [x['step'] + ': ' + x['check'] for x in rep if isinstance(x.get('check'), str) and x['check']]
     silent = [x['step'] for x in rep if x['step'] in has_check and x.get('check') is None]
-    return name, {'steps': len(rep) - 1, 'errors': errs, 'overflow': over, 'cut': cut, 'fails': fails, 'silent': silent}
+    contrast = sum(len(x['dims'].get('contrast') or []) for x in rep if x['dims'])
+    intent = sum(len(x['dims'].get('intent') or []) for x in rep if x['dims'])
+    ds = next((x for x in rep if x['step'] == 'deep'), None)
+    dp = (ds or {}).get('deep') or {}
+    deepn = sum(len(dp.get(k) or []) for k in ('states', 'keyboard', 'interactive')) + len((ds or {}).get('errors') or [])
+    return name, {'steps': sum(1 for x in rep if x['step'] not in ('load', 'deep')), 'errors': errs, 'overflow': over, 'cut': cut,
+                  'contrast': contrast, 'intent': intent, 'deep': deepn, 'deep_ran': ds is not None, 'fails': fails, 'silent': silent}
 
 
 if __name__ == '__main__':
@@ -82,6 +91,8 @@ if __name__ == '__main__':
         if 'crash' in r:
             print(f'{name}: LỖI CHẠY {r["crash"]}')
         else:
-            print(f'{name}: {r["steps"]} bước · console {r["errors"]} · tràn {r["overflow"]} · cắt {r["cut"]} · FAIL {len(r["fails"])} {r["fails"] or ""} · im lặng {len(r["silent"])} {r["silent"] or ""}')
+            print(f'{name}: {r["steps"]} bước · console {r["errors"]} · tràn {r["overflow"]} · cắt {r["cut"]} · tương phản {r["contrast"]} · '
+                  f'ý định {r["intent"]}' + (f' · sâu {r["deep"]}' if r.get('deep') else '')
+                  + f' · FAIL {len(r["fails"])} {r["fails"] or ""} · im lặng {len(r["silent"])} {r["silent"] or ""}')
     os.makedirs(out, exist_ok=True)
     json.dump(summary, open(os.path.join(out, 'summary.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)

@@ -30,23 +30,24 @@ test('manifest plugin nói về bước concept, bỏ "five decision gates"', ()
 test('CHANGELOG ghi phiên bản mới của hai skill', () => {
   const md = read('CHANGELOG.md');
   const unreleased = md.split(/^## /m)[1]; // mục mới nhất, ngay dưới tiêu đề
-  for (const v of ['`sketch-to-concept` 1.1', '`sketch-to-site` 4.1', '`evolve-site` 1.7', '`tweak-site` 1.1', '`handover-check` 1.1']) {
+  for (const v of ['`sketch-to-concept` 1.2', '`sketch-to-site` 4.2', '`evolve-site` 1.8', '`tweak-site` 1.2', '`handover-check` 1.2']) {
     assert.ok(unreleased.includes(v), `CHANGELOG thiếu ${v}`);
   }
-  assert.match(unreleased, /superpowers/);
+  assert.match(unreleased, /ux-ui-agent-skills/);
 });
 
 test('README và CHANGELOG nói về QA_LOAD_TIMEOUT của run.mjs', () => {
   assert.ok(read('README.md').includes('QA_LOAD_TIMEOUT'), 'README thiếu QA_LOAD_TIMEOUT');
-  const unreleased = read('CHANGELOG.md').split(/^## /m)[1];
-  assert.ok(unreleased.includes('QA_LOAD_TIMEOUT'), 'CHANGELOG thiếu QA_LOAD_TIMEOUT');
+  const v110 = read('CHANGELOG.md').split(/^## /m).find(s => s.startsWith('1.1.0 ('));
+  assert.ok(v110.includes('QA_LOAD_TIMEOUT'), 'CHANGELOG 1.1.0 thiếu QA_LOAD_TIMEOUT');
 });
 
 test('ghi nguồn superpowers, README chạy test ở cả hai thư mục, SKILL.md có ghi chú phiên bản mới', () => {
   const lic = read('THIRD_PARTY_LICENSES.md');
   assert.ok(lic.includes('| [obra/superpowers](https://github.com/obra/superpowers) | © 2025 Jesse Vincent |'), 'thiếu dòng ghi nguồn superpowers');
   assert.ok(read('README.md').includes('node --test skills/sketch-to-concept/tests/ skills/sketch-to-site/tests/'), 'README thiếu lệnh test hai thư mục');
-  for (const [f, v] of [['sketch-to-site', 'v4.1'], ['sketch-to-concept', 'v1.1'], ['evolve-site', 'v1.7'], ['tweak-site', 'v1.1'], ['handover-check', 'v1.1']]) {
+  assert.ok(lic.includes('| [plugin87/ux-ui-agent-skills](https://github.com/plugin87/ux-ui-agent-skills) | © 2026 Thientan Soparat |'), 'thiếu dòng ghi nguồn ux-ui-agent-skills');
+  for (const [f, v] of [['sketch-to-site', 'v4.2'], ['sketch-to-concept', 'v1.2'], ['evolve-site', 'v1.8'], ['tweak-site', 'v1.2'], ['handover-check', 'v1.2']]) {
     assert.ok(read(`skills/${f}/SKILL.md`).split('\n').some(l => l.startsWith(`> **${v} (`)), `${f} thiếu ghi chú ${v}`);
   }
 });
@@ -64,7 +65,13 @@ test('mọi SKILL.md: name trùng thư mục, description tối đa 1.024 ký t�
   }
 });
 
-test('phát hành 1.1.0: hai manifest cùng phiên bản, CHANGELOG có mục 1.1.0 ở đầu', () => {
-  for (const f of ['.claude-plugin/plugin.json', '.codex-plugin/plugin.json']) assert.equal(JSON.parse(read(f)).version, '1.1.0', f);
-  assert.ok(read('CHANGELOG.md').split(/^## /m)[1].startsWith('1.1.0 ('), 'mục đầu của CHANGELOG phải là 1.1.0');
+test('phát hành 1.2.0: hai manifest cùng phiên bản, CHANGELOG có mục 1.2.0 ở đầu', () => {
+  for (const f of ['.claude-plugin/plugin.json', '.codex-plugin/plugin.json']) assert.equal(JSON.parse(read(f)).version, '1.2.0', f);
+  assert.ok(read('CHANGELOG.md').split(/^## /m)[1].startsWith('1.2.0 ('), 'mục đầu của CHANGELOG phải là 1.2.0');
+});
+
+test('README nói về themes.mjs, trang _system.html, phép đo trên trang và nợ cũ', () => {
+  const md = read('README.md');
+  for (const s of ['themes.mjs', '_system.html', 'themes.json', 'QA_DEEP', 'debt']) assert.ok(md.includes(s), `README thiếu ${s}`);
+  assert.match(md, /color\.js/);
 });

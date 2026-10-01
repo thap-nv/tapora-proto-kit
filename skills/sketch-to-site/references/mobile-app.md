@@ -10,7 +10,7 @@
 ```
 site/
 ├── index.html        # nhiều bề mặt: trang lối vào, link tới từng bề mặt · chỉ có app: link tới app/
-├── assets/           # tokens.css · tw.js · theme.js · data.js · store.js · app.css · app.js — mọi bề mặt dùng chung
+├── assets/           # tokens.css · themes.json · themes.css · tw.js · theme.js · color.js · data.js · store.js · app.css · app.js — mọi bề mặt dùng chung
 ├── admin/            # bề mặt web, nếu có (luật web như cũ)
 └── app/
     ├── index.html    # trang tổng quan: các màn chính trong khung máy, đổi iOS/Android
@@ -22,7 +22,7 @@ site/
   - màn gốc của tab theo `screen.html`, màn đi sâu *(chi tiết, form)* theo `detail.html`;
   - `app/index.html` theo `overview.html`, sửa danh sách `SCREENS`;
   - màn đọc `?id=` giữ thẻ `<meta name="qa-query">` của `detail.html`, đổi thành một mã có thật trong `data.js`: bộ kiểm khói mở màn đó theo mẫu này.
-- **Token dùng chung:** tách khối D.2 *(`rules-and-conflicts.md`)* thành `assets/tokens.css` *(CSS variables, cả nền tối)* và `assets/tw.js` *(`tailwind.config`)*. `app.css` nạp **sau** `tokens.css`.
+- **Token dùng chung:** mọi bề mặt dùng chung `assets/tokens.css` *(chép `templates/tokens.css`, thang không màu)*, `assets/themes.css` *(sinh từ `themes.json` bằng `scripts/themes.mjs`, mọi theme; D.2)* và `assets/tw.js` *(`tailwind.config` của D.2)*. `app.css` nạp **sau** `tokens.css` và `themes.css`.
 - **Đầu mỗi màn:** `<html lang="vi" data-surface="app" data-platform="ios">`, viewport có `viewport-fit=cover`. `app.js` nạp trong `<head>`, **không** `defer`.
   - `data-surface="app"` báo cho `preflight.py` *(P16, P17; bỏ P11)* và `qa_init.py` *(bước kiểm vùng chạm)* đây là màn app.
 - **Một file chạy hai kiểu**, `app.js` tự nhận:

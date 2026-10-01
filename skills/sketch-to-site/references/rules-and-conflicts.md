@@ -9,7 +9,9 @@
 ### A.1 Sàn không thương lượng
 | Luật | Ngưỡng |
 |---|---|
-| Tương phản chữ | ≥ 4.5:1 cho chữ thân · ≥ 3:1 cho chữ ≥ 18px/đậm ≥ 14px · áp cả **nút, placeholder, focus ring, chữ lỗi** |
+| Tương phản chữ | ≥ 4.5:1 cho chữ thân · ≥ 3:1 cho chữ lớn *(≥ 24px, hoặc ≥ 18,66px và đậm ≥ 700)* · áp cả **nút, placeholder, focus ring, chữ lỗi** · viền control và vòng focus ≥ 3:1 |
+| Màu theo ý định | Nút nguy hiểm *(xoá, huỷ việc gì, thu hồi, đặt lại)* dùng `--destructive` ở **mọi** chỗ, cả nút mở lẫn nút xác nhận; không bao giờ `--primary`. Nút đồng ý không mang màu nguy hiểm |
+| Bề mặt dẫn xuất | Chữ trên lớp phủ trong suốt, dải chuyển, nền nhạt cũng phải đạt ngưỡng. Đo trên nền thật *(bộ kiểm đo)*, không chỉ tin cặp token gốc |
 | Vùng chạm | ≥ 44×44px, cách nhau ≥ 8px |
 | Bàn phím | Mọi thứ bấm được đều tab tới được · focus ring nhìn thấy · `Esc` đóng lớp phủ · modal khoá focus |
 | Chuyển động | Mọi animation có nhánh `@media (prefers-reduced-motion: reduce)` tắt về tĩnh |
@@ -24,12 +26,22 @@
 - **Một họ xám** *(ấm hoặc lạnh, không cả hai)*.
 - **Một bộ icon**, một độ dày nét.
 - **Một giọng văn**.
+- **Mọi theme** chung một bộ tên biến; theme chỉ khác giá trị *(D.2)*.
 
 ### A.3 Trạng thái
-Mọi vùng dữ liệu có **đang tải** *(skeleton đúng hình, không spinner tròn)* · **rỗng** *(nói cách lấp đầy)* · **lỗi** *(cạnh chỗ lỗi; toast chỉ cho việc thoáng qua)*. Nút có hover · active `scale(.98)` · focus · disabled.
+- **Control:** 8 trạng thái: mặc định · hover · focus *(vòng `--ring` nhìn thấy)* · nhấn *(active `scale(.98)`)* · tắt · đang tải *(nếu bất đồng bộ; giữ độ đậm, thêm spinner, không mượn kiểu tắt)* · lỗi *(nếu nhận dữ liệu)* · đang chọn *(nếu chọn được)*.
+- **Vùng dữ liệu:** đang tải *(skeleton đúng hình, không spinner tròn)* · rỗng *(nói cách lấp đầy)* · lỗi *(cạnh chỗ lỗi; toast chỉ cho việc thoáng qua)*.
+- Control mang trạng thái *(`aria-pressed`, `aria-expanded`, `aria-selected`…)* phải **đổi thật** khi bấm, và **nhìn khác** khi trạng thái đổi. Lượt kiểm sâu bấm thử từng control.
 
 ### A.4 Form
 Nhãn **ở trên** ô nhập · chữ gợi ý (tuỳ chọn) · lỗi **ở dưới** · **không** dùng placeholder thay nhãn.
+
+### A.5 Câu chữ giao diện
+> Rút từ `ux-writing` của `plugin87/ux-ui-agent-skills` *(MIT; nguồn ở `THIRD_PARTY_LICENSES.md`)*.
+- Nút bắt đầu bằng động từ, nói kết quả: *Lưu thay đổi*, *Gửi yêu cầu*. Không *OK*, không *Xác nhận* trơn.
+- Hộp thoại xác nhận: tiêu đề hỏi, nút trả lời bằng đúng hành động và đối tượng *("Huỷ đơn DH-1042?" · **Huỷ đơn** · Giữ đơn)*. Việc không đảo ngược được mà nặng *(xoá tài khoản)*: gõ lại tên để xác nhận.
+- Thông báo lỗi: chuyện gì xảy ra · vì sao · làm gì tiếp. Không mã lỗi trơn, không đổ lỗi cho người dùng.
+- Trạng thái rỗng: vùng này để làm gì · hành động đầu tiên. Không *"Không có dữ liệu"* trơn.
 
 ---
 
@@ -85,23 +97,29 @@ Nhãn **ở trên** ô nhập · chữ gợi ý (tuỳ chọn) · lỗi **ở d�
 <script src="https://unpkg.com/@phosphor-icons/web"></script>   <!-- hoặc lucide nếu họ phong cách cho phép -->
 ```
 
-### D.2 Token → CSS variables → Tailwind
+### D.2 Token: themes.json → themes.css, tokens.css → CSS variables → Tailwind
+**Ba file, nạp ở mọi trang, trong `<head>`, theo thứ tự:**
 ```html
-<style>
-  :root{ --bg:#FBFBFA; --surface:#FFFFFF; --ink:#18181B; --muted:#71717A; --line:rgba(0,0,0,.08); --accent:#0F766E; --radius:12px; }
-  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#0B0C0E; --surface:#141518; --ink:#EDEDEF; --muted:#9A9AA3; --line:rgba(255,255,255,.08); } }
-  :root[data-theme="dark"]{ --bg:#0B0C0E; --surface:#141518; --ink:#EDEDEF; --muted:#9A9AA3; --line:rgba(255,255,255,.08); }
-  body{ background:var(--bg); color:var(--ink); font-variant-numeric: tabular-nums; }
-  @media (prefers-reduced-motion: reduce){ *,*::before,*::after{ animation-duration:.01ms!important; transition-duration:.01ms!important; scroll-behavior:auto!important; } }
-</style>
-<script>tailwind.config={theme:{extend:{colors:{bg:'var(--bg)',surface:'var(--surface)',ink:'var(--ink)',muted:'var(--muted)',line:'var(--line)',accent:'var(--accent)'},borderRadius:{DEFAULT:'var(--radius)'},fontFamily:{sans:['<Font>','system-ui','sans-serif']}}}}</script>
+<script src="assets/theme.js"></script>             <!-- không defer: đặt data-theme trước khi vẽ -->
+<link rel="stylesheet" href="assets/tokens.css">    <!-- thang không màu: chữ, bóng, bo góc, chuyển động, lớp -->
+<link rel="stylesheet" href="assets/themes.css">    <!-- màu theo theme: sinh từ themes.json, không sửa tay -->
+<script>tailwind.config={theme:{extend:{colors:{bg:'var(--bg)',surface:'var(--surface)',ink:'var(--ink)',muted:'var(--muted)',line:'var(--line)',primary:'var(--primary)','on-primary':'var(--on-primary)',accent:'var(--accent)',destructive:'var(--destructive)'},borderRadius:{sm:'var(--radius-sm)',DEFAULT:'var(--radius)',lg:'var(--radius-lg)'},fontFamily:{sans:'var(--font-body)'}}}}</script>
 ```
-Giá trị trong ví dụ chỉ là **khuôn**, còn **tên biến là hợp đồng chung của kit**: `templates/mobile/app.css` đọc đúng `--bg`, `--surface`, `--ink`, `--muted`, `--line`, `--accent`, `--brand-font`. Lấy giá trị thật từ `DESIGN.md`. Khối CSS ở `CONCEPT.md` *(do `sketch-to-concept/templates/tokens.js` sinh)* đã theo đúng các tên này, và thêm `--primary`, `--on-primary`, `--on-accent`, `--muted-bg`, `--ring`, `--font-display`, `--font-body`, `--radius-sm`, `--radius-lg`.
 
-**Có cả nền sáng và tối:** chép `templates/theme.js` vào `assets/`, nạp trong `<head>` của mọi trang, không `defer`.
-- Mặc định theo máy.
-- `?theme=light` hoặc `?theme=dark` ép một nền cho cả phiên, để demo và để bộ kiểm chụp đúng nền.
-- Nút đổi nền gọi `theme.toggle()`.
+**Tên biến là hợp đồng chung của kit.** `templates/color.js` giữ danh sách (`SEEDS`, `OPTIONAL`, `DERIVED`, `PAIRS`); `templates/mobile/app.css` và khối CSS của bảng concept dùng cùng tên:
+- **Màu gốc**, khai trong `themes.json` cho từng theme: `--bg --surface --ink --muted --line --primary --on-primary --accent --on-accent --destructive --on-destructive`. Tuỳ chọn: `--success --warning --info --ring --muted-bg`.
+- **Vai dẫn xuất**, `themes.mjs` tính, không khai tay: `--primary-hover --primary-pressed --accent-hover --accent-pressed --destructive-hover --destructive-pressed --hover --pressed --selected --primary-soft --muted-bg --card-foreground --line-strong --ring --link --success --success-soft --warning --warning-soft --info --info-soft --danger-text --danger-soft --scrim`.
+- **Thang không màu**, ở `tokens.css`: `--text-xs … --text-4xl --leading-tight --leading-normal --font-display --font-body --font-mono --brand-font --shadow-1 … --shadow-4 --shadow --radius-sm --radius --radius-lg --dur-fast --dur-base --dur-slow --ease-out --ease-in --ease-emphasis --z-sticky --z-dropdown --z-overlay --z-modal --z-toast --disabled-opacity`.
+- **Biến của theme:** `--theme-list --theme-default-light --theme-default-dark` ở `:root`; `--theme-name`, `--theme-mode` và `color-scheme` trong từng khối theme.
+
+**Theme:** mọi theme *(sáng, tối, theme thương hiệu)* là một giá trị của `data-theme` trên `<html>`, ngang hàng nhau.
+- `?theme=<tên>` ép một theme cho cả phiên, để demo và để bộ kiểm chụp đúng theme. `?theme=system` bỏ ép, về theo máy.
+- Không ép thì theo `default` trong `themes.json`: theme cho máy để chế độ sáng, theme cho máy để chế độ tối.
+- Nút đổi theme gọi `theme.set('<tên>')` hoặc `theme.toggle()` *(đổi giữa mặc định sáng và tối)*. `theme.list()` trả danh sách theme.
+- **Thêm theme:** thêm một mục vào `themes` *(tên a-z, 0-9, dấu gạch ngang; `mode` sáng hay tối; `seeds`)* → `node <skills>/sketch-to-site/scripts/themes.mjs <thư-mục-prototype>` → `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype> --update`, lệnh này in dòng cần thêm vào `qa.config.json`.
+- Vai dẫn xuất sai ý thiết kế: ghi giá trị vào `overrides` của theme đó; vẫn được đo.
+
+Dự án làm trước v4.2 *(khối `:root` và `[data-theme="dark"]` viết tay, chưa có `themes.json`)* vẫn chạy như cũ. Muốn chuyển: chép màu gốc sang `themes.json`, chạy `themes.mjs`, thay khối viết tay bằng ba dòng nạp ở trên.
 
 ### D.3 Tương tác tối thiểu *(JS thuần, không thư viện)*
 - Tab `[data-tab-target]` · modal/drawer `[data-modal-open]` `[data-modal-close]` + `Esc` + trả focus về nút mở · lọc/tìm trên bảng · toast `role="status"` · menu di động.
@@ -121,8 +139,19 @@ Giá trị trong ví dụ chỉ là **khuôn**, còn **tên biến là hợp đ�
 - Trang đọc tham số URL *(chi tiết theo `?id=`)*: khai báo mẫu trong `<head>` bằng `<meta name="qa-query" content="?id=<mã có trong data.js>">`. `qa_init.py` đọc thẻ này để bộ khói mở trang có nội dung; thiếu thì lệnh in CẢNH BÁO.
 - Kiểm luồng xuyên trang trong **một** bộ kiểm: bước `js` ghi dữ liệu rồi `location.href = 'orders.html'`, `wait` ≥ 1500, rồi `check` trên trang mới. Mỗi bộ chạy với hồ sơ trình duyệt mới nên luôn bắt đầu từ dữ liệu mẫu, mốc không trôi.
 
+**Kịch bản dữ liệu:** `?data=empty` làm rỗng mọi danh sách, `?data=stress` sinh danh sách ≥ 40 mục với chữ dài và số lớn *(muốn dữ liệu dài của riêng dự án thì khai `window.SEED_STRESS` trong `data.js`)*. Hai kịch bản không đụng dữ liệu demo. Bộ kiểm có sẵn một bộ cho mỗi kịch bản.
+
 ### D.6 Màn app mobile
 Khuôn ở `templates/mobile/`, luật ở `mobile-app.md`. Khác trang web ở: `<html data-surface="app" data-platform="…">` · viewport có `viewport-fit=cover` · token nạp từ `assets/tokens.css` và `assets/tw.js` · `app.css` + `app.js` *(trong `<head>`)* · khung `.app` › `.app-nav` · `.app-body` · `.app-tabs`. Tương tác tối thiểu D.3 vẫn áp; lớp phủ dùng sheet của khuôn.
+
+### D.7 Biểu đồ và dashboard *(khi sản phẩm có màn nhiều số)*
+> Rút từ `data-dashboard` của `plugin87/ux-ui-agent-skills` *(MIT; nguồn ở `THIRD_PARTY_LICENSES.md`)*.
+- Màu chuỗi lấy từ `--chart-n` *(`themes.json`, khoá `chart`)*, mỗi màu ≥ 3:1 trên `--surface`. Không dùng màu chính, màu báo cho chuỗi. Màu biểu đồ **không phải màu chữ**: chữ và nhãn trên biểu đồ dùng `--ink`, `--muted`.
+- Chuỗi phân biệt bằng cả hình *(nét đứt, điểm, nhãn trực tiếp)*, không chỉ bằng màu.
+- Nhãn hạng mục nằm trên hình *(dưới cột, cạnh đường)*, không chỉ trong `aria-label`. Mỗi biểu đồ có `<figcaption>` hoặc bảng số tóm tắt cho trình đọc màn hình.
+- Bố cục: một con số dẫn *(to nhất)*, rồi các phần khác hình dạng nhau; không bốn thẻ bằng nhau. Trong một hàng lưới, ô thấp hơn ô bên cạnh phải lấp chỗ trống *(`grid-template-rows:auto minmax(0,1fr)`)*, không để khoảng trắng dưới đáy.
+- Bảng dày trên điện thoại: bỏ cột phụ bằng media query và ghi lý do; không thu chữ dưới thang.
+- Nhịp xuất hiện lệch nhau lấy từ token: `calc(var(--dur-fast) * .6 * n)`.
 
 ---
 

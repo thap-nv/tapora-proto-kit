@@ -47,14 +47,15 @@ test('grade không làm tròn lên ngưỡng', () => {
   assert.equal(T.grade(2.99), 'Không đạt');
 });
 
-test('checkPairs chỉ đo cặp có đủ hai màu, số cắt xuống 2 chữ số', () => {
+test('checkPairs chỉ đo cặp có đủ hai màu, số cắt xuống 2 chữ số, kèm ngưỡng và mức', () => {
   const rows = T.checkPairs({ background: '#FFFFFF', foreground: '#767676', primary: '#0F766E' });
-  assert.deepEqual(rows, [{ fg: 'foreground', bg: 'background', label: 'Chữ chính trên nền', ratio: 4.54, grade: 'AA' }]);
+  assert.deepEqual(rows, [{ fg: 'foreground', bg: 'background', label: 'Chữ chính trên nền', ratio: 4.54, grade: 'AA', need: 4.5, verdict: 'sat' }]);
 });
 
-test('checkPairs không vỡ khi một màu không phải mã hex', () => {
-  const rows = T.checkPairs({ background: 'rgba(255,255,255,.9)', foreground: '#18181B' });
-  assert.deepEqual(rows, [{ fg: 'foreground', bg: 'background', label: 'Chữ chính trên nền', ratio: null, grade: 'Không đo được (cần mã hex)' }]);
+test('checkPairs không vỡ khi một màu không đọc được; rgba() trong suốt thì trộn lên trắng rồi đo', () => {
+  assert.deepEqual(T.checkPairs({ background: 'không-phải-màu', foreground: '#18181B' }),
+    [{ fg: 'foreground', bg: 'background', label: 'Chữ chính trên nền', ratio: null, grade: 'Không đo được (màu không đọc được)', need: 4.5, verdict: 'khong' }]);
+  assert.equal(typeof T.checkPairs({ background: 'rgba(255,255,255,.9)', foreground: '#18181B' })[0].ratio, 'number');
 });
 
 test('parseMix đọc mã trộn, không phân biệt hoa thường và thứ tự', () => {
@@ -192,4 +193,37 @@ test('fontsHref gộp font trùng, hợp các độ đậm, dùng độ đậm k
     'https://fonts.googleapis.com/css2?family=Anybody:wght@400;500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap');
   const same = { fontFamily: { display: 'Lexend', body: 'Lexend' }, fontWeights: { display: '700', body: '400;500' } };
   assert.equal(T.fontsHref(same), 'https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700&display=swap');
+});
+
+// Bảng màu đủ màu gốc: concept A của khuôn concepts.js
+const FULL = { background: '#F3F4F1', foreground: '#1F2A24', card: '#FFFFFF', 'card-foreground': '#1F2A24', muted: '#E6E8E3', 'muted-foreground': '#56615A',
+  border: '#D5D9D2', primary: '#1F2A24', 'on-primary': '#F3F4F1', accent: '#B3261E', 'on-accent': '#FFFFFF', destructive: '#B3261E', 'on-destructive': '#FFFFFF', ring: '#B3261E' };
+const FULL_DARK = { ...FULL, background: '#121714', foreground: '#E7EBE6', card: '#1A201C', 'card-foreground': '#E7EBE6', muted: '#232A25', 'muted-foreground': '#A3ADA6',
+  border: '#2E3631', primary: '#E7EBE6', 'on-primary': '#121714', accent: '#E0574D', 'on-accent': '#121714', destructive: '#E0574D', 'on-destructive': '#121714', ring: '#E0574D' };
+
+test('checkPairs đo được màu oklch, kèm ngưỡng và mức sát', () => {
+  const rows = T.checkPairs({ background: '#FFFFFF', foreground: '#18181B', primary: 'oklch(0.58 0.19 38)', 'on-primary': '#FFFFFF' });
+  const btn = rows.find(r => r.fg === 'on-primary');
+  assert.deepEqual([btn.ratio, btn.grade, btn.need, btn.verdict], [4.66, 'AA', 4.5, 'sat']);
+});
+
+test('checkPairs: concept đủ màu gốc thì đo thêm cặp của vai dẫn xuất', () => {
+  const rows = T.checkPairs(FULL, 'light');
+  for (const k of ['primary-hover', 'line-strong', 'ring', 'hover', 'danger-soft']) assert.ok(rows.some(r => r.fg === k || r.bg === k), k);
+  assert.ok(rows.every(r => typeof r.ratio === 'number' && r.grade && r.verdict));
+  assert.ok(rows.length >= 20);
+});
+
+test('cssText xuất vai dẫn xuất và color-scheme cho từng nền, không khai trùng biến', () => {
+  const css = T.cssText(T.resolve({ concepts: [{ id: 'a', colors: { light: FULL, dark: FULL_DARK } }] }, 'a'));
+  assert.match(css, /^:root\{--bg:#F3F4F1;[^}]*color-scheme:light;--theme-mode:"light";[^}]*--primary-hover:#[0-9A-F]{6};/);
+  assert.match(css, /:root\[data-theme="dark"\]\{[^}]*color-scheme:dark;[^}]*--line-strong:#[0-9A-F]{6};/);
+  const root = /^:root\{([^}]*)\}/.exec(css)[1];
+  const names = root.match(/--[\w-]+(?=:)/g);
+  assert.equal(names.length, new Set(names).size, 'khai trùng biến trong :root');
+});
+
+test('validate báo màu không đọc được', () => {
+  assert.deepEqual(T.validate({ concepts: [{ id: 'a', colors: { light: { background: 'xanh' } } }] }),
+    ['Concept "a": màu background không đọc được ("xanh").']);
 });

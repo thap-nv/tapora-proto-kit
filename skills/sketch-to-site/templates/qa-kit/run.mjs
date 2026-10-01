@@ -1,5 +1,6 @@
 // Bộ chạy thử: mở 1 trang, thực hiện chuỗi bước (JS), chụp ảnh từng bước, gom lỗi console.
 // node [--experimental-websocket] run.mjs <file.html> <steps.json> <outdir> [w] [h] [mobile]
+// Mỗi bước còn đo tương phản và màu theo ý định (probes.js, cần color.js cạnh file này); QA_DEEP=1 thêm lượt kiểm sâu (deep.mjs).
 // Node 20 cần cờ --experimental-websocket; Node 22 trở lên có sẵn WebSocket. run_all.py tự thêm cờ khi cần.
 // Trình duyệt: biến QA_BROWSER, rồi "browser" trong qa.config.json, rồi tự dò Edge/Chrome/Chromium theo hệ điều hành.
 import { spawn } from 'node:child_process';
@@ -14,6 +15,10 @@ mkdirSync(outdir, { recursive: true });
 const HERE = dirname(fileURLToPath(import.meta.url));
 let cfg = {};
 try { cfg = JSON.parse(readFileSync(join(HERE, 'qa.config.json'), 'utf8')); } catch {}
+// Lõi màu và phép đo trong trang: _qa/color.js và _qa/probes.js (qa_init.py chép). Chạy thẳng từ khuôn của skill thì color.js ở thư mục cha
+const kitFile = f => [join(HERE, f), join(HERE, '..', f)].find(p => existsSync(p));
+const PROBE_FILES = ['color.js', 'probes.js'].map(kitFile);
+const PROBE_SRC = PROBE_FILES.every(Boolean) ? PROBE_FILES.map(p => readFileSync(p, 'utf8')) : null;
 
 function findBrowser() {
   const pick = [process.env.QA_BROWSER, cfg.browser].filter(Boolean);
@@ -91,24 +96,33 @@ function layoutCheck() {
 const BROWSER = findBrowser();
 if (!BROWSER) { console.error('Không tìm thấy Edge, Chrome hay Chromium. Đặt biến QA_BROWSER hoặc khoá "browser" trong _qa/qa.config.json.'); process.exit(4); }
 
-// CDP_PORT: cổng riêng khi chạy nhiều bộ song song (run_all.py); không có thì chọn ngẫu nhiên
-const port = +process.env.CDP_PORT || 9300 + Math.floor(Math.random() * 600);
+// CDP_PORT chỉ là cách ép cổng bằng tay (tuỳ chọn). Không đặt thì để hệ điều hành chọn cổng trống (--remote-debugging-port=0)
+// rồi đọc cổng thật từ DevToolsActivePort trong hồ sơ: nhiều lần chạy song song không bao giờ đụng cổng nhau
+const fixedPort = +process.env.CDP_PORT || 0;
+let port = fixedPort;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-// Cổng đã có trình duyệt khác (thường là trình duyệt sót từ lần chạy trước) thì dừng hẳn: chạy tiếp là điều khiển nhầm trình duyệt đó
-try { await fetch(`http://127.0.0.1:${port}/json/version`); console.error(`Cổng ${port} đã có trình duyệt khác. Tắt trình duyệt còn sót (hồ sơ cdp-* trong thư mục tạm) rồi chạy lại.`); process.exit(3); } catch {}
+// Ép cổng bằng tay mà cổng đã có trình duyệt khác (thường là trình duyệt sót từ lần chạy trước) thì dừng hẳn: chạy tiếp là điều khiển nhầm trình duyệt đó
+if (fixedPort) try { await fetch(`http://127.0.0.1:${port}/json/version`); console.error(`Cổng ${port} đã có trình duyệt khác. Tắt trình duyệt còn sót (hồ sơ cdp-* trong thư mục tạm) rồi chạy lại.`); process.exit(3); } catch {}
 const prof = mkdtempSync(join(tmpdir(), 'cdp-'));
 // Linux: /dev/shm của container thường chỉ 64 MB nên trình duyệt dễ sập; chạy bằng root (Docker, VPS) thì Chrome không khởi động nếu thiếu --no-sandbox.
 // QA_BROWSER_ARGS: cờ thêm cho trình duyệt, ví dụ "--no-sandbox" khi container không cho dùng sandbox dù không chạy bằng root
 const linux = process.platform === 'linux';
 const extraArgs = [...(linux ? ['--disable-dev-shm-usage'] : []), ...(linux && process.getuid?.() === 0 ? ['--no-sandbox'] : []),
   ...(process.env.QA_BROWSER_ARGS || '').split(/\s+/).filter(Boolean)];
-const proc = spawn(BROWSER, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--remote-debugging-port=${port}`, `--user-data-dir=${prof}`, '--no-first-run', ...extraArgs, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+const proc = spawn(BROWSER, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--remote-debugging-port=${fixedPort}`, `--user-data-dir=${prof}`, '--no-first-run', ...extraArgs, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
 // Giữ phần cuối stderr của trình duyệt: không kết nối được thì in ra để biết lý do
 let berr = '';
 proc.stderr.on('data', d => { berr = (berr + d).slice(-2000); });
 proc.on('error', e => { berr += '\n' + e.message; });
+// Cổng do hệ điều hành chọn: đợi trình duyệt ghi DevToolsActivePort (dòng đầu là cổng), cùng ngân sách ~9 giây với vòng /json bên dưới
+if (!fixedPort) {
+  for (let i = 0; i < 60 && !port; i++) {
+    try { port = +readFileSync(join(prof, 'DevToolsActivePort'), 'utf8').split('\n')[0] || 0; } catch {}
+    if (!port) await sleep(150);
+  }
+}
 let target;
-for (let i = 0; i < 60 && !target; i++) { try { const l = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); target = l.find(t => t.type === 'page'); } catch {} await sleep(150); }
+for (let i = 0; i < 60 && port && !target; i++) { try { const l = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); target = l.find(t => t.type === 'page'); } catch {} await sleep(150); }
 if (!target) {
   const why = berr.trim().split('\n').filter(l => l.trim()).slice(-2).join(' | ').slice(-300);
   console.error(`Không kết nối được trình duyệt ở cổng ${port}: ${BROWSER}` + (why ? `\n  ${why}` : ''));
@@ -136,6 +150,8 @@ ws.addEventListener('message', ev => {
 });
 const send = (method, params = {}) => new Promise(r => { const i = ++id; pend.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
 const waitLoad = ms => new Promise(r => { const t = setTimeout(r, ms); loadWaiters.push(() => { clearTimeout(t); r(); }); });
+// Bơm lõi màu và phép đo vào trang trước mỗi lần đo: trang có thể vừa chuyển. probes.js tự bỏ qua khi đã có
+const inject = async () => { if (!PROBE_SRC) return false; for (const src of PROBE_SRC) await send('Runtime.evaluate', { expression: src }); return true; };
 await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
 // File tải xuống (nút xuất) lưu trong hồ sơ tạm, xoá cùng hồ sơ khi chạy xong; mặc định headless lưu vào Downloads của máy
 await send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: join(prof, 'downloads') });
@@ -152,7 +168,10 @@ const loaded = waitLoad(LOAD_TIMEOUT);
 await send('Page.navigate', { url: pathToFileURL(resolve(file)).href + qs });
 await Promise.all([loaded, sleep(2200)]);
 navigating = false; // tài nguyên treo không bao giờ tải xong: chỉ đợi một lần, không đợi lại ở mọi bước
-const report = [{ step: 'load', errors: errors.slice(), check: null, dims: null }];
+// Theme theo tên (?theme=<tên>, themes.css): prefers-color-scheme theo --theme-mode của theme đang bật, để phần theo media của trang khớp theme
+const tm = (await send('Runtime.evaluate', { expression: `getComputedStyle(document.documentElement).getPropertyValue('--theme-mode').replace(/["'\\s]/g, '')`, returnByValue: true })).result?.result?.value;
+if (tm === 'dark' || tm === 'light') await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: tm }] });
+const report = [{ step: 'load', errors: errors.slice().concat(PROBE_SRC ? [] : ['PROBES thiếu color.js hoặc probes.js cạnh run.mjs: chạy qa_init.py --update']), check: null, dims: null }];
 for (const s of steps.steps) {
   errors = [];
   if (s.js) { const r = await send('Runtime.evaluate', { expression: s.js, awaitPromise: true, returnByValue: true }); if (r.result?.exceptionDetails) errors.push('STEP ' + (r.result.exceptionDetails.exception?.description || r.result.exceptionDetails.text).split('\n')[0]); }
@@ -160,7 +179,11 @@ for (const s of steps.steps) {
   if (navigating) { await waitLoad(LOAD_TIMEOUT); navigating = false; } // bước vừa chuyển trang: đợi trang mới tải xong rồi mới kiểm
   let val = null;
   if (s.check) { const r = await send('Runtime.evaluate', { expression: s.check, returnByValue: true }); val = r.result?.result?.value; }
-  const dimsReply = await send('Runtime.evaluate', { expression: `JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,cut:(${layoutCheck})()})`, returnByValue: true });
+  // Đo tương phản và màu theo ý định ở mọi bước (probes.js); lỗi của phép đo thành một dòng, không làm hỏng cả bước
+  const probed = await inject();
+  const safe = f => `(()=>{try{return __qa.${f}()}catch(e){return ['LỖI ĐO '+e.message]}})()`;
+  const measure = probed ? `,contrast:${safe('contrast')},intent:${safe('intent')}` : '';
+  const dimsReply = await send('Runtime.evaluate', { expression: `JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,cut:(${layoutCheck})()${measure}})`, returnByValue: true });
   const dims = dimsReply.result?.result?.value;
   // Không đo được (trang chưa có body, đang chuyển trang): báo lỗi ở bước này, không làm sập cả bộ
   if (dims === undefined) errors.push('EVAL không đo được bố cục: ' + String(dimsReply.result?.exceptionDetails?.exception?.description || dimsReply.error?.message || 'không có giá trị').split('\n')[0]);
@@ -182,6 +205,23 @@ for (const s of steps.steps) {
     }
   }
   report.push({ step: s.name, errors, check: val, dims: dims === undefined ? null : JSON.parse(dims) });
+}
+// Lượt kiểm sâu (deep.mjs): chỉ khi QA_DEEP=1. Tải lại trang giữa các phép đo để phép này không làm lệch phép kia.
+// Lỗi console trong lượt sâu (bấm một control làm trang ném lỗi) ghi vào bước deep; handover.py so với mốc (qadiff deep_errors).
+// Lỗi lúc tải trang lặp lại ở mỗi lần tải lại: đã ghi ở bước load nên không ghi lại; lỗi trùng trong lượt sâu chỉ ghi một lần
+if (process.env.QA_DEEP === '1') {
+  const url = pathToFileURL(resolve(file)).href + qs;
+  const evaluate = async expression => (await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })).result?.result?.value;
+  const reload = async () => { const l = waitLoad(LOAD_TIMEOUT); await send('Page.navigate', { url }); await Promise.all([l, sleep(1200)]); navigating = false; await inject(); };
+  errors = [];
+  let d = null;
+  try {
+    await reload();
+    const { deep } = await import(pathToFileURL(join(HERE, 'deep.mjs')).href);
+    d = await deep({ send, sleep, reload, evaluate });
+  } catch (e) { errors.push('DEEP ' + String(e && e.message || e).split('\n')[0]); }
+  const seen = new Set(report[0].errors);
+  report.push({ step: 'deep', errors: errors.filter(x => !seen.has(x) && seen.add(x)), check: null, dims: null, deep: d });
 }
 console.log(JSON.stringify(report, null, 1));
 ws.close();

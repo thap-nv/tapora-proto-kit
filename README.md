@@ -11,7 +11,7 @@ Works with **Claude Code**, **Codex**, and other hosts that support [Agent Skill
 | Skill | Use it when | What it does |
 |---|---|---|
 | `sketch-to-concept` | You want to settle the concept before anything is built, or show a client options before the requirements are detailed | Reads only the core of the brief, then builds a concept board: 3 concepts from 3 different sources, each with an idea, a style tile and one real key screen. You compare them in the browser, mix layers from different concepts, and pick one at 2 decision gates. The result is `CONCEPT.md`. |
-| `sketch-to-site` | You need a new prototype from scratch: a website, a web app, an iOS/Android app, or a system with several surfaces | Starts from `CONCEPT.md`, and runs `sketch-to-concept` first when there is none. Reads the full requirements, tests the concept on the hardest screens, then locks a design system with you. It builds the full prototype and checks it itself, then installs the QA kit and takes the first baseline. App screens follow iOS or Android conventions, show in a phone frame on a computer and full-screen on a phone, and switch between iOS and Android with `?platform=android`. |
+| `sketch-to-site` | You need a new prototype from scratch: a website, a web app, an iOS/Android app, or a system with several surfaces | Starts from `CONCEPT.md`, and runs `sketch-to-concept` first when there is none. Reads the full requirements, tests the concept on the hardest screens, then locks a design system with you. It builds the full prototype and checks it itself, then installs the QA kit and takes the first baseline. App screens follow iOS or Android conventions, show in a phone frame on a computer and full-screen on a phone, and switch between iOS and Android with `?platform=android`. It sets up themes from `themes.json` (every theme is a `data-theme`) and a living design-system page, `_system.html`, reviewed at gate 3. |
 | `evolve-site` | You add, change or remove a feature in an existing prototype | It sizes the change (levels 0–3) and flags risks: permissions, data, logic, requirements, tokens, shared code. The level and flags decide which of the 3 gates to stop at. It reuses the existing design system and data contract, so the new part looks like it shipped on day one. |
 | `tweak-site` | The change is small: copy, spacing, one component, no risk flag | No questions and no baseline run. It runs the quick check, then writes one log line. Anything bigger goes to `evolve-site`. |
 | `handover-check` | Before you hand over, share a link or commit | Runs every suite on every theme once, and matches every difference to a logged change. Also runs a 12-point UX check on the screens you touched and updates the docs once. After your sign-off, it sets the new baseline. |
@@ -155,7 +155,18 @@ python _qa/handover.py promote _qa/handover/<date-time>
 | `python _qa/run_all.py <out> [filter]` | Debugging | Runs suites without any baseline |
 | `python _qa/compare.py <a> <b>` | Debugging | Compares two runs step by step |
 
-A run is clean when it has 0 console errors, 0 failed steps, 0 silent steps, 0 new horizontal overflows and 0 new clipped items, and preflight passes. A step is silent when it has a `check` but returns no value.
+A run is clean when it has 0 console errors, 0 failed steps, 0 silent steps, 0 new horizontal overflows, 0 new clipped items, 0 new contrast issues, 0 new action-intent issues, and preflight passes. A step is silent when it has a `check` but returns no value.
+
+**Measurements on the rendered page**
+
+- Every step measures text contrast on the real background: transparent layers are composited, gradients sampled, sibling layers under the text followed, and placeholders included. It also checks action intent: a destructive label (xoá, huỷ đơn, thu hồi…) painted with the primary colour, or an affirmative label painted with the danger colour.
+- `handover.py run` adds a deep pass (`QA_DEEP=1`) on each page's desktop smoke suite, or on the page's first desktop suite when the project has no smoke suites, and prints which suites ran it (`Lượt sâu: n bộ (…)`): hover and focus contrast, Tab reachability, arrow keys in roving widgets, Enter and Space on custom controls, and a real click on every control that declares a state (`aria-pressed`, `aria-expanded`, …). Elements marked `data-demo-state` are drawings of a state and are not clicked.
+- New measurements block only new issues against the baseline. When the baseline was recorded by an older kit, existing issues are reported as debt: printed, not blocking, and `handover-check` asks whether to fix them or accept them. A new suite whose issue is already in the baseline of another suite (a shared component) also gets debt, and console errors of the deep pass are compared with the baseline like the other measurements. Debt is printed once per issue, with `×n` when it repeats across steps, sizes and themes.
+- `color.js` has one source, `sketch-to-site/templates/color.js`. `qa_init.py` copies it into `_qa/` with `probes.js` and `deep.mjs`; `--update` refreshes them.
+
+**Themes**
+
+`site/assets/themes.json` lists every theme's seed colours. `node <skills>/sketch-to-site/scripts/themes.mjs <prototype-dir>` derives the state and status colours, checks every pair in every theme, and writes `themes.css`. `qa_init.py` turns each theme into a QA theme. The design-system page `site/_system.html` shows and measures the tokens of the active theme.
 
 **Configuration: `_qa/qa.config.json`**
 
@@ -163,7 +174,7 @@ A run is clean when it has 0 console errors, 0 failed steps, 0 silent steps, 0 n
 |---|---|
 | `site` | Folder with the pages, relative to the prototype folder (default `site`) |
 | `pages` | HTML page names without `.html`, relative to `site`. Pages in subfolders keep the folder, for example `admin/orders` or `app/home` |
-| `themes` | `{name: "?url-param"}`. The first theme is the default. Other themes are checked by `handover.py`, and by `quick.py` when a `.css` file changes. `qa_init.py` adds `light` and `dark` when the site has a dark theme. For an app built for both platforms, add `"android": "?platform=android"`. |
+| `themes` | `{name: "?url-param"}`. The first theme is the default. Other themes are checked by `handover.py`, and by `quick.py` when a `.css` file changes. `qa_init.py` adds `light` and `dark` when the site has a dark theme. For an app built for both platforms, add `"android": "?platform=android"`. When `site/assets/themes.json` exists, `qa_init.py` takes the themes from it. |
 | `sizes` | Named viewports `[width, height, mobile]` |
 | `suites` | `[name, page, steps-key, size]`. Steps are read from `_qa/steps-<steps-key>.json`. |
 | `noisy` | `[suite, step]` pairs whose value changes between runs by design, such as a live clock. They are ignored when comparing. |
@@ -232,6 +243,9 @@ For app screens (`<html data-surface="app">`), `qa_init.py` adds a `tap-targets`
   - The theme parameter: `?theme=` in `sketch-to-site/templates/theme.js`, the `prefers-color-scheme` rule in `run.mjs`, and the themes that `qa_init.py` generates.
   - The minimum tap sizes (44 on iOS, 48 on Android): `--tap` in `sketch-to-site/templates/mobile/app.css`, `TAP_CHECK` in `qa_init.py`, and `mobile-app.md` §2 and §4.
   - The reference-only list: each skill's `disable-model-invocation` flag and `agents/openai.yaml`, the note at the top of `sketch-to-site`, the note under the `evolve-site` §4 table, and the paragraph under "Bundled supporting skills" in this README.
+  - The token contract: `SEEDS`, `OPTIONAL`, `DERIVED` and `PAIRS` in `sketch-to-site/templates/color.js`, `rules-and-conflicts.md` §D.2, and `templates/DESIGN.md` §2. The tests check D.2 against `color.js`.
+  - The destructive and affirmative label lists: `DESTRUCTIVE` and `AFFIRM` in `qa-kit/probes.js`, and `qa-gate.md` §2. The tests check the Vietnamese list.
+  - The theme hash: `themes.mjs` writes it, `preflight.py` P21 checks it (SHA-1 of `themes.json` with `\n` line endings, first 10 characters).
 - **Bundled third-party skills are frozen copies.** They do not follow upstream updates. To refresh one, replace its folder, keep its `LICENSE`, and re-apply the changes listed in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). `huashu-design` is trimmed, so refreshing it also means removing the slide, animation, video and audio parts again.
 - **QA kit changes.** Test on a small sample site with `qa_init.py`: run `handover.py run`, `promote`, then edit one file and run `quick.py`. Existing projects upgrade with `qa_init.py <dir> --update`, which replaces the scripts but not the config, steps or baselines.
 - **Releases.** Bump `version` in both `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`, then add an entry to [CHANGELOG.md](CHANGELOG.md).

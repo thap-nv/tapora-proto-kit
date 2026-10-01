@@ -46,6 +46,7 @@ test('SKILL.md nhắc đủ các khuôn của skill', () => {
   for (const f of ['templates/concept-board.html', 'templates/concepts.js', 'templates/tokens.js', 'templates/key-screen.html', 'templates/CONCEPT.md', 'references/concept-method.md']) {
     assert.ok(md.includes(f), `SKILL.md chưa nhắc ${f}`);
   }
+  assert.ok(md.includes('<skills>/sketch-to-site/templates/color.js'), 'SKILL.md chưa dặn chép color.js');
 });
 
 test('SKILL.md chỉ có Cổng 1 và Cổng 2, dừng ở cả hai', () => {
@@ -77,6 +78,7 @@ test('lệnh lấy khối CSS ghi trong SKILL.md chạy được trên thư mụ
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   fs.mkdirSync(path.join(dir, 'concept'));
   for (const f of ['concepts.js', 'tokens.js']) fs.copyFileSync(path.join(SKILL, 'templates', f), path.join(dir, 'concept', f));
+  fs.copyFileSync(path.join(SKILL, '..', 'sketch-to-site', 'templates', 'color.js'), path.join(dir, 'concept', 'color.js'));
   const cmd = m[1].replace('<id>', 'a').replace('<mã trộn>', 'mau:B');
   const out = execSync(cmd, { cwd: dir, encoding: 'utf8' });
   assert.match(out, /^:root\{--bg:#14110F;/, 'màu phải lấy từ concept B theo mã trộn');

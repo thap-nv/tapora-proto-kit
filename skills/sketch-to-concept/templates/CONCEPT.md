@@ -40,6 +40,8 @@
 | destructive · on-destructive | `--destructive` · `--on-destructive` | | | Lỗi | <x:1> |
 | ring | `--ring` | | | Vòng focus | |
 
+**Sang Phần B:** B2 của `sketch-to-site` chép các màu này vào `site/assets/themes.json` *(khuôn `<skills>/sketch-to-site/templates/themes.json`)*, mỗi nền một theme: background → `bg`, card → `surface`, foreground → `ink`, muted-foreground → `muted`, border → `line`, muted → `muted-bg`, vai khác giữ tên. Vai dẫn xuất *(hover, nhấn, nền nhạt, viền control, vòng focus, liên kết)* do `themes.mjs` tính và đo, không chép tay.
+
 **Lý do màu:** <một câu, theo giao thức 3 bước>
 
 **Chữ**

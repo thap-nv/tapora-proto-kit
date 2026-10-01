@@ -2,7 +2,7 @@
 // Chép vào concept/concepts.js rồi THAY TOÀN BỘ dữ liệu mẫu bằng dữ liệu của dự án, và xoá dòng "example: true".
 // Còn dòng đó thì bảng hiện dải cảnh báo "dữ liệu mẫu".
 // - Nạp bằng <script>, không fetch: trang mở bằng file:// thì trình duyệt chặn fetch file cục bộ.
-// - Vai trò màu theo cột của ui-ux-pro-max/data/colors.csv, viết kebab-case. Mọi màu viết mã hex để bảng đo được tương phản.
+// - Vai trò màu theo cột của ui-ux-pro-max/data/colors.csv, viết kebab-case. Màu viết mã hex hoặc oklch(); bảng đo cả màu dẫn xuất (hover, nền nhạt, viền control, vòng focus) như themes.mjs sẽ sinh.
 //   tokens.js xuất biến CSS theo tên chung của kit: background → --bg, card → --surface, foreground → --ink,
 //   muted-foreground → --muted, border → --line, muted → --muted-bg; vai trò khác giữ tên (--primary, --on-primary…).
 //   Concept khoá một nền thì chỉ khai "light" hoặc chỉ "dark".

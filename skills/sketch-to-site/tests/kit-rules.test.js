@@ -249,3 +249,93 @@ test('mọi đường dẫn {skills}/… trong prompt và tài liệu đều có
   }
   assert.deepEqual(missing, []);
 });
+
+// ---- v4.2: design system theo theme, trang _system.html, đo trên trang render ----
+test('v4.2: B2 dựng theme bằng themes.json và themes.mjs, có trang _system.html; Cổng 3 xem ảnh _system ở mọi theme', () => {
+  const md = read('skills/sketch-to-site/SKILL.md');
+  const b2 = section(md, '### B2 · Design system', '### 🛑 Cổng 3');
+  for (const s of ['templates/themes.json', 'scripts/themes.mjs', 'templates/tokens.css', 'templates/system.html', 'site/_system.html', 'data-system-demo', 'SÁT'])
+    assert.ok(b2.includes(s), `B2 thiếu ${s}`);
+  assert.match(section(md, '### 🛑 Cổng 3', '### B3'), /_system\.html[^\n]*mỗi theme/);
+  assert.match(md, /^> \*\*v4\.2 \(/m);
+});
+
+test('B1 ghi giả định Thực tế nội dung, mỗi dòng có giá phải trả nếu sai; khuôn DECISIONS.md có mục Giả định', () => {
+  const b1 = section(read('skills/sketch-to-site/SKILL.md'), '### B1 ·', '### B2');
+  assert.match(b1, /\*\*Thực tế nội dung\*\*/);
+  assert.match(b1, /giá phải trả nếu sai/);
+  assert.match(read('skills/sketch-to-site/templates/DECISIONS.md'), /^## Giả định/m);
+});
+
+test('D.2 liệt kê đúng màu gốc và vai dẫn xuất của color.js; mọi theme là một data-theme; có cách thêm theme', () => {
+  const C = require('../templates/color.js');
+  const d2 = section(read('skills/sketch-to-site/references/rules-and-conflicts.md'), '### D.2', '### D.3');
+  for (const k of C.SEEDS.concat(C.OPTIONAL, C.DERIVED)) assert.ok(d2.includes(`--${k}`), `D.2 thiếu --${k}`);
+  assert.match(d2, /mọi theme[^\n]*là một giá trị của `data-theme`/i);
+  assert.match(d2, /\*\*Thêm theme:\*\*/);
+});
+
+test('khuôn DESIGN.md: bảng 8 trạng thái, thang chữ, bóng theo độ cao, theme, biểu đồ, kết quả themes.mjs', () => {
+  const md = read('skills/sketch-to-site/templates/DESIGN.md');
+  assert.match(md, /\| Component \| Mặc định \| Hover \| Focus \| Nhấn \| Tắt \| Đang tải \| Lỗi \| Đang chọn \|/);
+  for (const s of ['--shadow-4', '--text-4xl', '## 2b. Theme', '## 11. Biểu đồ', 'themes.mjs']) assert.ok(md.includes(s), s);
+});
+
+test('qa-gate: mục 1 có P19–P21; mục 2 có phép đo trong trang, lượt sâu, nợ cũ; từ điển nhãn khớp probes.js', () => {
+  const qg = read('skills/sketch-to-site/references/qa-gate.md');
+  const s1 = section(qg, '## 1.', '## 2.');
+  for (const c of ['P19', 'P20', 'P21']) assert.ok(s1.includes('`' + c + '`'), c);
+  const s2 = section(qg, '## 2.', '## 3.');
+  for (const s of ['data-contrast-bg', 'data-demo-state', 'nợ cũ', 'Lượt kiểm sâu']) assert.ok(s2.includes(s), s);
+  const probes = read('skills/sketch-to-site/templates/qa-kit/probes.js');
+  const words = /Nhãn nguy hiểm: \*([^*]+)\*/.exec(s2)[1].split(',').map(w => w.trim()).filter(w => !w.includes('+'));
+  assert.ok(words.length >= 8);
+  for (const w of words) assert.ok(probes.includes(w), `probes.js thiếu "${w}"`);
+});
+
+test('qa-gate mục 7: xem ảnh trước khi nói, mỗi vấn đề có bằng chứng, có kết luận và mục không đánh giá được', () => {
+  const s7 = section(read('skills/sketch-to-site/references/qa-gate.md'), '## 7. Review bằng góc nhìn mới', '\n## 8.');
+  for (const s of ['Xem trước khi nói', 'Mỗi vấn đề phải có bằng chứng', 'KẾT LUẬN: chặn · làm lại · giao', 'Không đánh giá được', 'Chịu tải', 'Tương tác thật'])
+    assert.ok(s7.includes(s), s);
+});
+
+test('A.3 có 8 trạng thái; A.5 câu chữ giao diện; D.5 kịch bản dữ liệu; D.7 biểu đồ; ghi nguồn plugin87', () => {
+  const r = read('skills/sketch-to-site/references/rules-and-conflicts.md');
+  assert.match(section(r, '### A.3', '### A.4'), /8 trạng thái/);
+  assert.match(r, /^### A\.5 Câu chữ giao diện/m);
+  assert.match(section(r, '### D.5', '### D.6'), /\?data=empty[^\n]*\?data=stress/);
+  assert.match(r, /^### D\.7 Biểu đồ và dashboard/m);
+  assert.match(r, /plugin87\/ux-ui-agent-skills/);
+});
+
+test('khuôn AGENTS-qa.md nói lệnh themes.mjs, trang _system.html, tương phản và nợ cũ', () => {
+  const a = read('skills/sketch-to-site/templates/AGENTS-qa.md');
+  for (const s of ['scripts/themes.mjs', '_system.html', 'tương phản mới', 'nợ cũ']) assert.ok(a.includes(s), s);
+});
+
+test('evolve-site 1.8: cờ T thêm màu vào themes.json, component vào _system.html; phần mới đọc được ở mọi theme', () => {
+  const md = read('skills/evolve-site/SKILL.md');
+  assert.match(md, /^> \*\*v1\.8 \(/m);
+  assert.match(md, /\*\*T · Token, component\*\*[^\n]*themes\.json[^\n]*_system\.html/);
+  assert.match(md, /đọc được ở \*\*mọi theme\*\*/);
+});
+
+test('tweak-site 1.2: đổi màu qua themes.json và themes.mjs; nợ cũ không tự sửa', () => {
+  const md = read('skills/tweak-site/SKILL.md');
+  assert.match(md, /^> \*\*v1\.2 \(/m);
+  assert.match(section(md, '## 2. Luật không bỏ', '## 3.'), /themes\.json[^\n]*themes\.mjs/);
+  assert.match(section(md, '## 3. Quy trình', '## 4.'), /`nợ cũ`[^\n]*không tự sửa/);
+});
+
+test('handover-check 1.2: bảng đọc kết quả có phép đo mới và nợ cũ; cổng hỏi nợ cũ', () => {
+  const md = read('skills/handover-check/SKILL.md');
+  assert.match(md, /^> \*\*v1\.2 \(/m);
+  const b4 = section(md, '### B4 · Đọc kết quả', '### B5');
+  assert.match(b4, /\*\*Tương phản, ý định, sâu\*\*/);
+  assert.match(b4, /\*\*Nợ cũ\*\*/);
+  assert.match(section(md, '### 🛑 Cổng', '### B7'), /\*\*Nhận nợ cũ vào mốc\*\*/);
+});
+
+test('sketch-to-concept 1.2 có ghi chú phiên bản về lõi màu chung', () => {
+  assert.match(read('skills/sketch-to-concept/SKILL.md'), /^> \*\*v1\.2 \([^\n]*color\.js/m);
+});
