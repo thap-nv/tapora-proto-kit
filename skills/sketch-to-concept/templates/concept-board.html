@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bảng concept</title>
 <!-- Mẫu từ sketch-to-concept/templates/concept-board.html. Chép thành concept/index.html, KHÔNG sửa file này:
-     mọi nội dung lấy từ concepts.js. Cùng thư mục cần: concepts.js, tokens.js, theme.js, a.html, b.html, c.html. -->
+     mọi nội dung lấy từ concepts.js. Cùng thư mục cần: concepts.js, color.js, tokens.js, theme.js, a.html, b.html, c.html. -->
 <script src="theme.js"></script>
 <script src="concepts.js"></script>
+<script src="color.js"></script>
 <script src="tokens.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -60,6 +61,7 @@
   .ct li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;padding:4px 0;border-bottom:1px solid var(--line)}
   .ct b{font-weight:600}
   .ct b.bad{color:var(--destructive)}
+  .ct b.near{color:var(--warning, var(--ink))}
   .display{margin:0;font-family:var(--font-display);font-size:28px;line-height:1.2;overflow-wrap:anywhere}
   .bodytext{margin:8px 0 0;color:var(--muted)}
   .mono{margin:8px 0 0;font-family:var(--font-mono,var(--font-body));font-size:13px}
@@ -81,7 +83,7 @@
   .shot{padding:16px;border-top:1px solid var(--ui-line)}
   .shot p{margin:0 0 8px;font-size:13px;color:var(--ui-muted)}
   .frame{position:relative;overflow:hidden;border:1px solid var(--ui-line);border-radius:8px;background:var(--ui-bg)}
-  .frame iframe{position:absolute;top:0;left:0;border:0;transform-origin:0 0;background:#FFFFFF}
+  .frame iframe{position:absolute;top:0;left:0;border:0;transform-origin:0 0;background:#FFFFFF} /* color-ok: nền của khung trước khi màn xem trước tải xong */
   section.block{margin-top:32px;background:var(--ui-surface);border:1px solid var(--ui-line);border-radius:12px;padding:16px}
   section.block h2{margin:0 0 8px;font-size:20px}
   .scroll{overflow-x:auto}
@@ -153,6 +155,7 @@
   const missing = [];
   if (!D) missing.push('Không đọc được concepts.js: kiểm file nằm cùng thư mục với index.html và không có lỗi cú pháp.');
   if (!T) missing.push('Không đọc được tokens.js: chép từ sketch-to-concept/templates/tokens.js vào cùng thư mục với index.html.');
+  if (!window.ColorKit) missing.push('Không đọc được color.js: chép từ sketch-to-site/templates/color.js vào cùng thư mục với index.html.');
   if (missing.length) return fail(missing);
   const problems = T.validate(D);
   if (problems.length) return fail(problems);
@@ -166,6 +169,8 @@
   let width = 1440;
   const mode = () => (window.theme ? window.theme.get() : 'light');
   const palette = c => (mode() === 'dark' && c.colors.dark) || c.colors.light || c.colors.dark;
+  // Chế độ của bảng màu đang hiện (concept chỉ có một nền thì là nền đó): vai dẫn xuất đo theo đúng chế độ này
+  const paletteMode = c => (mode() === 'dark' && c.colors.dark) ? 'dark' : (c.colors.light ? 'light' : 'dark');
   const ratio = r => (r === null ? 'Không đo được' : r.toFixed(2).replace('.', ',') + ':1');
   const screenSrc = (id, mix) => `${id}.html?theme=${mode()}` + (mix ? `&mix=${encodeURIComponent(mix)}` : '');
 
@@ -186,8 +191,8 @@
   function tile(c) {
     const p = palette(c), k = D.content || {};
     const only = !(c.colors.light && c.colors.dark) ? `<span>chỉ có nền ${c.colors.dark ? 'tối' : 'sáng'}</span>` : '';
-    const rows = T.checkPairs(p).map(r => `<li data-contrast="${esc(r.fg)}" data-grade="${esc(r.grade)}"><span>${esc(r.label)}</span>` +
-      `<span data-ratio>${ratio(r.ratio)}</span><b class="${r.grade === 'Không đạt' ? 'bad' : ''}">${esc(r.grade)}</b></li>`).join('');
+    const rows = T.checkPairs(p, paletteMode(c)).map(r => `<li data-contrast="${esc(r.fg)}" data-grade="${esc(r.grade)}" data-verdict="${esc(r.verdict)}"><span>${esc(r.label)}</span>` +
+      `<span data-ratio>${ratio(r.ratio)}</span><b class="${r.grade === 'Không đạt' ? 'bad' : r.verdict === 'sat' ? 'near' : ''}">${esc(r.grade)}${r.verdict === 'sat' ? ' · sát' : ''}</b></li>`).join('');
     const sw = Object.keys(p).map(role => `<li><span class="chip" style="background:var(--${esc(T.varName(role))})"></span><span>${esc(ROLE[role] || role)}</span><code>${esc(p[role])}</code></li>`).join('');
     const ff = c.fontFamily || {};
     const r = (c.shape && c.shape.radius) || {};

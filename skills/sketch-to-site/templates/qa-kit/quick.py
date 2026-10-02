@@ -6,8 +6,10 @@
 #   python _qa/quick.py --note "..." --themes <theme1>,<theme2>
 # File đổi = khác băm so với _qa/current/manifest.json. Bộ bị ảnh hưởng = bộ của mọi trang nạp file đó
 # (đọc từ thẻ <script>/<link>/<img> của trang), cộng bộ có file bước đổi. Đổi file .css thì chạy thêm mọi theme khác.
-# Sạch (0 lỗi console, 0 FAIL, 0 bước im lặng, 0 tràn ngang mới, 0 chữ tràn hoặc bị cắt mới trong khung, preflight 0 lỗi)
+# Sạch (0 lỗi console, 0 FAIL, 0 bước im lặng, 0 tràn ngang mới, 0 chữ tràn hoặc bị cắt mới trong khung, 0 tương phản mới, 0 màu sai ý định mới, preflight 0 lỗi)
 # thì ghi kết quả vào _qa/current/ và thêm một dòng vào _qa/current/ledger.jsonl. Không sạch thì không ghi, thoát mã 1.
+# Mốc do bộ kiểm cũ ghi chưa đo tương phản hay ý định, hoặc bộ mới mang dòng đã có ở bộ khác trong mốc: dòng đó là nợ cũ,
+# in gộp (mỗi mục một dòng) mà không chặn; handover-check hỏi người dùng.
 import argparse, datetime, json, os, shutil, sys
 import qalib as Q
 
@@ -49,15 +51,17 @@ pf_ok, pf_line = Q.preflight()
 out = os.path.join(Q.HERE, '.quick-run')
 shutil.rmtree(out, ignore_errors=True)
 res = Q.run_suites(names, out, themes, shots=False) if names else {}
+# Dòng đã có trong mốc current ở bộ khác: bộ mới mang dòng đó thì là nợ cũ (component dùng chung), không chặn
+known = Q.known_lines(Q.CUR)
 
-tot = {'steps': 0, 'errors': 0, 'fails': 0, 'silent': 0, 'over': 0, 'cut': 0, 'changed': 0}
-ledger_changed, ledger_lost, ledger_new, bad = [], [], [], []
+tot = {'steps': 0, 'errors': 0, 'fails': 0, 'silent': 0, 'over': 0, 'cut': 0, 'contrast': 0, 'intent': 0, 'changed': 0}
+ledger_changed, ledger_lost, ledger_new, bad, debt = [], [], [], [], []
 for (th, name), r in sorted(res.items()):
     if 'crash' in r:
         bad.append(f'  LỖI CHẠY {th}/{name}: {r["crash"][:200]}')
         continue
     rep = Q.load_json(os.path.join(out, th, name, 'report.json'))
-    d = Q.diff_report(Q.load_json(os.path.join(Q.CUR, th, name, 'report.json')), rep, name)
+    d = Q.diff_report(Q.load_json(os.path.join(Q.CUR, th, name, 'report.json')), rep, name, known)
     tot['steps'] += r['steps']; tot['errors'] += r['errors']; tot['fails'] += len(r['fails'])
     tot['silent'] += len(r['silent']); tot['over'] += len(d['over_new']); tot['cut'] += len(d['cut_new']); tot['changed'] += len(d['changed'])
     if r['errors']:
@@ -66,6 +70,10 @@ for (th, name), r in sorted(res.items()):
     bad += [f'  im lặng {th}/{name} · {s} (có check mà không trả giá trị)' for s in r['silent']]
     bad += [f'  tràn ngang mới {th}/{name} · {s}' for s in d['over_new']]
     bad += [f'  trong khung mới {th}/{name} · {s}: {c}' for s, c in d['cut_new']]
+    for key, lab in (('contrast', 'tương phản'), ('intent', 'ý định')):
+        tot[key] += len(d[key + '_new'])
+        bad += [f'  {lab} mới {th}/{name} · {s}: {c}' for s, c in d[key + '_new']]
+    debt += [(th, name, s, k, c) for s, k, c in d['debt']]
     for n, x, y in d['changed']:
         print(f'  đổi check {th}/{name} · {n}: {Q.short(x)} → {Q.short(y)}')
         ledger_changed.append([th, name, n, Q.short(x, 300), Q.short(y, 300)])
@@ -80,7 +88,17 @@ for line in bad:
 if tot['cut']:
     print('Chữ tràn hoặc bị cắt trong khung: xem ảnh của bước đó. Cố ý (tràn lề, marquee, slide ló) thì gắn data-clip-ok="<lý do>" vào khung. Không cố ý thì sửa ở gốc, đừng làm im.')
 
-clean = pf_ok and not bad and tot['errors'] == 0 and tot['fails'] == 0 and tot['silent'] == 0 and tot['over'] == 0 and tot['cut'] == 0
+groups = Q.group_debt(debt)
+ndebt = Q.debt_count(groups)
+if debt:
+    print(f'Nợ cũ ({ndebt}): lỗi có sẵn. Mốc do bộ kiểm cũ ghi chưa đo mục này, hoặc bộ mới mang lỗi đã có ở bộ khác trong mốc. '
+          'Không chặn lần kiểm nhanh; handover-check sẽ hỏi sửa hay nhận vào mốc.')
+    for line in Q.debt_lines(groups):
+        print(line)
+if tot['contrast']:
+    print('Tương phản dưới ngưỡng: sửa màu hoặc nền ở gốc (themes.json nếu là token). Không hạ opacity, không đổi cỡ chữ để né (qa-gate.md mục 6).')
+
+clean = pf_ok and not bad and tot['errors'] == 0 and tot['fails'] == 0 and tot['silent'] == 0 and tot['over'] == 0 and tot['cut'] == 0 and tot['contrast'] == 0 and tot['intent'] == 0
 verdict = 'ĐẠT' if clean else 'CHƯA ĐẠT'
 if clean and not a.no_save:
     Q.copy_reports(out, Q.CUR, res.keys())
@@ -93,5 +111,6 @@ if clean and not a.no_save:
 elif not clean:
     verdict += ', chưa lưu mốc: sửa rồi chạy lại'
 print(f'quick · {len(changed)} file đổi · {len(res)} bộ ({" + ".join(themes)}) · {tot["steps"]} bước · preflight: {pf_line} · '
-      f'console {tot["errors"]} · FAIL {tot["fails"]} · im lặng {tot["silent"]} · tràn mới {tot["over"]} · cắt mới {tot["cut"]} · check đổi {tot["changed"]} → {verdict}')
+      f'console {tot["errors"]} · FAIL {tot["fails"]} · im lặng {tot["silent"]} · tràn mới {tot["over"]} · cắt mới {tot["cut"]} · tương phản mới {tot["contrast"]} · ý định mới {tot["intent"]} · check đổi {tot["changed"]}'
+      + (f' · nợ cũ {ndebt}' if debt else '') + f' → {verdict}')
 sys.exit(0 if clean else 1)

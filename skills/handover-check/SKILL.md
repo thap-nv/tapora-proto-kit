@@ -6,6 +6,7 @@ description: >-
 
 # Handover Check · Kiểm tổng trước bàn giao
 
+> **v1.2 (01/10/2026)** · Kết quả có thêm tương phản, màu theo ý định và lượt kiểm sâu (trạng thái, bàn phím, tương tác). Nợ cũ *(mốc do bộ kiểm cũ ghi, chưa đo mục đó)* hỏi người dùng ở cổng.
 > **v1.1 (29/09/2026)** · B7: soát danh sách sửa theo `sketch-to-site/references/rules-and-conflicts.md` mục F trước khi sửa.
 > **v1.0 (28/09/2026)** · Đi cùng `tweak-site` và `evolve-site`. Mỗi lần sửa chỉ kiểm nhanh các bộ bị ảnh hưởng; skill này bắt phần còn lại một lần: lỗi lan sang trang mà lần kiểm nhanh không chạy, theme thứ hai, UX, tài liệu.
 > Lệnh dưới đây là của bộ kiểm trong `<skills>/sketch-to-site/templates/qa-kit/` (`<skills>` là thư mục cha của thư mục chứa SKILL.md này). Chạy từ thư mục prototype, tức thư mục chứa `_qa/`. Dự án ghi lệnh riêng trong `AGENTS.md` hoặc `CLAUDE.md` thì theo đó.
@@ -29,6 +30,7 @@ Không thấy `_qa/handover.py`:
 1. `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype>`. Lệnh chép script vào `_qa/`, sinh `qa.config.json` (mỗi trang một bộ khói ở 1440, 768, 390; màn app ở 1440 và 390) và `_qa/.gitignore`.
 2. Đọc `qa.config.json` cùng người dùng:
    - web app thì `preflight_kind` là `app`;
+   - site có `site/assets/themes.json` thì lệnh đã lấy theme từ đó; theme thêm sau đó thì `--update` in dòng cần thêm vào `themes`;
    - site có nền tối thì lệnh đã tự thêm theme `light` và `dark`; theme khác thì khai báo ở `themes`, mỗi theme kèm tham số URL bật nó, theme đầu là mặc định;
    - lệnh in CẢNH BÁO cho trang đọc tham số URL mà chưa có mẫu: thêm `<meta name="qa-query">` theo dòng đó;
    - bước tự đổi giá trị giữa các lần chạy (đồng hồ, số ngẫu nhiên) ghi vào `noisy`.
@@ -57,6 +59,9 @@ Bộ kiểm khói chỉ bắt lỗi console, tràn ngang, chữ tràn hoặc b�
 | Mục trong kết quả | Làm gì |
 |---|---|
 | **Lỗi**: console, FAIL, im lặng, tràn ngang mới, chữ tràn hoặc bị cắt mới trong khung, preflight | Lỗi thật. Ghi lại, tìm lần sửa gây ra, **không tự sửa** |
+| **Tương phản, ý định, sâu** mới *(trạng thái, bàn phím, tương tác)* | Lỗi thật, như dòng Lỗi. Tìm lần sửa gây ra, **không tự sửa** |
+| **Nợ cũ** | Có từ trước khi kit đo mục này, hoặc bộ mới mang lỗi đã có ở bộ khác trong mốc. Không chặn `promote`. Kết quả đã gộp: mỗi mục một dòng, `×n` khi gặp ở nhiều bước, khổ, theme *(đủ danh sách trong `handover.json`)*. Liệt kê theo nhóm ở cổng và hỏi |
+| **Lượt sâu** | Dòng `Lượt sâu: n bộ (…)` nói bộ nào đã kiểm sâu. Có dòng `Lượt sâu không chạy` thì nêu lý do ở cổng: khi đó `sâu mới 0` không có nghĩa là sạch |
 | **Khác biệt đã gán** cho một lần sửa | Đọc lướt: giá trị mới có khớp ghi chú của lần sửa đó không. Không khớp → coi như chưa gán |
 | **Khác biệt không gán được** | Chạy lại riêng bộ đó một lần để loại nhiễu: `python _qa/run_all.py _qa/.recheck <tên bộ>`. Còn lệch → lỗi lan. Tìm lần sửa gây ra: file đổi của trang đó giao với nhật ký. Nếu các lần sửa đã commit riêng thì chạy bộ đó trên commit cũ bằng `git worktree` |
 | **File không có trong ledger** | Có người sửa ngoài quy trình. Xem `git diff` của file đó rồi xếp vào một trong hai loại trên |
@@ -71,7 +76,7 @@ Màn app mobile *(`<html data-surface="app">`)*: soát thêm mục *App mobile* 
 - `DESIGN.md`: số chỗ gọi component dùng chung, **đếm bằng `grep`**; token mới đã duyệt mà chưa ghi.
 - `_qa/QA.md`: **một** mục "Bàn giao <ngày>" gồm:
   - thư mục chạy;
-  - bảng số cho từng theme: bộ, bước, console, FAIL, tràn, cắt, `check` đổi;
+  - bảng số cho từng theme: bộ, bước, console, FAIL, tràn, cắt, tương phản, ý định, sâu, `check` đổi, nợ cũ;
   - danh sách lần sửa lấy từ nhật ký, mỗi lần kèm các `check` đổi;
   - kết quả UX;
   - lỗi còn lại.
@@ -80,10 +85,12 @@ Màn app mobile *(`<html data-surface="app">`)*: soát thêm mục *App mobile* 
 Báo cáo bằng số thật: dòng tổng của từng theme, số lần sửa, số khác biệt đã gán và chưa gán, lỗi kèm lần sửa gây ra, UX, link mở `index.html`. Hỏi bằng `AskUserQuestion`:
 - Không có lỗi: **Chốt bàn giao (Khuyến nghị)** · **Sửa trước** *(nói điểm cần sửa)*.
 - Có lỗi: **Sửa lỗi rồi kiểm lại (Khuyến nghị)** *(liệt kê)* · **Chốt, để lỗi lại** *(ghi vào QA.md là lỗi đã biết)*.
+- Có **nợ cũ**: hỏi thêm một câu trong cùng lượt: **Nhận nợ cũ vào mốc** *(promote; lần sau chỉ chặn lỗi mới)* · **Sửa trước** *(liệt kê theo nhóm: tương phản, ý định, trạng thái, bàn phím, tương tác, console lượt sâu)*.
 
 Không có công cụ `AskUserQuestion` *(ví dụ Codex)*: viết câu hỏi và các lựa chọn đánh số ra tin nhắn. Hỏi xong thì **kết thúc lượt**. Im lặng không phải đồng ý.
 
 ### B7 · Sau khi người dùng trả lời
+- **Nhận nợ cũ** → ghi vào mục "Bàn giao <ngày>" của `QA.md` là nợ đã nhận, kèm số mục từng nhóm.
 - Ghi lời người dùng **nguyên văn** vào `DECISIONS.md`, bảng "Lặp lại sau nghiệm thu".
 - **Chốt** → `python _qa/handover.py promote _qa/handover/<ngày-giờ>`. Lần chạy đó thành mốc bàn giao mới, nhật ký chuyển vào thư mục chạy, `current` làm lại từ đầu.
 - **Sửa** → soát danh sách theo `sketch-to-site/references/rules-and-conflicts.md` mục F, sửa bằng `tweak-site` hoặc `evolve-site` tuỳ cấp, rồi quay lại **B3** (chạy tổng lại, vì `promote` cần một lần chạy khớp với file hiện tại).

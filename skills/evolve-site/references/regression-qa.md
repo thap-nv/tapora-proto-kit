@@ -14,6 +14,8 @@
 - [ ] **Khóa cuộn màn hình nền (Scroll Lock):** Khi Modal/Drawer mở ra, trang nền phía sau có bị cuộn vô ý không? (Khuyến nghị thêm `overflow-hidden` cho `body` khi mở overlay).
 
 ### Nhóm B: Trợ năng & Thoát hiểm (Accessibility & Exit Paths)
+> Bộ kiểm đã đo: tương phản ở mọi bước; khi chạy `handover.py` còn đo tương phản khi hover và focus, Tab tới được, phím mũi tên của widget, bấm thử control hứa trạng thái *(`sketch-to-site/references/qa-gate.md` mục 2)*. Nhóm này soát phần máy không đo: thứ tự đọc, nhãn cho trình đọc màn hình, focus trả về sau khi đóng lớp phủ.
+
 - [ ] **Luật thoát hiểm hai chiều:** 
   * Bấm nút Đóng (`X`) hoặc Huỷ: Lớp phủ biến mất mượt mà.
   * Bấm vào vùng backdrop mờ: Đóng lớp phủ.
@@ -86,6 +88,8 @@ Chạy trên **phần mới thêm và trang chứa nó**, đọc code thật, m�
 ---
 
 ## 2. So với mốc bằng script
+
+Kết quả có thêm `tương phản mới`, `ý định mới` và `nợ cũ`. Dòng mới là lỗi của lần sửa này; nợ cũ không chặn.
 
 **Vì sao cần mốc:** prototype có sẵn thường đã mang lỗi từ trước *(một prototype thật từng mang sẵn 33 lỗi `preflight.py` trước lần sửa đầu tiên)*. Không có mốc thì sau khi sửa không phân biệt được lỗi mới với lỗi cũ, và dễ tiện tay sửa luôn lỗi cũ, tức là đụng vào code ngoài phạm vi.
 

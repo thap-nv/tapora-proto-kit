@@ -6,6 +6,7 @@ description: >-
 
 # Sketch to Site · Thiết kế website và app từ đầu
 
+> **v4.2 (01/10/2026)** · Design system theo theme: màu gốc ở `site/assets/themes.json`, `scripts/themes.mjs` tính vai dẫn xuất và đo mọi cặp; mọi theme là một `data-theme` *(B2, D.2)*. Trang design system sống `site/_system.html` duyệt ở Cổng 3. B1 ghi giả định *Thực tế nội dung*. Bộ kiểm đo trên trang render: tương phản và màu theo ý định ở mọi bước; khi bàn giao có thêm lượt kiểm sâu *(trạng thái, bàn phím, tương tác)*. Mốc cũ chưa đo thì ghi nợ cũ *(`qa-gate.md` mục 2)*.
 > **v4.1 (29/09/2026)** · Sổ tiến độ `BUILD-LOG.md` ở B3 *(B0 làm tiếp từ sổ)*. B4: tìm nguyên nhân gốc, không làm im bộ kiểm *(`qa-gate.md` mục 6)*, review bằng góc nhìn mới *(`qa-gate.md` mục 7)*. Luật dừng có bảng cớ bỏ cổng. Cổng 4: nhận góp ý theo `rules-and-conflicts.md` mục F.
 > **v4.0 (29/09/2026)** · Tách phần concept ra `sketch-to-concept`. Định hình dự án, nạp tham chiếu, tra design intelligence, chọn phong cách và dựng 3 phương án giờ là **Cổng 1–2** ở đó, trên một bảng concept nhìn thấy được. Skill này nhận `CONCEPT.md`, đọc đủ yêu cầu rồi thử concept trên màn khó *(B0–B1)*. Design system, dựng đầy đủ, tự kiểm đổi số thành B2, B3, B4; hai cổng cuối thành **Cổng 3** và **Cổng 4**.
 > **v3.1 (29/09/2026)** · Bộ kiểm: tự có khổ 768, bắt chữ tràn hoặc bị cắt trong khung, chụp ảnh ở mọi theme, nền sáng/tối theo `?theme=` chứ không theo máy chạy kiểm *(`templates/theme.js`)*, màn cần tham số khai báo mẫu bằng `qa-query`. Trục biến thể riêng cho app. Câu hỏi định hình dự án giữ ≤ 4 câu một lượt.
@@ -126,6 +127,7 @@ B0 Nhận concept ─► B1 Đọc đủ yêu cầu + thử concept ─► B2 De
 
 - Quét dự án, **lần này đọc đủ**: tài liệu yêu cầu *(đặc tả từng chức năng, trường dữ liệu, quy tắc nghiệp vụ, luồng lỗi)*, glossary, prototype cũ, `DESIGN.md`, token, logo, font, `CLAUDE.md`. Dự án có quy ước thư mục hay quy tắc prototype thì **theo quy ước đó**.
 - Ra **danh sách màn, dữ liệu, luồng**: đầu vào cho sơ đồ trang ở B2.
+- **Thực tế nội dung**, ghi vào `DECISIONS.md` mục *Giả định* *(không hỏi; Cổng 3 chỉ nêu dòng nào đổi thiết kế)*: mỗi danh sách khi rỗng, một mục, nhiều mục *(bao nhiêu)*; chuỗi dài nhất có thật *(tên công ty, địa chỉ, mã giao dịch)*; số lớn nhất; số nào thật, số nào minh hoạ; hành động nào không đảo ngược được, xác nhận bằng gì, thất bại thì người dùng đọc gì. Mỗi dòng: **giả định · mặc định đã chọn · giá phải trả nếu sai**.
 - Tham chiếu: dùng lại `REFERENCE-READ.md` của Phần A. Có tham chiếu mới thì đọc theo `references/reference-intake.md`.
 - **Thử concept trên 2 màn khó nhất** với concept: bảng dày nhất, form dài nhất, trạng thái rỗng và lỗi, màn của bề mặt khác. Ghi concept **giữ được ở đâu, gãy ở đâu**.
 - Concept gãy thì **không tự pha loãng**. Đưa lên Cổng 3 *(câu 3)*.
@@ -133,16 +135,24 @@ B0 Nhận concept ─► B1 Đọc đủ yêu cầu + thử concept ─► B2 De
 
 ### B2 · Design system + sơ đồ trang
 
-- Viết `DESIGN.md` theo `templates/DESIGN.md`. **Token lấy từ `CONCEPT.md` mục 3** *(màu, chữ đã kiểm tiếng Việt, hình khối, khối CSS; tên biến giữ nguyên)*, rồi viết tiếp phần concept chưa có: thang khoảng cách, chuyển động, trạng thái component, **một bộ icon**, và **danh sách cấm riêng** của dự án.
+- **Màu theo theme:** chép `templates/themes.json` thành `site/assets/themes.json`, điền màu gốc từ `CONCEPT.md` mục 3 *(mỗi nền của concept là một theme; bảng đổi tên vai ở cuối mục 3 của `CONCEPT.md`)*. Chạy `node <skills>/sketch-to-site/scripts/themes.mjs <thư-mục-prototype>`. Lệnh tính vai dẫn xuất *(hover, nhấn, nền nhạt, viền control, vòng focus, liên kết, màu báo)*, đo mọi cặp ở mọi theme, rồi ghi `site/assets/themes.css`. Cặp dưới ngưỡng thì lệnh không ghi file: sửa màu gốc, không hạ ngưỡng. Cặp **SÁT** *(vượt ngưỡng chưa tới 0,3)* chỉ cần một lớp phủ hay một bước hover là rớt: nêu ở Cổng 3. Cần theme thương hiệu thứ hai thì thêm một mục vào `themes` *(mọi theme là một `data-theme`, `references/rules-and-conflicts.md` D.2)*.
+- **Thang không màu:** chép `templates/tokens.css` thành `site/assets/tokens.css`. Đặt thang chữ theo họ phong cách *(chữ hiển thị ≥ 2,5 lần chữ thân)*, bóng 4 bậc theo độ cao, bo góc, chuyển động theo dial MOTION. Chép `templates/color.js` và `templates/theme.js` vào `site/assets/`. Đổi `KEY` trong `theme.js` thành slug của dự án *(như `store.js`)*, để theme đã chọn không lan sang prototype khác mở bằng `file://`.
+- Viết `DESIGN.md` theo `templates/DESIGN.md`: bảng màu và dòng kết quả lấy từ `themes.mjs`, bảng 8 trạng thái cho từng component, **một bộ icon**, **danh sách cấm riêng** của dự án.
+- **Trang design system sống:** chép `templates/system.html` thành `site/_system.html`. Phần token tự vẽ. Thay khối `data-system-demo` bằng component **thật** của dự án *(nút, ô nhập, bảng, thẻ, tab, thông báo, hộp thoại, component đặc trưng)*, dùng đúng CSS mà các trang sẽ dùng. Mỗi component đủ trạng thái: trạng thái tĩnh dùng `disabled`, `aria-busy`, `aria-invalid`, `aria-selected` và gắn `data-demo-state`; hover, focus, nhấn để sống. Mỗi component thêm một biến thể nội dung khó *(chuỗi dài, số lớn, rỗng)*. Chạy `preflight.py` cho `site/`: 0 lỗi, không P19, P20.
 - Lập **sơ đồ trang**: danh sách trang/màn, các section theo thứ tự, hành động chính của từng màn, nội dung và dữ liệu mỗi section cần. Màn then chốt ở `concept/<id>.html` là màn đầu tiên của sơ đồ.
 - Đề xuất **phạm vi lần này** để hỏi ở Cổng 3.
 - Có app: sơ đồ màn ghi thêm **tab** và **ngăn xếp** *(màn nào đi sâu từ màn nào)*. Hệ thống nhiều bề mặt: chia sơ đồ theo bề mặt, kèm bảng **luồng xuyên bề mặt**. Phần riêng của từng bề mặt ghi ở `DESIGN.md` mục 10.
 
 ### 🛑 Cổng 3 · Duyệt design system, sơ đồ trang và phạm vi
 
-Đây là **cổng cuối trước bước tốn công nhất**. Tóm tắt `DESIGN.md` trong ≤ 15 dòng kèm dải màu và cặp chữ, đưa sơ đồ trang và kết quả thử concept ở B1, rồi hỏi **một lượt**:
+Đây là **cổng cuối trước bước tốn công nhất**. Người duyệt **nhìn** design system, không đọc mô tả:
+- Chụp `site/_system.html` ở khổ 1440 cho mỗi theme *(`?theme=<tên>`; lệnh chụp tay ở `references/qa-gate.md` mục 2)*, mở từng ảnh ra xem, đưa ảnh lên cổng kèm link mở trang.
+- Kèm dòng cuối của `themes.mjs` *(số theme, số cặp, số sát ngưỡng)* và các cặp SÁT nếu có.
+- Tóm tắt `DESIGN.md` trong ≤ 10 dòng, sơ đồ trang, kết quả thử concept ở B1, và giả định *Thực tế nội dung* nào đổi thiết kế.
 
-1. **Design system và sơ đồ trang:** Duyệt · Sửa token *(nói rõ sửa gì)* · Sửa sơ đồ trang · Quay lại concept *(Cổng 2)*.
+Rồi hỏi **một lượt**:
+
+1. **Design system và sơ đồ trang:** Duyệt · Sửa token *(nói rõ sửa gì; sửa ở `themes.json` hay `tokens.css` rồi chạy lại `themes.mjs`)* · Sửa sơ đồ trang · Quay lại concept *(Cổng 2)*.
 2. **Phạm vi lần này:** 1 trang chủ · Trang chủ + 2–4 trang con · Toàn bộ luồng *(liệt kê)*.
 3. **Chỗ concept gãy** *(chỉ hỏi khi B1 ghi có)*: Giữ concept, chấp nhận ngoại lệ ở màn X · Chỉnh token cho các màn đó · Quay lại Cổng 2.
 
@@ -151,29 +161,32 @@ B0 Nhận concept ─► B1 Đọc đủ yêu cầu + thử concept ─► B2 De
 Yêu cầu kỹ thuật ở `references/rules-and-conflicts.md` mục D. Tóm tắt:
 
 - **Sổ tiến độ** *(`templates/BUILD-LOG.md`)*: trước trang đầu tiên, chép khuôn thành `BUILD-LOG.md` ở thư mục prototype, mỗi trang trong phạm vi đã chốt ở Cổng 3 một dòng. Dựng xong trang nào thì chạy `preflight.py` cho trang đó; được **0 lỗi** mới đổi thành `xong` và dán dòng kết quả. **Làm tiếp** *(phiên mới, ngữ cảnh bị nén, người dùng gõ "tiếp")*: đọc sổ trước tiên, xác nhận các trang `xong` theo luật làm tiếp ở đầu sổ *(**mở file thật**, chạy lại `preflight.py`; file mất hay đã bị sửa thì xử như sổ ghi)*, ghi một dòng vào *Lần tiếp tục*. Không dựng lại trang đã `xong`.
-- Một file HTML mỗi trang, hoặc một SPA nhẹ. **Token là CSS variables**, định nghĩa ở `:root` và ghi đè cho nền tối: chép khối CSS ở `DESIGN.md` *(lấy từ `CONCEPT.md`)*. `tailwind.config` đọc lại chính các token đó.
-- **Có cả nền sáng và tối** *(Cổng 2)*: chép `templates/theme.js` vào `assets/`, nạp trong `<head>` mọi trang. `?theme=dark` ép nền tối cho cả phiên, để demo và để bộ kiểm chụp đúng nền *(D.2)*.
+- Một file HTML mỗi trang, hoặc một SPA nhẹ. Mọi trang nạp `assets/theme.js` *(trong `<head>`, không `defer`)*, `assets/tokens.css`, `assets/themes.css` *(D.2)*. Không định nghĩa màu ở trang; `tailwind.config` đọc lại chính các token đó. Đổi màu: sửa `themes.json` rồi chạy lại `themes.mjs`, không sửa `themes.css`.
+- **Theme:** `?theme=<tên>` ép một theme cho cả phiên, để demo và để bộ kiểm chụp đúng theme. Nút đổi theme gọi `theme.set('<tên>')` hoặc `theme.toggle()` *(D.2)*.
 - Font lấy từ Google Fonts, **đã kiểm tiếng Việt**. Icon mặc định là **Phosphor** *(Lucide được phép khi họ phong cách là *công cụ vận hành*)*. **Không emoji.**
 - JS thuần: tab `data-tab-target`, modal/drawer `data-modal-open`/`-close` + `Esc` + khoá focus, lọc bảng, toast, trạng thái *đang tải / rỗng / lỗi*.
 - **Dữ liệu dùng chung** khi là web app hoặc có từ 2 trang cùng đọc một loại dữ liệu: dữ liệu mẫu ở `assets/data.js`, mọi trang đọc ghi qua `assets/store.js` chép từ `templates/store.js` *(mục D.5)*. Tạo đơn ở trang này thì trang khác thấy, F5 không mất, `?reset` về dữ liệu mẫu. Trang đọc tham số URL *(chi tiết theo `?id=`)* khai báo mẫu cho bộ kiểm: `<meta name="qa-query" content="?id=<mã có trong data.js>">`.
 - **Giữ concept:** ý, ẩn dụ, khoảnh khắc đọc lần hai và tương tác đặc trưng ở `CONCEPT.md` phải còn thấy được trên bản dựng, không chỉ ở màn then chốt.
 - Chuyển động **theo nhịp đã chốt** *(`CONCEPT.md` mục 1: dial và nhịp)*. Cuộn thì dùng `IntersectionObserver`, **cấm** `addEventListener('scroll')`. Mọi chuyển động gói trong `prefers-reduced-motion`. GSAP *(qua cdnjs)* chỉ khi nhịp ≥ 8.
 - Bộ luật bố cục theo **loại sản phẩm** *(mục 5)*.
-- **App:** chép `templates/mobile/app.css`, `app.js` và `templates/theme.js` vào `site/assets/`; màn gốc tab theo `screen.html`, màn đi sâu theo `detail.html`, trang tổng quan `site/app/index.html` theo `overview.html`. Token tách ra `assets/tokens.css` + `assets/tw.js` để mọi bề mặt dùng chung *(`mobile-app.md` mục 1)*.
+- **App:** chép `templates/mobile/app.css`, `app.js` và `templates/theme.js` vào `site/assets/`; màn gốc tab theo `screen.html`, màn đi sâu theo `detail.html`, trang tổng quan `site/app/index.html` theo `overview.html`. Mọi bề mặt dùng chung `assets/tokens.css`, `assets/themes.css` và `assets/tw.js` *(`mobile-app.md` mục 1)*.
+- **Component mới trong lúc dựng:** thêm vào `site/_system.html` ngay, đủ trạng thái, để bộ kiểm đo nó ở mọi theme.
 
 ### B4 · Tự kiểm *(phải qua hết rồi mới được mở Cổng 4)*
 
 Chi tiết ở `references/qa-gate.md`:
 
-1. `python <skills>/sketch-to-site/scripts/preflight.py <thư-mục-site>`: bắt emoji, gạch dài trong chữ hiển thị, `h-screen`, lắng nghe scroll, `#000000`, Lorem/John Doe/Acme, font thiếu dấu tiếng Việt, ảnh thiếu `alt`, eyebrow vượt trần. **Phải 0 lỗi.**
+1. `python <skills>/sketch-to-site/scripts/preflight.py <thư-mục-site>`: bắt emoji, gạch dài trong chữ hiển thị, `h-screen`, lắng nghe scroll, `#000000`, Lorem/John Doe/Acme, font thiếu dấu tiếng Việt, ảnh thiếu `alt`, eyebrow vượt trần, biến CSS chưa định nghĩa (P19), màu viết cứng (P20), `themes.css` cũ hơn `themes.json` (P21). **Phải 0 lỗi.**
 2. **Cài bộ kiểm rồi chạy** *(lần đầu)*:
    - Đã có `_qa/` từ trước *(làm tiếp, dự án cũ)*: chạy `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype> --update` trước lần kiểm đầu của phiên. Lệnh chỉ chép đè script của bộ kiểm bằng bản của kit đang dùng, không đụng `qa.config.json`, file bước, mốc.
    - `python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype>`. Lệnh chép script vào `_qa/`, sinh `qa.config.json` với một bộ khói cho mỗi trang ở 1440, 768, 390 *(màn app: 1440 và 390)*. Site có nền tối thì lệnh tự thêm theme `light` và `dark`.
+   - Có `site/assets/themes.json` thì mỗi theme trong đó là một theme của bộ kiểm; có `site/_system.html` thì bộ khói của nó kiểm component mẫu đã thay và mọi cặp màu đạt; trang nạp `store.js` có thêm bộ `du-lieu-rong-*` *(`?data=empty`)* và `du-lieu-dai-*` *(`?data=stress`)*.
    - Lệnh in **CẢNH BÁO** khi trang đọc tham số URL mà chưa có `qa-query`: thêm mẫu theo đúng dòng cảnh báo, nếu không bộ khói chỉ chụp được màn "không tìm thấy".
    - Sửa cấu hình: web app thì `preflight_kind` là `app`; theme khác thì khai báo ở `themes`.
    - Có app: lệnh tự thêm bước `tap-targets` cho màn app. Làm cả iOS và Android thì thêm `"android": "?platform=android"` vào `themes`.
-   - `python _qa/handover.py run`: bắt lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung; chụp ảnh từng trang ở mọi theme vào `_qa/handover/<ngày-giờ>/<theme>/`.
+   - `python _qa/handover.py run`: bắt lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung, **tương phản trên nền thật** và **màu theo ý định** ở mọi bước, mọi theme. Bộ khói khổ desktop của mỗi trang *(dự án không có bộ khói thì bộ khổ desktop đầu tiên của trang)* có thêm **lượt kiểm sâu**: tương phản khi hover và focus, Tab tới được mọi control, phím mũi tên của widget, bấm thật từng control hứa trạng thái. Chụp ảnh từng trang ở mọi theme vào `_qa/handover/<ngày-giờ>/<theme>/`. Lần chạy đầu chưa có mốc nên mọi dòng là lỗi: sửa về 0 trước Cổng 4 *(`references/qa-gate.md` mục 2)*.
    - Mở ảnh ra xem theo `qa-gate.md` mục 2: màn đầu nằm trọn trong khung, menu desktop một dòng, bảng ở 768 không bị ép cột.
+   - Ảnh của bộ `du-lieu-rong-*` và `du-lieu-dai-*`: trạng thái rỗng có lời hướng dẫn, nội dung dài không vỡ bố cục.
    - Không chạy được trình duyệt headless thì chụp tay theo `qa-gate.md` mục 2.
 3. **`laws-of-ux-checklist`** 12 điểm trên từng trang. Mỗi dòng ghi ✅ hoặc ❌ **kèm dòng code làm bằng chứng**.
 4. **Soát gu** theo loại sản phẩm *(`qa-gate.md` mục 4)*, và soát **concept còn nguyên** *(B3, dòng Giữ concept)*.
@@ -236,7 +249,7 @@ Mặc định `docs/prototypes/<slug>/`. Dự án có quy ước khác thì theo
 ├── concept/              # bảng concept: index.html, concepts.js, tokens.js, 3 màn then chốt, ảnh chụp
 ├── DESIGN.md             # design system đã khoá ở Cổng 3
 ├── BUILD-LOG.md          # sổ tiến độ dựng ở B3 (và các đợt evolve-site Cấp 3)
-├── site/                 # bản dựng đầy đủ; có app hoặc nhiều bề mặt: assets/ dùng chung, admin/, app/ (mobile-app.md mục 1)
+├── site/                 # bản dựng đầy đủ; _system.html (design system sống); assets/: themes.json, themes.css, tokens.css, theme.js, color.js; có app hoặc nhiều bề mặt: admin/, app/ (mobile-app.md mục 1)
 └── _qa/                  # bộ kiểm: script, qa.config.json, steps-*.json, mốc last-green/, ảnh chụp, QA.md
 ```
 

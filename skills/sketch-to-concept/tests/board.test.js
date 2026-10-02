@@ -26,6 +26,7 @@ function fixture(extraData = '') {
   fs.copyFileSync(t('concept-board.html'), path.join(dir, 'index.html'));
   fs.writeFileSync(path.join(dir, 'concepts.js'), fs.readFileSync(t('concepts.js'), 'utf8') + extraData);
   fs.copyFileSync(t('tokens.js'), path.join(dir, 'tokens.js'));
+  fs.copyFileSync(path.join(S2S, 'templates', 'color.js'), path.join(dir, 'color.js'));
   fs.copyFileSync(path.join(S2S, 'templates', 'theme.js'), path.join(dir, 'theme.js'));
   const screen = fs.readFileSync(t('key-screen.html'), 'utf8');
   for (const id of ['a', 'b', 'c']) fs.writeFileSync(path.join(dir, `${id}.html`), screen.replace('data-concept="a"', `data-concept="${id}"`));
@@ -165,8 +166,8 @@ test('màn then chốt của app: khuôn mobile nhận token của concept qua t
   fs.copyFileSync(path.join(mobile, 'app.css'), path.join(dir, 'app.css'));
   fs.copyFileSync(path.join(mobile, 'app.js'), path.join(dir, 'app.js'));
   const screen = fs.readFileSync(path.join(mobile, 'screen.html'), 'utf8')
-    .replace('<link rel="stylesheet" href="../assets/tokens.css">\n<script src="../assets/tw.js"></script>\n<script src="../assets/theme.js"></script>',
-      '<script src="theme.js"></script>\n<script src="concepts.js"></script>\n<script src="tokens.js" data-concept="c"></script>')
+    .replace('<link rel="stylesheet" href="../assets/tokens.css">\n<link rel="stylesheet" href="../assets/themes.css"><!-- dự án chưa có themes.css (trước v4.2): bỏ dòng này -->\n<script src="../assets/tw.js"></script>\n<script src="../assets/theme.js"></script>',
+      '<script src="theme.js"></script>\n<script src="concepts.js"></script>\n<script src="color.js"></script>\n<script src="tokens.js" data-concept="c"></script>')
     .replace('../assets/app.css', 'app.css').replace('../assets/app.js', 'app.js')
     .replace(/<script src="\.\.\/assets\/data\.js"><\/script>[\s\S]*?store\.on\(draw\);[\s\S]*?<\/script>/, '');
   assert.ok(screen.includes('data-concept="c"') && !screen.includes('../assets/'), 'khuôn mobile đã đổi, cập nhật test');
@@ -249,4 +250,40 @@ test('preflight bắt font thiếu dấu tiếng Việt khai trong concepts.js',
   const r = spawnSync(PYTHON, [PREFLIGHT, dir], { encoding: 'utf8' });
   assert.equal(r.status, 1);
   assert.match(r.stdout, /P07[^\n]*Outfit|Outfit[^\n]*P07/);
+});
+
+test('concept viết màu bằng oklch: bảng đo được, có hàng của vai dẫn xuất và mức sát', t => {
+  const r = run(fixture(`\nwindow.CONCEPTS.concepts[0].colors.light.primary = 'oklch(0.3 0.03 150)';`), 'index.html', [{ name: 'rows', check: `JSON.stringify({
+    ratio: document.querySelector('[data-tile="a"] [data-contrast="on-primary"] [data-ratio]').textContent.trim(),
+    rows: document.querySelectorAll('[data-tile="a"] [data-contrast]').length,
+    verdicts: [...new Set([...document.querySelectorAll('[data-tile="a"] [data-verdict]')].map(e => e.dataset.verdict))] })` }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  const v = JSON.parse(step(r, 'rows').check);
+  assert.match(v.ratio, /^\d+,\d{2}:1$/);
+  assert.ok(v.rows >= 20, `chỉ có ${v.rows} hàng`);
+  assert.ok(v.verdicts.every(x => ['dat', 'sat', 'khong'].includes(x)));
+});
+
+test('thiếu color.js: bảng báo rõ file thiếu', t => {
+  const dir = fixture();
+  fs.rmSync(path.join(dir, 'color.js'));
+  const r = run(dir, 'index.html', [{ name: 'msg', check: `document.body.textContent.includes('color.js') ? 'PASS' : 'FAIL: không báo thiếu color.js'` }]);
+  if (!r) return t.skip('không có trình duyệt');
+  assert.equal(step(r, 'msg').check, 'PASS');
+});
+
+test('concept chỉ có nền tối, bảng đang ở nền sáng: số đo vai dẫn xuất theo chế độ tối của màu đang hiện', t => {
+  const T = require(path.join(SKILL, 'templates', 'tokens.js'));
+  const vm = require('node:vm');
+  const ctx = { window: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(SKILL, 'templates', 'concepts.js'), 'utf8'), ctx);
+  const dark = (ctx.window.CONCEPTS || ctx.CONCEPTS).concepts[0].colors.dark;
+  const want = T.checkPairs(dark, 'dark').map(r => `${r.fg}|${r.bg}|${r.ratio.toFixed(2).replace('.', ',')}:1`);
+  const r = run(fixture(`\ndelete window.CONCEPTS.concepts[0].colors.light;`), 'index.html', [{ name: 'rows', check: `JSON.stringify([...document.querySelectorAll('[data-tile="a"] [data-contrast]')].map(li => li.dataset.contrast + '|' + li.querySelector('[data-ratio]').textContent.trim()))` }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  const got = JSON.parse(step(r, 'rows').check);
+  assert.ok(want.length >= 20);
+  assert.deepEqual(got.map(x => x.split('|')[1]), want.map(x => x.split('|')[2]));
 });

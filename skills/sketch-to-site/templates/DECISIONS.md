@@ -23,6 +23,13 @@
 **Vòng biến thể (nếu có):**
 **Nền:** · **Nhịp:**
 
+## Giả định (B1)
+> Thực tế nội dung mà tài liệu yêu cầu chưa nói. Không hỏi; Cổng 3 chỉ nêu dòng nào đổi thiết kế.
+
+| Giả định | Mặc định đã chọn | Giá phải trả nếu sai |
+|---|---|---|
+| <ví dụ: danh sách đơn có tới 400 dòng> | <bảng có phân trang 50 dòng, lọc theo trạng thái> | <nếu tới 5.000 dòng: cần tìm kiếm phía máy chủ, đổi bố cục bảng> |
+
 ## 🛑 Cổng 3 · Design system, sơ đồ trang, phạm vi — <dd/mm/yyyy> *(sketch-to-site)*
 **Thử concept ở B1:** giữ được ở <…> · gãy ở <… | không>
 **Đáp án design system và sơ đồ trang (nguyên văn):**

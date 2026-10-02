@@ -6,6 +6,7 @@ description: >-
 
 # Evolve Site · Mở rộng & Cập nhật Prototype có sẵn
 
+> **v1.8 (01/10/2026)** · Cờ T: màu mới vào `site/assets/themes.json` rồi chạy `themes.mjs`, component mới vào `site/_system.html` đủ trạng thái. B4: bộ kiểm đo tương phản và màu theo ý định ở mọi bước; lỗi mới thì chặn, mốc cũ chưa đo thì ghi nợ cũ.
 > **v1.7 (29/09/2026)** · B3: kiểm trước, dựng sau; Cấp 3 ghi `BUILD-LOG.md`. B4: bẻ thử bước phủ định, lỗi mới tìm nguyên nhân gốc. Cổng 3: nhận góp ý theo `sketch-to-site/references/rules-and-conflicts.md` mục F.
 > **v1.6 (29/09/2026)** · Màn app mobile và hệ thống nhiều bề mặt: B1 nhận màn app, B2 có mẫu tích hợp cho app, thêm bề mặt là Cấp 3. Prototype có `assets/store.js`: đổi cấu trúc bản ghi thì tăng phiên bản `KEY` *(luật 2)*. `design-taste-frontend` đọc theo đường dẫn *(mục 4)*.
 >
@@ -69,7 +70,7 @@ Skill này có tối đa **3 CỔNG QUYẾT ĐỊNH (🛑)**. Phải đi bao nhi
 | **D · Dữ liệu** | Thêm, đổi tên, đổi kiểu hoặc bỏ trường hay cấu trúc dữ liệu | **Thêm** trường: không hỏi. **Đổi hoặc bỏ** trường đang dùng: nêu số chỗ đọc nó *(đếm bằng `grep`)*, hỏi **Giữ trường cũ, thêm trường mới** *(Khuyến nghị)* · **Đổi và sửa mọi chỗ đọc** | Nhóm E trên **mọi trang** đọc dữ liệu đó |
 | **L · Logic** | Đổi **quy tắc**: validation, điều kiện bật/tắt, công thức ra số, chuyển trạng thái. **Không bật** khi thay đổi chỉ làm prototype khớp lại quy tắc đã ghi trong nguồn yêu cầu *(ghi nguồn ở báo cáo)* | Quy tắc cũ → mới, kèm nguồn: **Xác nhận** · **Sửa** | Cho QA lớn, bẻ thử |
 | **Y · Yêu cầu** | Dự án **có** nguồn yêu cầu mà không tìm thấy tính năng trong đó, hoặc thấy nó **trái** nguồn | **Dựng như đề xuất** *(ghi rõ là đề xuất, chưa phải yêu cầu)* · **Sửa cho khớp yêu cầu** · **Bỏ** | Báo cáo ghi rõ *đề xuất* |
-| **T · Token, component** | Cần màu, font, token, component hay mẫu tương tác mà DNA ở B1 **chưa có** | **Dựng từ thứ sẵn có** *(Khuyến nghị khi làm được)* · **Thêm mới** vào `:root` và `DESIGN.md` *(nói rõ thêm gì, giá trị nào)* | Cập nhật `DESIGN.md` |
+| **T · Token, component** | Cần màu, font, token, component hay mẫu tương tác mà DNA ở B1 **chưa có** | **Dựng từ thứ sẵn có** *(Khuyến nghị khi làm được)* · **Thêm mới**: màu vào `site/assets/themes.json` rồi chạy `themes.mjs` *(dự án chưa có `themes.json`: vào `:root`)*, component vào `site/_system.html` đủ trạng thái, và ghi `DESIGN.md` *(nói rõ thêm gì, giá trị nào)* | Cập nhật `DESIGN.md` |
 | **C · Dùng chung** | Sửa file, component hay hàm mà **nhiều trang** cùng dùng *(menu chung, store, file dữ liệu, CSS chung)* | Không hỏi | Hồi quy trên **mọi trang dùng nó** *(đếm bằng `grep`)* |
 
 **Cờ đổi cổng thế nào:**
@@ -108,7 +109,7 @@ Cấp <n> · cờ: <Q, L… | không> · vì <một dòng lý do>
 ## 2. Bốn luật thép bảo toàn (The 4 Preservation Laws)
 
 1. **Zero Visual Drift (Không trôi phong cách):**
-   * Mọi màu sắc, font chữ, độ bo góc, khoảng cách, bóng đổ **bắt buộc lấy 100% từ `:root` hoặc `DESIGN.md` hiện hữu**.
+   * Mọi màu sắc, font chữ, độ bo góc, khoảng cách, bóng đổ **bắt buộc lấy 100% từ `:root` hoặc `DESIGN.md` hiện hữu** *(dự án có `themes.json`: màu từ `themes.css`, không khai màu ở trang)*.
    * Cấm tự tiện đưa mã màu HEX lạ vào code. Cấm tự chế biến CSS mới nếu không có sự phê duyệt *(cờ T: duyệt ở Cổng 2, hoặc ở 🛑1 rút gọn với Cấp 1)*.
    * Icon: Dùng **đúng bộ icon** mà prototype đang dùng (Phosphor / Lucide / Tabler). Đang dùng Phosphor thì tuyệt đối không kéo Lucide vào.
 2. **Data & Contract Preservation (Bảo toàn dữ liệu):**
@@ -128,7 +129,7 @@ Cấp <n> · cờ: <Q, L… | không> · vì <một dòng lý do>
 **Sàn không thương lượng** *(cùng sàn với `sketch-to-site` mục 2; áp cho mọi phần mới thêm)*:
 - Chuyển động mới gói trong `prefers-reduced-motion`, chỉ animate `transform` và `opacity`.
 - Modal, drawer **khoá focus** bên trong khi mở *(`Tab` không lọt ra trang nền)* và trả focus khi đóng.
-- Site có nền tối thì phần mới đọc được ở **cả hai nền**, màu lấy từ token.
+- Phần mới đọc được ở **mọi theme** trong `qa.config.json`, màu lấy từ token *(bộ kiểm đo tương phản ở mọi theme)*.
 - Chữ trên giao diện: không emoji, không gạch dài `—` `–` làm dấu ngắt, dùng đúng **thuật ngữ trong glossary** của dự án. Font mới *(nếu cờ T được duyệt)* phải có đủ glyph cho ngôn ngữ của giao diện *(tiếng Việt: đủ dấu)*.
 - Tương phản đạt WCAG AA, không tràn ngang ở 390px.
 
@@ -233,7 +234,7 @@ Cờ T bật thì hỏi thêm câu của cờ T *(bảng mục 1.2)*. Chưa đư
 5. **Bỏ tính năng:** bước kiểm khẳng định lối vào đã mất *(`check` trả `FAIL:` khi còn thấy nút, mục menu, phím tắt)*. Chạy thấy đỏ khi chưa bỏ, bỏ xong thì xanh.
 
 Yêu cầu kỹ thuật bắt buộc khi viết code:
-- **Tái sử dụng 100% token:** Gọi `var(--accent)`, `var(--surface)`, `var(--ink)`... Không viết mã màu riêng.
+- **Tái sử dụng 100% token:** Gọi `var(--accent)`, `var(--surface)`, `var(--ink)`... Không viết mã màu riêng. Đổi màu nào thì đổi ở `themes.json` rồi chạy lại `themes.mjs`; không sửa `themes.css`.
 - **Tái sử dụng cấu trúc Component cũ:**
   * Nút bấm dùng đúng bộ class của site cũ (Primary, Secondary, Ghost, Danger).
   * Form inputs dùng đúng chiều cao, bo góc, màu viền focus.
@@ -273,6 +274,8 @@ Trước khi mở Cổng 3 *(Cấp 0: trước khi báo cáo)*, làm các bướ
 | 10 | Cập nhật ghi chú của prototype *(trang, trạng thái, số chỗ gọi component dùng chung: **đếm bằng `grep`**, không sửa số theo trí nhớ)*, và `DESIGN.md` nếu cờ T được duyệt | — | ✓ | ✓ |
 
 **Kiểm thêm theo cờ** *(cộng vào bảng trên, ở mọi cấp)*: cờ D → bước 5 trên **mọi trang** đọc dữ liệu đó · cờ C → bước 1 và 6 trên **mọi trang dùng thứ đã sửa** *(lệnh kiểm nhanh tự chọn các trang nạp file đó; không có thì đếm bằng `grep`)* · bỏ tính năng → còn **0** chỗ gọi.
+
+- Dòng `tương phản mới`, `ý định mới` *(và `trạng thái`, `bàn phím`, `tương tác` khi chạy handover)*: lỗi thật, sửa ở gốc *(`sketch-to-site/references/qa-gate.md` mục 2, 6)*. Dòng `nợ cũ`: có từ trước khi kit đo mục đó; không chặn, không tự sửa, ghi vào báo cáo Cổng 3.
 
 **Dự án dùng `handover-check`:** ở Cấp 1, bước 7 và phần đếm số chỗ gọi của bước 10 dồn sang lần kiểm bàn giao. Ghi tên màn đã đụng vào ghi chú của lệnh kiểm nhanh để lần đó biết cần soát ở đâu. Cấp 2–3 vẫn làm đủ ở đây, vì Cổng 3 cần số UX để chốt phương án.
 

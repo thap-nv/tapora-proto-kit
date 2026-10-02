@@ -6,6 +6,7 @@ description: >-
 
 # Sketch to Concept · Chốt concept trước khi dựng prototype
 
+> **v1.2 (01/10/2026)** · Bảng concept dùng lõi màu chung `color.js` *(chép từ `<skills>/sketch-to-site/templates/color.js`)*: nhận màu oklch, đo thêm cặp của vai dẫn xuất *(hover, viền control, vòng focus, nền nhạt)* và đánh dấu cặp sát ngưỡng. `CONCEPT.md` mục 3 ghi cách chép màu sang `themes.json`.
 > **v1.1 (29/09/2026)** · Luật dừng có bảng cớ bỏ cổng. A3: dựng 3 concept bằng 3 subagent song song khi có, chấm lớp Ý bằng một subagent chưa tham gia dựng *(`references/subagent-prompts.md`)*.
 > **v1.0 (29/09/2026)** · Phần A của quy trình hai phần. Phần B là `sketch-to-site`, đọc `CONCEPT.md` mà skill này viết ra.
 > **Đường dẫn:** `<skills>` là thư mục cha của thư mục chứa SKILL.md này. Skill tham chiếu đọc theo đường dẫn, không gọi qua công cụ Skill *(quy ước ở đầu `sketch-to-site`)*.
@@ -129,6 +130,7 @@ Trình brief *(echo-back)*, rồi hỏi **chỉ những dòng trống hoặc đo
    | `templates/concept-board.html` | `concept/index.html` *(không sửa)* |
    | `templates/concepts.js` | `concept/concepts.js` |
    | `templates/tokens.js` | `concept/tokens.js` *(không sửa)* |
+   | `<skills>/sketch-to-site/templates/color.js` | `concept/color.js` *(không sửa; tokens.js cần)* |
    | `templates/key-screen.html` | `concept/a.html`, `b.html`, `c.html` *(đổi `data-concept`)* |
    | `<skills>/sketch-to-site/templates/theme.js` | `concept/theme.js`: đổi `KEY` thành `<slug>-concept`, để nền sáng/tối chọn ở bảng này không lan sang bảng của dự án khác cũng mở bằng `file://` |
    | `<skills>/sketch-to-site/templates/mobile/app.css`, `app.js` *(chỉ khi có app)* | `concept/app.css`, `concept/app.js`. Màn app dựng theo `mobile/screen.html` nhưng lấy `<head>` token của `key-screen.html`; `tokens.js` xuất đúng tên biến mà `app.css` đọc *(`--bg`, `--ink`, `--accent`, `--brand-font`…)* |
@@ -179,7 +181,7 @@ Mặc định `docs/prototypes/<slug>/`, dự án có quy ước khác thì theo
 ├── DECISIONS.md        # Cổng 1–2 ở đây, Cổng 3–4 do sketch-to-site ghi tiếp
 ├── REFERENCE-READ.md   # nếu có tham chiếu
 ├── CONCEPT.md          # concept đã chốt: nguồn token cho tới Cổng 3
-└── concept/            # index.html, concepts.js, tokens.js, theme.js, a/b/c.html, shots/
+└── concept/            # index.html, concepts.js, color.js, tokens.js, theme.js, a/b/c.html, shots/
 ```
 
 ---
@@ -203,7 +205,7 @@ Mặc định `docs/prototypes/<slug>/`, dự án có quy ước khác thì theo
 
 | Mức | Skill | Dùng ở | Thiếu thì sao |
 |---|---|---|---|
-| 🔴 **Bắt buộc** | `sketch-to-site` | Khuôn `DECISIONS.md`, `theme.js`, `sketch-to-site/templates/mobile/` · `reference-intake.md`, `style-catalogue.md`, `mobile-app.md`, `qa-gate.md` · `preflight.py` · `qa-kit/run.mjs` cho test | **Hỏng**: không kiểm font, không có kho phong cách |
+| 🔴 **Bắt buộc** | `sketch-to-site` | Khuôn `DECISIONS.md`, `theme.js`, `color.js`, `sketch-to-site/templates/mobile/` · `reference-intake.md`, `style-catalogue.md`, `mobile-app.md`, `qa-gate.md` · `preflight.py` · `qa-kit/run.mjs` cho test | **Hỏng**: không kiểm font, không có kho phong cách |
 | 🔴 | `ui-ux-pro-max` | A2 tra màu và chữ · dữ liệu font cho `preflight.py` | **Hỏng**: không tra được, P07 thành P15 |
 | 🟠 **Nên chép** | `huashu-design` | Concept B *(`design-styles.md`)* · brand có thật *(`brand-asset-protocol.md`)* · tự chấm *(`critique-guide.md`)* | Nhẹ: phần cốt lõi đã rút vào `references/concept-method.md` |
 

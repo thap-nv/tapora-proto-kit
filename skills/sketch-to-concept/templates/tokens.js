@@ -1,7 +1,19 @@
-// Token của concept: đổi dữ liệu trong concepts.js thành CSS variables, đo tương phản, đọc mã trộn.
+// Token của concept: đổi dữ liệu trong concepts.js thành CSS variables, đo tương phản (cả vai dẫn xuất), đọc mã trộn. Cần color.js.
 // Mẫu từ sketch-to-concept/templates/tokens.js. Chép nguyên vào concept/tokens.js, không sửa.
 // Mã trộn: "man:A mau:B chu:A nut:A" = màn và ý của A, màu của B, chữ của A, nút và hình khối của A.
 (function (root) {
+  // Lõi màu dùng chung (sketch-to-site/templates/color.js). Trình duyệt: nạp color.js TRƯỚC tokens.js.
+  // Node: tìm color.js cạnh file này (concept/color.js), hoặc ở khuôn của sketch-to-site khi chạy trong repo
+  const CK = (() => {
+    if (typeof module === 'object' && module.exports) {
+      const path = require('path');
+      for (const p of ['color.js', path.join('..', '..', 'sketch-to-site', 'templates', 'color.js')]) {
+        try { return require(path.join(__dirname, p)); } catch (e) { if (e.code !== 'MODULE_NOT_FOUND') throw e; }
+      }
+      throw new Error('tokens.js cần color.js cùng thư mục: chép từ sketch-to-site/templates/color.js');
+    }
+    return root.ColorKit || null;
+  })();
   const LAYERS = ['man', 'mau', 'chu', 'nut'];
   // Trục so giữa các concept (plan mục 3.4): cần khác nhau ở >= 3 trục, và khung bố cục phải khác
   const AXES = ['nen', 'chatNen', 'chu', 'yTuong', 'khoanhKhac', 'khung'];
@@ -35,18 +47,8 @@
     return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
   }
 
-  function luminance(hex) {
-    const [r, g, b] = hexToRgb(hex).map(v => {
-      const c = v / 255;
-      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-    });
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  }
-
-  function contrast(a, b) {
-    const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-    return (hi + 0.05) / (lo + 0.05);
-  }
+  // Đọc được mọi dạng màu CSS (hex, rgb, hsl, oklch, oklab); màu trong suốt trộn lên trắng
+  const contrast = (a, b) => CK.contrast(a, b);
 
   // Không làm tròn lên: 4,499 là chưa đạt AA
   function grade(ratio) {
@@ -56,15 +58,35 @@
     return 'Không đạt';
   }
 
-  function checkPairs(colors) {
-    return PAIRS.filter(([fg, bg]) => colors[fg] && colors[bg]).map(([fg, bg, label]) => {
+  // Vai trò màu của concept (cột colors.csv) → màu gốc của theme (tên biến chung của kit), để tính vai dẫn xuất như scripts/themes.mjs
+  const SEED_OF = { bg: 'background', surface: 'card', ink: 'foreground', muted: 'muted-foreground', line: 'border', 'muted-bg': 'muted' };
+  function derived(colors, mode) {
+    if (!CK || !colors) return null;
+    const s = {};
+    for (const k of CK.SEEDS.concat(CK.OPTIONAL)) { const v = colors[SEED_OF[k] || k]; if (v) s[k] = v; }
+    if (!s.surface && s.bg) s.surface = s.bg;
+    if (CK.SEEDS.some(k => !s[k])) return null;
+    let vars;
+    try { vars = CK.deriveTheme(s, mode).vars; } catch (e) { return null; }
+    // Vai concept đã khai (ring, card-foreground, muted…) thì CSS dùng giá trị của concept: đo đúng giá trị đó
+    for (const role of Object.keys(colors)) { const k = varName(role); if (k in vars) vars[k] = colors[role]; }
+    return vars;
+  }
+
+  function checkPairs(colors, mode) {
+    const base = PAIRS.filter(([fg, bg]) => colors[fg] && colors[bg]).map(([fg, bg, label]) => {
       try {
         const r = contrast(colors[fg], colors[bg]);
-        return { fg, bg, label, ratio: Math.floor(r * 100) / 100, grade: grade(r) };
+        return { fg, bg, label, ratio: Math.floor(r * 100) / 100, grade: grade(r), need: 4.5, verdict: CK.verdict(r, 4.5) };
       } catch (e) {
-        return { fg, bg, label, ratio: null, grade: 'Không đo được (cần mã hex)' };
+        return { fg, bg, label, ratio: null, grade: 'Không đo được (màu không đọc được)', need: 4.5, verdict: 'khong' };
       }
     });
+    const vars = derived(colors, mode || 'light');
+    if (!vars) return base;
+    const isDerived = k => k && CK.DERIVED.includes(k);
+    return base.concat(CK.measure(vars).filter(r => isDerived(r.fg) || isDerived(r.bg) || isDerived(r.under))
+      .map(r => ({ fg: r.fg, bg: r.bg, label: r.label, ratio: r.ratio, grade: grade(r.ratio), need: r.need, verdict: r.verdict })));
   }
 
   function parseMix(str) {
@@ -118,11 +140,19 @@
     const [tex, size] = TEXTURES[s.texture || 'none'] || [s.texture, 'auto'];
     shape.texture = tex;
     shape['texture-size'] = size;
+    // Mỗi khối nền: color-scheme (ô nhập, thanh cuộn theo nền), --theme-mode (bộ kiểm, theme.js) và vai dẫn xuất chưa khai
+    const themeExtra = (colors, mode) => {
+      const head = `color-scheme:${mode};--theme-mode:"${mode}";`;
+      const v = derived(colors, mode);
+      if (!v) return head;
+      const have = new Set(Object.keys(colors).map(varName));
+      return head + CK.DERIVED.filter(k => !have.has(k)).map(k => `--${k}:${v[k]};`).join('');
+    };
     const { light, dark } = c.colors;
     const sel = scope ? ` ${scope}` : '';
-    let css = `${scope || ':root'}{${colorDecl(light || dark)}${decl(fonts)}${decl(shape)}}`;
+    let css = `${scope || ':root'}{${colorDecl(light || dark)}${themeExtra(light || dark, light ? 'light' : 'dark')}${decl(fonts)}${decl(shape)}}`;
     if (light && dark) {
-      const d = colorDecl(dark);
+      const d = colorDecl(dark) + themeExtra(dark, 'dark');
       css += `@media (prefers-color-scheme: dark){:root:not([data-theme="light"])${sel}{${d}}}:root[data-theme="dark"]${sel}{${d}}`;
     }
     return css;
@@ -137,6 +167,9 @@
       const id = String(c && c.id);
       if (!/^[a-z0-9-]+$/.test(id)) out.push(`Concept "${id}": id chỉ gồm chữ thường a-z, số và dấu gạch ngang.`);
       if (!c || !c.colors || !(c.colors.light || c.colors.dark)) out.push(`Concept "${id}": thiếu colors.light hoặc colors.dark.`);
+      for (const m of ['light', 'dark']) for (const [role, v] of Object.entries((c && c.colors && c.colors[m]) || {})) {
+        if (CK && !CK.parse(v)) out.push(`Concept "${id}": màu ${role} không đọc được ("${v}").`);
+      }
       if (seen.has(id)) out.push(`Concept "${id}" bị trùng id.`);
       seen.add(id);
     }
@@ -173,6 +206,7 @@
 
   // Ghi token và link font của một concept vào trang (màn then chốt)
   function apply(doc, data, id, mix) {
+    if (!CK) console.error('tokens.js: chưa có window.ColorKit. Nạp color.js trước tokens.js.');
     const c = resolve(data, id, mix);
     let style = doc.getElementById('concept-tokens');
     if (!style) { style = doc.createElement('style'); style.id = 'concept-tokens'; doc.head.appendChild(style); }

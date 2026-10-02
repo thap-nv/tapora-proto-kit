@@ -5,7 +5,7 @@
 # Cấu hình của dự án ở _qa/qa.config.json (trang, theme, bộ kiểm, bước tự đổi giá trị, ảnh Hub).
 import glob, hashlib, json, os, re, shutil, subprocess, sys
 from concurrent.futures import ThreadPoolExecutor
-import run_all
+import qadiff, run_all
 
 HERE = run_all.HERE
 ROOT = os.path.dirname(HERE)
@@ -21,6 +21,8 @@ DEFAULT_THEME = next(iter(THEMES))
 SUITE_NAMES = [s[0] for s in run_all.SUITES]
 # Bước tự đổi giá trị giữa 2 lần chạy dù không ai sửa gì (đồng hồ chạy thật, số ngẫu nhiên): [bộ, bước]
 NOISY = {tuple(x) for x in CFG.get('noisy', [])}
+# Mã của bộ kiểm chạy trong trang: đổi một file trong số này thì mọi bộ có thể đổi kết quả
+KIT_CODE = ('run.mjs', 'probes.js', 'color.js', 'deep.mjs')
 
 
 def find_preflight():
@@ -73,7 +75,7 @@ def manifest():
             p = os.path.join(base, n)
             out[os.path.relpath(p, ROOT).replace('\\', '/')] = sha(p)
     for n in os.listdir(HERE):
-        if (n.startswith('steps-') and n.endswith('.json')) or n == 'run.mjs':
+        if (n.startswith('steps-') and n.endswith('.json')) or n in KIT_CODE:
             out['_qa/' + n] = sha(os.path.join(HERE, n))
     return out
 
@@ -109,7 +111,7 @@ def affected_suites(changed):
                           for f in d if f.endswith(('.html', '.js', '.css')) and os.path.exists(os.path.join(ROOT, f)))
     pages, suites = set(), set()
     for f in changed:
-        if f == '_qa/run.mjs':
+        if f in {'_qa/' + n for n in KIT_CODE}:
             return list(SUITE_NAMES)
         if f.startswith('_qa/steps-'):
             key = f[len('_qa/steps-'):-len('.json')]
@@ -125,15 +127,33 @@ def affected_suites(changed):
     return [n for n in SUITE_NAMES if n in suites]
 
 
-def run_suites(names, out_root, themes, shots):
-    # Theme sau theme mặc định bỏ các bộ tự đổi theme, giống run_all.py khi có QA_QUERY. shots: chụp ảnh ở mọi theme
+def deep_suites():
+    # Lượt kiểm sâu: mỗi trang một bộ. Bộ khói (tên bắt đầu bằng smoke-) khổ desktop đầu tiên theo thứ tự trong cấu hình;
+    # trang không có bộ khói (dự án đặt tên bộ bằng tay) thì bộ khổ desktop đầu tiên của trang. {trang: bộ}
+    desk = run_all.SIZES.get('desktop')
+    pick = {}
+    for name, page, _, size in run_all.SUITES:
+        if desk is None or size != desk:
+            continue
+        if page not in pick or (not pick[page].startswith('smoke-') and name.startswith('smoke-')):
+            pick[page] = name
+    return pick
+
+
+DEEP_BY_PAGE = deep_suites()
+DEEP_SUITES = frozenset(DEEP_BY_PAGE.values())
+
+
+def run_suites(names, out_root, themes, shots, deep=False):
+    # Theme sau theme mặc định bỏ các bộ tự đổi theme, giống run_all.py khi có QA_QUERY. shots: chụp ảnh ở mọi theme.
+    # deep: bật lượt kiểm sâu cho các bộ trong DEEP_SUITES (run_all.run chỉ nhận quyết định, không tự chọn bộ)
     res = {}
     for th in themes:
         os.environ['QA_QUERY'] = THEMES[th]
         os.environ['QA_NOSHOT'] = '' if shots else '1'
         todo = [s for s in run_all.SUITES if s[0] in names and not (th != DEFAULT_THEME and s[0].startswith(run_all.THEME_PREFIX))]
         with ThreadPoolExecutor(4) as ex:
-            for name, r in ex.map(lambda s: run_all.run(s, os.path.join(out_root, th)), todo):
+            for name, r in ex.map(lambda s: run_all.run(s, os.path.join(out_root, th), deep and s[0] in DEEP_SUITES), todo):
                 if r is not None:
                     res[(th, name)] = r
     os.environ['QA_QUERY'] = ''
@@ -141,35 +161,23 @@ def run_suites(names, out_root, themes, shots):
     return res
 
 
-def over_steps(rep):
-    return {x['step'] for x in rep if x.get('dims') and x['dims']['sw'] > x['dims']['cw']}
+over_steps = qadiff.over_steps
 
 
-def cut_items(rep):
-    # Chữ tràn khung hoặc bị khung cắt (run.mjs, layoutCheck), từng bước: {(bước, khoá): dòng gốc}.
-    # Khoá bỏ số px: lệch vài px giữa hai lần chạy không tính là khác
-    return {(x['step'], re.sub(r'\d+px', 'px', c)): c for x in rep if x.get('dims') for c in x['dims'].get('cut') or []}
+def known_lines(root):
+    # Mọi dòng đo có trong mốc ở root (current/ cho quick.py, last-green/ cho handover.py), mọi bộ, mọi theme.
+    # Bộ mới mang dòng đã có ở bộ khác (component dùng chung) thì dòng đó là nợ cũ, không chặn
+    reps = [load_json(p) for p in glob.glob(os.path.join(glob.escape(root), '*', '*', 'report.json'))]
+    return qadiff.known_lines(r for r in reps if r)
 
 
-def new_cuts(rep, base):
-    cur, old = cut_items(rep), (cut_items(base) if base is not None else {})
-    return sorted((k[0], cur[k]) for k in cur.keys() - old.keys())
+def diff_report(base, rep, suite, known=frozenset()):
+    # So từng bước với mốc (qadiff.py): bước mất, bước mới, check đổi, tràn ngang mới, dòng mới của từng phép đo, nợ cũ
+    return qadiff.diff_report(base, rep, suite, NOISY, known)
 
 
-def diff_report(base, rep, suite):
-    # So từng bước với mốc. base None: bộ mới, không có gì để so
-    out = {'lost': [], 'new': [], 'changed': [], 'over_new': [], 'cut_new': new_cuts(rep, base)}
-    if base is None:
-        out['over_new'] = sorted(over_steps(rep))
-        return out
-    ra = {s['step']: s for s in base}
-    rb = {s['step']: s for s in rep}
-    out['lost'] = [n for n in ra if n not in rb]
-    out['new'] = [n for n in rb if n not in ra]
-    out['changed'] = [(n, ra[n].get('check'), rb[n].get('check')) for n in ra
-                      if n in rb and (suite, n) not in NOISY and ra[n].get('check') != rb[n].get('check')]
-    out['over_new'] = sorted(over_steps(rep) - over_steps(base))
-    return out
+# Nợ cũ in gộp (qadiff.py): mỗi mục (phép đo, dòng đã bỏ số) một dòng dù gặp ở nhiều bước, khổ, theme
+group_debt, debt_count, debt_lines = qadiff.group_debt, qadiff.debt_count, qadiff.debt_lines
 
 
 def preflight():

@@ -33,12 +33,15 @@ python <skills>/sketch-to-site/scripts/preflight.py <thư-mục> --save <file.js
 | `P16` | CẢNH BÁO | Màn app *(`<html data-surface="app">`)*: viewport thiếu `viewport-fit=cover` |
 | `P17` | CẢNH BÁO | Màn app chặn phóng to *(`user-scalable=no`, `maximum-scale=1`)* |
 | `P18` | CẢNH BÁO | `data-clip-ok` không ghi lý do *(viết `data-clip-ok="<lý do>"`)* |
+| `P19` | CẢNH BÁO | `var(--x)` không có giá trị dự phòng mà trang *(kể cả CSS/JS nạp kèm)* không định nghĩa `--x`. Bỏ qua trang nạp `tokens.js` *(bảng concept)* |
+| `P20` | CẢNH BÁO | Màu viết cứng trong `<style>` hay file `.css` *(không tính `tokens.css`, `themes.css`, định nghĩa biến, giá trị dự phòng)*; lớp màu thô của Tailwind *(`bg-zinc-100`, `text-[#333]`)*. Cố ý thì ghi `/* color-ok: <lý do> */` cùng dòng |
+| `P21` | LỖI | `themes.css` cũ hơn `themes.json` *(đã sửa json mà chưa chạy `themes.mjs`)* |
 
 Thoát mã `1` khi còn **LỖI**. Cảnh báo thì phải **đọc từng dòng** rồi sửa, hoặc ghi lý do giữ vào `DECISIONS.md`.
 
 **Phạm vi đọc:** trang HTML **và** CSS/JS cục bộ mà trang nạp *(`<link rel=stylesheet>`, `<script src>`)*. File dùng chung chỉ báo một lần. **Không đọc** chữ do JS sinh lúc chạy *(ví dụ emoji nằm trong chuỗi JS rồi `innerHTML` ra)*. Phần đó phải soát bằng ảnh chụp ở mục 2.
 
-⚠️ **Script đã được thử trên trang cố ý làm hỏng** *(`--selftest`: 16/16 mã kêu trên trang hỏng · im trên trang sạch, kể cả `data-clip-ok` có lý do và selector `[data-clip-ok]` trong CSS · `--kind app` bỏ P11 · CSS nạp kèm báo đúng một lần · màn app kêu P16, P17 và không kêu P11 · `--compare` bỏ qua dòng xê dịch, bắt đúng lỗi mới)*. Selftest cũng đã được **bẻ thử**: tắt một phép kiểm thì selftest phải trả mã 1. Sửa script thì chạy lại `--selftest`.
+⚠️ **Script đã được thử trên trang cố ý làm hỏng** *(`--selftest`: 18/18 mã kêu trên trang hỏng · im trên trang sạch, kể cả `data-clip-ok` có lý do và selector `[data-clip-ok]` trong CSS · `--kind app` bỏ P11 · CSS nạp kèm báo đúng một lần · màn app kêu P16, P17 và không kêu P11 · `--compare` bỏ qua dòng xê dịch, bắt đúng lỗi mới · P21 kêu khi băm lệch, im khi khớp · P19 bỏ qua trang nạp tokens.js)*. Selftest cũng đã được **bẻ thử**: tắt một phép kiểm thì selftest phải trả mã 1. Sửa script thì chạy lại `--selftest`.
 
 ---
 
@@ -54,6 +57,16 @@ Mỗi bước, bộ chạy tự đo:
 - **chữ tràn hoặc bị cắt trong khung**: chữ tràn khỏi hộp của nó *(ô bảng bị ép, nút hẹp)*, hoặc chữ hay nút bị khung `overflow:hidden` cắt mất một phần *(bảng rộng hơn khung bo góc)*.
   - Phép đo tràn ngang không thấy lỗi này, vì phần tràn nằm trong khung.
   - Cố ý *(tràn lề, marquee, slide ló)* thì gắn `data-clip-ok="<lý do>"` vào khung, ví dụ `data-clip-ok="marquee chạy ngang"`. Thiếu lý do thì preflight báo P18. **Không** gắn cho chỗ tràn không cố ý *(mục 6)*.
+- **tương phản trên nền thật** *(`probes.js`)*: mọi chữ và placeholder đang hiện. Phép đo trộn các lớp nền trong suốt, lấy mẫu dải chuyển, theo cả lớp anh em nằm dưới chữ *(dải màu đầu app)*. Ngưỡng 4,5:1, chữ lớn 3:1. Điểm nằm trên ảnh thì bỏ, không đoán. Chữ nằm trên lớp `pointer-events:none` mà bị đo nhầm nền: gắn `data-contrast-bg="<selector lớp đó>"` vào chữ hoặc khung *(chữ vẫn được đo)*;
+- **màu theo ý định**: nút nhãn nguy hiểm tô màu chính, nút đồng ý tô màu nguy hiểm, cùng nhãn nguy hiểm mà hai màu. Nhãn nguy hiểm: *xoá, gỡ, thu hồi, từ chối, vô hiệu hoá, chấm dứt, khoá tài khoản, đặt lại, khôi phục mặc định, huỷ + việc gì*. "Huỷ", "Huỷ bỏ" của hộp thoại là thoát ra; xoá hay đặt lại bộ lọc, ô tìm kiếm, lựa chọn không làm mất dữ liệu: không tính. "Đặt lại" chỉ là nhãn nguy hiểm khi đi với thứ bị mất dữ liệu *(đặt lại dữ liệu, cài đặt, mặc định, tất cả)*. "Đặt lại mật khẩu" và đặt hàng lại *("Đặt lại" trơn, "đặt lại đơn, lịch…")* không tính. Nhãn đồng ý: *lưu, xác nhận, đồng ý, tiếp tục, gửi, duyệt, thanh toán, đặt, tạo, thêm*. Hai danh sách chép ở `templates/qa-kit/probes.js`: sửa một chỗ thì sửa cả hai.
+
+**Lượt kiểm sâu** *(chỉ `handover.py run`; `templates/qa-kit/deep.mjs`)*: chạy ở bộ khói khổ desktop của mỗi trang; dự án không có bộ khói thì bộ khổ desktop đầu tiên của trang. `handover.py` in dòng `Lượt sâu: n bộ (…)`, hoặc `Lượt sâu không chạy: <lý do>`.
+- **trạng thái:** chữ của từng control khi di chuột và khi focus bằng bàn phím phải đạt ngưỡng;
+- **bàn phím:** Tab tới được mọi control trong vòng Tab *(có hộp thoại modal thì chỉ xét trong hộp thoại)* · widget nhiều mục có đường vào bằng bàn phím · widget khai roving tabindex thì phím mũi tên phải chạy · control tự dựng mang trạng thái đổi được bằng Enter hoặc Space;
+- **tương tác:** bấm thật từng control hứa trạng thái *(`aria-pressed`, `aria-expanded`, `aria-checked`, `aria-selected`, `aria-sort`, role switch, tab, option)*: phải đổi thứ gì đó, và khi thuộc tính trạng thái đổi thì control phải nhìn khác;
+- `data-demo-state="<trạng thái>"`: phần tử vẽ một trạng thái tĩnh *(trang `_system.html`)*, không phải control thật; lượt sâu không bấm thử. **Không** gắn lên control thật để né *(mục 6)*.
+
+**Độ chặt:** như chữ bị cắt, chỉ chặn lỗi **mới** so với mốc. Chưa có mốc thì mọi dòng là lỗi: sửa về 0. Mốc do bộ kiểm cũ ghi *(chưa đo mục đó, chưa có lượt sâu)* thì dòng là **nợ cũ**: in ra mà không chặn; `handover-check` hỏi người dùng sửa hay nhận vào mốc. Bộ mới *(trang mới thêm vào dự án đã có mốc)* mang dòng đã có ở bộ khác trong mốc *(component dùng chung)* thì dòng đó cũng là nợ cũ. Lỗi console của lượt sâu được so với mốc như các phép đo khác. Nợ cũ in gộp: mỗi mục một dòng, kèm `×n` khi gặp ở nhiều bước, khổ, theme.
 
 Lệnh dưới đây chỉ dùng khi **không chạy được bộ kiểm**, để chụp tay.
 
@@ -68,6 +81,8 @@ npx playwright screenshot --viewport-size=390,844   --full-page "file:///<…>" 
 ```bash
 msedge --headless=new --disable-gpu --hide-scrollbars --screenshot="<abs>\_qa\1440.png" --window-size=1440,900 "file:///<abs>/index.html"
 ```
+
+Chụp `site/_system.html` cho Cổng 3 khi chưa cài bộ kiểm: dùng đúng lệnh này, mỗi theme một ảnh, thêm `?theme=<tên>` vào địa chỉ.
 
 **Mở từng ảnh ra xem** *(công cụ Read đọc được ảnh)*, soát:
 - [ ] Không tràn ngang ở 390
@@ -130,6 +145,8 @@ Chạy trên **từng trang**, đọc code thật, mỗi điểm ✅/❌ kèm `f
 - [ ] Không trang trí nền, không bento trang trí, không marquee
 - [ ] Phân quyền: vai không có quyền thì **không thấy** màn, không chỉ bị ẩn nút *(thử mở thẳng URL)*
 - [ ] Số tự đặt được gắn nhãn minh hoạ
+- [ ] Dashboard theo `rules-and-conflicts.md` D.7: một con số dẫn, màu chuỗi `--chart-n`, nhãn hạng mục trên hình
+- [ ] Câu chữ theo A.5: nút là động từ + kết quả, hộp thoại xác nhận nhắc lại hành động, lỗi nói cách sửa, trạng thái rỗng có hành động đầu tiên
 
 ### App mobile *(luật đủ ở `mobile-app.md`)*
 - [ ] Bước `tap-targets` của bộ khói **PASS** ở khổ 390 trên mọi màn và mọi nền tảng đang làm
@@ -147,6 +164,7 @@ Chạy trên **từng trang**, đọc code thật, mỗi điểm ✅/❌ kèm `f
 ```markdown
 **Kiểm cơ giới:** 0 lỗi · n cảnh báo (đã xử: …)
 **Hiển thị:** 1440 ✅ · 768 ✅ · 390 ✅ — ảnh ở `_qa/`
+**Đo trên trang:** tương phản 0 · ý định 0 · sâu 0 *(trạng thái, bàn phím, tương tác)* · nợ cũ n *(nếu có)*
 **UX 12 điểm:** Trang chủ 12/12 · Sản phẩm 11/12 (❌ #7: …)
 **Review độc lập:** n vấn đề (chặn nghiệm thu · nên sửa · nhỏ), đã sửa n, đưa lên cổng n · hoặc: không có review độc lập
 **Còn chờ:** 4 ảnh thật (…) · 2 số minh hoạ (…)
@@ -175,6 +193,9 @@ Chạy trên **từng trang**, đọc code thật, mỗi điểm ✅/❌ kèm `f
 | Thêm vào `noisy` một bước không tự đổi giữa các lần chạy | Tìm vì sao giá trị đổi |
 | Đổi khổ, theme hay `query` của bộ để né lỗi | Sửa ở đúng khổ, theme đó |
 | Bọc code bằng `try {} catch {}` rỗng cho hết lỗi console | Sửa lỗi gốc |
+| Gắn `data-demo-state` lên control thật | Sửa control cho đổi trạng thái thật và nhìn khác |
+| Hạ opacity, làm chữ to lên chỉ để qua ngưỡng tương phản; tô nút nguy hiểm thành xám cho khỏi bị bắt | Sửa màu gốc trong `themes.json`, hoặc đổi nền dưới chữ |
+| Gắn `data-contrast-bg` chỉ tới lớp không nằm dưới chữ | Chỉ tới đúng lớp nằm dưới; không có lớp nào thì sửa màu |
 
 **Ba lần sửa chưa xong thì dừng.** Báo người dùng: lỗi gì, đã thử ba cách nào, giả thuyết còn lại. Lỗi thường nằm ở bố cục hay dữ liệu, không ở chỗ đang vá.
 
@@ -184,17 +205,34 @@ Chạy trên **từng trang**, đọc code thật, mỗi điểm ✅/❌ kèm `f
 
 ## 7. Review bằng góc nhìn mới
 
-> Dùng ở B4 bước 5 của `sketch-to-site`, khi có công cụ tạo subagent và phiên cho phép. Người dựng tự soát thường sót đúng chỗ đã sót lúc dựng. Rút từ `superpowers` *(requesting-code-review)*.
+> Dùng ở B4 bước 5 của `sketch-to-site`, khi có công cụ tạo subagent và phiên cho phép. Người dựng tự soát thường sót đúng chỗ đã sót lúc dựng. Rút từ `superpowers` *(requesting-code-review)*, và cách nhìn của agent `design-critic` trong `plugin87/ux-ui-agent-skills`.
 
 ```text
-Bạn review prototype {tên dự án} trước khi nghiệm thu. Bạn không dựng nó. Chỉ đọc, không sửa file nào.
+Bạn review prototype {tên dự án} trước khi nghiệm thu, như một giám đốc thiết kế nhận bản của người khác. Bạn không dựng nó. Chỉ đọc, không sửa file nào. Mặc định bản này chưa đạt cho tới khi ảnh chứng minh ngược lại; qua bộ kiểm không phải bằng chứng về gu.
 
-Đọc: {thư mục prototype}/CONCEPT.md, {thư mục prototype}/DESIGN.md (sơ đồ trang ở mục 9), {thư mục prototype}/DECISIONS.md (phạm vi ở Cổng 3; thứ đã khoá ở một cổng thì chỉ nêu, không đề xuất đổi), mã nguồn trong {thư mục prototype}/site/ (để dẫn file:dòng), ảnh chụp mới nhất trong {thư mục prototype}/_qa/handover/, và {skills}/sketch-to-site/references/qa-gate.md mục 4.
+Đọc: {thư mục prototype}/CONCEPT.md, {thư mục prototype}/DESIGN.md (sơ đồ trang ở mục 9), {thư mục prototype}/DECISIONS.md (phạm vi ở Cổng 3, giả định ở B1; thứ đã khoá ở một cổng thì chỉ nêu, không đề xuất đổi), mã nguồn trong {thư mục prototype}/site/ (để dẫn file:dòng), và {skills}/sketch-to-site/references/qa-gate.md mục 4.
+
+Xem trước khi nói: mở ảnh mới nhất trong {thư mục prototype}/_qa/handover/ ở khổ 1440 và 390, ở mọi theme, cả trang _system. Khổ hay theme nào chưa có ảnh thì ghi vào mục Không đánh giá được, không đoán.
+
+Soát theo thứ tự:
+1. Điểm nhìn đầu: mỗi màn có một chỗ mắt dừng trước; không bốn thẻ bằng nhau.
+2. Chữ: chữ hiển thị đủ lớn so với chữ thân (≥ 2,5 lần), độ đậm có vai; dòng thân không quá 75 ký tự.
+3. Khoảng cách: trong nhóm chặt hơn giữa nhóm; không một khoảng cho mọi thứ.
+4. Màu: màu nhấn đúng chỗ, không rải khắp; hành động nguy hiểm mang màu nguy hiểm ở mọi chỗ.
+5. Độ nổi, bo góc: bóng theo độ cao thật của lớp, không một bóng cho mọi thứ.
+6. Nội dung: không chữ giữ chỗ; số liệu như người dùng thật có; trạng thái rỗng nói cách lấp đầy.
+7. Chịu tải: chuỗi dài, danh sách rỗng, một mục, bốn mươi mục, số chín chữ số (ảnh của bộ du-lieu-rong, du-lieu-dai nếu có). Xem khổ 390 trước khi khen khổ 1440.
+8. Tương tác thật: đối chiếu dòng "sâu" trong kết quả handover; control nào trông bấm được mà không làm gì.
+9. Câu chữ: nút bắt đầu bằng động từ; lỗi nói cách sửa; không giọng "AI cố tỏ ra sâu sắc".
+10. Concept còn nguyên: Ý, ẩn dụ, khoảnh khắc đọc lần hai, tương tác đặc trưng thấy ở những trang nào, mất ở trang nào.
+
+Mỗi vấn đề phải có bằng chứng: file:dòng, một số đo của bộ kiểm, hoặc một chỗ cụ thể trên một ảnh cụ thể (trang, khổ, theme). "Trông chung chung" không phải một vấn đề.
 
 Trả về:
-1. Concept còn nguyên không: Ý, ẩn dụ, khoảnh khắc đọc lần hai, tương tác đặc trưng thấy ở những trang nào, mất ở trang nào.
-2. Soát gu theo qa-gate.md mục 4: mỗi vấn đề chỉ vào trang, khổ, và chỗ trên ảnh hoặc file:dòng.
-3. Chỗ trông giống khuôn chung, không thuộc về sản phẩm này.
-
-Xếp mọi vấn đề theo mức: Chặn nghiệm thu · Nên sửa · Nhỏ. Cuối cùng: danh sách những gì đã cân nhắc mà bỏ qua, mỗi dòng một lý do.
+KẾT LUẬN: chặn · làm lại · giao
+Ba lý do một giám đốc thiết kế sẽ trả bản này về (kết luận giao thì ghi "không có").
+Bảng: # · Mức (Chặn nghiệm thu · Nên sửa · Nhỏ) · Vấn đề · Bằng chứng · Cách sửa.
+Điểm làm tốt: tối đa hai.
+Không đánh giá được: những gì chưa xem được, và vì sao.
+Đừng đẩy mức lên để tỏ ra kỹ: mọi vấn đề đều Nhỏ thì nói thẳng là giao được.
 ```

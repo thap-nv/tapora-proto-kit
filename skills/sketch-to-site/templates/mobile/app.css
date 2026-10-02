@@ -48,7 +48,7 @@ body {
 .app-status-icons { display: flex; align-items: center; gap: 6px; }
 [data-device] .app::before {                   /* Dynamic Island; Android: lỗ camera */
   content: ""; position: absolute; z-index: 60; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px;
-  border-radius: 20px; background: #0A0A0B; pointer-events: none;
+  border-radius: 20px; background: #0A0A0B; pointer-events: none; /* color-ok: Dynamic Island luôn đen như máy thật */
 }
 [data-device][data-platform="android"] .app::before { top: 12px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; }
 [data-device] .app::after {                    /* thanh home */
@@ -63,7 +63,7 @@ body {
 }
 [data-device="frame"] .app {
   flex: none; width: var(--app-w); height: var(--app-h); border-radius: 54px;
-  box-shadow: 0 0 0 10px var(--bezel), 0 0 0 11px color-mix(in srgb, var(--ink) 28%, var(--bezel)), 0 40px 80px -24px rgba(12, 12, 14, .45);
+  box-shadow: 0 0 0 10px var(--bezel), 0 0 0 11px color-mix(in srgb, var(--ink) 28%, var(--bezel)), 0 40px 80px -24px rgba(12, 12, 14, .45); /* color-ok: bóng khung máy trên nền trình bày, không thuộc theme */
 }
 [data-device="frame"][data-platform="android"] .app { border-radius: 34px; }
 /* Màn máy tính thấp: thu cả khung lại cho vừa, không bắt cuộn trang */
@@ -137,9 +137,11 @@ body {
 /* ---------- Nút ---------- */
 .app-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 50px; padding: 0 20px;
-  border: 0; border-radius: 12px; background: var(--accent); color: var(--bg); font: inherit; font-size: 17px; font-weight: 600; cursor: pointer;
+  border: 0; border-radius: 12px; background: var(--accent); color: var(--on-accent, var(--bg)); font: inherit; font-size: 17px; font-weight: 600; cursor: pointer;
 }
 .app-btn.is-quiet { background: var(--app-soft); color: var(--accent); }
+.app-btn:not(.is-quiet):hover { background: var(--accent-hover, var(--accent)); }
+.app-btn:not(.is-quiet):active { background: var(--accent-pressed, var(--accent)); }
 [data-platform="android"] .app-btn { width: auto; min-height: 48px; border-radius: 24px; font-size: 14px; font-weight: 500; }
 
 /* ---------- Công tắc: <input type="checkbox" class="app-switch"> ---------- */
@@ -147,7 +149,7 @@ body {
   appearance: none; position: relative; flex: none; width: 51px; height: 31px; margin: 0; border-radius: 16px;
   background: var(--line); cursor: pointer; transition: background .2s;
 }
-.app-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 2px 6px rgba(12, 12, 14, .2); transition: transform .2s; }
+.app-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 2px 6px rgba(12, 12, 14, .2); transition: transform .2s; } /* color-ok: núm công tắc iOS luôn trắng */
 .app-switch:checked { background: var(--accent); }
 .app-switch:checked::after { transform: translateX(20px); }
 [data-platform="android"] .app-switch { width: 52px; height: 32px; border: 2px solid var(--muted); box-sizing: border-box; background: transparent; }
@@ -158,7 +160,7 @@ body {
 /* ---------- Bottom sheet: <div class="app-sheet" id="…" role="dialog" aria-modal="true"> ---------- */
 .app-sheet {
   position: absolute; inset: 0; z-index: 40; display: flex; align-items: flex-end;
-  background: rgba(12, 12, 14, .36); visibility: hidden; opacity: 0; transition: opacity .25s ease, visibility 0s linear .25s;
+  background: rgba(12, 12, 14, .36); visibility: hidden; opacity: 0; transition: opacity .25s ease, visibility 0s linear .25s; /* color-ok: lớp mờ sau bottom sheet giữ như iOS */
 }
 .app-sheet.is-open { visibility: visible; opacity: 1; transition: opacity .25s ease; }
 .app-sheet-panel {
@@ -187,7 +189,7 @@ body {
 [data-enter="push"] .app-body { animation: app-push .28s cubic-bezier(.2, .8, .2, 1); }
 [data-enter="pop"] .app-body { animation: app-pop .28s cubic-bezier(.2, .8, .2, 1); }
 
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--ring, var(--accent)); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   .app *, .app *::before, .app *::after { animation: none !important; transition-duration: .01ms !important; }
 }

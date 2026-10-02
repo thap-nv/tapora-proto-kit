@@ -16,7 +16,7 @@ def load(d):
 
 
 def cuts(s):
-    # Chữ tràn hoặc bị cắt trong khung của một bước: {khoá bỏ số px, như qalib.cut_items: dòng gốc}
+    # Chữ tràn hoặc bị cắt trong khung của một bước: {khoá bỏ số px, như qadiff.items: dòng gốc}
     return {re.sub(r'\d+px', 'px', c): c for c in ((s.get('dims') or {}).get('cut') or [])}
 
 
