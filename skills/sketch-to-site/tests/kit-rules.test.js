@@ -231,7 +231,8 @@ test('sau review: khuôn báo cáo Cổng 4 có chỗ cho review độc lập; m
   const f = section(read('skills/sketch-to-site/references/rules-and-conflicts.md'), '## F. Nhận góp ý và yêu cầu sửa', '\n## G.');
   assert.match(f, /sàn không thương lượng ở `sketch-to-site` mục 2/);
   assert.match(read('skills/sketch-to-site/SKILL.md'), /^> \*\*v4\.1 [^\n]*`qa-gate\.md` mục 7/m);
-  assert.match(read('skills/sketch-to-concept/references/subagent-prompts.md'), /Concept làm lại thì gửi lại prompt mục 2 cho riêng concept đó/);
+  // v1.3: chấm trên dữ liệu một lần; concept sửa ý thì được soát lại trên ảnh, không chấm lại bằng prompt mục 2
+  assert.match(read('skills/sketch-to-concept/references/subagent-prompts.md'), /Không chấm lại trên dữ liệu: lần soát trên ảnh/);
 });
 
 test('mọi đường dẫn {skills}/… trong prompt và tài liệu đều có thật', () => {
@@ -242,7 +243,7 @@ test('mọi đường dẫn {skills}/… trong prompt và tài liệu đều có
   walk('skills');
   const missing = [];
   for (const f of files) {
-    for (const m of read(f).matchAll(/\{skills\}\/([^\s)`,:;*]+)/g)) {
+    for (const m of read(f).matchAll(/\{skills\}\/([^\s)`,:;*"']+)/g)) {
       const p = m[1].replace(/[.]+$/, '');
       if (!/[<>{}]/.test(p) && !fs.existsSync(path.join(REPO, 'skills', p))) missing.push(`${f}: ${p}`);
     }

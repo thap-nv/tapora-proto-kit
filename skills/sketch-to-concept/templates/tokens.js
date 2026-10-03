@@ -35,8 +35,8 @@
   // Chất nền dùng qua background-image: var(--texture); background-size: var(--texture-size)
   const TEXTURES = {
     none: ['none', 'auto'],
-    grid: ['repeating-linear-gradient(0deg, var(--border) 0 1px, transparent 1px 24px), repeating-linear-gradient(90deg, var(--border) 0 1px, transparent 1px 24px)', 'auto'],
-    dots: ['radial-gradient(var(--border) 1px, transparent 1.5px)', '16px 16px'],
+    grid: ['repeating-linear-gradient(0deg, var(--line) 0 1px, transparent 1px 24px), repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 24px)', 'auto'],
+    dots: ['radial-gradient(var(--line) 1px, transparent 1.5px)', '16px 16px'],
     grain: ["url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .07 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>\")", '160px 160px'],
   };
 

@@ -6,6 +6,7 @@ description: >-
 
 # Sketch to Site · Thiết kế website và app từ đầu
 
+> **v4.3 (03/10/2026)** · `qa-gate.md` mục 2: Edge/Chrome headless dàn trang ở khoảng 496px khi cửa sổ hẹp hơn, nên khổ 390 chụp bằng Playwright hoặc `run.mjs`. `run.mjs`: bước `clip` chụp đúng vùng cả khi trang đã cuộn. Giữ nguyên tiêu đề mục 3 và 6: `sketch-to-concept` in riêng hai mục này theo tiêu đề.
 > **v4.2 (01/10/2026)** · Design system theo theme: màu gốc ở `site/assets/themes.json`, `scripts/themes.mjs` tính vai dẫn xuất và đo mọi cặp; mọi theme là một `data-theme` *(B2, D.2)*. Trang design system sống `site/_system.html` duyệt ở Cổng 3. B1 ghi giả định *Thực tế nội dung*. Bộ kiểm đo trên trang render: tương phản và màu theo ý định ở mọi bước; khi bàn giao có thêm lượt kiểm sâu *(trạng thái, bàn phím, tương tác)*. Mốc cũ chưa đo thì ghi nợ cũ *(`qa-gate.md` mục 2)*.
 > **v4.1 (29/09/2026)** · Sổ tiến độ `BUILD-LOG.md` ở B3 *(B0 làm tiếp từ sổ)*. B4: tìm nguyên nhân gốc, không làm im bộ kiểm *(`qa-gate.md` mục 6)*, review bằng góc nhìn mới *(`qa-gate.md` mục 7)*. Luật dừng có bảng cớ bỏ cổng. Cổng 4: nhận góp ý theo `rules-and-conflicts.md` mục F.
 > **v4.0 (29/09/2026)** · Tách phần concept ra `sketch-to-concept`. Định hình dự án, nạp tham chiếu, tra design intelligence, chọn phong cách và dựng 3 phương án giờ là **Cổng 1–2** ở đó, trên một bảng concept nhìn thấy được. Skill này nhận `CONCEPT.md`, đọc đủ yêu cầu rồi thử concept trên màn khó *(B0–B1)*. Design system, dựng đầy đủ, tự kiểm đổi số thành B2, B3, B4; hai cổng cuối thành **Cổng 3** và **Cổng 4**.

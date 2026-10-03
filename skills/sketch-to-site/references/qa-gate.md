@@ -81,6 +81,7 @@ npx playwright screenshot --viewport-size=390,844   --full-page "file:///<…>" 
 ```bash
 msedge --headless=new --disable-gpu --hide-scrollbars --screenshot="<abs>\_qa\1440.png" --window-size=1440,900 "file:///<abs>/index.html"
 ```
+Chỉ dùng cho khổ từ 500 trở lên. Dưới đó trình duyệt vẫn dàn trang ở khoảng 496px rồi cắt ảnh, nên ảnh "390" trông như tràn ngang dù trang không tràn. Khổ 390 chụp bằng Playwright ở trên, hoặc bằng `templates/qa-kit/run.mjs` *(đặt khổ qua CDP)*.
 
 Chụp `site/_system.html` cho Cổng 3 khi chưa cài bộ kiểm: dùng đúng lệnh này, mỗi theme một ảnh, thêm `?theme=<tên>` vào địa chỉ.
 
