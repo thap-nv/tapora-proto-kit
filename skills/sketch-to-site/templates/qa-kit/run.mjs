@@ -193,7 +193,9 @@ for (const s of steps.steps) {
     if (s.jpeg) opt.quality = 82;
     let box = null;
     if (s.clip) {
-      const r = await send('Runtime.evaluate', { expression: `JSON.stringify((function(){var e=document.querySelector(${JSON.stringify(s.clip)});if(!e)return null;var b=e.getBoundingClientRect();return {x:b.left,y:b.top,width:b.width,height:b.height}})())`, returnByValue: true });
+      // clip của Page.captureScreenshot tính theo toạ độ tài liệu, getBoundingClientRect theo khung nhìn: cộng phần đã cuộn,
+      // không thì trang đã cuộn (bước cuộn tới một khối) cho ảnh lệch đúng bằng khoảng cuộn, phía trên trống
+      const r = await send('Runtime.evaluate', { expression: `JSON.stringify((function(){var e=document.querySelector(${JSON.stringify(s.clip)});if(!e)return null;var b=e.getBoundingClientRect();return {x:b.left+scrollX,y:b.top+scrollY,width:b.width,height:b.height}})())`, returnByValue: true });
       box = JSON.parse(r.result?.result?.value ?? 'null');
       if (box) opt.clip = Object.assign(box, { scale: s.scale || 1 });
       // Khung chưa có (pha "thấy đỏ" của evolve-site) hay selector sai: báo lỗi ở bước này, không sập cả bộ

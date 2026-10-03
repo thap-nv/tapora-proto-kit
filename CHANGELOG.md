@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.0 (2026-10-03)
+
+- Skills: `sketch-to-concept` 1.3, `sketch-to-site` 4.3.
+- `sketch-to-concept` costs less to run. In three measured runs, most of the cost came from repeated rework rounds, parallel subagents and reading whole reference files:
+  - The idea layer is scored once on `concepts.js` (idea, metaphor, formFrom, signature) before any screen is built, by a fresh subagent when the session allows one, called in the foreground because the build waits for its scores. A weak idea is fixed in the data along the reviewer's direction, not by rebuilding a screen, and is not re-scored: the check on screenshots catches it. After the build, a concept is reworked at most once. If it still scores 5 or less, it goes to gate 2 with its score and the user decides.
+  - One agent builds the three screens in sequence by default. Parallel subagents run only when the user asks, at most 3. A subagent that stopped midway is replaced by a new one that reads the files already written, not resumed.
+  - Templates marked "do not edit" are copied with `cp`, not opened. `sketch-to-site` §3 and §6 are printed with a `sed` range instead of reading the whole file. A2 runs the design-system search once, for concept A.
+  - `scripts/shots.mjs` screenshots the board at 1440 and each screen at 1440 and 390 through `run.mjs`, plus a close-up of the block marked `data-signature` (the signature interaction, often below the first screen). It prints one line per screenshot: horizontal overflow, clipped text, contrast, action intent, console errors. The board's line also reports data errors, the sample-data banner, axis warnings and failing colour pairs, so nobody has to dump the board's DOM.
+  - Handover suggests a new session before `sketch-to-site`.
+- Fixed: the `grid` and `dots` textures in `tokens.js` used `var(--border)`, which the template never defines, so they did not show. They now use `--line`.
+- Fixed: the input placeholder on the concept board used the browser's default grey and failed contrast on dark tiles. It now uses `--muted`.
+- Fixed: `run.mjs` passed viewport coordinates as the screenshot `clip`, but CDP reads document coordinates. A `clip` step on a scrolled page captured the wrong region: blank on top by the scrolled distance, cut at the bottom.
+- `qa-gate.md` §2: Edge and Chrome headless lay the page out at about 496px when the window is narrower, so a 390 screenshot taken with `--window-size` is a cropped, wider page. Use Playwright or `run.mjs` for 390.
+
 ## 1.2.0 (2026-10-01)
 
 - Skills: `sketch-to-site` 4.2, `sketch-to-concept` 1.2, `evolve-site` 1.8, `tweak-site` 1.2, `handover-check` 1.2.

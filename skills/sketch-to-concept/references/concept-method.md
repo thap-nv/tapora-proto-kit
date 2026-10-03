@@ -52,7 +52,7 @@ Trả lời cho màn then chốt của **mỗi** concept, trước khi dựng:
 4. **Sức chứa:** phác 3 bố cục nhanh, nội dung thật có vừa không?
 5. **Mô-típ thị giác:** thứ gì chỉ nội dung này mới có? Một thành phần, một cấu trúc hay một ẩn dụ mà chủ đề khác không có. Đó là hạt giống của form.
 
-Sau khi dựng, viết một câu **"form đến từ đâu trong nội dung"** vào `formFrom` của `concepts.js`. Không viết được câu này tức là đang dùng khuôn: quay lại câu 5.
+**Trước khi dựng**, viết câu 5 thành một câu **"form đến từ đâu trong nội dung"** vào `formFrom` của `concepts.js`: lớp Ý được chấm trên câu này *(mục 7)*. Không viết được câu này tức là đang dùng khuôn: quay lại câu 5. Dựng xong, kiểm màn có mang đúng mô-típ đó không.
 
 ### 2.4 Câu Ý *(theo `brandkit`, Tagline style)*
 Ngắn, cụ thể, nói được bằng lời thường. *"Mỗi lô hạt là một trang sổ tay của người rang"* được. *"Nâng tầm trải nghiệm cà phê"* không được: sáo ngữ, và đổi sang sản phẩm nào cũng đúng.
@@ -142,7 +142,7 @@ Nền tảng · khung máy · logic bảng màu · tính cách chữ · thang c�
 
 ---
 
-## 7. Tự chấm lớp Ý trước Cổng 2 *(theo `huashu-design/references/critique-guide.md` mục 0)*
+## 7. Chấm lớp Ý: trên dữ liệu trước khi dựng, soát trên ảnh sau khi dựng *(theo `huashu-design/references/critique-guide.md` mục 0)*
 
 | Điểm | Mức |
 |---|---|
@@ -152,13 +152,17 @@ Nền tảng · khung máy · logic bảng màu · tính cách chữ · thang c�
 | 3–4 | Khuôn chung thay áo |
 | 1–2 | Chọn sai cả phong cách, chỉ là trang trí chồng lên nhau |
 
-Hỏi lần lượt:
+**Trên dữ liệu** *(khối của concept trong `concepts.js`: `idea`, `metaphor`, `formFrom`, `signature`)*, hỏi lần lượt:
 - Nói được ý của concept trong một câu không?
-- Che hết chữ và logo, còn nhận ra chủ đề không?
 - Đổi tên sản phẩm, concept còn đứng được không? Còn thì tối đa **5**.
-- Form có mô-típ riêng của nội dung không *(mục 2.3, câu 5)*?
+- `formFrom` có chỉ vào một mô-típ riêng của nội dung không *(mục 2.3, câu 5)*?
+- Tương tác đặc trưng có phục vụ việc chính và mang ẩn dụ không?
 
-**Concept nào ≤ 5 thì làm lại concept đó, chưa mở Cổng 2.** Tay nghề tốt không cứu được một concept không có ý.
+**Trên ảnh** *(sau khi dựng)*:
+- Che hết chữ và logo, còn nhận ra chủ đề không?
+- Màn có mang đúng mô-típ đã ghi ở `formFrom` không?
+
+**Làm lại:** trên dữ liệu, concept ≤ 5 thì sửa ý trong `concepts.js` theo hướng sửa của người chấm *(sửa chữ rẻ hơn dựng lại màn)*, rồi dựng; không chấm lại trên dữ liệu, lần soát trên ảnh sẽ kiểm. Trên ảnh, màn đánh mất ý thì làm lại concept đó **tối đa một lần**. Vẫn ≤ 5 thì thôi làm lại: trình ở Cổng 2 kèm điểm và lý do, người dùng quyết giữ hay bỏ. Tay nghề tốt không cứu được một concept không có ý; làm lại nhiều vòng cũng không.
 
 ---
 
