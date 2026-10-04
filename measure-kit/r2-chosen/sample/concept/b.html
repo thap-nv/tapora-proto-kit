@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Màn then chốt · concept B · Một ngày, bốn vết rạch</title>
+<!-- Mẫu từ sketch-to-concept/templates/key-screen.html. Mỗi concept một file: a.html, b.html, c.html.
+     Đổi data-concept cho khớp id trong concepts.js. Giữ thứ tự nạp: theme.js, concepts.js, color.js, tokens.js (đều trong <head>, không defer).
+     Ba màn cùng MỘT nội dung (CONCEPTS.content), khác nhau ở khung bố cục và token. Thay <body> bằng màn thật.
+     Gắn data-signature lên khối của tương tác đặc trưng: scripts/shots.mjs cuộn tới và chụp riêng khối đó.
+     Màn app: dựng trên sketch-to-site/templates/mobile/screen.html, giữ khối <head> dưới đây thay cho token của khuôn app. -->
+<script src="theme.js"></script>
+<script src="concepts.js"></script>
+<script src="color.js"></script>
+<script src="tokens.js" data-concept="b"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Tên biến theo rules-and-conflicts.md D.2 của sketch-to-site (--bg, --surface, --ink, --muted, --line, --accent) + vai trò thêm của colors.csv -->
+<script>tailwind.config={theme:{extend:{colors:{bg:'var(--bg)',surface:'var(--surface)',ink:'var(--ink)',muted:'var(--muted)','muted-bg':'var(--muted-bg)',line:'var(--line)',primary:'var(--primary)','on-primary':'var(--on-primary)',accent:'var(--accent)','on-accent':'var(--on-accent)',destructive:'var(--destructive)',ring:'var(--ring)'},fontFamily:{display:'var(--font-display)',body:'var(--font-body)',mono:'var(--font-mono)'},borderRadius:{sm:'var(--radius-sm)',DEFAULT:'var(--radius)',lg:'var(--radius-lg)'},boxShadow:{DEFAULT:'var(--shadow)'}}}}</script>
+<style>
+  body{margin:0;min-height:100dvh;background-color:var(--bg);background-image:var(--texture);background-size:var(--texture-size);color:var(--ink);font-family:var(--font-body)}
+  h1,h2,h3{font-family:var(--font-display)}
+  .btn{transition:transform .15s ease}
+  .btn:active{transform:scale(.98)}
+  :focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<style>
+  .page{overflow-x:clip}
+  .num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+  /* Thanh ngày tràn hai mép: 5:30 → 19:00 nằm trong vùng --pad, hai đầu bo tròn khuất ngoài màn */
+  .bleed{width:100vw;margin-left:calc(50% - 50vw);overflow:hidden}
+  .day{--pad:16px;position:relative;height:9.5rem}
+  @media (min-width:768px){.day{--pad:max(32px,calc((100vw - 72rem)/2 + 32px))}}
+  .inner{position:absolute;left:var(--pad);right:var(--pad);top:0;bottom:0}
+  .bar{position:absolute;left:calc(-1 * var(--pad) - 24px);right:calc(-1 * var(--pad) - 24px);top:3.25rem;height:2.5rem;background:color-mix(in srgb,var(--accent) 20%,var(--surface));border:1px solid var(--line);border-radius:var(--radius-lg)}
+  .cut{position:absolute;top:3.25rem;width:5px;height:2.5rem;margin-left:-2.5px;background:var(--accent);border-radius:3px;transform:skewX(-24deg)}
+  .cut.gone{opacity:.45}
+  .cutlabel{position:absolute;top:6.25rem;transform:translateX(-50%);font-size:.875rem;white-space:nowrap}
+  .tick{position:absolute;top:2.25rem;transform:translateX(-50%);font-size:.6875rem;color:var(--muted)}
+  .now{position:absolute;top:1.5rem;height:4.75rem;width:2px;margin-left:-1px;background:var(--primary)}
+  .knob{position:absolute;top:3.75rem;width:1.5rem;height:1.5rem;margin-left:-.75rem;border-radius:50%;background:var(--primary);border:3px solid var(--surface)}
+  .nowlabel{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap;font-size:.8125rem;font-weight:600;color:var(--primary);background:var(--bg);padding:0 .25rem}
+  .range{position:absolute;left:calc(var(--pad) - 14px);right:calc(var(--pad) - 14px);top:3.25rem;height:2.5rem;width:calc(100% - 2 * var(--pad) + 28px);margin:0;opacity:0;cursor:ew-resize}
+  .range:focus-visible + .focusring{opacity:1}
+  .focusring{position:absolute;left:4px;right:4px;top:2.9rem;height:3.2rem;border:2px solid var(--ring);border-radius:var(--radius-lg);opacity:0;pointer-events:none}
+  .row{position:relative;display:grid;grid-template-columns:6.75rem 1fr;gap:1rem;align-items:baseline;border-top:1px solid var(--line);padding-top:.75rem}
+  .row .t{font-size:2rem;line-height:1;font-weight:500}
+  .row.gone .t{color:var(--muted);text-decoration:line-through;text-decoration-thickness:2px}
+  .gap{font-size:.875rem;color:var(--muted);padding-left:7.75rem}
+  .chip{display:inline-block;border:1px solid var(--line);border-radius:var(--radius-sm);padding:.125rem .5rem;font-size:.8125rem}
+  .chip.live{border-color:var(--primary);color:var(--primary);font-weight:600}
+</style>
+
+<div class="page">
+<header class="mx-auto flex max-w-[72rem] flex-wrap items-baseline justify-between gap-2 px-4 py-5 md:px-8">
+  <p class="font-display text-[1.25rem] font-semibold tracking-tight">Lò Bánh Củi Cô Ba <span class="font-body text-[0.9375rem] font-normal text-muted">· Đà Lạt</span></p>
+  <p class="text-[0.9375rem] text-muted">Mở <span class="num">5:30</span> đến <span class="num">19:00</span> · nghỉ thứ Hai</p>
+</header>
+
+<main>
+  <section class="mx-auto max-w-[72rem] px-4 pt-6 md:px-8 md:pt-14" aria-labelledby="h1">
+    <p class="num text-[0.8125rem] uppercase tracking-wider text-muted">Lò củi · 4 mẻ mỗi ngày</p>
+    <h1 id="h1" class="mt-3 max-w-[18ch] text-[2.375rem] font-semibold leading-[1.05] tracking-tight md:text-[4.25rem]">Bốn mẻ bánh lò củi mỗi ngày. Mẻ nào hết là hết.</h1>
+    <p class="mt-5 max-w-[52ch] text-[1.0625rem] leading-relaxed text-muted">Lò Bánh Củi Cô Ba nướng bánh bằng lò củi, ra lò lúc 6:00, 9:30, 15:00 và 17:30. Nhắn Zalo để giữ bánh trước khi tới.</p>
+  </section>
+
+  <!-- Tương tác đặc trưng: kéo "Tôi tới lúc" trên thanh ngày -->
+  <section class="mt-10 md:mt-14" data-signature aria-labelledby="sig">
+    <div class="mx-auto max-w-[72rem] px-4 md:px-8">
+      <h2 id="sig" class="text-[1.125rem] font-semibold">Kéo mốc xanh tới giờ bạn ghé tiệm</h2>
+    </div>
+    <div class="bleed mt-2">
+      <div class="day" id="day">
+        <div class="bar" aria-hidden="true"></div>
+        <div class="inner" id="inner" aria-hidden="true"></div>
+        <input class="range" id="arrive" type="range" min="330" max="1140" step="5" value="520" aria-label="Tôi tới lúc" aria-describedby="result">
+        <span class="focusring" aria-hidden="true"></span>
+      </div>
+    </div>
+    <div class="mx-auto max-w-[72rem] px-4 md:px-8">
+      <p id="result" class="max-w-[30ch] text-[1.625rem] font-semibold leading-snug md:text-[2.125rem]" aria-live="polite"></p>
+      <p id="sub" class="mt-2 text-[1rem] text-muted"></p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a id="cta" href="https://zalo.me/0909123456" target="_blank" rel="noopener" class="btn inline-flex items-center rounded bg-primary px-6 py-3 font-semibold text-on-primary">Giữ bánh qua Zalo</a>
+        <a href="https://www.google.com/maps/search/?api=1&amp;query=14%20Hai%20B%C3%A0%20Tr%C6%B0ng%2C%20Ph%C6%B0%E1%BB%9Dng%201%2C%20%C4%90%C3%A0%20L%E1%BA%A1t" target="_blank" rel="noopener" class="btn inline-flex items-center rounded border border-line bg-surface px-6 py-3 font-semibold">Xem đường đi</a>
+      </div>
+      <p class="mt-3 text-[0.875rem] text-muted">Giờ hiện tại 8:40 và trạng thái từng mẻ là minh hoạ, chưa nối dữ liệu thật.</p>
+    </div>
+  </section>
+
+  <!-- Bảng giờ dọc: khoảng cách giữa các dòng theo tỉ lệ thời gian -->
+  <section class="mx-auto mt-16 grid max-w-[72rem] gap-12 px-4 pb-20 md:grid-cols-12 md:px-8" aria-labelledby="tt">
+    <div class="md:col-span-7">
+      <h2 id="tt" class="text-[1.5rem] font-semibold tracking-tight">Bảng giờ ra lò hôm nay</h2>
+      <ol class="mt-6" id="timetable">
+        <li class="row gone"><span class="t num">6:00</span><span><span class="chip">Đã hết</span><span class="mt-1 block text-[0.9375rem] text-muted">Hết lúc 8:10 (minh hoạ)</span></span></li>
+        <li class="gap" aria-hidden="true" data-h="3.5">3 giờ 30 phút</li>
+        <li class="row"><span class="t num">9:30</span><span><span class="chip live">Đang trong lò</span><span class="mt-1 block text-[0.9375rem] text-muted">Ra lò sau 50 phút</span></span></li>
+        <li class="gap" aria-hidden="true" data-h="5.5">5 giờ 30 phút không có mẻ nào</li>
+        <li class="row"><span class="t num">15:00</span><span><span class="chip">Chưa vào lò</span></span></li>
+        <li class="gap" aria-hidden="true" data-h="2.5">2 giờ 30 phút</li>
+        <li class="row"><span class="t num">17:30</span><span><span class="chip">Chưa vào lò</span><span class="mt-1 block text-[0.9375rem] text-muted">Mẻ cuối, tiệm đóng 19:00</span></span></li>
+      </ol>
+    </div>
+    <div class="md:col-span-5">
+      <h2 class="text-[1.5rem] font-semibold tracking-tight">Trong mỗi mẻ</h2>
+      <ul class="mt-6 divide-y divide-line border-y border-line">
+        <li class="flex justify-between gap-4 py-3"><span>Bánh mì que củi</span><span class="num">8.000 ₫</span></li>
+        <li class="flex justify-between gap-4 py-3"><span>Bánh mì đặc ruột</span><span class="num">6.000 ₫</span></li>
+        <li class="flex justify-between gap-4 py-3"><span>Bánh sừng bò bơ Đà Lạt</span><span class="num">22.000 ₫</span></li>
+        <li class="flex justify-between gap-4 py-3"><span>Bánh nho Bảo Lộc</span><span class="num">18.000 ₫</span></li>
+      </ul>
+      <p class="mt-2 text-[0.875rem] text-muted">Mỗi mẻ ra đủ 4 món: giả định, chờ Cô Ba xác nhận.</p>
+      <div class="mt-8 rounded border border-line bg-surface p-5">
+        <h3 class="text-[1.125rem] font-semibold">Mở 5:30 đến 19:00, nghỉ thứ Hai</h3>
+        <p class="mt-2 text-[1rem]">14 Hai Bà Trưng, Phường 1, Đà Lạt</p>
+        <p class="mt-1 text-[1rem]">Zalo <span class="num">0909 123 456</span></p>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+  const OPEN = 330, CLOSE = 1140, NOW = 520; // 5:30, 19:00, giờ minh hoạ 8:40
+  const BATCHES = [{ t: 360, label: '6:00', gone: true }, { t: 570, label: '9:30' }, { t: 900, label: '15:00' }, { t: 1050, label: '17:30' }];
+  const inner = document.getElementById('inner');
+  const pct = m => ((m - OPEN) / (CLOSE - OPEN) * 100) + '%';
+  const hhmm = m => Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+  const dur = m => (m >= 60 ? Math.floor(m / 60) + ' giờ ' : '') + (m % 60 ? (m % 60) + ' phút' : '').trim();
+  for (let h = 6; h <= 19; h++) {
+    const s = document.createElement('span'); s.className = 'tick num'; s.style.left = pct(h * 60);
+    s.textContent = (h % 3 === 0 || window.innerWidth >= 768) ? h : ''; inner.appendChild(s);
+  }
+  BATCHES.forEach(b => {
+    const c = document.createElement('span'); c.className = 'cut' + (b.gone ? ' gone' : ''); c.style.left = pct(b.t); inner.appendChild(c);
+    const l = document.createElement('span'); l.className = 'cutlabel num' + (b.gone ? ' text-muted line-through' : ''); l.style.left = pct(b.t); l.textContent = b.label; inner.appendChild(l);
+  });
+  const now = document.createElement('span'); now.className = 'now'; inner.appendChild(now);
+  const knob = document.createElement('span'); knob.className = 'knob'; inner.appendChild(knob);
+  const nowLabel = document.createElement('span'); nowLabel.className = 'nowlabel num'; inner.appendChild(nowLabel);
+  const range = document.getElementById('arrive');
+  const result = document.getElementById('result'), sub = document.getElementById('sub'), cta = document.getElementById('cta');
+  function update() {
+    const t = Number(range.value);
+    now.style.left = pct(t); knob.style.left = pct(t); nowLabel.style.left = 'clamp(2.5rem,' + pct(t) + ',calc(100% - 2.5rem))';
+    nowLabel.textContent = 'Bạn tới ' + hhmm(t);
+    range.setAttribute('aria-valuetext', hhmm(t));
+    if (t < NOW) {
+      result.textContent = 'Giờ ' + hhmm(t) + ' đã qua.';
+      sub.textContent = 'Bây giờ là 8:40 (minh hoạ). Kéo mốc sang phải để xem mẻ bạn bắt kịp.';
+      cta.textContent = 'Giữ bánh qua Zalo'; return;
+    }
+    const next = BATCHES.find(b => b.t >= t && !b.gone);
+    if (!next) {
+      result.textContent = 'Sau 17:30 hôm nay không còn mẻ nào.';
+      sub.textContent = 'Mẻ sớm nhất là 6:00 sáng mai, trừ thứ Hai tiệm nghỉ. Mẻ 17:30 có thể đã hết trước giờ bạn tới.';
+      cta.textContent = 'Giữ bánh mẻ 6:00 mai qua Zalo'; return;
+    }
+    const wait = next.t - t;
+    result.innerHTML = 'Tới lúc <span class="num">' + hhmm(t) + '</span>, bạn bắt kịp mẻ <span class="num text-primary">' + next.label + '</span>.';
+    const passed = BATCHES.filter(b => b.t < t).map(b => b.label);
+    sub.textContent = (wait === 0 ? 'Đúng giờ ra lò. ' : 'Đợi ' + dur(wait) + ' tới giờ ra lò. ') + (passed.length ? 'Mẻ ' + passed.join(', ') + ' đã qua; mẻ nào hết là hết.' : '');
+    cta.textContent = 'Giữ bánh mẻ ' + next.label + ' qua Zalo';
+  }
+  range.addEventListener('input', update);
+  // Khoảng cách dọc của bảng giờ theo tỉ lệ thời gian
+  document.querySelectorAll('#timetable .gap').forEach(g => {
+    const k = window.innerWidth >= 768 ? 26 : 20;
+    g.style.paddingTop = g.style.paddingBottom = Math.max(6, (Number(g.dataset.h) * k - 18) / 2) + 'px';
+  });
+  update();
+</script>
+</body>
+</html>
