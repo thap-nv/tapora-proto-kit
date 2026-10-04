@@ -6,7 +6,7 @@
 ## 0. Bản đọc thiết kế
 **Đọc là:** <loại sản phẩm> cho <người dùng>, trên <thiết bị>, giọng <…>, nghiêng về <họ phong cách>.
 **Concept:** <tên> *(`CONCEPT.md`, chốt ở Cổng 2)* · **Họ phong cách:** <tên, từ `style-catalogue.md`> · **Mã trộn:** <… | không> · **Mức bám tham chiếu:** <…>
-**Dial:** VARIANCE <n> · MOTION <n> · DENSITY <n> · **Nền:** <sáng | tối | theo hệ thống>
+**Dial:** VARIANCE <n> · MOTION <n> · DENSITY <n> · **Nền:** <sáng | tối> · **Nền thứ hai:** <không | theo cài đặt máy, người dùng xin ở Cổng 2>
 
 ## 1. Không khí
 <2–3 câu gợi hình: cảm giác, mật độ, nhịp. Ví dụ: "Sáng, thoáng như một phòng trưng bày kiến trúc; bố cục lệch tự tin; chuyển động nặng và chậm.">
@@ -32,7 +32,7 @@
 | Theme | Chế độ | Mặc định cho | Khác theme đầu ở đâu |
 |---|---|---|---|
 | `<light>` | sáng | máy để chế độ sáng | theme đầu |
-| `<dark>` | tối | máy để chế độ tối | <…> |
+| `<dark>` *(chỉ khi người dùng xin chế độ tối; không thì bỏ dòng)* | tối | máy để chế độ tối | <…> |
 
 **Thêm theme:** thêm một mục vào `themes.json` → chạy `themes.mjs` → `qa_init.py --update` in dòng cần thêm vào `qa.config.json`. Không sửa `theme.js`.
 

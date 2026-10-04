@@ -232,7 +232,7 @@ test('sau review: khuôn báo cáo Cổng 4 có chỗ cho review độc lập; m
   assert.match(f, /sàn không thương lượng ở `sketch-to-site` mục 2/);
   assert.match(read('skills/sketch-to-site/SKILL.md'), /^> \*\*v4\.1 [^\n]*`qa-gate\.md` mục 7/m);
   // v1.3: chấm trên dữ liệu một lần; concept sửa ý thì được soát lại trên ảnh, không chấm lại bằng prompt mục 2
-  assert.match(read('skills/sketch-to-concept/references/subagent-prompts.md'), /Không chấm lại trên dữ liệu: lần soát trên ảnh/);
+  assert.match(read('skills/sketch-to-concept/references/subagent-prompts.md'), /Do not re-score on the data: the image check/);
 });
 
 test('mọi đường dẫn {skills}/… trong prompt và tài liệu đều có thật', () => {
@@ -337,6 +337,23 @@ test('handover-check 1.2: bảng đọc kết quả có phép đo mới và nợ
   assert.match(section(md, '### 🛑 Cổng', '### B7'), /\*\*Nhận nợ cũ vào mốc\*\*/);
 });
 
-test('sketch-to-concept 1.2 có ghi chú phiên bản về lõi màu chung', () => {
-  assert.match(read('skills/sketch-to-concept/SKILL.md'), /^> \*\*v1\.2 \([^\n]*color\.js/m);
+// SKILL.md của sketch-to-concept chỉ giữ bản đang chạy; lịch sử phiên bản ở CHANGELOG
+test('sketch-to-concept 1.2 (lõi màu chung color.js) có trong CHANGELOG', () => {
+  const v120 = read('CHANGELOG.md').split(/^## /m).find(s => s.startsWith('1.2.0 ('));
+  assert.match(v120, /`sketch-to-concept` 1\.2/);
+  assert.match(v120, /color\.js/);
+});
+
+test('chế độ tối chỉ khi người dùng xin: không mặc định theo hệ thống; B2 thêm theme thứ hai chỉ khi Cổng 2 ghi người dùng xin', () => {
+  const row = read('skills/sketch-to-site/references/rules-and-conflicts.md').split('\n').find(l => l.startsWith('| 11 |'));
+  assert.doesNotMatch(row, /theo hệ thống/);
+  assert.match(row, /một nền/);
+  assert.match(row, /người dùng xin/);
+  const app = read('skills/sketch-to-site/references/mobile-app.md');
+  assert.doesNotMatch(app, /mặc định \*theo hệ thống\*/);
+  assert.match(section(app, '**Nền tối:**', '\n'), /người dùng xin/);
+  assert.match(section(read('skills/sketch-to-site/SKILL.md'), '### B2 · Design system', '### 🛑 Cổng 3'), /theme thứ hai[^\n]*người dùng xin/);
+  const design = read('skills/sketch-to-site/templates/DESIGN.md');
+  assert.doesNotMatch(design, /<sáng \| tối \| theo hệ thống>/);
+  assert.match(design, /`<dark>` \*\(chỉ khi người dùng xin/);
 });

@@ -174,9 +174,9 @@ test('diffAxes đếm trục khác nhau giữa từng cặp, bắt buộc khác 
     { id: 'c', axes: axes('sáng tinh ', 'Giấy', 'Display cá tính', 'Hành trình', 'Con số khổng lồ', 'lưới biên tập 12 cột') },
   ] };
   assert.deepEqual(T.diffAxes(data), [
-    { a: 'a', b: 'b', differ: ['nen', 'chatNen', 'chu', 'khung'], ok: true },
-    { a: 'a', b: 'c', differ: ['chu', 'yTuong'], ok: false },
-    { a: 'b', b: 'c', differ: ['nen', 'chatNen', 'chu', 'yTuong', 'khung'], ok: true },
+    { a: 'a', b: 'b', differ: ['nen', 'chatNen', 'chu', 'khung'], shared: false, ok: true },
+    { a: 'a', b: 'c', differ: ['chu', 'yTuong'], shared: false, ok: false },
+    { a: 'b', b: 'c', differ: ['nen', 'chatNen', 'chu', 'yTuong', 'khung'], shared: false, ok: true },
   ]);
 });
 
@@ -226,4 +226,62 @@ test('cssText xuất vai dẫn xuất và color-scheme cho từng nền, không 
 test('validate báo màu không đọc được', () => {
   assert.deepEqual(T.validate({ concepts: [{ id: 'a', colors: { light: { background: 'xanh' } } }] }),
     ['Concept "a": màu background không đọc được ("xanh").']);
+});
+
+test('validate: screen trỏ tới concept có màn riêng; vòng phải có trong rounds; tối đa một recommended', () => {
+  const C = (id, extra = {}) => Object.assign({ id, colors: { light: { background: '#FFFFFF' } } }, extra);
+  assert.deepEqual(T.validate({ rounds: [{ n: 1 }, { n: 2 }], concepts: [C('a'), C('d', { round: 2, screen: 'a' })] }), []);
+  assert.deepEqual(T.validate({ concepts: [C('a'), C('d', { screen: 'x' })] }), ['Concept "d": screen "x" không phải id của concept nào.']);
+  assert.deepEqual(T.validate({ concepts: [C('a'), C('d', { screen: 'a' }), C('e', { screen: 'd' })] }),
+    ['Concept "e": screen phải trỏ tới concept có màn riêng; "d" cũng đang mượn màn.']);
+  assert.deepEqual(T.validate({ concepts: [C('a', { screen: 'a' })] }), ['Concept "a": screen không trỏ về chính nó.']);
+  assert.deepEqual(T.validate({ rounds: [{ n: 1 }], concepts: [C('a', { round: 3 })] }), ['Concept "a": vòng 3 chưa có trong CONCEPTS.rounds.']);
+  assert.deepEqual(T.validate({ concepts: [C('a', { recommended: true }), C('b', { recommended: true })] }),
+    ['Có 2 concept gắn recommended: chỉ một concept được khuyến nghị.']);
+  // Dữ liệu của kit cũ: không có rounds, không có round
+  assert.deepEqual(T.validate({ concepts: [C('a'), C('b')] }), []);
+});
+
+test('lint: thiếu lý do Hình là cảnh báo, validate không chặn', () => {
+  const why = { mau: 'x', chu: 'x', hinh: 'x', chatNen: 'x' };
+  const data = { concepts: [{ id: 'a', colors: { light: { background: '#FFFFFF' } }, why },
+    { id: 'b', colors: { light: { background: '#FFFFFF' } }, why: { mau: 'x', chu: ' ' } },
+    { id: 'c', colors: { light: { background: '#FFFFFF' } } }] };
+  assert.deepEqual(T.lint(data), [
+    { id: 'b', kind: 'why', text: 'Concept "b": thiếu lý do Hình ở chu, hinh, chatNen.' },
+    { id: 'c', kind: 'why', text: 'Concept "c": thiếu lý do Hình ở mau, chu, hinh, chatNen.' },
+  ]);
+  assert.deepEqual(T.validate(data), []);
+});
+
+test('diffAxes: cặp dùng chung một màn chỉ cần khác 2 trong 3 trục Hình', () => {
+  const ax = (nen, chatNen, chu) => ({ nen, chatNen, chu, yTuong: 'y', khoanhKhac: 'k', khung: 'K' });
+  const data = { concepts: [
+    { id: 'b', axes: ax('Tối', 'Trơn', 'Grotesk') },
+    { id: 'e', screen: 'b', axes: ax('Sáng', 'Giấy', 'Grotesk') },
+    { id: 'f', screen: 'b', axes: ax('Sáng', 'Lưới', 'Grotesk') },
+  ] };
+  assert.deepEqual(T.diffAxes(data).map(d => [d.a, d.b, d.shared, d.ok]),
+    [['b', 'e', true, true], ['b', 'f', true, true], ['e', 'f', true, false]]);
+  assert.equal(T.screenOf(data.concepts[1]), 'b');
+  assert.equal(T.screenOf(data.concepts[0]), 'b');
+  assert.deepEqual(T.HINH_AXES, ['nen', 'chatNen', 'chu']);
+  assert.deepEqual(T.WHY, ['mau', 'chu', 'hinh', 'chatNen']);
+});
+
+// Mục nhỏ còn lại sau review 1.4: rounds không phải mảng làm validate ném lỗi (bảng trắng); vòng 0 lọt; recommended viết thành chuỗi
+test('validate: rounds phải là mảng, vòng là số nguyên từ 1, recommended là true hoặc false', () => {
+  const two = () => ({ concepts: [{ id: 'a', colors: { light: { background: '#FFFFFF' } } }, { id: 'b', colors: { light: { background: '#FFFFFF' } } }] });
+  const withRounds = rounds => Object.assign(two(), { rounds });
+  assert.deepEqual(T.validate(withRounds('vòng 1')), ['CONCEPTS.rounds phải là mảng, mỗi vòng một dòng { n, note }.']);
+  assert.deepEqual(T.validate(withRounds({ n: 1 })), ['CONCEPTS.rounds phải là mảng, mỗi vòng một dòng { n, note }.']);
+  const zero = withRounds([{ n: 0, note: '' }]);
+  zero.concepts[0].round = 0;
+  assert.deepEqual(T.validate(zero), ['CONCEPTS.rounds: n phải là số nguyên từ 1 (đang là "0").', 'Concept "a": round phải là số nguyên từ 1 (đang là "0").']);
+  const rec = two();
+  rec.concepts[0].recommended = 'false';
+  assert.deepEqual(T.validate(rec), ['Concept "a": recommended phải là true hoặc false, không đặt trong ngoặc.']);
+  rec.concepts[0].recommended = false;
+  rec.concepts[1].recommended = true;
+  assert.deepEqual(T.validate(rec), []);
 });

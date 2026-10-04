@@ -1,41 +1,39 @@
 ---
 name: sketch-to-concept
 description: >-
-  Dùng khi cần chốt concept thiết kế (ý tưởng, phong cách, một màn then chốt) TRƯỚC khi dựng prototype website, web app, app mobile iOS/Android hay hệ thống nhiều bề mặt: người dùng nói "lên concept", "định hướng thiết kế", "style tile", "moodboard", "concept để trình khách", "chọn phong cách trước", kể cả khi chưa có tài liệu yêu cầu chi tiết; hoặc khi sketch-to-site bắt đầu một dự án chưa có CONCEPT.md. KHÔNG dùng khi prototype đã có (evolve-site), sửa nhỏ (tweak-site), chấm UX trang có sẵn (laws-of-ux-review).
+  Dùng khi cần chốt concept thiết kế (ý tưởng, phong cách, một màn then chốt) TRƯỚC khi dựng prototype website, web app, app mobile iOS/Android hay hệ thống nhiều bề mặt: người dùng nói "lên concept", "định hướng thiết kế", "style tile", "moodboard", "concept để trình khách", "chọn phong cách trước", kể cả khi chưa có tài liệu yêu cầu chi tiết; hoặc khi sketch-to-site bắt đầu một dự án chưa có CONCEPT.md; hoặc khi đã có bảng concept mà người dùng nói concept chưa hợp, muốn làm vòng mới, đổi concept, kể cả khi prototype đã dựng (vòng mới thêm lên cùng bảng). KHÔNG dùng để sửa bố cục prototype đã có (evolve-site), sửa nhỏ (tweak-site), chấm UX trang có sẵn (laws-of-ux-review).
 ---
 
-# Sketch to Concept · Chốt concept trước khi dựng prototype
+# Sketch to Concept · Settle the concept before building the prototype
 
-> **v1.3 (03/10/2026)** · Giữ chi phí thấp, theo số đo của ba lần chạy thật: chấm lớp Ý trên `concepts.js` trước khi dựng màn, làm lại sau khi dựng tối đa một lần. Mặc định một agent dựng tuần tự. Chép khuôn mà không mở, chỉ in mục cần đọc, chụp bằng `scripts/shots.mjs`.
-> **v1.2 (01/10/2026)** · Bảng concept dùng lõi màu chung `color.js` *(chép từ `<skills>/sketch-to-site/templates/color.js`)*: nhận màu oklch, đo thêm cặp của vai dẫn xuất *(hover, viền control, vòng focus, nền nhạt)* và đánh dấu cặp sát ngưỡng. `CONCEPT.md` mục 3 ghi cách chép màu sang `themes.json`.
-> **v1.1 (29/09/2026)** · Luật dừng có bảng cớ bỏ cổng. A3: dựng 3 concept bằng 3 subagent song song khi có, chấm lớp Ý bằng một subagent chưa tham gia dựng *(`references/subagent-prompts.md`)*.
-> **v1.0 (29/09/2026)** · Phần A của quy trình hai phần. Phần B là `sketch-to-site`, đọc `CONCEPT.md` mà skill này viết ra.
-> **Đường dẫn:** `<skills>` là thư mục cha của thư mục chứa SKILL.md này. Skill tham chiếu đọc theo đường dẫn, không gọi qua công cụ Skill *(quy ước ở đầu `sketch-to-site`)*.
-> Việc của skill: đưa người dùng tới một concept **là của họ**. Người không làm thiết kế khó tả concept, nhưng phản ứng tốt với phương án nhìn thấy được. Vì vậy skill dựng 3 concept thật, rồi **dừng lại** để người dùng chọn.
+> **v1.4 (04/10/2026)** · Change history: `CHANGELOG.md` at the repo root.
+> **Language:** talk to the user in the language they write in: gate questions and options, progress notes, reports. Files the user reads (`DECISIONS.md`, `CONCEPT.md`, the board, names, ideas, axes and `why` in `concepts.js`) are in that language too; the templates are in Vietnamese. Screen content follows the language of the brief.
+> **Paths:** `<skills>` is the parent of the folder holding this SKILL.md. Read referenced skills by path, never through the Skill tool (convention at the top of `sketch-to-site`). On Windows, give `node` and `python` paths with the drive letter and forward slashes (`W:/…`), never Git Bash's `/w/…`: they cannot read it.
+> The job: bring the user to a concept that is **theirs**. Non-designers struggle to describe a concept but react well to options they can see, so the skill builds 3 real concepts, then **stops** for the user to choose.
 
 ---
 
-## 0. Concept gồm ba lớp
+## 0. Three layers of a concept
 
-| Lớp | Là gì | Trả lời cho |
+| Layer | What | Answers |
 |---|---|---|
-| **Ý** | Một câu ý tưởng + ẩn dụ, gắn với **điểm khác biệt** của sản phẩm | độc đáo |
-| **Hình** | Màu theo vai trò, cặp chữ tiếng Việt, bo góc, bóng, chất nền, nền, nhịp | đẹp |
-| **Dụng** | **Một màn then chốt** dựng thật bằng nội dung thật, có **một tương tác đặc trưng** bấm được | dùng được |
+| **Ý** (idea) | One idea sentence + a metaphor, tied to the product's **difference** | original |
+| **Hình** (form) | Colour by role, a Vietnamese-capable type pair, radius, shadow, texture, background, rhythm | good-looking |
+| **Dụng** (use) | **One key screen** built with real content, with **one signature interaction** you can click | usable |
 
-Phương pháp cho từng lớp: `references/concept-method.md`.
+Method for each layer: `references/concept-method.md`.
 
 ---
 
-## 1. Luật dừng *(cùng luật với `sketch-to-site` mục 1: sửa thì sửa cả hai)*
+## 1. Stop rule *(same rule as `sketch-to-site` §1: change both)*
 
-**Cổng (🛑)** là chỗ chỉ con người được quyết. Tới cổng thì:
-1. **Trình bày** bằng thứ nhìn thấy được: bảng concept, ảnh chụp. Đừng hỏi mở kiểu *"bạn thích phong cách nào?"*.
-2. **Hỏi** bằng `AskUserQuestion`: tối đa 4 câu một lượt, mỗi câu 2–4 lựa chọn; lựa chọn khuyến nghị đứng **đầu** và ghi *"(Khuyến nghị)"*; lựa chọn thẩm mỹ gắn `preview`.
-3. **Dừng.** Không có công cụ hỏi thì viết câu hỏi ra rồi **kết thúc lượt**. **Không tự chọn thay**, kể cả ở chế độ tự động hay phiên không người trực.
-4. **Ghi** đáp án **nguyên văn** vào `DECISIONS.md` *(khuôn `<skills>/sketch-to-site/templates/DECISIONS.md`)*.
+A **gate (🛑)** is a decision only a human makes. At a gate:
+1. **Show** something visible: the board, screenshots. Do not ask open questions like *"which style do you like?"*.
+2. **Ask** with `AskUserQuestion`: at most 4 questions per turn, 2–4 options each; the recommended option goes **first**, marked recommended (*"(Khuyến nghị)"* in Vietnamese); aesthetic options carry a `preview`.
+3. **Stop.** Without an ask tool, write the questions and **end the turn**. **Never choose for the user**, even in auto mode or an unattended session.
+4. **Record** the answers **verbatim** in `DECISIONS.md` (template `<skills>/sketch-to-site/templates/DECISIONS.md`).
 
-**Chỉ được qua cổng mà không hỏi khi:** người dùng nói rõ **trong phiên này** là bỏ qua đúng cổng đó *(ghi nguyên văn)* · đáp án **đã có trong input** *(ghi nguồn)*.
+**Pass a gate without asking only when:** the user says clearly **in this session** to skip that gate (record verbatim) · the answer **is already in the input** (record the source).
 
 <!-- luat-dung:co:bat-dau -->
 **Cớ hay gặp để bỏ cổng, và sự thật** *(rút từ `superpowers` writing-skills và brainstorming; khối này giống hệt ở `sketch-to-site` và `sketch-to-concept`, test giữ hai bản khớp nhau)*:
@@ -57,157 +55,98 @@ Người dùng trả lời *Tuỳ bạn* cho một câu hỏi ở cổng: đó l
 
 ---
 
-## 2. Sàn và thứ tự ưu tiên
+## 2. Floor and priority
 
-- **Sàn không thương lượng**, áp cho cả bảng lẫn màn then chốt: tương phản WCAG AA · bàn phím và focus · `prefers-reduced-motion` · không tràn ngang · font có dấu **tiếng Việt** · chỉ animate `transform`/`opacity`.
-- Chống AI-slop, dữ liệu thật tiếng Việt, placeholder trung thực, ảnh: theo `sketch-to-site` mục 3 và 6. **Đọc hai mục đó trước khi dựng A3**, in riêng hai mục thay vì mở cả file: `sed -n '/^## 3\./,/^## 4\./p;/^## 6\./,/^## 7\./p' <skills>/sketch-to-site/SKILL.md`.
-- Luật của skill nguồn *(`huashu-design`, `brandkit`, họ phong cách)* đụng luật kit thì luật kit thắng, theo `sketch-to-site` mục 2.
-
----
-
-## 3. Quy trình · 2 cổng
-
-```
-A1 Đọc lõi ─► 🛑1 Brief concept ─► A2 Nạp tham chiếu + tra ─► A3 Dựng 3 concept ─► 🛑2 Chọn concept ─► Bàn giao
-```
-
-Số cổng đánh **liên tục** với `sketch-to-site` *(Cổng 3 và 4 ở đó)*, cùng ghi vào một `DECISIONS.md`.
-
-### A1 · Đọc lõi *(không hỏi)*
-
-- **Đọc:** lời người dùng · tài liệu yêu cầu, **chỉ** mục lục, phần tổng quan hay mục tiêu, persona, và **tên** các chức năng · tham chiếu brand *(logo, màu, `DESIGN.md`)*.
-- **Không đọc** đặc tả từng chức năng, trường dữ liệu, quy tắc nghiệp vụ. Phần đó để `sketch-to-site` B1, sau khi concept đã chốt.
-- **Đếm loại màn** từ tên chức năng: bảng, form, chi tiết, giới thiệu… Loại chiếm nhiều nhất quyết màn then chốt *(A3)*.
-- **Kiểm công cụ:** `AskUserQuestion` · Edge/Chrome headless để chụp · `WebSearch` *(cần cho concept B)* · công cụ sinh ảnh.
-- Viết **Brief concept**, mỗi dòng ghi nguồn *(người dùng nói · tài liệu, mục/dòng · đoán)*:
-  1. **Sản phẩm:** loại · nền tảng · các bề mặt
-  2. **Cho ai:** người dùng chính · thiết bị · hoàn cảnh dùng
-  3. **Việc chính:** 1–3 việc · loại màn chiếm nhiều nhất *(số đếm được)*
-  4. **Khác biệt:** điều làm sản phẩm khác đối thủ
-  5. **Định hướng:** 3 từ · thích · ghét hoặc cấm
-  6. **Ràng buộc:** brand, màu hay font bắt buộc, tham chiếu và mức bám
-
-### 🛑 Cổng 1 · Brief concept
-
-Trình brief *(echo-back)*, rồi hỏi **chỉ những dòng trống hoặc đoán**, gộp một lượt:
-
-| Câu | Lựa chọn gợi ý |
-|---|---|
-| **Loại sản phẩm?** | Site giới thiệu / landing · E-commerce · Web app / công cụ vận hành · Portfolio · **App mobile** · **Hệ thống nhiều bề mặt** *(nêu từng bề mặt)* |
-| **Nền tảng app?** *(chỉ khi có app)* | iOS · Android · Cả hai |
-| **Người dùng chính và thiết bị?** | Khách lướt điện thoại · Khách mua trên desktop · Nhân viên dùng máy tính cả ngày · Trộn |
-| **Tham chiếu và mức bám?** | Bám sát 100 % · Làm nền, được biến tấu · Chỉ lấy cảm hứng · Không có *(`<skills>/sketch-to-site/references/reference-intake.md` mục 1)* |
-| **Khác biệt?** · **Định hướng?** | Đưa 3 phương án suy từ brief, người dùng chọn hoặc gõ ở *Other*. **Đừng** bắt người dùng tự viết concept |
-
-- Tối đa 4 câu một lượt. Có app và chưa biết nền tảng thì hỏi nền tảng ở một lượt ngắn ngay sau, vẫn thuộc Cổng 1.
-- **Không** hỏi phạm vi *(bao nhiêu trang)*: câu đó ở Cổng 3 của `sketch-to-site`, cùng sơ đồ trang.
-- Có app: đọc `<skills>/sketch-to-site/references/mobile-app.md` ngay sau cổng này.
-
-### A2 · Nạp tham chiếu và tra
-
-1. **Tham chiếu** *(nếu có)*: làm theo `<skills>/sketch-to-site/references/reference-intake.md` → `REFERENCE-READ.md`. Tham chiếu là **thương hiệu có thật** thì kiểm bằng `WebSearch` và lấy tài sản từ nguồn chính thức *(`<skills>/huashu-design/references/brand-asset-protocol.md`)*.
-2. **Tra** *(một lần, cho concept A)*:
-   ```bash
-   python <skills>/ui-ux-pro-max/scripts/search.py "<ngành> <loại sản phẩm> <từ khoá không khí>" --design-system --variance <V> --density <D> --motion <M>
-   python <skills>/sketch-to-site/scripts/preflight.py --font "<Tên font>" "<Tên font>"
-   ```
-   V/M/D lấy từ dòng **Dial** của họ phong cách hợp nhất trong `style-catalogue.md`. Lệnh trả bảng màu của ngành, gần như không đổi theo dial. Kết quả lệch ngành thì bỏ qua, không tra lại. Không chạy lại cho B và C: màu của hai concept đó đi từ nguồn của chính nó *(`concept-method.md` mục 5.1)*. Cần thêm gợi ý chữ thì chạy `--domain typography -n 5` một lần. **Mọi font** phải qua `preflight.py --font` trước khi ghi vào `concepts.js`.
-   Satoshi, Cabinet Grotesk, Clash *(Fontshare)* và Outfit, Instrument Serif, Syne, DM Sans, Sora, Orbitron, Bodoni Moda, Archivo Black, Rajdhani *(Google)* **không có dấu tiếng Việt**. Có app: `--design-system` viết cho landing page, chỉ lấy bảng màu làm gợi ý *(`mobile-app.md` mục 8)*.
-3. **Chọn 3 concept** theo `references/concept-method.md`:
-   - mỗi concept một nguồn: **A hợp nhất** *(`<skills>/sketch-to-site/references/style-catalogue.md`)* · **B chuẩn thật** · **C lăng kính studio** *(mục 3)*. Không bốc ngẫu nhiên;
-   - Ý mọc từ dòng **Khác biệt**, trả lời 5 câu tìm form *(mục 2)*;
-   - mỗi cặp khác nhau **≥ 3 trục**, **bắt buộc khác khung bố cục** *(mục 4)*;
-   - màu theo giao thức 3 bước *(mục 5.1)*; xếp hợp nhất → cân bằng → táo bạo.
-   - Mức bám **100 %**: chỉ dựng **một** concept từ tham chiếu *(mục 3.1 dưới)*.
-
-### A3 · Dựng 3 concept
-
-1. **Chép khuôn** vào `<thư-mục-prototype>/concept/`. Khuôn ghi *không sửa* thì chép bằng `cp` và không mở ra đọc: tên biến CSS đã có trong `<head>` của `key-screen.html`. `theme.js` chỉ sửa đúng dòng `KEY`.
-
-   | Khuôn | Thành |
-   |---|---|
-   | `templates/concept-board.html` | `concept/index.html` *(không sửa)* |
-   | `templates/concepts.js` | `concept/concepts.js` |
-   | `templates/tokens.js` | `concept/tokens.js` *(không sửa)* |
-   | `<skills>/sketch-to-site/templates/color.js` | `concept/color.js` *(không sửa; tokens.js cần)* |
-   | `templates/key-screen.html` | `concept/a.html`, `b.html`, `c.html` *(đổi `data-concept`)* |
-   | `<skills>/sketch-to-site/templates/theme.js` | `concept/theme.js`: đổi `KEY` thành `<slug>-concept`, để nền sáng/tối chọn ở bảng này không lan sang bảng của dự án khác cũng mở bằng `file://` |
-   | `<skills>/sketch-to-site/templates/mobile/app.css`, `app.js` *(chỉ khi có app)* | `concept/app.css`, `concept/app.js`. Màn app dựng theo `mobile/screen.html` nhưng lấy `<head>` token của `key-screen.html`; `tokens.js` xuất đúng tên biến mà `app.css` đọc *(`--bg`, `--ink`, `--accent`, `--brand-font`…)* |
-
-2. **Viết `concept/concepts.js`:** thay **toàn bộ** dữ liệu mẫu *(nhà rang Hạt Mây)* bằng brief, nội dung dùng chung và 3 concept của dự án. **Xoá `example: true`**. Mỗi concept ghi đủ lớp Ý: `idea`, `metaphor`, `formFrom` *(câu 5 tìm form, `concept-method.md` mục 2.3)*, `signature`, `axes`. Đi đường subagent *(bước 4)* thì lúc này chỉ ghi brief và nội dung dùng chung, để `concepts: []`: mỗi subagent ghi concept của mình ra file riêng, agent chính ghép sau. `id` chỉ gồm chữ thường a-z, số, dấu gạch ngang. Mọi màu viết hex; font khai trong `fontFamily: { … }`. App muốn thân chữ theo font nền tảng *(SF Pro, Roboto)* thì ghi `body: 'system-ui'`. Bảng tự kiểm dữ liệu và báo lỗi nếu sai quy ước.
-3. **Chấm lớp Ý trên dữ liệu**, trước khi dựng màn: chấm từng concept theo `concept-method.md` mục 7, chỉ dựa trên khối của nó trong `concepts.js`. Phiên cho tạo subagent thì giao cho một subagent **chưa tham gia viết**, prompt ở `references/subagent-prompts.md` mục 2: nó chỉ đọc `concepts.js` và mục 7, nên rẻ. Gọi ở chế độ chờ kết quả, không chạy nền: bước 4 cần điểm này, còn chạy nền rồi ngồi chờ thì phải nạp lại cả ngữ cảnh khi kết quả về. Không thì tự chấm. Concept ≤ 5/10 thì sửa ý trong `concepts.js` theo hướng sửa của người chấm: sửa chữ rẻ hơn nhiều so với dựng lại màn. Sửa xong thì không chấm lại trên dữ liệu: lần soát trên ảnh ở bước 5 sẽ kiểm. Đường subagent: mỗi subagent tự chấm khối của mình trước khi dựng *(prompt mục 1)*. Ghi điểm và ai chấm vào `DECISIONS.md` *(Cổng 2)*.
-4. **Dựng màn then chốt** *(`concept-method.md` mục 6)*:
-   - **ai dựng:** mặc định một agent **dựng tuần tự**. Trước mỗi concept chỉ đọc lại brief và khối của concept đó trong `concepts.js`, chưa mở màn của concept khác cho tới khi xong cả ba. Subagent dựng chỉ khi người dùng xin dựng song song trong phiên: tối đa 3 subagent, mỗi subagent một concept, prompt ở `references/subagent-prompts.md` mục 1. Mỗi subagent chỉ nhận brief, nội dung dùng chung và phần giao của concept mình *(nguồn, họ phong cách, trục đã chọn ở A2)*. Agent chính ghép ba khối vào `concepts.js` rồi xoá các file `{id}.concept.js` và dòng nạp chúng trong `{id}.html` *(prompt mục 1)*. Đường này đắt hơn nhiều: mỗi subagent nạp lại toàn bộ ngữ cảnh nền và tài liệu, và nhiều subagent song song dễ chạm giới hạn phiên của gói;
-   - **cùng một màn, cùng nội dung** *(`CONCEPTS.content`)*: người dùng so concept, không so nội dung;
-   - **khác khung bố cục**, đúng như `axes.khung` đã khai;
-   - tương tác đặc trưng **bấm được**, gắn `data-signature` lên khối của nó *(như khuôn)*;
-   - thay `<body>` của khuôn bằng màn thật, viết nội dung thẳng vào HTML, giữ nguyên `<head>`. Mỗi màn viết bằng **một** lần `Write`; sửa sau đó bằng `Edit`, không viết lại cả file;
-   - app: dựng trên `<skills>/sketch-to-site/templates/mobile/screen.html`; nhiều bề mặt: mỗi concept dựng màn then chốt của **mọi** bề mặt.
-5. **Tự kiểm**, xong hết mới mở Cổng 2:
-   - `python <skills>/sketch-to-site/scripts/preflight.py concept/` → **0 lỗi**;
-   - chụp bằng `node <skills>/sketch-to-concept/scripts/shots.mjs concept/`: bảng ở 1440, mỗi màn ở 1440 và 390, cộng ảnh riêng khối `data-signature` của mỗi màn, vào `concept/shots/`. Mỗi ảnh in một dòng đo *(tràn ngang, chữ bị cắt, tương phản, màu sai ý định, lỗi console)*. Dòng của `index.html` báo cả trạng thái bảng *(lỗi dữ liệu, dải dữ liệu mẫu, cảnh báo So trục, cặp màu dưới AA)*, nên không cần mở DOM của bảng. Sửa tới khi mọi dòng `OK`. Concept khoá nền tối thì chụp thêm với `QA_QUERY="?theme=dark"`. **Mở đúng các ảnh này ra xem**, không chụp thêm cả trang;
-   - **soát lớp Ý trên ảnh:** che chữ và logo còn nhận ra chủ đề không, màn có mang mô-típ đã ghi ở `formFrom` không. Màn đánh mất ý *(≤ 5)* thì làm lại concept đó **tối đa một lần**, bằng `Edit`. Vẫn ≤ 5 thì thôi làm lại: trình ở Cổng 2 kèm điểm và lý do, giữ hay bỏ là việc của người dùng.
-
-### 🛑 Cổng 2 · Chọn concept
-
-Trình link `concept/index.html` và ảnh chụp, rồi hỏi **một lượt**:
-1. **Concept:** A *(Khuyến nghị)* · B · C · Trộn. `preview` mỗi lựa chọn 5 dòng: **Ý** · **Màu** · **Chữ** · **Màn then chốt** · **Giống kiểu**. Lý do khuyến nghị nêu bằng dữ kiện của brief.
-2. **Nền:** Sáng · Tối · Theo hệ thống *(concept đã khoá nền thì bỏ câu này)*.
-3. **Nhịp:** Như concept · Tĩnh hơn · Sống động hơn. Viết bằng lời, không đưa số dial.
-
-- Chọn **Trộn**: xin **mã trộn** từ khung *Trộn* trên bảng *(ví dụ `man:A mau:B chu:A nut:A`)*, hoặc hỏi tiếp lấy lớp nào từ concept nào.
-- Người dùng **còn phân vân** giữa hai bản: làm **một vòng biến thể**, 2 bản của concept được nghiêng về, khác nhau ở trục bố cục *(`style-catalogue.md`, Động cơ biến thể)*, rồi hỏi lại.
-- Chốt xong: ghi `DECISIONS.md`, viết `CONCEPT.md` ở thư mục prototype theo `templates/CONCEPT.md`. Khối CSS cho mục 3 lấy bằng lệnh sau, chạy ở thư mục prototype *(thay `<id>` và `<mã trộn>`; không trộn thì để chuỗi rỗng)*: `node -e "global.window = global; require('./concept/concepts.js'); const T = require('./concept/tokens.js'); console.log(T.cssText(T.resolve(CONCEPTS, '<id>', T.parseMix('<mã trộn>'))))"`
-
-### 3.1 Trường hợp rút gọn
-- **Bám 100 % tham chiếu:** dựng **một** concept từ tham chiếu. Cổng 2 hỏi *Duyệt · Sửa (nói rõ sửa gì)*.
-- **Người dùng đã có concept rõ:** dựng concept đó + 1–2 concept đối chiếu.
-- **Người dùng nói bỏ qua concept** *(rõ trong phiên)*: dựng concept khuyến nghị, ghi nguyên văn câu cho phép vào `DECISIONS.md`, đi tiếp.
-
-### Bàn giao
-- Link Markdown tới `concept/index.html` và `CONCEPT.md`.
-- Được gọi từ `sketch-to-site`: đi tiếp **B0** của nó. Người dùng gọi riêng: hỏi có dựng prototype luôn không *(→ `sketch-to-site`)*.
-- Đi tiếp sang `sketch-to-site`: đề xuất mở **phiên mới**. `CONCEPT.md` và `DECISIONS.md` đủ để nối lại, còn phiên này đang mang tài liệu, màn và ảnh của cả ba concept: đi tiếp trong đó thì lượt nào cũng phải đọc lại phần ngữ cảnh ấy. Người dùng muốn ở lại thì đi tiếp ngay.
-- Muốn trình khách: đề xuất đăng `concept/` thành Artifact *(`sketch-to-site` mục 8)*.
+- **Non-negotiable floor**, for the board and the key screens: WCAG AA contrast · keyboard and focus · `prefers-reduced-motion` · no horizontal overflow · fonts with **Vietnamese** diacritics · animate only `transform`/`opacity`.
+- Anti-AI-slop, real data in the product's language, honest placeholders, images: per `sketch-to-site` §3 and §6. Print only those two sections, at A3 step 1 (`references/vong-dau.md`, command there).
+- Rules of source skills (`huashu-design`, `brandkit`, style families) lose to kit rules (`sketch-to-site` §2).
 
 ---
 
-## 4. Thư mục đầu ra
+## 3. Process · 2 gates
 
-Mặc định `docs/prototypes/<slug>/`, dự án có quy ước khác thì theo dự án.
+```
+A1 Read the core ─► 🛑1 Concept brief ─► A2 References + lookups ─► A3 Build concepts ─► 🛑2 Choose ─► Handover
+                                                                          └─ Not there yet ─► new round (references/vong-moi.md) ─► 🛑2
+```
+
+Gates are numbered **continuously** with `sketch-to-site` (Gates 3 and 4 are there), all recorded in one `DECISIONS.md`.
+
+**Turns cost more than text.** Every turn rereads the whole context, and the last turns carry 150–200k tokens, so put independent commands in one turn: several tool calls in one message, or one Bash command. Read a template or doc section in the turn that uses it, not earlier.
+
+### Start *(no board yet)*
+
+The prototype folder has no `concept/concepts.js`. In the next turn, read `references/vong-dau.md` (A1 to A3, Gate 1, short paths) and `references/concept-method.md` with `Read`, and check the tools in the same turn: `AskUserQuestion` · headless Edge/Chrome for screenshots · `WebSearch` (needed for the real-benchmark source; when it is a deferred tool, load it with `ToolSearch` in this same turn) · image generation. Then follow `vong-dau.md`: A1 → 🛑 Gate 1 → A2 → A3 → 🛑 Gate 2 below.
+
+### Re-entry *(a board exists)*
+
+The prototype folder already has `concept/concepts.js`: **skip** A1 and A2. Suggest a **new session** first: `concepts.js` and `DECISIONS.md` are enough to resume. In the next turn, read `references/vong-moi.md`, `concept/concepts.js` and `DECISIONS.md` with `Read` (a new round edits both: do not `cat` them), and in the same turn run this one command in the prototype folder:
+
+```bash
+S="<skills>"; cp "$S/sketch-to-concept/templates/concept-board.html" concept/index.html && cp "$S/sketch-to-concept/templates/tokens.js" "$S/sketch-to-site/templates/color.js" concept/; sed -n '/^### 2\.5/,/^## 3\./p;/^## 4\./,/^### 5\.3/p;/^### 5\.4/,/^## 6\./p' "$S/sketch-to-concept/references/concept-method.md"; grep -E '^### |^- \*\*(Cue words|Dial):' "$S/sketch-to-site/references/style-catalogue.md"; node "$S/sketch-to-concept/scripts/roles.mjs" concept/
+```
+
+It refreshes the board templates (a board from before 1.4 does not know rounds or borrowed screens), and prints the method sections a round uses (spread, axes, colour, type, form reasons), the style family index (name, cue words, dial) and the role map of every screen: which colour role paints what, which weights each type role uses, where radius, shadow and texture sit. Then follow `vong-moi.md`; nothing else needs reading.
+
+### 🛑 Gate 2 · Choose a concept
+
+Present the link to `concept/index.html` and the screenshots, then ask **in one turn** (options in the user's language):
+1. **Concept:** four fixed options, however many concepts the board has: `<recommended concept>` (recommended) · `<second concept>` · *Mix (paste the code from the board)* · **Not there yet, new round**. Other concepts: the user types them in *Other*. The `preview` of the two concept options has 5 lines: **Ý** · **Màu** · **Chữ** · **Màn then chốt** · **Giống kiểu**. Give the reason for the recommendation with facts from the brief.
+2. **Second background** (dark mode following the device setting; light mode if the concept is dark): No, one background like the concept (recommended) · Yes, add a second background. Skip it when the user already said so in the brief. *Yes*: do not rebuild the board; `sketch-to-site` B2 adds the second theme and measures every pair.
+3. **Rhythm:** Like the concept · Calmer · Livelier. In words, no dial numbers.
+
+- **Mix:** ask for the **mix code** from the *Trộn* panel of the board (e.g. `man:A mau:B chu:A nut:A`), or ask which layer comes from which concept.
+- **Not there yet, new round:** follow `references/vong-moi.md`. A user **torn between two** concepts is also a new round: the layer that misses is *Layout*, the closest concept is the one they lean to.
+- Once chosen: record `DECISIONS.md`, write `CONCEPT.md` in the prototype folder from `templates/CONCEPT.md`. The CSS block for its §3, run in the prototype folder (replace `<id>` and `<mix code>`; an empty string when not mixed): `node -e "global.window = global; require('./concept/concepts.js'); const T = require('./concept/tokens.js'); console.log(T.cssText(T.resolve(CONCEPTS, '<id>', T.parseMix('<mix code>'))))"`
+
+### Handover
+- Markdown links to `concept/index.html` and `CONCEPT.md`.
+- Called from `sketch-to-site`: continue with its **B0**. Called alone: ask whether to build the prototype now (→ `sketch-to-site`).
+- Moving on to `sketch-to-site`: suggest a **new session**. `CONCEPT.md` and `DECISIONS.md` are enough to resume, while this session carries the docs, screens and images of every concept: staying means every turn rereads that context. If the user wants to stay, go on.
+- For a client presentation: suggest publishing `concept/` as an Artifact (`sketch-to-site` §8).
+
+---
+
+## 4. Output folder
+
+Default `docs/prototypes/<slug>/`; follow the project's convention if it has one.
 
 ```
 <slug>/
-├── DECISIONS.md        # Cổng 1–2 ở đây, Cổng 3–4 do sketch-to-site ghi tiếp
-├── REFERENCE-READ.md   # nếu có tham chiếu
-├── CONCEPT.md          # concept đã chốt: nguồn token cho tới Cổng 3
-└── concept/            # index.html, concepts.js, color.js, tokens.js, theme.js, a/b/c.html, shots/
+├── DECISIONS.md        # Gates 1–2 here; sketch-to-site adds Gates 3–4
+├── REFERENCE-READ.md   # if there are references
+├── CONCEPT.md          # the chosen concept: token source until Gate 3
+└── concept/            # index.html, concepts.js (every round), color.js, tokens.js, theme.js, each concept's screens, shots/
 ```
 
 ---
 
-## 5. Lỗi hay gặp
+## 5. Common mistakes
 
-| Lỗi | Sửa |
+| Mistake | Fix |
 |---|---|
-| Ba concept chung một khung, chỉ đổi màu và chữ | Khác khung là bắt buộc. Bảng concept báo ở mục **So trục** |
-| Concept A dùng nguyên bảng màu của `colors.csv` | Chỉ là điểm xuất phát. Đi đủ giao thức 3 bước, và đổi `#000000` *(P05)* |
-| Đọc hết đặc tả trước khi có concept | A1 chỉ đọc lõi. Đặc tả để `sketch-to-site` B1 |
-| Còn `example: true` hay chữ mẫu *Hạt Mây* | Thay toàn bộ `concepts.js`. Bảng hiện dải cảnh báo khi còn dữ liệu mẫu |
-| Hỏi *"bạn thích phong cách nào?"* trước khi có bảng | Hỏi phong cách chỉ ở Cổng 2, trên bảng đã dựng |
-| Concept B chép giao diện sản phẩm làm chuẩn | Chỉ mượn cách giải. Câu *"form đến từ đâu"* phải chỉ vào nội dung của dự án |
-| Font không có dấu tiếng Việt | Kiểm từng font bằng `preflight.py --font`; khai trong `fontFamily` để P07 bắt |
-| Màn then chốt là hero trong khi sản phẩm chủ yếu là bảng | Chọn màn then chốt theo loại màn đếm được ở A1 |
-| Dựng xong mới chấm Ý, rồi làm lại hết vòng này tới vòng khác | Chấm trên `concepts.js` trước khi dựng *(A3 bước 3)*. Sau khi dựng, làm lại tối đa một lần |
+| All concepts share one skeleton, only colour and type change | A different skeleton is required. `check.mjs` and the board's *So trục* report it |
+| A best-fit concept takes the `colors.csv` palette as is | Only a starting point. Run the full 3-step protocol, and replace `#000000` (P05) |
+| Reading the whole spec before there is a concept | A1 reads only the core. The spec is for `sketch-to-site` B1 |
+| `example: true` or the sample *Hạt Mây* text left over | Replace all of `concepts.js`. The board shows a banner while sample data remains |
+| Asking *"which style do you like?"* before the board exists | Ask about style only at Gate 2, on a built board |
+| A real-benchmark concept copies the product's UI | Borrow the solution only. *"Where the form comes from"* must point to this project's content |
+| A font without Vietnamese, or with marks that read wrong (Big Shoulders, Big Shoulders Stencil: ả looks like à; Vina Sans: ì looks like I) | Take fonts from `--vi-fonts`, check others with `preflight.py --font`; declare them in `fontFamily` so `check.mjs` and P07 catch them. Read the marks on the 1440 image |
+| A hero key screen for a product made mostly of tables | Choose the key screen by the screen types counted in A1 |
+| Scoring the idea after building, then reworking round after round | Score on `concepts.js` before building (A3 step 3). After building, rework at most once |
+| Long key screens: footers, extra sections nobody screenshots | Keep to the budget in A3 step 4; `shots.mjs` flags *dài: …* |
+| Habits measured in 1.3 (three runs of one brief, 9 concepts): editorial serif + grain + cream for the safe direction; Swiss + Barlow Condensed + radius 0 for the bold one; Be Vietnam Pro as body text in all 9 | Not banned, but reusing one needs a `why` pointing to the content. Add new habits here |
+| Habits measured again in 1.4 (three runs, 9 concepts): the *Brutalist · Swiss công nghiệp* family in all 3 runs; Fira Sans Extra Condensed with Fira Sans in 2; square-serif fonts (Alfa Slab One, Aleo, Rokkitt) in 2. The two font pairs match exactly the two keywords the docs once gave as examples | Derive the `--vi-fonts` keyword from the letterform the concept needs, never from an example. A family already used by another concept needs a `why` pointing to the content |
+| Making a second palette for dark mode, shooting `?theme=dark` when the user never asked | One palette per concept. Dark mode only when the user asks (in the brief, or Gate 2 question 2) |
 
 ---
 
-## 6. Phụ thuộc
+## 6. Dependencies
 
-| Mức | Skill | Dùng ở | Thiếu thì sao |
+| Level | Skill | Used in | If missing |
 |---|---|---|---|
-| 🔴 **Bắt buộc** | `sketch-to-site` | Khuôn `DECISIONS.md`, `theme.js`, `color.js`, `sketch-to-site/templates/mobile/` · `reference-intake.md`, `style-catalogue.md`, `mobile-app.md` · `preflight.py` · `qa-kit/run.mjs` cho `scripts/shots.mjs` và test | **Hỏng**: không kiểm font, không có kho phong cách |
-| 🔴 | `ui-ux-pro-max` | A2 tra màu và chữ · dữ liệu font cho `preflight.py` | **Hỏng**: không tra được, P07 thành P15 |
-| 🟠 **Nên chép** | `huashu-design` | Concept B *(`design-styles.md`)* · brand có thật *(`brand-asset-protocol.md`)* · tự chấm *(`critique-guide.md`)* | Nhẹ: phần cốt lõi đã rút vào `references/concept-method.md` |
+| 🔴 **Required** | `sketch-to-site` | Templates `DECISIONS.md`, `theme.js`, `color.js`, `sketch-to-site/templates/mobile/` · `reference-intake.md`, `style-catalogue.md`, `mobile-app.md` · `preflight.py` · `qa-kit/run.mjs` for `scripts/shots.mjs` and the tests | **Broken**: no font checks, no style catalogue |
+| 🔴 | `ui-ux-pro-max` | A2 colour and type lookups · font data for `preflight.py` and `check.mjs` | **Broken**: no lookups, P07 becomes P15 |
+| 🟠 **Recommended** | `huashu-design` | Real benchmarks (`design-styles.md`) · real brands (`brand-asset-protocol.md`) · self-critique (`critique-guide.md`) | Light: the core is distilled into `references/concept-method.md` |
 
-**Không phải skill mà vẫn cần:** Python 3 · Node 20+ và Edge/Chrome để chụp và chạy test *(`node --test <skills>/sketch-to-concept/tests/`)* · mạng *(Google Fonts, Tailwind CDN)* · `WebSearch` cho concept B · công cụ tạo subagent *(tuỳ chọn: chấm lớp Ý ở A3 bước 3; dựng song song chỉ khi người dùng xin)*.
+**Not skills but needed:** Python 3 · Node 20+ and Edge/Chrome for screenshots and tests (`node --test <skills>/sketch-to-concept/tests/`) · network (Google Fonts, Tailwind CDN) · `WebSearch` for real benchmarks · a subagent tool (optional: scoring the idea layer in A3 step 3; parallel builds only when the user asks).

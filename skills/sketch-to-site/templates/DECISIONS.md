@@ -12,15 +12,15 @@
 | Khác biệt · Định hướng *(nếu brief còn trống)* | | |
 
 ## 🛑 Cổng 2 · Concept — <dd/mm/yyyy> *(sketch-to-concept)*
-| Concept | Nguồn | Ý *(một câu)* | Họ phong cách | Màn then chốt · khung |
-|---|---|---|---|---|
-| A *(Khuyến nghị)* | hợp nhất | | | |
-| B | chuẩn thật: <sản phẩm> | | | |
-| C | lăng kính studio: <tên> | | | |
-**Bảng:** `concept/index.html` · **Chấm lớp Ý** *(review độc lập | tự chấm)*: A <n>/10 · B <n>/10 · C <n>/10
+| Vòng | Concept | Nguồn | Ý *(một câu)* | Họ phong cách | Màn then chốt · khung |
+|---|---|---|---|---|---|
+| 1 | <id> *(Khuyến nghị)* | <hợp nhất · chuẩn thật: sản phẩm · lăng kính studio: tên> | | | |
+**Bảng:** `concept/index.html` · **Chấm lớp Ý** *(review độc lập | tự chấm)*: <id> <n>/10 · …
+**Hướng chưa dùng** *(A2 rải 6–8 hướng; vòng sau lấy từ đây trước)*:
+- <ẩn dụ · trục chính · hình khối>
+**Vòng <n>** *(nếu có)*: chưa hợp ở <lớp> · gần đúng: <id> · góp ý (nguyên văn):
 **Đáp án concept (nguyên văn):**
 **Mã trộn (nếu có):**
-**Vòng biến thể (nếu có):**
 **Nền:** · **Nhịp:**
 
 ## Giả định (B1)

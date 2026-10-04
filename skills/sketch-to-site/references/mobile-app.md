@@ -91,7 +91,7 @@ site/
 - **Dial:** M ≤ 5, chuyển động chỉ để phản hồi và chuyển màn *(200–350 ms)*. D theo loại app: tiêu dùng 4–6, công cụ và tài chính 6–8.
 - Mỗi màn **một** điểm nhấn thị giác *(ảnh sản phẩm, con số chính, thẻ trạng thái)*; phần còn lại theo hệ thống.
 - **Ảnh:** theo SKILL.md mục 6. Ảnh là nội dung *(món, sản phẩm, địa điểm)* thì cần; ảnh chỉ để trang trí thì bỏ.
-- **Nền tối:** theo Cổng 2. App tiêu dùng mặc định *theo hệ thống*.
+- **Nền tối:** theo Cổng 2. Mặc định một nền, như concept; chế độ tối theo máy chỉ làm khi người dùng xin.
 
 ---
 
