@@ -48,10 +48,11 @@ function load(f) {
 }
 
 const P = c => String((c.input || {}).file_path || '').replace(/\\/g, '/');
-// Lệnh có biến (S="<skills>…"; cat "$S/…"): thay biến bằng giá trị trước khi so dấu hiệu
+// Lệnh có biến (S="<skills>…" hay S=<skills>; cat "$S/…"): thay biến bằng giá trị trước khi so dấu hiệu
 const expand = cmd => {
   const v = {};
-  for (const m of cmd.matchAll(/\b([A-Za-z_]\w*)="([^"]+)"/g)) v[m[1]] = m[2].replace(/\$\{?(\w+)\}?/g, (a, k) => v[k] || a);
+  // có ngoặc kép (S="…") hay không (S=/đường/dẫn;); bỏ qua giá trị là $(…)
+  for (const m of cmd.matchAll(/\b([A-Za-z_]\w*)=(?:"([^"]+)"|(?!\$\()([^\s;&|"'()]+))/g)) v[m[1]] = (m[2] ?? m[3]).replace(/\$\{?(\w+)\}?/g, (a, k) => v[k] || a);
   return cmd.replace(/\$\{?([A-Za-z_]\w*)\}?/g, (a, k) => v[k] || a);
 };
 const CMD = c => c.name === 'Bash' || c.name === 'PowerShell' ? expand(String(c.input.command || '').replace(/\\/g, '/')) : '';

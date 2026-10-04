@@ -6,10 +6,11 @@
 const fs = require('fs'), path = require('path');
 const { SKILLS, inSkills } = require('./paths');
 const norm = s => String(s || '').replace(/\\/g, '/');
-// Lệnh có biến (S="<skills>…"; cat "$S/…"): thay biến bằng giá trị trước khi đếm
+// Lệnh có biến (S="<skills>…" hay S=<skills>; cat "$S/…"): thay biến bằng giá trị trước khi đếm
 const expand = cmd => {
   const v = {};
-  for (const m of cmd.matchAll(/\b([A-Za-z_]\w*)="([^"]+)"/g)) v[m[1]] = m[2].replace(/\$\{?(\w+)\}?/g, (a, k) => v[k] || a);
+  // có ngoặc kép (S="…") hay không (S=/đường/dẫn;); bỏ qua giá trị là $(…)
+  for (const m of cmd.matchAll(/\b([A-Za-z_]\w*)=(?:"([^"]+)"|(?!\$\()([^\s;&|"'()]+))/g)) v[m[1]] = (m[2] ?? m[3]).replace(/\$\{?(\w+)\}?/g, (a, k) => v[k] || a);
   return cmd.replace(/\$\{?([A-Za-z_]\w*)\}?/g, (a, k) => v[k] || a);
 };
 const cmdOf = c => c.name === 'Bash' || c.name === 'PowerShell' ? expand(norm(c.input.command)) : '';
