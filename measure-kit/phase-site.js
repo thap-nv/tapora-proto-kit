@@ -6,6 +6,7 @@
 //   B2   ghi file trong site/ hoặc DESIGN.md · lệnh có site/, themes.mjs, preflight.py, khuôn B2 (themes.json, tokens.css, DESIGN.md, system.html, theme.js, color.js) · Read khuôn đó hay themes.mjs
 //   Cổng 3  chụp _system.html để trình: --screenshot ở khổ 1440, hoặc ra _qa/ hay cong-3/ (cả hai lần đo đầu đặt tên vậy) · mở ảnh system-…1440 hay ảnh trong _qa/, cong-3/ · lượt cuối (câu trả lời).
 //        Chụp _system.html ra chỗ khác để tự soát rồi sửa là B2.
+// Bản 4.5: lượt vào có Read references/b0-b2.md (pha 1) hay b3-b4.md (pha 2) là B0, dù lệnh cùng lượt chép khuôn vào site/ hay in rules-and-conflicts.md.
 // Pha 2: bước chỉ tăng B0 → B3 → B4 → Cổng 4 (sửa trang ở B4 vẫn là B4). Lối vào lại (đọc SKILL.md, CONCEPT.md, DESIGN.md) là B0.
 //   B3   BUILD-LOG.md · rules-and-conflicts.md · ghi file trong site/ (Write, Edit, hay python/sed -i/cat >/cp vào site/)
 //   B4   chạy qa_init.py, handover.py, run_all.py · laws-of-ux · gọi subagent · qa-gate.md khi đã có trang (đọc trước để chuẩn bị thì không tính)
@@ -101,7 +102,9 @@ for (const f of args.filter(a => !a.startsWith('--'))) {
   const pha2 = /Làm B3/.test(prompt);
   let cur = 0, siteWritten = false, page = false;
   turns.forEach((t, i) => {
-    const m = Math.max(-1, ...t.calls.map(c => pha2 ? marker2(c, page) : marker1(c, siteWritten)));
+    let m = Math.max(-1, ...t.calls.map(c => pha2 ? marker2(c, page) : marker1(c, siteWritten)));
+    // Bản 4.5: lượt vào (Read references/b0-b2.md hay b3-b4.md, kèm lệnh chép khuôn hoặc in luật) là B0, khi chưa qua bước nào
+    if (cur === 0 && t.calls.some(c => c.name === 'Read' && /references\/b(0-b2|3-b4)\.md$/.test(P(c)))) m = pha2 ? -1 : 0;
     if (t.calls.some(c => siteWrite(c) && /\/site\/(?!_system)[^\/\s"']+\.html/.test(P(c) + ' ' + CMD(c)))) page = true;
     // Lần sửa đầu vào site/ (Write, Edit, sed -i, python, cat >), không tính cp/mkdir: bản 4.5 chép khuôn ngay ở lượt vào
     if (t.calls.some(c => writes(c) && /\/site\//.test(P(c)) || /\bsed\s+-i\b|\.write\(|write_text|cat\s*>/.test(CMD(c)) && /\/site\//.test(CMD(c)))) siteWritten = true;
