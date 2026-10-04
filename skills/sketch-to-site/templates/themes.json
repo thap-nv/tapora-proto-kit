@@ -1,6 +1,6 @@
 {
-  "_ghi_chu": "Khuôn từ sketch-to-site/templates/themes.json. Chép vào site/assets/themes.json, thay màu gốc bằng màu ở CONCEPT.md mục 3, rồi chạy: node <skills>/sketch-to-site/scripts/themes.mjs <thư-mục-prototype>. Màu viết hex hoặc oklch(). Tuỳ chọn trong seeds: success, warning, info, ring, muted-bg. chart: màu biểu đồ, chỉ khai khi có dashboard. overrides: ghi đè một vai dẫn xuất, vẫn được đo. Thêm theme: thêm một mục vào themes (tên a-z, 0-9, dấu gạch ngang) rồi chạy lại lệnh.",
-  "default": { "light": "light", "dark": "dark" },
+  "_ghi_chu": "Khuôn từ sketch-to-site/templates/themes.json. Chép vào site/assets/themes.json, thay màu gốc bằng màu ở CONCEPT.md mục 3, rồi chạy: node <skills>/sketch-to-site/scripts/themes.mjs <thư-mục-prototype>. Màu viết hex hoặc oklch(). Một theme, như concept một nền; concept nền tối thì đổi mode thành dark. Chế độ tối (hay sáng) thứ hai chỉ thêm khi người dùng xin ở Cổng 2: thêm một mục vào themes với mode khác và trỏ default.dark tới nó. Tuỳ chọn trong seeds: success, warning, info, ring, muted-bg. chart: màu biểu đồ, chỉ khai khi có dashboard. overrides: ghi đè một vai dẫn xuất, vẫn được đo. Thêm theme: thêm một mục vào themes (tên a-z, 0-9, dấu gạch ngang) rồi chạy lại lệnh.",
+  "default": { "light": "light" },
   "themes": {
     "light": {
       "mode": "light",
@@ -8,15 +8,6 @@
         "bg": "#FBFBFA", "surface": "#FFFFFF", "ink": "#18181B", "muted": "#5F5F68", "line": "#E4E4E7",
         "primary": "#0F766E", "on-primary": "#FFFFFF", "accent": "#0F766E", "on-accent": "#FFFFFF",
         "destructive": "#B42318", "on-destructive": "#FFFFFF"
-      },
-      "overrides": {}
-    },
-    "dark": {
-      "mode": "dark",
-      "seeds": {
-        "bg": "#0B0C0E", "surface": "#141518", "ink": "#EDEDEF", "muted": "#A1A1AA", "line": "#2A2B30",
-        "primary": "#2DD4BF", "on-primary": "#0B0C0E", "accent": "#2DD4BF", "on-accent": "#0B0C0E",
-        "destructive": "#F97066", "on-destructive": "#0B0C0E"
       },
       "overrides": {}
     }

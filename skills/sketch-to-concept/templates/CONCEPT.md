@@ -14,21 +14,21 @@
 | Ràng buộc | <brand, màu hay font bắt buộc, tham chiếu và mức bám> | |
 
 ## 1. Concept đã chọn
-- **Tên:** <…> · **Concept:** <A | B | C | trộn> · **Nguồn:** <hợp nhất | chuẩn thật: tên sản phẩm | lăng kính studio: tên>
+- **Tên:** <…> · **Concept:** <id | trộn> · **Vòng:** <n> · **Nguồn:** <hợp nhất | chuẩn thật: tên sản phẩm | lăng kính studio: tên>
 - **Ý:** <một câu>
 - **Ẩn dụ:** <…> · **Trục ý tưởng:** <…> · **Khoảnh khắc đọc lần hai:** <…>
 - **Form đến từ đâu trong nội dung:** <một câu>
 - **Họ phong cách:** <tên trong `style-catalogue.md`> · **Dial:** VARIANCE <n> · MOTION <n> · DENSITY <n>
-- **Nền:** <sáng | tối | theo hệ thống> · **Nhịp:** <như concept | tĩnh hơn | sống động hơn>
+- **Nền:** <sáng | tối, như concept> · **Nền thứ hai:** <không | có, theo cài đặt máy: người dùng xin ở Cổng 2> · **Nhịp:** <như concept | tĩnh hơn | sống động hơn>
 - **Tự chấm lớp Ý:** <n>/10 · <một câu lý do> *(`concept-method.md` mục 7)*
 
 ## 2. Dụng
-- **Màn then chốt:** <tên màn · file `concept/<id>.html`> · **Khung bố cục:** <…>
+- **Màn then chốt:** <tên màn · file `concept/<id>.html`; concept chỉ đổi Hình (có `screen`): file `concept/<screen>.html` với mã trộn `man:<SCREEN> mau:<ID> chu:<ID> nut:<ID>`> · **Khung bố cục:** <…>
 - **Tương tác đặc trưng:** <thao tác> · **Phục vụ việc chính nào:** <…>
 
 ## 3. Hình: token đã khoá
 **Màu** *(vai trò theo cột của `colors.csv`; biến CSS theo `rules-and-conflicts.md` D.2 của `sketch-to-site`, do `tokens.js` đổi)*
-| Vai trò | Biến CSS | Sáng | Tối | Dùng cho | Tương phản |
+| Vai trò | Biến CSS | Màu *(nền của concept)* | Nền thứ hai *(chỉ khi người dùng xin; bỏ cột nếu không)* | Dùng cho | Tương phản |
 |---|---|---|---|---|---|
 | background | `--bg` | | | Nền trang | |
 | foreground | `--ink` | | | Chữ chính | trên nền <x:1> |
@@ -40,7 +40,7 @@
 | destructive · on-destructive | `--destructive` · `--on-destructive` | | | Lỗi | <x:1> |
 | ring | `--ring` | | | Vòng focus | |
 
-**Sang Phần B:** B2 của `sketch-to-site` chép các màu này vào `site/assets/themes.json` *(khuôn `<skills>/sketch-to-site/templates/themes.json`)*, mỗi nền một theme: background → `bg`, card → `surface`, foreground → `ink`, muted-foreground → `muted`, border → `line`, muted → `muted-bg`, vai khác giữ tên. Vai dẫn xuất *(hover, nhấn, nền nhạt, viền control, vòng focus, liên kết)* do `themes.mjs` tính và đo, không chép tay.
+**Sang Phần B:** B2 của `sketch-to-site` chép các màu này vào `site/assets/themes.json` *(khuôn `<skills>/sketch-to-site/templates/themes.json`, một theme)*. Nền thứ hai chỉ có khi người dùng xin: B2 thêm theme thứ hai và đo mọi cặp. Đổi tên vai: background → `bg`, card → `surface`, foreground → `ink`, muted-foreground → `muted`, border → `line`, muted → `muted-bg`, vai khác giữ tên. Vai dẫn xuất *(hover, nhấn, nền nhạt, viền control, vòng focus, liên kết)* do `themes.mjs` tính và đo, không chép tay.
 
 **Lý do màu:** <một câu, theo giao thức 3 bước>
 
@@ -71,6 +71,6 @@
 **Mã trộn:** <man:… mau:… chu:… nut:… | không trộn> · **Người dùng nói (nguyên văn):** <…>
 
 ## 6. Concept không chọn
-| Concept | Ý | Vì sao không chọn *(nguyên văn nếu người dùng nói)* |
-|---|---|---|
-| | | |
+| Vòng | Concept | Ý | Vì sao không chọn *(nguyên văn nếu người dùng nói)* |
+|---|---|---|---|
+| | | | |

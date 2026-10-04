@@ -24,7 +24,7 @@ function fixture(extraData = '') {
   const dir = tmpdir('concept-');
   const t = f => path.join(SKILL, 'templates', f);
   fs.copyFileSync(t('concept-board.html'), path.join(dir, 'index.html'));
-  fs.writeFileSync(path.join(dir, 'concepts.js'), fs.readFileSync(t('concepts.js'), 'utf8') + extraData);
+  fs.writeFileSync(path.join(dir, 'concepts.js'), fs.readFileSync(t('concepts.example.js'), 'utf8') + extraData);
   fs.copyFileSync(t('tokens.js'), path.join(dir, 'tokens.js'));
   fs.copyFileSync(path.join(S2S, 'templates', 'color.js'), path.join(dir, 'color.js'));
   fs.copyFileSync(path.join(S2S, 'templates', 'theme.js'), path.join(dir, 'theme.js'));
@@ -32,6 +32,11 @@ function fixture(extraData = '') {
   for (const id of ['a', 'b', 'c']) fs.writeFileSync(path.join(dir, `${id}.html`), screen.replace('data-concept="a"', `data-concept="${id}"`));
   return dir;
 }
+
+// Mẫu khai mỗi concept một bảng màu (chế độ tối chỉ khi người dùng xin). Test nền tối thêm bảng tối cho a, như dự án đã xin
+const A_DARK_PALETTE = { background: '#121714', foreground: '#E7EBE6', card: '#1A201C', 'card-foreground': '#E7EBE6', muted: '#232A25', 'muted-foreground': '#A3ADA6',
+  border: '#2E3631', primary: '#E7EBE6', 'on-primary': '#121714', accent: '#E0574D', 'on-accent': '#121714', destructive: '#E0574D', 'on-destructive': '#121714', ring: '#E0574D' };
+const A_DARK = `\nCONCEPTS.concepts[0].colors.dark = ${JSON.stringify(A_DARK_PALETTE)};`;
 
 let noBrowser = false;
 // Trả về báo cáo của run.mjs; null khi máy không có trình duyệt
@@ -49,6 +54,15 @@ function run(dir, file, steps, { w = 1440, h = 900, query = '' } = {}) {
 }
 const step = (report, name) => report.find(s => s.step === name);
 const noErrors = report => assert.deepEqual(report.flatMap(s => s.errors), []);
+
+// Vòng 2: d chỉ đổi lớp Hình, dùng màn của b; khác b ở nền và chất nền
+const ROUND2 = `
+CONCEPTS.rounds = [{ n: 1, note: '' }, { n: 2, note: 'màu ấm hơn, chữ ít cổ điển' }];
+CONCEPTS.concepts.push(Object.assign(JSON.parse(JSON.stringify(CONCEPTS.concepts[1])), {
+  id: 'd', name: 'Than lạnh', round: 2, screen: 'b', recommended: false,
+  axes: Object.assign({}, CONCEPTS.concepts[1].axes, { nen: 'Sáng tinh', chatNen: 'Giấy' }),
+  colors: { light: CONCEPTS.concepts[0].colors.light } }));
+`;
 
 test('bảng concept mở bằng file:// không lỗi, đủ 3 tile, có dải báo dữ liệu mẫu', t => {
   const r = run(fixture(), 'index.html', [{ name: 'tiles', check: `JSON.stringify({
@@ -83,7 +97,7 @@ test('mỗi tile mang token của concept mình, bảng tương phản có số 
 });
 
 test('bấm nền tối: tile theo bảng màu tối, màn xem trước nhận ?theme=dark', t => {
-  const r = run(fixture(), 'index.html', [{ name: 'dark', js: `document.querySelector('[data-set-theme="dark"]').click()`, check: `(() => {
+  const r = run(fixture(A_DARK), 'index.html', [{ name: 'dark', js: `document.querySelector('[data-set-theme="dark"]').click()`, check: `(() => {
     const a = window.CONCEPTS.concepts.find(c => c.id === 'a');
     const bg = getComputedStyle(document.querySelector('[data-tile="a"]')).getPropertyValue('--bg').trim().toUpperCase();
     return JSON.stringify({ theme: document.documentElement.dataset.theme, bg, want: a.colors.dark.background.toUpperCase(),
@@ -97,18 +111,22 @@ test('bấm nền tối: tile theo bảng màu tối, màn xem trước nhận ?
   assert.match(v.src, /theme=dark/);
 });
 
-test('khung Trộn in mã trộn và mở màn xem trước với mã đó', t => {
+test('ma trận trộn: chọn ô mỗi hàng ra mã trộn, màn lớn chuyển sang bản trộn', t => {
   const r = run(fixture(), 'index.html', [{ name: 'mix', js: `(() => {
-    const set = (k, v) => { const s = document.querySelector('[data-mix="' + k + '"]'); s.value = v; s.dispatchEvent(new Event('change', { bubbles: true })); };
-    set('man', 'a'); set('mau', 'b'); set('chu', 'a'); set('nut', 'c');
+    const pick = (k, v) => document.querySelector('input[name="mix-' + k + '"][value="' + v + '"]').click();
+    pick('man', 'a'); pick('mau', 'b'); pick('chu', 'a'); pick('nut', 'c');
   })()`, check: `JSON.stringify({ code: document.querySelector('[data-mix-code]').textContent.trim(),
-    src: decodeURIComponent(document.querySelector('iframe[data-mix-preview]').getAttribute('src')) })` }]);
+    src: decodeURIComponent(document.querySelector('iframe[data-preview]').getAttribute('src')),
+    tab: document.querySelector('[data-tab="mix"]').getAttribute('aria-pressed'),
+    caption: document.querySelector('[data-preview-caption]').textContent })` }]);
   if (!r) return t.skip('không có trình duyệt');
   noErrors(r);
   const v = JSON.parse(step(r, 'mix').check);
   assert.equal(v.code, 'man:A mau:B chu:A nut:C');
   assert.match(v.src, /^a\.html\?/);
   assert.match(v.src, /mix=man:A mau:B chu:A nut:C/);
+  assert.equal(v.tab, 'true');
+  assert.match(v.caption, /^Màn của A · màu của B · chữ của A · nút và hình của C\./);
 });
 
 test('màn then chốt tự áp token của concept, nhận mã trộn và nạp font', t => {
@@ -127,7 +145,7 @@ test('màn then chốt tự áp token của concept, nhận mã trộn và nạp
 });
 
 test('màn then chốt theo ?theme=dark', t => {
-  const r = run(fixture(), 'a.html', [{ name: 'dark', check: `(() => {
+  const r = run(fixture(A_DARK), 'a.html', [{ name: 'dark', check: `(() => {
     const a = window.CONCEPTS.concepts.find(c => c.id === 'a');
     return getComputedStyle(document.body).backgroundColor + ' | ' + a.colors.dark.background;
   })()` }], { query: '?theme=dark' });
@@ -226,7 +244,7 @@ test('concept dùng font nền tảng: bảng ghi rõ, preflight không cảnh b
 test('đường subagent: màn then chốt nhận concept từ file riêng {id}.concept.js', t => {
   const dir = fixture();
   const ctx = { window: {} };
-  require('node:vm').runInNewContext(fs.readFileSync(path.join(SKILL, 'templates', 'concepts.js'), 'utf8'), ctx);
+  require('node:vm').runInNewContext(fs.readFileSync(path.join(SKILL, 'templates', 'concepts.example.js'), 'utf8'), ctx);
   const data = ctx.window.CONCEPTS;
   const a = data.concepts.find(c => c.id === 'a');
   fs.writeFileSync(path.join(dir, 'concepts.js'), `window.CONCEPTS = ${JSON.stringify({ project: data.project, brief: data.brief, content: data.content, concepts: [] })};\n`);
@@ -275,15 +293,211 @@ test('thiếu color.js: bảng báo rõ file thiếu', t => {
 
 test('concept chỉ có nền tối, bảng đang ở nền sáng: số đo vai dẫn xuất theo chế độ tối của màu đang hiện', t => {
   const T = require(path.join(SKILL, 'templates', 'tokens.js'));
-  const vm = require('node:vm');
-  const ctx = { window: {} };
-  vm.runInNewContext(fs.readFileSync(path.join(SKILL, 'templates', 'concepts.js'), 'utf8'), ctx);
-  const dark = (ctx.window.CONCEPTS || ctx.CONCEPTS).concepts[0].colors.dark;
-  const want = T.checkPairs(dark, 'dark').map(r => `${r.fg}|${r.bg}|${r.ratio.toFixed(2).replace('.', ',')}:1`);
-  const r = run(fixture(`\ndelete window.CONCEPTS.concepts[0].colors.light;`), 'index.html', [{ name: 'rows', check: `JSON.stringify([...document.querySelectorAll('[data-tile="a"] [data-contrast]')].map(li => li.dataset.contrast + '|' + li.querySelector('[data-ratio]').textContent.trim()))` }]);
+  const want = T.checkPairs(A_DARK_PALETTE, 'dark').map(r => `${r.fg}|${r.bg}|${r.ratio.toFixed(2).replace('.', ',')}:1`);
+  const r = run(fixture(`\nCONCEPTS.concepts[0].colors = { dark: ${JSON.stringify(A_DARK_PALETTE)} };`), 'index.html', [{ name: 'rows', check: `JSON.stringify([...document.querySelectorAll('[data-tile="a"] [data-contrast]')].map(li => li.dataset.contrast + '|' + li.querySelector('[data-ratio]').textContent.trim()))` }]);
   if (!r) return t.skip('không có trình duyệt');
   noErrors(r);
   const got = JSON.parse(step(r, 'rows').check);
   assert.ok(want.length >= 20);
   assert.deepEqual(got.map(x => x.split('|')[1]), want.map(x => x.split('|')[2]));
+});
+
+// Mỗi concept một bảng màu là mặc định: nhãn "chỉ có nền …" chỉ hiện khi bảng đang ở nền mà concept không có
+test('nhãn "chỉ có nền": chỉ hiện khi nền của bảng khác nền duy nhất của concept', t => {
+  const label = `JSON.stringify(['a', 'b'].map(id => (document.querySelector('[data-tile="' + id + '"]').textContent.match(/chỉ có nền \\S+/) || [''])[0]))`;
+  const r = run(fixture(), 'index.html', [{ name: 'sang', js: `document.querySelector('[data-set-theme="light"]').click()`, check: label },
+    { name: 'toi', js: `document.querySelector('[data-set-theme="dark"]').click()`, check: label }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  assert.deepEqual(JSON.parse(step(r, 'sang').check), ['', 'chỉ có nền tối']);
+  assert.deepEqual(JSON.parse(step(r, 'toi').check), ['chỉ có nền sáng', '']);
+});
+
+test('bố cục mới: danh sách theo vòng, ma trận 4 hàng, màn lớn, chi tiết và So trục gập', t => {
+  const r = run(fixture(), 'index.html', [{ name: 'layout', check: `JSON.stringify({
+    rounds: [...document.querySelectorAll('[data-round]')].map(e => e.dataset.round),
+    cards: [...document.querySelectorAll('[data-card]')].map(e => e.dataset.card),
+    rows: [...document.querySelectorAll('[data-matrix] tbody tr')].map(tr => tr.querySelectorAll('input[type=radio]').length),
+    preview: !!document.querySelector('iframe[data-preview]'),
+    details: document.querySelector('[data-details]').open, axes: document.querySelector('[data-axes-block]').open,
+    brief: document.querySelector('details.brief').open,
+    current: document.querySelector('[data-view][aria-current="true"]').dataset.view,
+    visible: [...document.querySelectorAll('[data-tile]')].filter(e => !e.hidden).map(e => e.dataset.tile),
+    summary: document.querySelector('[data-summary]').textContent })` }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  assert.deepEqual(JSON.parse(step(r, 'layout').check), { rounds: ['1'], cards: ['a', 'b', 'c'], rows: [3, 3, 3, 3], preview: true,
+    details: false, axes: false, brief: false, current: 'a', visible: ['a'], summary: 'Bảng concept · 3 concept qua 1 vòng' });
+});
+
+test('vòng 2: nhóm và góp ý của vòng; concept chỉ đổi Hình xem trên màn nó mượn; đổi nền giữ mã trộn', t => {
+  const r = run(fixture(ROUND2), 'index.html', [
+    { name: 'r2', js: `document.querySelector('[data-view="d"]').click()`, check: `JSON.stringify({
+      rounds: [...document.querySelectorAll('[data-round]')].map(e => e.dataset.round),
+      note: document.querySelector('[data-round="2"] [data-round-note]').textContent,
+      labels: [...document.querySelectorAll('[data-card="d"] .lab')].map(e => e.textContent),
+      thumb: decodeURIComponent(document.querySelector('iframe[data-screen="d"]').getAttribute('src')),
+      preview: decodeURIComponent(document.querySelector('iframe[data-preview]').getAttribute('src')),
+      manCells: [...document.querySelectorAll('input[name="mix-man"]')].map(i => i.value),
+      mauCells: [...document.querySelectorAll('input[name="mix-mau"]')].map(i => i.value),
+      tab: document.querySelector('[data-tab="concept"]').getAttribute('aria-pressed'),
+      warn: document.querySelectorAll('[data-axes-warning]').length,
+      summary: document.querySelector('[data-summary]').textContent })` },
+    { name: 'dark', js: `document.querySelector('[data-set-theme="dark"]').click()`,
+      check: `decodeURIComponent(document.querySelector('iframe[data-preview]').getAttribute('src'))` },
+  ]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  const v = JSON.parse(step(r, 'r2').check);
+  assert.deepEqual(v.rounds, ['1', '2']);
+  assert.equal(v.note, 'Góp ý: màu ấm hơn, chữ ít cổ điển');
+  assert.deepEqual(v.labels, ['màn B']);
+  assert.match(v.thumb, /^b\.html\?theme=light&mix=man:B mau:D chu:D nut:D$/);
+  assert.match(v.preview, /^b\.html\?theme=light&mix=man:B mau:D chu:D nut:D$/);
+  assert.deepEqual(v.manCells, ['a', 'b', 'c']);
+  assert.deepEqual(v.mauCells, ['a', 'b', 'c', 'd']);
+  assert.equal(v.tab, 'true');
+  assert.equal(v.warn, 0);
+  assert.equal(v.summary, 'Bảng concept · 4 concept qua 2 vòng');
+  assert.match(step(r, 'dark').check, /^b\.html\?theme=dark&mix=man:B mau:D chu:D nut:D$/);
+});
+
+test('concept khuyến nghị là concept chỉ đổi Hình: bản trộn ban đầu lấy màn của concept nó mượn', t => {
+  const r = run(fixture(ROUND2 + '\nCONCEPTS.concepts[0].recommended = false; CONCEPTS.concepts[3].recommended = true;\n'), 'index.html',
+    [{ name: 'init', check: `JSON.stringify({ code: document.querySelector('[data-mix-code]').textContent.trim(),
+      current: document.querySelector('[data-view][aria-current="true"]').dataset.view })` }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  assert.deepEqual(JSON.parse(step(r, 'init').check), { code: 'man:B mau:D chu:D nut:D', current: 'd' });
+});
+
+test('chi tiết: tương phản đạt hết thì gọn một dòng; nút "Hiện mọi cặp" mở đủ bảng', t => {
+  const shown = `String([...document.querySelectorAll('[data-tile="a"] [data-contrast]')].filter(li => getComputedStyle(li).display !== 'none').length)`;
+  const r = run(fixture(), 'index.html', [
+    { name: 'gon', js: `document.querySelector('[data-details]').open = true`,
+      check: `document.querySelector('[data-tile="a"] [data-contrast-ok]').textContent.trim() + ' | ' + ${shown}` },
+    { name: 'du', js: `document.querySelector('[data-tile="a"] [data-show-all]').click()`, check: shown },
+  ]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  assert.equal(step(r, 'gon').check, 'Tất cả cặp đạt AA. | 0');
+  assert.ok(+step(r, 'du').check >= 20, `chỉ hiện ${step(r, 'du').check} cặp`);
+});
+
+test('cảnh báo So trục và thiếu lý do Hình hiện thành nhãn trên thẻ', t => {
+  const r = run(fixture('\nCONCEPTS.concepts[2].axes = Object.assign({}, CONCEPTS.concepts[0].axes);\ndelete CONCEPTS.concepts[1].why;\n'), 'index.html',
+    [{ name: 'labels', check: `JSON.stringify({ cards: Object.fromEntries([...document.querySelectorAll('[data-card]')].map(c => [c.dataset.card,
+      [...c.querySelectorAll('[data-card-warning]')].map(e => e.dataset.cardWarning + ':' + e.textContent)])),
+      count: document.querySelector('[data-axes-count]').textContent })` }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  assert.deepEqual(JSON.parse(step(r, 'labels').check), { cards: { a: ['axes:gần C'], b: ['why:thiếu lý do Hình'], c: ['axes:gần A'] }, count: '· 1 cảnh báo' });
+});
+
+test('khuôn concepts.js trống: bảng mở không lỗi, báo chưa có concept', t => {
+  const dir = fixture();
+  fs.copyFileSync(path.join(SKILL, 'templates', 'concepts.js'), path.join(dir, 'concepts.js'));
+  const r = run(dir, 'index.html', [{ name: 'empty', check: `JSON.stringify({ empty: !document.querySelector('[data-empty]').hidden,
+    err: !document.querySelector('[data-board-error]').hidden, main: getComputedStyle(document.querySelector('main')).display })` }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  assert.deepEqual(JSON.parse(step(r, 'empty').check), { empty: true, err: false, main: 'none' });
+});
+
+test('concepts.js của kit cũ (không rounds, round, why) vẫn mở được, mọi concept ở vòng 1', t => {
+  const r = run(fixture('\ndelete CONCEPTS.rounds; for (const c of CONCEPTS.concepts) { delete c.round; delete c.why; }\n'), 'index.html',
+    [{ name: 'old', check: `JSON.stringify({ rounds: [...document.querySelectorAll('[data-round]')].map(e => e.dataset.round),
+      err: !document.querySelector('[data-board-error]').hidden, cards: document.querySelectorAll('[data-card]').length })` }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  assert.deepEqual(JSON.parse(step(r, 'old').check), { rounds: ['1'], err: false, cards: 3 });
+});
+
+test('bảng nhiều vòng (9 concept) ở khổ 390: trang không tràn ngang, ma trận cuộn trong khung của nó', t => {
+  const more = `
+CONCEPTS.rounds = [1, 2, 3].map(n => ({ n, note: n > 1 ? 'góp ý vòng ' + n : '' }));
+const base = CONCEPTS.concepts.slice();
+['d', 'e', 'f', 'g', 'h', 'i'].forEach((id, i) => CONCEPTS.concepts.push(Object.assign(JSON.parse(JSON.stringify(base[i % 3])),
+  { id, name: 'Concept ' + id, round: i < 3 ? 2 : 3, screen: base[i % 3].id, recommended: false })));
+`;
+  const r = run(fixture(more), 'index.html', [{ name: 'many', check: `(() => { const s = document.querySelector('[data-matrix]').parentElement;
+    return JSON.stringify({ cards: document.querySelectorAll('[data-card]').length, scrolls: s.scrollWidth > s.clientWidth }); })()` }], { w: 390, h: 844 });
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  for (const s of r) assert.ok(s.dims === null || s.dims.sw <= s.dims.cw, `${s.step}: tràn ngang ${JSON.stringify(s.dims)}`);
+  assert.deepEqual(JSON.parse(step(r, 'many').check), { cards: 9, scrolls: true });
+});
+
+test('bàn phím trong ma trận: mỗi hàng là một nhóm radio vào được bằng Tab; đổi ô (phím mũi tên phát change) cập nhật mã trộn', t => {
+  const r = run(fixture(ROUND2), 'index.html', [{ name: 'keys', js: `(() => {
+    const i = document.querySelector('input[name="mix-mau"][value="d"]');
+    i.focus(); i.checked = true; i.dispatchEvent(new Event('change', { bubbles: true }));
+  })()`, check: `JSON.stringify({
+    groups: [...new Set([...document.querySelectorAll('[data-matrix] input[type=radio]')].map(i => i.name))],
+    tabbable: [...document.querySelectorAll('[data-matrix] input[type=radio]')].every(i => i.tabIndex === 0 && getComputedStyle(i).visibility !== 'hidden'),
+    focused: document.activeElement.name + ':' + document.activeElement.value,
+    code: document.querySelector('[data-mix-code]').textContent.trim(),
+    tab: document.querySelector('[data-tab="mix"]').getAttribute('aria-pressed') })` }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  assert.deepEqual(JSON.parse(step(r, 'keys').check), { groups: ['mix-man', 'mix-mau', 'mix-chu', 'mix-nut'], tabbable: true,
+    focused: 'mix-mau:d', code: 'man:A mau:D chu:A nut:A', tab: 'true' });
+});
+
+test('concept chỉ đổi Hình không ghi lớp Ý: bảng hiện Ý của concept nó mượn màn', t => {
+  const r = run(fixture(ROUND2 + "\nfor (const k of ['idea', 'metaphor', 'formFrom', 'signature']) delete CONCEPTS.concepts[3][k];\n"), 'index.html', [
+    { name: 'y', js: `document.querySelector('[data-view="d"]').click()`, check: `JSON.stringify({
+      caption: document.querySelector('[data-preview-caption]').textContent,
+      idea: document.querySelector('[data-tile="d"] .idea').textContent,
+      facts: [...document.querySelectorAll('[data-tile="d"] .facts dd')].slice(0, 3).map(e => e.textContent),
+      want: (b => [b.idea, b.metaphor, b.formFrom, b.signature])(CONCEPTS.concepts[1]) })` }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  const v = JSON.parse(step(r, 'y').check);
+  assert.equal(v.caption, `D · Than lạnh: ${v.want[0]}`);
+  assert.equal(v.idea, v.want[0]);
+  assert.deepEqual(v.facts, v.want.slice(1));
+});
+
+// Mục nhỏ còn lại sau review 1.4
+test('đổi nền giữ trạng thái gập vòng và "Hiện mọi cặp"', t => {
+  const state = `JSON.stringify({ fold: document.querySelector('[data-fold="1"]').getAttribute('aria-expanded'),
+    cardsHidden: document.querySelector('[data-cards="1"]').hidden,
+    all: document.querySelector('[data-tile="a"] [data-show-all]').getAttribute('aria-pressed'),
+    allClass: document.querySelector('[data-tile="a"] .ct').classList.contains('all') })`;
+  const r = run(fixture(), 'index.html', [
+    { name: 'truoc', js: `document.querySelector('[data-fold="1"]').click(); document.querySelector('[data-tile="a"] [data-show-all]').click()`, check: state },
+    { name: 'sau', js: `document.querySelector('[data-set-theme="dark"]').click()`, check: state }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  const want = { fold: 'false', cardsHidden: true, all: 'true', allClass: true };
+  assert.deepEqual(JSON.parse(step(r, 'truoc').check), want);
+  assert.deepEqual(JSON.parse(step(r, 'sau').check), want);
+});
+
+test('truy cập: aria-current ở nút xem concept; tên ô radio chỉ là lớp và concept; nút gập có aria-controls; ô góc ma trận dính', t => {
+  const r = run(fixture(), 'index.html', [{ name: 'a11y', check: `JSON.stringify({
+    liCurrent: document.querySelectorAll('li[data-card][aria-current]').length,
+    current: [...document.querySelectorAll('[data-view][aria-current="true"]')].map(b => b.dataset.view),
+    names: [...new Set([...document.querySelectorAll('[data-matrix] label.cell')].map(l => { const c = l.cloneNode(true);
+      c.querySelectorAll('[aria-hidden="true"], input').forEach(e => e.remove()); return c.textContent.trim().replace(/ của [A-Z]$/, ''); }))],
+    controls: [...document.querySelectorAll('[data-fold]')].map(b => (b.getAttribute('aria-controls') || '').split(' ').filter(Boolean)
+      .every(id => document.getElementById(id)) && b.getAttribute('aria-controls').includes(document.querySelector('[data-cards="' + b.dataset.fold + '"]').id)),
+    corner: getComputedStyle(document.querySelector('[data-matrix] thead th')).position })` }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  assert.deepEqual(JSON.parse(step(r, 'a11y').check), { liCurrent: 0, current: ['a'], names: ['Màn và ý', 'Màu', 'Chữ', 'Nút và hình'], controls: [true], corner: 'sticky' });
+});
+
+test('thẻ Bản trộn lấy mã từ concept đang xem tới khi người dùng chọn ô; chọn rồi thì xem concept khác vẫn giữ bản trộn', t => {
+  const code = `document.querySelector('[data-mix-code]').textContent.trim()`;
+  const r = run(fixture(ROUND2), 'index.html', [
+    { name: 'xemD', js: `document.querySelector('[data-view="d"]').click(); document.querySelector('[data-tab="mix"]').click()`, check: code },
+    { name: 'chon', js: `document.querySelector('input[name="mix-mau"][value="a"]').click()`, check: code },
+    { name: 'xemC', js: `document.querySelector('[data-view="c"]').click(); document.querySelector('[data-tab="mix"]').click()`, check: code }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  assert.equal(step(r, 'xemD').check, 'man:B mau:D chu:D nut:D');
+  assert.equal(step(r, 'chon').check, 'man:B mau:A chu:D nut:D');
+  assert.equal(step(r, 'xemC').check, 'man:B mau:A chu:D nut:D');
 });

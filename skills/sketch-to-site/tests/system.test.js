@@ -11,14 +11,21 @@ const S2S = path.resolve(__dirname, '..');
 const T = f => path.join(S2S, 'templates', f);
 const PYTHON = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 
+// Khuôn themes.json chỉ có theme sáng (chế độ tối chỉ khi người dùng xin). dark: thêm theme tối mẫu như dự án đã xin
+const DARK = { mode: 'dark', seeds: { bg: '#0B0C0E', surface: '#141518', ink: '#EDEDEF', muted: '#A1A1AA', line: '#2A2B30',
+  primary: '#2DD4BF', 'on-primary': '#0B0C0E', accent: '#2DD4BF', 'on-accent': '#0B0C0E', destructive: '#F97066', 'on-destructive': '#0B0C0E' }, overrides: {} };
+
 // Dựng site đúng như B2 hướng dẫn: _system.html + color.js, theme.js, tokens.css, themes.json → themes.css
-function site(t) {
+function site(t, { dark = true } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'system-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   const assets = path.join(dir, 'site', 'assets');
   fs.mkdirSync(assets, { recursive: true });
   fs.copyFileSync(T('system.html'), path.join(dir, 'site', '_system.html'));
-  for (const f of ['color.js', 'theme.js', 'tokens.css', 'themes.json']) fs.copyFileSync(T(f), path.join(assets, f));
+  for (const f of ['color.js', 'theme.js', 'tokens.css']) fs.copyFileSync(T(f), path.join(assets, f));
+  const themes = JSON.parse(fs.readFileSync(T('themes.json'), 'utf8'));
+  if (dark) { themes.themes.dark = DARK; themes.default.dark = 'dark'; }
+  fs.writeFileSync(path.join(assets, 'themes.json'), JSON.stringify(themes, null, 2));
   const g = spawnSync(process.execPath, [path.join(S2S, 'scripts', 'themes.mjs'), dir], { encoding: 'utf8' });
   assert.equal(g.status, 0, g.stdout + g.stderr);
   return dir;
@@ -50,6 +57,14 @@ for (const query of ['', '?theme=dark']) {
     assert.deepEqual([d.contrast, d.intent, d.cut], [[], [], []]);
   });
 }
+
+test('_system.html từ khuôn themes.json nguyên bản (một theme sáng): đủ 26 cặp, một nút theme, không lỗi', t => {
+  const r = run(site(t, { dark: false }), [{ name: 's', check: STATE }]);
+  if (!r) return t.skip('không có trình duyệt');
+  assert.deepEqual(r.flatMap(s => s.errors), []);
+  const v = JSON.parse(r.find(s => s.step === 's').check);
+  assert.deepEqual({ pairs: v.pairs, khong: v.khong, missing: v.missing, themes: v.themes }, { pairs: 26, khong: 0, missing: '', themes: 1 });
+});
 
 test('_system.html: bấm nút theme thì đổi theme và vẽ lại bảng', t => {
   const r = run(site(t), [{ name: 'dark', js: "document.querySelector('[data-set=\"dark\"]').click()", wait: 200, check: STATE }]);

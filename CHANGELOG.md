@@ -1,5 +1,81 @@
 # Changelog
 
+## 1.4.0 (2026-10-04)
+
+- Skills: `sketch-to-concept` 1.4, `sketch-to-site` 4.4.
+- The concept board keeps every round on one page. A list of concept cards grouped by round sits on the left, with each round's feedback. A compact mix matrix (screen and idea, colour, type, buttons and shape) sits above one large preview with a Concept / Mix toggle. Details and the axis table are folded. Contrast shows only failing or near pairs. Warnings appear as labels on the cards.
+- Gate 2 adds "Not there yet, new round" (`references/vong-moi.md`). One question finds the layers that miss and the closest concept. A round that changes only colour, type or shape adds data-only concepts that reuse an existing screen (`screen` in `concepts.js`), with no new HTML. A round that changes the idea or layout builds 1 to 3 new screens. New concepts must differ from every concept already on the board.
+- Re-entry: when `concept/concepts.js` exists, the skill skips A1 and A2 and reads `references/vong-moi.md`. It covers an open board, a chosen concept, and a built prototype (colour and type go to `themes.json` through `tweak-site`; a new layout is `evolve-site`).
+- Fixed concept roles removed. In three measured runs of the same brief, the 9 concepts repeated three roles (editorial serif with grain for A, Swiss with Barlow Condensed and no radius for C) and all used Be Vietnam Pro for body text. Now:
+  - slots carry no role; the three sources are a toolbox; A2 spreads 6 to 8 directions and picks the 3 furthest apart; unused directions go to `DECISIONS.md` for the next round;
+  - every colour, type, shape and texture choice has a one-line reason from the content (`why`), and the board labels concepts without one;
+  - the axis menu is examples only; pairs that share a screen must differ on 2 of the 3 visual axes;
+  - `templates/concepts.js` is an empty, annotated skeleton; the Hạt Mây sample moved to `templates/concepts.example.js` for tests;
+  - `preflight.py --vi-fonts <kind> "<keywords>"` lists Google fonts with Vietnamese support by kind, filtered by English words in the font name or in tags that split the list (513 fonts in the data; the data has no mood tags). Tags found on 75 % or more of a kind's fonts are skipped: the data gives tags by kind rather than by font, so every sans carries `geometric`, `humanist` and `grotesque`. Each font's line shows only its own tags. Fonts from this list need no second `--font` check. The docs show only a `"<keyword>"` placeholder: in a measured run, the two example keywords the docs used to name became the fonts two of three runs picked.
+- `scripts/shots.mjs`: `--round <n>` shoots only that round; data-only concepts are shot on the screen they reuse; the board line reports concepts without reasons and how many concepts over how many rounds.
+- Dark mode only when the user asks. Each concept declares one palette, and no `?theme=dark` screenshots are taken by default. Gate 2 asks "second background?" with "No, one background like the concept" recommended. The `sketch-to-site` `themes.json` template has one light theme, and consumer sites no longer default to following the system setting. The concept board's "only has a light/dark background" label now shows only when the board's mode differs from the concept's single palette.
+- New rounds cost less. In the measured round 2 (about 0.5M converted tokens, 28 turns), the agent spent turns finding the data-only block format and the method sections, checking fonts twice, opening 16 screenshots, and reshooting every screen in dark mode. `vong-moi.md` now prints exactly the sections to read, writes out the data-only block, shows which colour roles the reused screen uses (CSS variables and Tailwind classes), opens only the 1440 and signature screenshots of each data-only concept, and does not reshoot after moving `recommended`. Measured again on the same board: about 0.46M, 24 turns, 4 screenshots opened instead of 16. Most of what remains is reading the skill and the board data on every turn.
+- Board and data fixes from the review:
+  - switching light/dark keeps folded rounds and "show all pairs";
+  - until the user picks a matrix cell, the Mix tab starts from the concept being viewed (a data-only concept seeds its borrowed screen); once they pick, viewing other concepts keeps their mix;
+  - `aria-current` sits on the card's button; radio names read only "<layer> of <concept>"; round fold buttons have `aria-controls`; the matrix corner cell stays fixed when the matrix scrolls;
+  - `validate` reports a `rounds` that is not an array (the board used to go blank), rounds below 1, and `recommended` written as a string;
+  - `shots.mjs` gives a file to the longest matching id (`a-2.html` belongs to `a-2`, not to `a`), and `--round` stops with exit 2 when `concepts.js` cannot be read.
+- Lower token cost, from a breakdown of the measured runs (round 1 about 1.1M converted tokens over 44–48 turns: about 20 % base context reread every turn, 22–30 % skill docs, about 28 % writing):
+  - Agent-facing docs are in English: `sketch-to-concept` SKILL.md, `concept-method.md`, `vong-moi.md`, `subagent-prompts.md`, the `concepts.js` comments, and `sketch-to-site/references/style-catalogue.md`. Vietnamese text measured about 1.5 characters per token. The agent asks, reports progress and writes the files the user reads in the user's language. The skill description, the stop-rule block shared with `sketch-to-site`, family names and users' cue words stay in Vietnamese.
+  - `sketch-to-concept` SKILL.md keeps only the current version; the history of 1.0–1.3 is in this file.
+  - New `scripts/check.mjs`: one command checks the drafted `concepts.js` before any screen is built (data rules, failing colour pairs including derived roles, missing `why`, pairs too close on the axes, fonts without Vietnamese through `preflight.py --font`) and notes two chromatic colours closer than 60° hue and 0.3 lightness. It replaces several turns of `node -e` probes and separate font checks. `--round <n>` checks one round against the whole board.
+  - Key screen budget: the first screen plus the signature block, plus at most one section, about 10 KB per file. Measured screens were 12–20 KB with 21–51 % of the page outside anything screenshotted. `shots.mjs` adds *dài: …* to the 1440 line of a screen over budget (more than 25 % outside the first screen and signature block, or over 10 KB); the line stays OK.
+  - `style-catalogue.md` has an index command (name, cue words, fit and dial of the 12 families, about 3,000 characters) and an `awk` command that prints only the chosen families.
+- `concept-method.md` §5.1 has a one-line `node -e` command that prints oklch lightness, chroma and hue for any colours, to check the 60° or 0.3 rule. `preflight.py --vi-fonts` prints a note when a keyword is one of those generic tags (such as `grotesque` or `hand`), which then matches font names only.
+- From the measured runs of 1.4:
+  - On Windows, `node` and `python` take paths as `W:/…`, never Git Bash's `/w/…`. This is written at the top of both SKILL.md files and in the subagent prompts. Round 2 lost a turn to it.
+  - The data-only block in `vong-moi.md` lists the values of `source.kind` and the command that prints family names and dials from the style catalogue. The agent had searched `check.mjs` and read the catalogue index to find them.
+  - Giant type (a display word, one giant number) is sized with `clamp()` in `vw` and checked at 390 before shooting. Round 1 reshot three times because of it.
+  - A real benchmark starts from the 20 web styles of `huashu-design`, with an `awk` command that prints only their names and real products. It is verified with at most 2 `WebSearch` calls and no `WebFetch`.
+- Fewer turns. Cost follows turns × context, and the last turns carry 150–200k tokens. In the measured round 1 after the fixes above (54 turns), A1–A2 took 28 turns, 8 of them reading code for facts the docs left out, and the self-check took 13, one concept at a time:
+  - `check.mjs concept/ --shots` runs the data check, `preflight.py` on the folder and `shots.mjs` in one command, with one total line. A3 step 5 and step 6 of a new round use it.
+  - `preflight.py --vi-fonts` can be repeated in one command. A keyword with no match in its kind names the kinds that match. After the 15 fonts with tags, it prints up to 45 more names.
+  - SKILL.md asks for independent commands in one turn: two turns for the style index, lookups and fonts; all images of every concept in one turn, then every fix in one turn. `sketch-to-site` §3 and §6 are printed at A3 step 1, where they are used, instead of during A2.
+  - The docs now state what agents read code to learn: what "wrong action colour" means, which colour pairs are measured (derived hover, pressed and focus colours included), and that `fontFamily` has only `display`, `body` and `mono`.
+  - Measured with two runs per round: round 1 took 19 and 23 turns, about 0.65–0.88M converted tokens with idea scoring (was 54 turns, about 1.1M). Round 2 took 17 and 16 turns. One round 2 run was cheaper (0.37–0.39M, was 0.51–0.52M); the other cost the same, because it printed about 30 KB of files it then had to read again with `Read`.
+- From those four runs:
+  - The command that prints the 20 web styles of `huashu-design` is in SKILL.md A2, so it runs in the same turn as the style index. It used to sit in `concept-method.md` §3, which had to be read first.
+  - `search.py --design-system` is piped through `sed` to keep only the colours and the type pair (25 of 66 lines). The full output got cut off before the colours in both round 1 runs.
+  - A1 loads `WebSearch` with `ToolSearch` in the same turn as the tool check when it is a deferred tool.
+  - A3 step 5: a screen with a console or data error is fixed and rerun before its images are opened.
+  - A new round reads `concepts.js` and `DECISIONS.md` with `Read` from the start, since it edits both.
+- Fonts with the Vietnamese subset whose marks read wrong, confirmed on screenshots: Big Shoulders Stencil draws the hook above almost like a grave (*Củi* reads *Cùi*), and Intel One Mono breaks capitals with marks. `preflight.py` keeps them in `VI_FONT_ISSUES`: P07 reports them as errors, `--font` exits 1, `--vi-fonts` leaves them out, and `check.mjs` reports them. Xanh Mono (old-style digits, no ₫) gets a warning. Three of the four runs met one of these fonts and spent turns building test pages. A3 also asks to read the marks of the display type on the 1440 image.
+- From the four runs after those fixes (two per round). Round 1 cost 0.55–0.76M plus 0.05–0.08M for scoring, within run-to-run noise of the previous pass. Both round 2 runs cost 0.33–0.36M, the level of the cheaper previous run. What remained was in the seams between steps:
+  - `SKILL.md` keeps the stop rule, the two ways in, Gate 2 and the handover: 14k characters, down from 28k. A1 to A3, Gate 1 and the short paths moved to `references/vong-dau.md`. Round one reads that file in the same turn as `concept-method.md` and the tool check. A new round used to read the whole of SKILL.md for the few paragraphs it needs.
+  - Re-entry takes one turn: `Read` of `vong-moi.md`, `concepts.js` and `DECISIONS.md`, plus one command. The command refreshes the templates and prints the method sections, the style family index and the role map. Both round 2 runs spent a turn reading `vong-moi.md` before they knew what else to read, and one read `DECISIONS.md` twice.
+  - New `scripts/roles.mjs` prints the role map of each screen:
+    - which colour role paints what (CSS selector and property, or Tailwind class with its element and text);
+    - which weights each type role uses;
+    - where radius, shadow and texture sit, and which roles are unused.
+
+    It replaces `grep … | sort | uniq -c`, which only counted uses: both round 2 runs grepped the borrowed screen once or twice more.
+  - `check.mjs` reports *đậm giả* (faux bold): a screen, or the screen a concept borrows, sets a type role at 600 or more, but that role's font loads no weight of 600 or more (the font lacks one, or `fontWeights` leaves it out). One round 2 run gave a 400-only handwriting font to a title set at 600. It could not fix that without editing the borrowed screen.
+  - Fonts:
+    - `preflight.py --vi-fonts <kind>` with no keyword prints every Vietnamese-capable font of the kind, alphabetical, in a few lines; fonts with no weight of 600 or more show their weights. Guessed keywords found nothing in all four runs, at 1–3 extra turns each.
+    - A lookup with no match now exits 0. Exit 1 turned a combined command into an error result, which the harness cuts in the middle to about 10k characters: one run lost the `search.py` colours that way and reran it.
+    - `--font` can be repeated and prints each font's weights; keyword lines show weights instead of a style count.
+  - Round one A3:
+    - The draft check prints the scorer's prompt (§2) in the same command.
+    - After the scores, one turn fixes the ideas and writes the three screens.
+    - The `concepts.js` skeleton says each `content` value is one string, and shows the `fontWeights` format.
+
+    One run took 30 turns and the other 18, mostly because the first wrote the screens in three turns, edited ideas over two, and opened the sample file and the prompt in turns of their own.
+- From the four runs after the fourth pass (two per round). Every fix above held in all four runs. Round 1 took 17 and 16 turns and 0.61–0.68M, plus 0.05–0.08M for scoring. Both runs lost the prompt cache on the turn after the three screens: that turn thought and wrote for 6–7 minutes, past the 5-minute cache of a subagent, which added about 0.1M each. Without that loss, round 1 cost 0.50–0.57M. Round 2 took 16 and 12 turns and 0.32–0.43M. What remained:
+  - Big Shoulders, not only its Stencil cut, draws the hook above (ả) as a narrow upright stroke that reads as a grave at small sizes. Both round 2 runs picked it: one kept it with "Lò Bánh Cùi" in the header after a test page, the other switched fonts and reshot. It is now in `VI_FONT_ISSUES` (`--vi-fonts` leaves it out, `--font` and P07 report it). Big Shoulders Inline draws a curled hook and stays.
+  - The idea scorer uses a read-only agent type when the harness has one (Claude Code: `Explore`). It reads the same files, but starts at 23k tokens of context instead of 37k (0.05–0.06M against 0.08M).
+  - A3 step 1 reads `templates/concepts.js`, `templates/key-screen.html` and the `DECISIONS.md` template in the same turn as the `cp` command, and no longer copies the two templates it fills. One run copied them and spent a turn reading the copies.
+  - A data-only round goes straight to `check.mjs --round <n> --shots`, which runs the data check first. One run spent a turn on a separate `--round` check.
+  - A font listed by `--vi-fonts` without `[ ]` has a weight of 600 or more, so a separate `--font` lookup for weights is not needed. `fontWeights` lists the weights the screen uses, plus 700 for a role set at 600. One run spent a turn on `--font` only to see weights.
+- From the four runs after the fifth pass. Every fix above held in all four runs. Round 1 cost 0.52–0.65M without the cache loss, plus 0.04–0.06M for scoring; round 2 cost 0.28–0.39M. Two small leftovers, fixed:
+  - `roles.mjs` reads inline `style` (`font-family`, `font-weight`) before classes and CSS rules. One run set a heading as `<h1 class="font-bold" style="font-family:var(--font-body)">`; the `h1` rule gave it the display role, and `check.mjs` reported faux bold on a font the heading did not use. That cost one fix and a reshoot.
+  - Vina Sans is in `VI_FONT_ISSUES`. Its i has a top bar, and the grave or acute on it merges with the bar up to about 48px, so *Mì* reads *MI* or *Mī*. Marks on other letters read correctly. Both round 1 runs picked it; one moved its title to another font after the screenshots.
+
 ## 1.3.0 (2026-10-03)
 
 - Skills: `sketch-to-concept` 1.3, `sketch-to-site` 4.3.

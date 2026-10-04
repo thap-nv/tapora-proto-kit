@@ -21,7 +21,7 @@ python <skills>/sketch-to-site/scripts/preflight.py <thư-mục> --save <file.js
 | `P04` | LỖI | `addEventListener('scroll'…)` |
 | `P05` | LỖI | `#000000` / `#000` / `rgb(0,0,0)` |
 | `P06` | LỖI | Lorem ipsum · John/Jane Doe · Nguyễn Văn A · Acme · Nexus |
-| `P07` | LỖI | Font Google không có subset `vietnamese` *(tra dữ liệu `ui-ux-pro-max`)* |
+| `P07` | LỖI | Font Google không có subset `vietnamese` *(tra dữ liệu `ui-ux-pro-max`)*, hoặc có mà dấu khó đọc *(danh sách `VI_FONT_ISSUES` trong `preflight.py`, đã chụp xác nhận: Big Shoulders, Big Shoulders Stencil, Intel One Mono, Vina Sans; Xanh Mono chỉ cảnh báo)* |
 | `P08` | LỖI | `<img>` thiếu `alt` |
 | `P09` | LỖI | Có animation/transition mà **không** có `prefers-reduced-motion` |
 | `P10` | LỖI | Thiếu `<html lang>` hoặc thẻ `viewport` |

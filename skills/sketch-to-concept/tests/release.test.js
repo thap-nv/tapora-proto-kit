@@ -29,9 +29,12 @@ test('manifest plugin nói về bước concept, bỏ "five decision gates"', ()
 
 test('CHANGELOG ghi phiên bản mới của các skill', () => {
   const entries = read('CHANGELOG.md').split(/^## /m);
-  const latest = entries[1]; // mục mới nhất, ngay dưới tiêu đề
-  for (const v of ['`sketch-to-concept` 1.3', '`sketch-to-site` 4.3']) assert.ok(latest.includes(v), `CHANGELOG thiếu ${v}`);
-  assert.match(latest, /shots\.mjs/);
+  const latest = entries[1];
+  for (const v of ['`sketch-to-concept` 1.4', '`sketch-to-site` 4.4']) assert.ok(latest.includes(v), `CHANGELOG thiếu ${v}`);
+  for (const s of ['vong-moi.md', '--vi-fonts', 'concepts.example.js', '--round']) assert.ok(latest.includes(s), `CHANGELOG 1.4.0 thiếu ${s}`);
+  const v130 = entries.find(s => s.startsWith('1.3.0 ('));
+  for (const v of ['`sketch-to-concept` 1.3', '`sketch-to-site` 4.3']) assert.ok(v130.includes(v), `CHANGELOG 1.3.0 thiếu ${v}`);
+  assert.match(v130, /shots\.mjs/);
   const v120 = entries.find(s => s.startsWith('1.2.0 ('));
   for (const v of ['`sketch-to-concept` 1.2', '`sketch-to-site` 4.2', '`evolve-site` 1.8', '`tweak-site` 1.2', '`handover-check` 1.2']) {
     assert.ok(v120.includes(v), `CHANGELOG 1.2.0 thiếu ${v}`);
@@ -50,7 +53,7 @@ test('ghi nguồn superpowers, README chạy test ở cả hai thư mục, SKILL
   assert.ok(lic.includes('| [obra/superpowers](https://github.com/obra/superpowers) | © 2025 Jesse Vincent |'), 'thiếu dòng ghi nguồn superpowers');
   assert.ok(read('README.md').includes('node --test skills/sketch-to-concept/tests/ skills/sketch-to-site/tests/'), 'README thiếu lệnh test hai thư mục');
   assert.ok(lic.includes('| [plugin87/ux-ui-agent-skills](https://github.com/plugin87/ux-ui-agent-skills) | © 2026 Thientan Soparat |'), 'thiếu dòng ghi nguồn ux-ui-agent-skills');
-  for (const [f, v] of [['sketch-to-site', 'v4.3'], ['sketch-to-concept', 'v1.3'], ['evolve-site', 'v1.8'], ['tweak-site', 'v1.2'], ['handover-check', 'v1.2']]) {
+  for (const [f, v] of [['sketch-to-site', 'v4.4'], ['sketch-to-concept', 'v1.4'], ['evolve-site', 'v1.8'], ['tweak-site', 'v1.2'], ['handover-check', 'v1.2']]) {
     assert.ok(read(`skills/${f}/SKILL.md`).split('\n').some(l => l.startsWith(`> **${v} (`)), `${f} thiếu ghi chú ${v}`);
   }
 });
@@ -68,15 +71,17 @@ test('mọi SKILL.md: name trùng thư mục, description tối đa 1.024 ký t�
   }
 });
 
-test('phát hành 1.3.0: hai manifest cùng phiên bản, CHANGELOG có mục 1.3.0 ở đầu', () => {
-  for (const f of ['.claude-plugin/plugin.json', '.codex-plugin/plugin.json']) assert.equal(JSON.parse(read(f)).version, '1.3.0', f);
-  assert.ok(read('CHANGELOG.md').split(/^## /m)[1].startsWith('1.3.0 ('), 'mục đầu của CHANGELOG phải là 1.3.0');
+test('phát hành 1.4.0: hai manifest cùng phiên bản, CHANGELOG có mục 1.4.0 ở đầu', () => {
+  for (const f of ['.claude-plugin/plugin.json', '.codex-plugin/plugin.json']) assert.equal(JSON.parse(read(f)).version, '1.4.0', f);
+  assert.ok(read('CHANGELOG.md').split(/^## /m)[1].startsWith('1.4.0 ('), 'mục đầu của CHANGELOG phải là 1.4.0');
 });
 
 test('README: lệnh chụp của bảng concept, và luật giữ tiêu đề mục 3 và 6 của sketch-to-site', () => {
   const md = read('README.md');
   assert.ok(md.includes('scripts/shots.mjs'), 'README thiếu scripts/shots.mjs');
   assert.match(md, /§3 and §6[^\n]*heading/, 'Maintaining: sketch-to-concept in mục 3 và 6 theo tiêu đề');
+  assert.ok(md.includes('concepts.example.js'), 'Maintaining: dữ liệu mẫu cho test nằm ở concepts.example.js');
+  assert.match(md, /rounds/);
 });
 
 test('README nói về themes.mjs, trang _system.html, phép đo trên trang và nợ cũ', () => {

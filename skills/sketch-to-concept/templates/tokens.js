@@ -17,6 +17,12 @@
   const LAYERS = ['man', 'mau', 'chu', 'nut'];
   // Trục so giữa các concept (plan mục 3.4): cần khác nhau ở >= 3 trục, và khung bố cục phải khác
   const AXES = ['nen', 'chatNen', 'chu', 'yTuong', 'khoanhKhac', 'khung'];
+  // Ba trục Hình: luật của cặp dùng chung một màn (concept chỉ đổi lớp Hình với concept nó mượn màn, hoặc hai concept cùng mượn một màn)
+  const HINH_AXES = ['nen', 'chatNen', 'chu'];
+  // Lý do cho mọi lựa chọn Hình (concept-method.md mục 5.4): màu, chữ, bo góc và bóng, chất nền
+  const WHY = ['mau', 'chu', 'hinh', 'chatNen'];
+  // Màn mà concept hiện trên đó: màn của chính nó, hoặc màn của concept nó mượn (screen)
+  const screenOf = c => (c && c.screen) || (c && c.id);
   // Cặp chữ/nền cần đo. Vai trò màu theo cột của ui-ux-pro-max/data/colors.csv, viết kebab-case
   const PAIRS = [
     ['foreground', 'background', 'Chữ chính trên nền'],
@@ -119,7 +125,7 @@
   const decl = obj => Object.keys(obj).map(k => `--${k}:${obj[k]};`).join('');
   const colorDecl = colors => Object.keys(colors).map(k => `--${varName(k)}:${colors[k]};`).join('');
 
-  // scope: gói token vào một vùng (bảng concept đặt 3 concept cạnh nhau); bỏ trống thì là :root (màn then chốt)
+  // scope: gói token vào một vùng (bảng concept đặt nhiều concept cạnh nhau); bỏ trống thì là :root (màn then chốt)
   function cssText(c, scope) {
     const ff = c.fontFamily || {};
     const fonts = {};
@@ -163,6 +169,13 @@
     if (!data || !Array.isArray(data.concepts)) return ['concepts.js chưa có mảng concepts.'];
     const out = [];
     const seen = new Set();
+    // Vòng là số nguyên từ 1: bảng đọc round thiếu hay 0 thành vòng 1, nên vòng 0 sẽ hiện sai chỗ
+    const posInt = v => typeof v !== 'boolean' && Number.isInteger(+v) && +v >= 1;
+    if (data.rounds !== undefined && !Array.isArray(data.rounds)) out.push('CONCEPTS.rounds phải là mảng, mỗi vòng một dòng { n, note }.');
+    const list = Array.isArray(data.rounds) ? data.rounds : [];
+    for (const r of list) if (!posInt(r && r.n)) out.push(`CONCEPTS.rounds: n phải là số nguyên từ 1 (đang là "${r && r.n}").`);
+    const rounds = new Set([1].concat(list.map(r => +(r && r.n))));
+    let recs = 0;
     for (const c of data.concepts) {
       const id = String(c && c.id);
       if (!/^[a-z0-9-]+$/.test(id)) out.push(`Concept "${id}": id chỉ gồm chữ thường a-z, số và dấu gạch ngang.`);
@@ -172,6 +185,29 @@
       }
       if (seen.has(id)) out.push(`Concept "${id}" bị trùng id.`);
       seen.add(id);
+      if (c && c.screen !== undefined) {
+        const s = data.concepts.find(x => x && x.id === c.screen);
+        if (c.screen === c.id) out.push(`Concept "${id}": screen không trỏ về chính nó.`);
+        else if (!s) out.push(`Concept "${id}": screen "${c.screen}" không phải id của concept nào.`);
+        else if (s.screen) out.push(`Concept "${id}": screen phải trỏ tới concept có màn riêng; "${c.screen}" cũng đang mượn màn.`);
+      }
+      if (c && c.round !== undefined && !posInt(c.round)) out.push(`Concept "${id}": round phải là số nguyên từ 1 (đang là "${c.round}").`);
+      else if (c && c.round !== undefined && !rounds.has(+c.round)) out.push(`Concept "${id}": vòng ${c.round} chưa có trong CONCEPTS.rounds.`);
+      // Chuỗi 'false' vẫn là giá trị đúng trong JS: chỉ nhận true hoặc false
+      if (c && c.recommended !== undefined && typeof c.recommended !== 'boolean') out.push(`Concept "${id}": recommended phải là true hoặc false, không đặt trong ngoặc.`);
+      if (c && c.recommended === true) recs++;
+    }
+    if (recs > 1) out.push(`Có ${recs} concept gắn recommended: chỉ một concept được khuyến nghị.`);
+    return out;
+  }
+
+  // Cảnh báo không chặn: lựa chọn Hình chưa có lý do từ nội dung
+  function lint(data) {
+    const out = [];
+    for (const c of (data && data.concepts) || []) {
+      const why = (c && c.why) || {};
+      const miss = WHY.filter(k => !String(why[k] || '').trim());
+      if (miss.length) out.push({ id: c.id, kind: 'why', text: `Concept "${c.id}": thiếu lý do Hình ở ${miss.join(', ')}.` });
     }
     return out;
   }
@@ -183,7 +219,9 @@
     for (let i = 0; i < cs.length; i++) {
       for (let j = i + 1; j < cs.length; j++) {
         const differ = AXES.filter(k => norm(cs[i].axes && cs[i].axes[k]) !== norm(cs[j].axes && cs[j].axes[k]));
-        out.push({ a: cs[i].id, b: cs[j].id, differ, ok: differ.length >= 3 && differ.includes('khung') });
+        const shared = screenOf(cs[i]) === screenOf(cs[j]);
+        const ok = shared ? differ.filter(k => HINH_AXES.includes(k)).length >= 2 : differ.length >= 3 && differ.includes('khung');
+        out.push({ a: cs[i].id, b: cs[j].id, differ, shared, ok });
       }
     }
     return out;
@@ -221,7 +259,7 @@
     return c;
   }
 
-  const api = { AXES, PLATFORM, varName, hexToRgb, contrast, grade, checkPairs, parseMix, formatMix, resolve, cssText, validate, diffAxes, fontsHref, apply };
+  const api = { AXES, HINH_AXES, WHY, PLATFORM, varName, screenOf, hexToRgb, contrast, grade, checkPairs, parseMix, formatMix, resolve, cssText, validate, lint, diffAxes, fontsHref, apply };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.ConceptTokens = api;
 

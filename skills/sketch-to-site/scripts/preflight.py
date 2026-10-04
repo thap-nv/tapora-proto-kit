@@ -6,6 +6,7 @@ Cách dùng:
     python preflight.py <thư-mục> --save _qa/truoc/preflight.json      # lưu mốc trước khi sửa (evolve-site B1)
     python preflight.py <thư-mục> --compare _qa/truoc/preflight.json   # chỉ in lỗi mới so với mốc (evolve-site B4)
     python preflight.py --font "Be Vietnam Pro" "Outfit"
+    python preflight.py --vi-fonts <loại> "<từ khoá>" [--vi-fonts <loại> "<từ khoá>" ...]   # font có dấu tiếng Việt theo loại; không từ khoá thì in đủ cả loại theo vần; từ khoá là chữ tiếng Anh trong tên hoặc thẻ riêng (bỏ thẻ có ở từ 75 % font cùng loại); không khớp vẫn thoát 0
     python preflight.py --selftest
     python preflight.py --deps          # skill phụ thuộc có đủ chưa (SKILL.md mục 9)
 
@@ -73,6 +74,17 @@ _UIUX = find_skill("ui-ux-pro-max")
 FONTS_CSV = os.path.join(_UIUX or os.path.join(SKILLS_DIR, "ui-ux-pro-max"), "data", "google-fonts.csv")
 
 ERROR, WARN = "LỖI", "CẢNH BÁO"
+
+# Font có subset vietnamese mà dấu đọc sai khi hiển thị: dữ liệu Google Fonts không biết, chỉ thấy trên ảnh chụp.
+# Mỗi mục đã chụp xác nhận. LỖI: dấu đọc thành dấu khác hoặc chữ vỡ (P07, --font thoát 1, --vi-fonts bỏ khỏi danh sách);
+# CẢNH BÁO: đọc được nhưng dễ nhầm (ghi lưu ý). Gặp font mới như vậy: chụp xác nhận rồi thêm vào đây
+VI_FONT_ISSUES = {
+    "big shoulders": (ERROR, "dấu hỏi là một nét hẹp đứng, cỡ chữ nhỏ đọc thành dấu huyền: Củi thành Cùi"),
+    "big shoulders stencil": (ERROR, "dấu hỏi vẽ gần như dấu huyền: Củi đọc thành Cùi, MẺ thành MÈ"),
+    "intel one mono": (ERROR, "chữ hoa có dấu vỡ hình (Ò, Ủ, Ỗ), dấu huyền của ò cách xa chữ"),
+    "vina sans": (ERROR, "chữ i có chân ngang, dấu huyền và dấu sắc trên i dính vào chân tới cỡ khoảng 48px: Mì đọc thành MI hay Mī"),
+    "xanh mono": (WARN, "số kiểu cổ, 3 và 5 dễ lẫn; thiếu ký tự ₫ nên trình duyệt mượn font khác"),
+}
 
 # Đồng bộ với SKILL.md mục 9. (mức, skill, file bắt buộc phải có bên trong)
 DEPS = [
@@ -390,6 +402,9 @@ def check_file(path, kind, fonts, seen_assets):
                 add("P15", WARN, 1, "Font không phải Google Fonts (Fontshare/tự host?); kiểm dấu tiếng Việt bằng tay", name)
         elif has_vi and "vietnamese" not in row["Subsets"]:
             add("P07", ERROR, 1, f"Font không có subset vietnamese (có: {row['Subsets']})", name)
+        elif has_vi and key in VI_FONT_ISSUES:
+            level, why = VI_FONT_ISSUES[key]
+            add("P07", level, 1, f"Font có subset vietnamese nhưng {'dấu khó đọc' if level == ERROR else 'khó đọc'}: {why}", name)
     return out
 
 
@@ -495,6 +510,23 @@ def compare_baseline(paths, kind, baseline, quiet=False):
     return (1 if any(x[3] == ERROR for x in new) else 0), new
 
 
+def font_weights(row):
+    """Độ đậm thẳng (không nghiêng) của font, theo cột Styles: "100 | 100i | 400" → [100, 400]."""
+    return sorted({int(s) for s in (x.strip() for x in (row.get("Styles") or "").split("|")) if s.isdigit()})
+
+
+def weights_text(ws):
+    """[100, 200, …, 900] → "100–900"; [100, 300, 400, 500, 700] → "100,300–500,700". check.mjs đọc lại dạng này."""
+    out, i = [], 0
+    while i < len(ws):
+        j = i
+        while j + 1 < len(ws) and ws[j + 1] == ws[j] + 100:
+            j += 1
+        out.append(f"{ws[i]}–{ws[j]}" if j - i >= 2 else ",".join(str(w) for w in ws[i:j + 1]))
+        i = j + 1
+    return ",".join(out)
+
+
 def font_lookup(names):
     fonts = load_fonts()
     if fonts is None:
@@ -507,11 +539,99 @@ def font_lookup(names):
             print(f"{n:28} ?   không có trong dữ liệu Google Fonts — kiểm tay")
             bad = 1
         elif "vietnamese" in row["Subsets"]:
-            print(f"{n:28} VI  {row['Category']}")
+            level, why = VI_FONT_ISSUES.get(n.lower(), (None, ""))
+            note = f" · dấu khó đọc: {why}" if level == ERROR else f" · lưu ý: {why}" if level else ""
+            print(f"{n:28} VI  {row['Category']} · độ đậm {weights_text(font_weights(row))}{note}")
+            bad = 1 if level == ERROR else bad
         else:
             print(f"{n:28} --  KHÔNG có dấu tiếng Việt (có: {row['Subsets']})")
             bad = 1
     return bad
+
+
+VI_CATEGORY = {"sans": "Sans Serif", "serif": "Serif", "display": "Display", "handwriting": "Handwriting", "viet-tay": "Handwriting", "mono": "Monospace"}
+
+
+def _vi_match(fonts, cat, want):
+    """Font có dấu tiếng Việt của một loại khớp mọi từ khoá, xếp theo độ phổ biến; kèm font khớp mà bị bỏ vì dấu khó đọc
+    (VI_FONT_ISSUES mức LỖI), tập thẻ chung và hàm lấy thẻ riêng.
+
+    Thẻ của dữ liệu gán theo loại hơn là theo font (mọi font sans đều có geometric, humanist, grotesque),
+    nên thẻ có ở từ 75 % font cùng loại trở lên bị bỏ qua: từ khoá chỉ khớp tên font hoặc thẻ chia được danh sách."""
+    pool = [r for r in fonts.values() if "vietnamese" in r["Subsets"] and r["Category"] == cat]
+    tags = lambda r: list(dict.fromkeys(" ".join([r.get("Classifications") or "", r.get("Keywords") or ""]).lower().replace(",", " ").split()))
+    count = collections.Counter(t for r in pool for t in tags(r))
+    common = {t for t, k in count.items() if k >= 0.75 * len(pool)}
+    own = lambda r: [t for t in tags(r) if t not in common]
+    hay = lambda r: " ".join([r["Family"].lower()] + own(r))
+    rank = lambda r: int(r["Popularity Rank"]) if str(r.get("Popularity Rank") or "").isdigit() else 10 ** 6
+    found = sorted([r for r in pool if all(w in hay(r) for w in want)], key=rank)
+    broken = lambda r: VI_FONT_ISSUES.get(r["Family"].lower(), (None,))[0] == ERROR
+    return [r for r in found if not broken(r)], [r for r in found if broken(r)], common, own
+
+
+def _vi_all(cat, hit, dropped, width=150):
+    """Không từ khoá: mọi font của loại theo vần, nhiều tên một dòng. Font không có độ đậm từ 600 trở lên ghi kèm [độ đậm nó có]:
+    màn đặt chữ đậm mà font không có thì trình duyệt tô đậm giả."""
+    print(f"{len(hit)} font {cat} có dấu tiếng Việt, đủ cả, theo vần. [ ] = font không có độ đậm từ 600 trở lên, ghi độ đậm nó có:")
+    if dropped:
+        print("Bỏ khỏi danh sách (dấu khó đọc): " + " · ".join(r["Family"] for r in dropped))
+    items = []
+    for r in sorted(hit, key=lambda r: r["Family"].lower()):
+        ws = font_weights(r)
+        items.append(r["Family"] + ("" if ws and ws[-1] >= 600 else f" [{weights_text(ws)}]"))
+    line = ""
+    for it in items:
+        if line and len(line) + 3 + len(it) > width:
+            print("  " + line)
+            line = ""
+        line = f"{line} · {it}" if line else it
+    if line:
+        print("  " + line)
+    for r in sorted(hit, key=lambda r: r["Family"].lower()):
+        level, why = VI_FONT_ISSUES.get(r["Family"].lower(), (None, ""))
+        if level:
+            print(f"Lưu ý: {r['Family']}: {why}")
+
+
+def vi_fonts(kind, words, limit=15, more=45):
+    """Font Google có subset vietnamese theo loại. Không từ khoá: in đủ cả loại theo vần. Có từ khoá (tên font, thẻ riêng):
+    xếp theo độ phổ biến, in `limit` font kèm độ đậm và thẻ riêng, rồi tên của tối đa `more` font tiếp theo; không khớp thì in
+    loại khác có khớp. Không khớp vẫn thoát 0: tra cứu không phải kiểm, và mã lỗi làm cả lệnh gộp bị cắt ở giữa."""
+    fonts = load_fonts()
+    if fonts is None:
+        print(f"Không thấy {FONTS_CSV}")
+        return 2
+    cat = VI_CATEGORY.get(kind.lower())
+    if not cat:
+        print("Loại phải là một trong: " + ", ".join(VI_CATEGORY))
+        return 2
+    want = [w.lower() for w in words]
+    hit, dropped, common, own = _vi_match(fonts, cat, want)
+    if not want:
+        _vi_all(cat, hit, dropped)
+        return 0
+    label = f' khớp "{" ".join(words)}"'
+    print(f"{len(hit)} font {cat} có dấu tiếng Việt{label}; in {min(limit, len(hit))} font phổ biến nhất:")
+    for w in want:
+        if any(w in t for t in common):
+            print(f'Lưu ý: "{w}" là thẻ chung của loại này (có ở từ 75 % font trở lên), chỉ khớp tên font. Thẻ riêng của từng font in ở cuối dòng.')
+    if dropped:
+        print("Bỏ khỏi danh sách (dấu khó đọc): " + " · ".join(r["Family"] for r in dropped))
+    for r in hit[:limit]:
+        level, why = VI_FONT_ISSUES.get(r["Family"].lower(), (None, ""))
+        print(f"  {r['Family']} · độ đậm {weights_text(font_weights(r))} · {' '.join(own(r))[:60]}" + (f" · lưu ý: {why}" if level else ""))
+    if hit[limit:]:
+        print("Tiếp theo: " + " · ".join(r["Family"] for r in hit[limit:limit + more]))
+    if len(hit) > limit + more:
+        print(f"Còn {len(hit) - limit - more} font: thêm từ khoá để lọc.")
+    if want and not hit:
+        # Đoán sai loại là chỗ tốn lượt nhất khi đo: từ khoá có ở sans mà tra trong display
+        others = [(k, len(_vi_match(fonts, c, want)[0])) for k, c in VI_CATEGORY.items() if c != cat and k != "viet-tay"]
+        found = [f"{k} {n}" for k, n in others if n]
+        if found:
+            print("Loại khác có khớp: " + " · ".join(found))
+    return 0
 
 
 def check_deps():
@@ -693,7 +813,8 @@ def main():
     ap = argparse.ArgumentParser(description="Kiểm cơ giới prototype HTML (sketch-to-site B4, sketch-to-concept A3)")
     ap.add_argument("paths", nargs="*")
     ap.add_argument("--kind", choices=["site", "app"], default="site")
-    ap.add_argument("--font", nargs="+", metavar="TÊN")
+    ap.add_argument("--font", nargs="+", action="extend", metavar="TÊN", help="kiểm font có dấu tiếng Việt và in độ đậm; nhiều tên sau một cờ, hoặc lặp lại --font")
+    ap.add_argument("--vi-fonts", nargs="+", action="append", metavar="LOẠI", help="font có dấu tiếng Việt: loại (sans, serif, display, handwriting, mono) rồi từ khoá tuỳ chọn; không từ khoá thì in đủ cả loại theo vần; lặp lại --vi-fonts để tra nhiều lần trong một lệnh")
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--deps", action="store_true", help="kiểm các skill mà sketch-to-site phụ thuộc")
     ap.add_argument("--save", metavar="FILE.json", help="lưu kết quả làm mốc; lỗi có sẵn không làm thoát mã 1")
@@ -705,6 +826,13 @@ def main():
         sys.exit(check_deps())
     if a.font:
         sys.exit(font_lookup(a.font))
+    if a.vi_fonts:
+        codes = []
+        for i, q in enumerate(a.vi_fonts):
+            if i:
+                print()
+            codes.append(vi_fonts(q[0], " ".join(q[1:]).split()))
+        sys.exit(max(codes))
     if not a.paths:
         ap.print_help()
         sys.exit(2)

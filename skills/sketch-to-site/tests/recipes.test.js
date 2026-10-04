@@ -321,7 +321,7 @@ test('qa_init.py: theme lấy từ themes.json, theme mặc định sáng đứn
   const dir = prototype(t);
   withThemes(dir, { 'cam-dat': { mode: 'light', seeds: CAM_SEEDS } });
   assert.equal(spawnSync(PYTHON, [QA_INIT, dir], { cwd: dir, encoding: 'utf8' }).status, 0);
-  assert.deepEqual(readJson(path.join(dir, '_qa', 'qa.config.json')).themes, { light: '', dark: '?theme=dark', 'cam-dat': '?theme=cam-dat' });
+  assert.deepEqual(readJson(path.join(dir, '_qa', 'qa.config.json')).themes, { light: '', 'cam-dat': '?theme=cam-dat' });
 });
 
 test('qa_init.py: trang _system có bước system-demo và system-pairs trong bộ khói', t => {

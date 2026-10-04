@@ -22,9 +22,29 @@ function proto(t, json) {
 }
 const run = (dir, ...a) => spawnSync(process.execPath, [THEMES, dir, ...a], { encoding: 'utf8' });
 const css = dir => fs.readFileSync(path.join(dir, 'site', 'assets', 'themes.css'), 'utf8');
-const tpl = () => JSON.parse(fs.readFileSync(TEMPLATE, 'utf8'));
+// Khuôn chỉ có theme sáng: chế độ tối chỉ làm khi người dùng xin ở Cổng 2. Test cần nhiều theme thì thêm theme tối mẫu này
+const DARK = { mode: 'dark', seeds: { bg: '#0B0C0E', surface: '#141518', ink: '#EDEDEF', muted: '#A1A1AA', line: '#2A2B30',
+  primary: '#2DD4BF', 'on-primary': '#0B0C0E', accent: '#2DD4BF', 'on-accent': '#0B0C0E', destructive: '#F97066', 'on-destructive': '#0B0C0E' }, overrides: {} };
+const tpl = () => {
+  const t = JSON.parse(fs.readFileSync(TEMPLATE, 'utf8'));
+  t.themes.dark = JSON.parse(JSON.stringify(DARK));
+  t.default.dark = 'dark';
+  return t;
+};
 
-test('khuôn themes.json: hai theme mẫu đạt mọi cặp, không sát ngưỡng', () => {
+test('khuôn themes.json chỉ có theme sáng, không default.dark: chế độ tối chỉ khi người dùng xin', t => {
+  const raw = JSON.parse(fs.readFileSync(TEMPLATE, 'utf8'));
+  assert.deepEqual(Object.keys(raw.themes), ['light']);
+  assert.deepEqual(raw.default, { light: 'light' });
+  assert.match(raw._ghi_chu, /người dùng xin/);
+  const dir = proto(t, raw);
+  const r = run(dir);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /1 theme · 26 cặp · 0 không đạt · 0 sát ngưỡng → đã ghi/);
+  assert.doesNotMatch(css(dir), /prefers-color-scheme: dark|--theme-default-dark/);
+});
+
+test('theme sáng của khuôn và theme tối mẫu của test đạt mọi cặp, không sát ngưỡng', () => {
   const t = tpl();
   assert.deepEqual(Object.keys(t.themes), ['light', 'dark']);
   for (const [name, th] of Object.entries(t.themes)) {
@@ -34,7 +54,7 @@ test('khuôn themes.json: hai theme mẫu đạt mọi cặp, không sát ngư�
 });
 
 test('sinh themes.css đủ khối: mặc định sáng, theme theo tên, mặc định tối theo máy, danh sách theme', t => {
-  const dir = proto(t, fs.readFileSync(TEMPLATE, 'utf8'));
+  const dir = proto(t, tpl());
   const r = run(dir);
   assert.equal(r.status, 0, r.stdout + r.stderr);
   const out = css(dir);
