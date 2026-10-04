@@ -74,6 +74,57 @@ test('_system.html: bấm nút theme thì đổi theme và vẽ lại bảng', t
   assert.equal(v.khong, 0);
 });
 
+// Đo trước 4.5: cả hai lần dựng _system.html đều mất 2–3 vòng sửa vì khuôn: không nạp Tailwind nên thiếu border-box (tràn ngang ở 390),
+// .sys p và .sys h2 đè màu và lề của component, mẫu chữ cỡ lớn tràn ở 390
+function withComponents(dir, css, html) {
+  const f = path.join(dir, 'site', '_system.html');
+  const src = fs.readFileSync(f, 'utf8')
+    .replace(/<!-- CSS component của dự án đặt ở đây[\s\S]*?-->/, '<link rel="stylesheet" href="assets/app.css">')
+    .replace(/<div data-system-demo>[\s\S]*?\n    <\/div>\n/, html + '\n');
+  fs.writeFileSync(f, src);
+  fs.writeFileSync(path.join(dir, 'site', 'assets', 'app.css'), css);
+}
+function run390(dir, steps) {
+  const sf = path.join(dir, 'steps.json');
+  fs.writeFileSync(sf, JSON.stringify({ steps }));
+  const r = spawnSync(process.execPath, [T(path.join('qa-kit', 'run.mjs')), path.join(dir, 'site', '_system.html'), sf, path.join(dir, 'out'), '390', '844', '1'],
+    { encoding: 'utf8', timeout: 90000 });
+  if (r.status === 4) return null;
+  assert.equal(r.status, 0, r.stderr);
+  return JSON.parse(r.stdout);
+}
+
+test('khuôn _system.html: component rộng 100% có đệm không tràn ngang ở 390 (border-box)', t => {
+  const dir = site(t, { dark: false });
+  withComponents(dir, '.x-card{width:100%;padding:16px 40px;border:1px solid var(--line)}', '<div class="x-card"><p class="x-note">Mẻ 9:30</p></div>');
+  const r = run390(dir, [{ name: 's', check: 'document.title' }]);
+  if (!r) return t.skip('không có trình duyệt');
+  const d = r.find(s => s.step === 's').dims;
+  assert.ok(d.sw <= d.cw, `trang rộng ${d.sw}px trong khung ${d.cw}px`);
+});
+
+test('khuôn _system.html: luật lớp của component thắng luật chữ của trang (.sys p, .sys h2 không đè màu, lề)', t => {
+  const dir = site(t, { dark: false });
+  withComponents(dir, '.x-panel h2{margin:0;color:var(--primary)} .x-note{color:var(--primary);margin:0}',
+    '<div class="x-panel"><h2>Đang nướng</h2><p class="x-note">Ra lò sau 50 phút</p></div>');
+  const check = `(() => { const ref = document.createElement('span'); ref.style.color = 'var(--primary)'; document.body.append(ref);
+    const want = getComputedStyle(ref).color, h = document.querySelector('.x-panel h2'), p = document.querySelector('.x-note');
+    return JSON.stringify({ h2: getComputedStyle(h).color === want, h2Margin: getComputedStyle(h).marginTop, p: getComputedStyle(p).color === want, pMargin: getComputedStyle(p).marginBottom }); })()`;
+  const r = run390(dir, [{ name: 's', check }]);
+  if (!r) return t.skip('không có trình duyệt');
+  assert.deepEqual(JSON.parse(r.find(s => s.step === 's').check), { h2: true, h2Margin: '0px', p: true, pMargin: '0px' });
+});
+
+test('khuôn _system.html: thang chữ có chữ hiển thị 96px không tràn, không bị cắt ở 390', t => {
+  const dir = site(t, { dark: false });
+  withComponents(dir, ':root{--text-4xl:6rem}', '<p>Component thật</p>');
+  const r = run390(dir, [{ name: 's', check: 'document.title' }]);
+  if (!r) return t.skip('không có trình duyệt');
+  const d = r.find(s => s.step === 's').dims;
+  assert.ok(d.sw <= d.cw, `trang rộng ${d.sw}px trong khung ${d.cw}px`);
+  assert.deepEqual(d.cut, []);
+});
+
 test('preflight: _system.html từ khuôn không lỗi, không P19, P20', t => {
   const dir = site(t);
   const r = spawnSync(PYTHON, [path.join(S2S, 'scripts', 'preflight.py'), path.join(dir, 'site')], { encoding: 'utf8' });

@@ -318,7 +318,8 @@ test('chữ cũ: không còn "bảng demo", "3 màn then chốt", "3 concepts fr
   for (const [f, s] of [['README.md', readme], ['CHANGELOG.md', read(path.join(REPO, 'CHANGELOG.md'))], ['concepts.example.js', read(path.join(SKILL, 'templates', 'concepts.example.js'))]]) {
     assert.doesNotMatch(s, /demo board|bảng demo/, `${f} nhắc tới bảng demo không có thật`);
   }
-  const site = read(path.join(SKILLS, 'sketch-to-site', 'SKILL.md'));
+  // 4.5: sơ đồ trang ở B2, file references/b0-b2.md của sketch-to-site
+  const site = read(path.join(SKILLS, 'sketch-to-site', 'SKILL.md')) + read(path.join(SKILLS, 'sketch-to-site', 'references', 'b0-b2.md'));
   assert.doesNotMatch(site, /3 màn then chốt/);
   assert.match(site, /Màn then chốt ở `concept\/<id>\.html`[^\n]*`screen`/, 'sơ đồ trang: concept chỉ đổi Hình thì màn đầu là màn nó mượn');
   // Dòng luật (// - … và dòng tiếp //   …) của concepts.example.js phải giống hệt khung concepts.js

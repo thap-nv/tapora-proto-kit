@@ -5,13 +5,13 @@
 #   python _qa/handover.py promote _qa/handover/<ngày-giờ>
 #   python _qa/quick.py --note "..."    sau mỗi lần sửa
 # --update: chép đè script của bộ kiểm bằng bản trong skill; không đụng qa.config.json, file bước, mốc, ledger.
-# Bộ khói: trang web ở 1440, 768, 390; màn app ở 1440 (khung máy) và 390. Trang cần tham số mới có nội dung (chi tiết theo ?id=)
+# Bộ khói: trang web ở 1440, 768, 390, chụp hết trang theo từng màn; màn app ở 1440 (khung máy) và 390. Trang cần tham số mới có nội dung (chi tiết theo ?id=)
 # khai báo mẫu bằng <meta name="qa-query" content="?id=..."> trong <head>. Site có nền tối thì tự thêm theme light và dark.
 # Có site/assets/themes.json: mỗi theme trong đó là một theme của bộ kiểm (theme mặc định sáng đứng đầu, không tham số).
 # Có site/_system.html: bộ khói của nó kiểm thêm component mẫu đã thay và mọi cặp màu đạt ngưỡng.
 # Trang nạp store.js: thêm bộ du-lieu-rong-<trang> (?data=empty) và du-lieu-dai-<trang> (?data=stress).
 # _qa/.kit-source ghi thư mục skill đã cài bộ kiểm, để bộ kiểm gọi đúng preflight.py của bản skill đó.
-import argparse, filecmp, json, os, re, shutil, sys
+import argparse, filecmp, html as html_lib, json, os, re, shutil, sys
 sys.stdout.reconfigure(encoding='utf-8')
 KIT = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(os.path.dirname(KIT))
@@ -85,7 +85,8 @@ def qa_query(html):
         if re.search(r'name\s*=\s*["\']qa-query["\']', tag, re.I):
             m = re.search(r'content\s*=\s*["\']([^"\']*)["\']', tag, re.I)
             if m and m.group(1).strip():
-                return '?' + m.group(1).strip().lstrip('?')
+                # Thuộc tính HTML viết & thành &amp;: giải ra, không thì bộ khói đọc thành tham số "amp;…"
+                return '?' + html_lib.unescape(m.group(1).strip()).lstrip('?')
     return ''
 
 
@@ -165,8 +166,13 @@ else:
             apps.append(p)
         sf = os.path.join(qa, f'steps-smoke-{key}.json')
         if not os.path.exists(sf):
-            # Bộ khói: mở trang, chụp ảnh. Bộ chạy tự ghi lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung của mọi bước
-            steps = {'steps': [{'name': 'view', 'wait': 600, 'check': 'document.title', 'shot': key, 'jpeg': True}]}
+            # Bộ khói: mở trang, chụp ảnh. Bộ chạy tự ghi lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung của mọi bước.
+            # Trang web chụp hết trang theo từng màn (<key>.jpg, <key>-2.jpg, …, tối đa 8): chỉ màn đầu thì phần dưới không ai xem.
+            # Màn app chụp khung máy nên một ảnh là đủ
+            view = {'name': 'view', 'wait': 600, 'check': 'document.title', 'shot': key, 'jpeg': True}
+            if not app:
+                view['slices'] = 8
+            steps = {'steps': [view]}
             if app:
                 steps['steps'].append({'name': 'tap-targets', 'wait': 100, 'check': TAP_CHECK})
             if p == '_system':

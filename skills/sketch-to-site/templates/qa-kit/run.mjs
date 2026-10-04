@@ -1,13 +1,21 @@
 // Bộ chạy thử: mở 1 trang, thực hiện chuỗi bước (JS), chụp ảnh từng bước, gom lỗi console.
-// node [--experimental-websocket] run.mjs <file.html> <steps.json> <outdir> [w] [h] [mobile]
+// node run.mjs <file.html> <steps.json> <outdir> [w] [h] [mobile]
 // Mỗi bước còn đo tương phản và màu theo ý định (probes.js, cần color.js cạnh file này); QA_DEEP=1 thêm lượt kiểm sâu (deep.mjs).
-// Node 20 cần cờ --experimental-websocket; Node 22 trở lên có sẵn WebSocket. run_all.py tự thêm cờ khi cần.
+// Node 20 cần cờ --experimental-websocket: thiếu cờ thì script tự chạy lại chính nó với cờ. Node 22 trở lên có sẵn WebSocket.
 // Trình duyệt: biến QA_BROWSER, rồi "browser" trong qa.config.json, rồi tự dò Edge/Chrome/Chromium theo hệ điều hành.
-import { spawn } from 'node:child_process';
+// Bước có "shot": chụp khung nhìn vào <shot>.png (.jpg khi "jpeg"); "clip": "<selector>" chỉ chụp một khối;
+// "full": true chụp cả trang thành một ảnh; "slices": n chụp cả trang theo từng màn cao bằng khung nhìn: <shot>, <shot>-2, … tối đa n ảnh.
+import { spawn, spawnSync } from 'node:child_process';
 import { writeFileSync, readFileSync, mkdtempSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname, delimiter } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
+
+if (typeof WebSocket === 'undefined' && !process.env.QA_WS_FLAG) {
+  const r = spawnSync(process.execPath, ['--experimental-websocket', fileURLToPath(import.meta.url), ...process.argv.slice(2)],
+    { stdio: 'inherit', env: { ...process.env, QA_WS_FLAG: '1' } });
+  process.exit(r.status ?? 1);
+}
 
 const [file, stepsFile, outdir, w = '1440', h = '900', mobile = '0'] = process.argv.slice(2);
 const steps = JSON.parse(readFileSync(stepsFile, 'utf8'));
@@ -201,9 +209,25 @@ for (const s of steps.steps) {
       // Khung chưa có (pha "thấy đỏ" của evolve-site) hay selector sai: báo lỗi ở bước này, không sập cả bộ
       else errors.push('SHOT không thấy khung clip ' + s.clip);
     }
-    if (!s.clip || box) {
+    const ext = s.jpeg ? '.jpg' : '.png';
+    if (!s.clip && (s.full || s.slices)) {
+      // Cả trang: chụp theo toạ độ tài liệu, vượt khung nhìn. Trình duyệt giới hạn ảnh khoảng 16 000px nên cắt ở 15 000px
+      const m = (await send('Page.getLayoutMetrics')).result || {};
+      const size = m.cssContentSize || m.contentSize || { width: +w, height: +h };
+      const vw = (await send('Runtime.evaluate', { expression: 'document.documentElement.clientWidth', returnByValue: true })).result?.result?.value || +w;
+      const total = Math.min(Math.ceil(size.height), 15000);
+      const shoot = async (y, height, name) => {
+        const sh = await send('Page.captureScreenshot', { ...opt, captureBeyondViewport: true, clip: { x: 0, y, width: vw, height, scale: 1 } });
+        writeFileSync(join(outdir, name + ext), Buffer.from(sh.result.data, 'base64'));
+      };
+      if (s.full) await shoot(0, total, s.shot);
+      else {
+        const n = Math.min(Math.ceil(total / +h), s.slices === true ? 12 : +s.slices);
+        for (let i = 0; i < n; i++) await shoot(i * +h, Math.min(+h, total - i * +h), s.shot + (i ? '-' + (i + 1) : ''));
+      }
+    } else if (!s.clip || box) {
       const sh = await send('Page.captureScreenshot', opt);
-      writeFileSync(join(outdir, s.shot + (s.jpeg ? '.jpg' : '.png')), Buffer.from(sh.result.data, 'base64'));
+      writeFileSync(join(outdir, s.shot + ext), Buffer.from(sh.result.data, 'base64'));
     }
   }
   report.push({ step: s.name, errors, check: val, dims: dims === undefined ? null : JSON.parse(dims) });

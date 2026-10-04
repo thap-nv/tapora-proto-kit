@@ -12,6 +12,8 @@ const S2S = path.join(SKILLS, 'sketch-to-site');
 const REPO = path.resolve(SKILLS, '..');
 const PYTHON = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 const read = f => fs.readFileSync(f, 'utf8');
+// 4.5: B0–B4 nằm ở references/b0-b2.md và references/b3-b4.md; bảng phụ thuộc ở references/phu-thuoc.md
+const STEPS = ['SKILL.md', 'references/b0-b2.md', 'references/b3-b4.md'];
 const s2sFiles = () => ['SKILL.md', ...['references', 'templates'].flatMap(d => fs.readdirSync(path.join(S2S, d)).filter(f => f.endsWith('.md')).map(f => `${d}/${f}`)), 'scripts/preflight.py'];
 
 test('sketch-to-site: không còn chỗ trỏ theo số bước, số cổng cũ', () => {
@@ -26,11 +28,11 @@ test('sketch-to-site: không còn chỗ trỏ theo số bước, số cổng cũ
 });
 
 test('sketch-to-site: mô tả và quy trình nhận CONCEPT.md, 4 cổng qua hai skill', () => {
-  const md = read(path.join(S2S, 'SKILL.md'));
-  const fm = /^---\n([\s\S]*?)\n---\n/.exec(md.replace(/\r\n/g, '\n'))[1];
+  const fm = /^---\n([\s\S]*?)\n---\n/.exec(read(path.join(S2S, 'SKILL.md')).replace(/\r\n/g, '\n'))[1];
+  const md = STEPS.map(f => read(path.join(S2S, f))).join('\n');
   assert.match(fm, /sketch-to-concept/);
   assert.match(fm, /CONCEPT\.md/);
-  assert.match(md, /v4\.0/);
+  assert.match(read(path.join(REPO, 'CHANGELOG.md')), /`sketch-to-site` 4\.0 starts from `CONCEPT\.md`/);
   assert.match(md, /### B0 · Nhận concept/);
   assert.match(md, /### B1 · Đọc đủ yêu cầu và thử concept/);
   assert.match(md, /### 🛑 Cổng 3 · /);
@@ -38,8 +40,8 @@ test('sketch-to-site: mô tả và quy trình nhận CONCEPT.md, 4 cổng qua ha
   assert.doesNotMatch(md, /### 🛑 Cổng [12] · /, 'Cổng 1–2 đã chuyển sang sketch-to-concept');
 });
 
-test('sketch-to-site: mọi đường dẫn trong SKILL.md đều có thật', () => {
-  const md = read(path.join(S2S, 'SKILL.md'));
+test('sketch-to-site: mọi đường dẫn trong SKILL.md và hai file giai đoạn đều có thật', () => {
+  const md = STEPS.map(f => read(path.join(S2S, f))).join('\n');
   const missing = [];
   for (const m of md.matchAll(/`([^`\s]+)`/g)) {
     let p = m[1].replace(/[),.:;]+$/, '');
@@ -59,8 +61,9 @@ test('khuôn DECISIONS.md và DESIGN.md theo 4 cổng mới', () => {
   assert.match(des, /CONCEPT\.md/);
 });
 
-test('phụ thuộc: sketch-to-concept có trong bảng mục 9 và DEPS, --deps đủ 14/14', () => {
-  assert.match(read(path.join(S2S, 'SKILL.md')), /\| 🔴[^|]*\| `sketch-to-concept` \|/);
+test('phụ thuộc: sketch-to-concept có trong bảng phu-thuoc.md và DEPS, --deps đủ 14/14', () => {
+  assert.match(read(path.join(S2S, 'references', 'phu-thuoc.md')), /\| 🔴[^|]*\| `sketch-to-concept` \|/);
+  assert.match(read(path.join(S2S, 'SKILL.md')), /^## 9\. [^\n]*\n\n[^\n]*`references\/phu-thuoc\.md`/m);
   assert.match(read(path.join(S2S, 'scripts', 'preflight.py')), /"sketch-to-concept", \["SKILL\.md", "templates\/concept-board\.html"\]/);
   const r = spawnSync(PYTHON, [path.join(S2S, 'scripts', 'preflight.py'), '--deps'], { encoding: 'utf8', cwd: REPO });
   assert.equal(r.status, 0, r.stdout + r.stderr);

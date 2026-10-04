@@ -133,7 +133,8 @@ test('--vi-fonts có từ khoá: in 15 font kèm độ đậm và thẻ, rồi t
 });
 
 test('tài liệu nói thẻ chung (từ 75 % font cùng loại) bị bỏ qua', () => {
-  const docs = [path.resolve(__dirname, '..', 'scripts', 'preflight.py'), path.resolve(__dirname, '..', 'SKILL.md'),
+  // 4.5: SKILL.md của sketch-to-site chỉ giữ ghi chú phiên bản đang chạy; ghi chú 4.4 (ngưỡng thẻ chung) ở CHANGELOG
+  const docs = [path.resolve(__dirname, '..', 'scripts', 'preflight.py'), path.resolve(__dirname, '..', '..', '..', 'CHANGELOG.md'),
     ...['references/vong-dau.md', 'references/concept-method.md'].map(f => path.resolve(__dirname, '..', '..', 'sketch-to-concept', f))];
   for (const f of docs) assert.match(require('node:fs').readFileSync(f, 'utf8'), /75 %/, `${path.basename(f)} chưa nói ngưỡng thẻ chung`);
 });

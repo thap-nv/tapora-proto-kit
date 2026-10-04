@@ -16,11 +16,14 @@
 <!-- CSS component của dự án đặt ở đây, ví dụ: <link rel="stylesheet" href="assets/app.css"> -->
 <script src="assets/color.js"></script>
 <style>
+  /* Hộp tính cả viền và đệm, như preflight của Tailwind mà các trang nạp: component rộng 100% có đệm không tràn ở 390 */
+  *,*::before,*::after{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body, system-ui, sans-serif);font-size:var(--text-base);line-height:var(--leading-normal)}
   .sys{max-width:1180px;margin:0 auto;padding:40px 16px 80px}
-  .sys h1{font-family:var(--font-display, inherit);font-size:var(--text-3xl);line-height:var(--leading-tight);margin:0 0 8px}
-  .sys h2{font-family:var(--font-display, inherit);font-size:var(--text-xl);line-height:var(--leading-tight);margin:48px 0 16px}
-  .sys p{max-width:65ch;margin:0 0 12px;color:var(--muted)}
+  /* Chữ của trang bọc :where() nên độ ưu tiên bằng 0: luật của component (.panel h2, .note) luôn thắng, không bị đè lề và màu */
+  :where(.sys h1){font-family:var(--font-display, inherit);font-size:var(--text-3xl);line-height:var(--leading-tight);margin:0 0 8px}
+  :where(.sys h2){font-family:var(--font-display, inherit);font-size:var(--text-xl);line-height:var(--leading-tight);margin:48px 0 16px}
+  :where(.sys p){max-width:65ch;margin:0 0 12px;color:var(--muted)}
   .sys-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0}
   .sys-bar button{font:inherit;padding:6px 12px;border-radius:var(--radius-sm);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer}
   .sys-bar button[aria-pressed="true"]{background:var(--selected);border-color:var(--ring)}
@@ -37,6 +40,9 @@
   .sys-table [data-verdict="khong"] td:last-child{color:var(--danger-text);font-weight:600}
   .sys-table [data-verdict="sat"] td:last-child{color:var(--warning);font-weight:600}
   .sys-type > div{display:grid;grid-template-columns:minmax(0,160px) minmax(0,1fr);gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line)}
+  .sys-type span{min-width:0;overflow-wrap:anywhere}
+  /* Khổ hẹp: mẫu chữ xuống dưới nhãn, chữ hiển thị cỡ lớn (96px trở lên) không tràn */
+  @media (max-width:600px){.sys-type > div{grid-template-columns:minmax(0,1fr);gap:4px}}
   .sys-type code{font:var(--text-xs)/1.4 var(--font-mono, ui-monospace, monospace);color:var(--muted)}
   .sys-shape{display:flex;flex-wrap:wrap;gap:16px}
   .sys-shape div{width:140px;height:88px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;text-align:center;font-size:var(--text-sm)}

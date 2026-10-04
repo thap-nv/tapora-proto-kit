@@ -168,6 +168,11 @@ A run is clean when it has 0 console errors, 0 failed steps, 0 silent steps, 0 n
 
 `site/assets/themes.json` lists every theme's seed colours. `node <skills>/sketch-to-site/scripts/themes.mjs <prototype-dir>` derives the state and status colours, checks every pair in every theme, and writes `themes.css`. `qa_init.py` turns each theme into a QA theme. The design-system page `site/_system.html` shows and measures the tokens of the active theme.
 
+**One-command checks used by `sketch-to-site`**
+
+- `node <skills>/sketch-to-site/scripts/system-check.mjs <prototype-dir>` (B2, gate 3): runs `themes.mjs` (stops on a failing pair), `preflight.py` on `site/`, and measures `site/_system.html` at 1440 and 390 in every theme. It saves each screen and the full page at 1440 to `_shots/system/`, prints only what fails, and exits 0 when clean.
+- `python <skills>/sketch-to-site/scripts/qa-check.py <prototype-dir>` (B4): installs the kit when `_qa/qa.config.json` is missing, or runs `qa_init.py --update`, then `handover.py run`. It prints the summary, at most 15 lines per list, and the screenshots by suite.
+
 **Configuration: `_qa/qa.config.json`**
 
 | Key | Meaning |
@@ -194,7 +199,7 @@ A run is clean when it has 0 console errors, 0 failed steps, 0 silent steps, 0 n
 
 A `check` that returns a string starting with `FAIL` is a failure. For suites whose name starts with `scan`, any non-empty string is a failure. The runner records console errors, page overflow and clipped items for every step automatically.
 
-`qa_init.py` creates one smoke suite per page at 1440, 768 and 390 px. App screens get 1440 and 390 only, because at 768 they still sit in the phone frame.
+`qa_init.py` creates one smoke suite per page at 1440, 768 and 390 px. Web pages are shot screen by screen down the whole page (`<page>.jpg`, `<page>-2.jpg`, … up to 8, the `slices` option of a step; `full` shoots the whole page as one image). App screens get 1440 and 390 only, because at 768 they still sit in the phone frame.
 
 - **Clipped items** are overflow that stays inside the page, so the page-level overflow check cannot see it:
   - text that spills out of its own box, such as a squeezed table cell or a narrow button;
@@ -238,7 +243,7 @@ For app screens (`<html data-surface="app">`), `qa_init.py` adds a `tap-targets`
   - The stop rules: `sketch-to-site` §1 and `sketch-to-concept` §1. The excuses table between the `luat-dung:co` markers must stay identical; the tests check it.
   - The quality floor and full-output rules: `sketch-to-site` §2–3, `sketch-to-concept` §2 and `evolve-site` §2. `sketch-to-concept` prints `sketch-to-site` §3 and §6 by their heading (a `sed` range), so keep those headings and their numbers; the tests check them.
   - The token variable names: `rules-and-conflicts.md` §D.2, `VARS` in `sketch-to-concept/templates/tokens.js`, and `sketch-to-site/templates/mobile/app.css`.
-  - The dependency list: `sketch-to-site` §9 and `DEPS` in `preflight.py`.
+  - The dependency list: `sketch-to-site/references/phu-thuoc.md` and `DEPS` in `preflight.py`.
   - The shared data store: `sketch-to-site/templates/store.js`, `rules-and-conflicts.md` §D.5, and `evolve-site` §2 law 2.
   - The theme parameter: `?theme=` in `sketch-to-site/templates/theme.js`, the `prefers-color-scheme` rule in `run.mjs`, and the themes that `qa_init.py` generates.
   - The minimum tap sizes (44 on iOS, 48 on Android): `--tap` in `sketch-to-site/templates/mobile/app.css`, `TAP_CHECK` in `qa_init.py`, and `mobile-app.md` §2 and §4.
