@@ -1,0 +1,10 @@
+sketch-to-site 4.5 measured on Claude Code cloud (Linux, Node 22, Chromium 141, Opus 5.5), 04/10/2026, same start dirs and prompts as the 4.4 baseline. Details: measure-kit/README.md, section "sketch-to-site: sau 4.5 (cloud)"; transcripts in measure-kit/transcripts/site-4.5/.
+- Phase 1 (B0 → gate 3): 15 and 17 turns, 0.50–0.54M and 0.47–0.50M converted tokens (baseline 59/69 turns, 1.46–1.97M): −65 % and −75 %. No cache misses.
+- Phase 2 (B3 → gate 4), without review: 21 and 28 turns, 0.69–0.72M and 0.76–0.79M (baseline 59/66 turns, 1.57–2.35M): −56 % and −67 %. Well past the 25 % noise threshold despite the environment change.
+- Items 1–6 landed: one-command checks (0 self-run run.mjs, 0 manual shots, 0–1 code reads vs 10–11), batched turns (image-only turns 2–3 vs 8–13), no trial page in B1, doc sections only (rules-and-conflicts and qa-gate never read whole).
+- Item 3 partly: `:where(.sys p)` still sets `color`, so text in the arch lost its colour; both phase-1 runs needed one contrast fix round (~30–40k).
+- Item 7 (Explore review) not measurable: cloud subagents have no Agent tool, so both phase-2 runs skipped the review and said so at gate 4. Measure it from a main session.
+- New stumbles, both phase-2 runs: `slices` shots don't scroll, so IntersectionObserver reveal sections come out blank while the check says clean (~0.1–0.15M); qa-check prints image name ranges, costing an extra `ls` turn; phase-2 entry turn misses site.css/_system.html/concept/c.html (1–3 extra turns).
+- Next fixes ranked by measured saving: slices scroll (0.1–0.15M, high), b3-b4 entry reads (40–70k, high), system.html `:where(.sys p)` colour (30–40k, high), qa-check full image names (~20k, high), qa-query not frozen in step files and no smooth scroll (0–65k each, medium).
+- Cloud setup: network must allow cdn.tailwindcss.com and unpkg.com; Chromium NSS store may need the proxy CA (certutil); on Node 22 run tests as `node --test <dir>/*.test.js` (314 pass, 2 Windows-only skips).
+- Measuring scripts changed (rerun baseline locally to confirm): phase-site entry turn = B0; unquoted shell vars expanded in phase-site/fixes-site; attrib counts .jpg as images.

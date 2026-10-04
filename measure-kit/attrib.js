@@ -6,7 +6,7 @@ const cat = (c, res) => {
   const i = c.input || {}, n = c.name;
   if (n === 'Read') {
     const p = String(i.file_path || '');
-    if (/\.png$/i.test(p)) return 'ảnh mở ra xem';
+    if (/\.(png|jpe?g)$/i.test(p)) return 'ảnh mở ra xem';
     if (inSkills(p.replace(/\\/g, '/')) || /tapora-proto-kit\/skills/i.test(p)) return 'đọc tài liệu skill (Read)';
     return 'đọc file dự án (Read)';
   }

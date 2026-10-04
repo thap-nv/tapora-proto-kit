@@ -26,6 +26,9 @@ Dùng để đo một lần chạy skill `sketch-to-concept` tốn bao nhiêu l�
 | `paths.js` | Đường dẫn của máy chạy đo, dùng chung cho `phase-site.js`, `fixes-site.js`, `attrib.js`, `turns.js`, `dump.js`. Mặc định là máy Windows của các mốc; máy khác đặt `SKILLS` (thư mục skills của repo) và `RUNS` (thư mục cha của các `<DIR>`) |
 | `r2-chosen/sample/` | sketch-to-site pha 1: `r1-board` đã chốt Cổng 2 = C, một nền, nhịp như concept (`DECISIONS.md`, `CONCEPT.md`). Chép ra rồi mới chạy |
 | `r3-gate3/sample/` | sketch-to-site pha 2: kết quả pha 1 lần A, Cổng 3 đang mở. Chép ra rồi mới chạy |
+| `transcripts/site-4.5/` | Transcript của bốn lần đo 4.5 trên cloud (`.jsonl.gz` + `.meta.json`). Xem mục *sketch-to-site: sau 4.5 (cloud)* |
+| `runs-4.5/` | Ảnh cả trang `_system.html` (pha 1), ảnh trang chủ 1440 (pha 2) và `DECISIONS.md` của bốn lần đo 4.5 |
+| `memory-note.md` | Ghi chú tiếng Anh để chép vào memory `token-rollout-plan` |
 
 Token quy đổi = input + 1,25 × ghi cache + 0,1 × đọc cache + 5 × output. Transcript chỉ ghi output lúc bắt đầu stream nên output ước từ số ký tự đã viết (2,5–3,5 ký tự một token); khối thinking không tính được.
 
@@ -307,3 +310,155 @@ Khác mốc nền:
 - Số phút không so được. Tổng token chỉ để tham khảo; chênh dưới khoảng 25 % thì chưa nói được gì.
 - Transcript của phiên cloud mất khi máy bị xoá. Prompt cho phép commit và push, nhưng chỉ `measure-kit/`, và chỉ lên nhánh đo.
 - Transcript lưu ở `transcripts/site-4.5/`, dạng `.jsonl.gz`. Giải nén cạnh file `.meta.json` của nó rồi mới chạy script: script tìm transcript con qua `.meta.json` và đọc `.jsonl`.
+
+## sketch-to-site: sau 4.5 (cloud, 04/10/2026)
+
+Đo bằng `prompt-site-cloud.md`: skill bản 4.5 (nhánh `measure/site-4.5`, có `d6d7708`), cùng thư mục bắt đầu và prompt như mốc nền. Chỉ thay `<DIR>` và đường dẫn repo. Mỗi lần chạy là một subagent `general-purpose` chạy nền; hai lần của mỗi pha chạy song song, pha 2 bắt đầu sau khi pha 1 xong.
+
+### Môi trường
+
+| | Mốc nền | Lần này |
+|---|---|---|
+| Máy | Windows, Git Bash | Claude Code cloud, Linux |
+| Node · Python | 20 · 3.x (cp1252) | v22.22.0 · 3.11.15 |
+| Trình duyệt | Edge | Chromium 141.0.7390.37 của Playwright (`/opt/pw-browsers`), symlink `/usr/local/bin/chromium` |
+| Model | Opus 5.5 | Opus 5.5 (`claude-opus-5-5`) |
+| Ngữ cảnh lúc vào lượt 1 | 36–38k | 42k (pha 1, không cache) · 34k đọc + 8k ghi (pha 2) |
+
+Chuẩn bị máy cloud, phải làm lại ở phiên mới:
+- Mức mạng phải cho `cdn.tailwindcss.com` và `unpkg.com` (mức mặc định trả 403; 31 test hỏng vì vậy).
+- Kho NSS của Chromium (`~/.pki/nssdb`) có thể trống, khi đó Google Fonts lỗi `ERR_CERT_AUTHORITY_INVALID`. Thêm CA của proxy: `apt-get install -y libnss3-tools && certutil -d sql:/root/.pki/nssdb -A -t "C,," -n agent-proxy-ca -i /root/.ccr/agent-proxy-ca.crt`. Ở máy lần này, sau khi đổi mạng, kho đã có sẵn `ccr-agent-proxy-2`.
+- Node 22 không nhận thư mục ở `node --test`. Chạy `node --test skills/sketch-to-concept/tests/*.test.js skills/sketch-to-site/tests/*.test.js`: 314 qua, 0 hỏng, 2 bỏ qua (hai test chỉ cho Windows), tổng 316.
+
+### So với mốc nền
+
+Số thô từ `parts2.js`, số theo bước từ `phase-site.js` (đã sửa, xem dưới). Không lần nào mất cache, nên cột "bỏ lượt mất cache" bằng số thô. Không so phút.
+
+| Pha · lần | Lượt | Quy đổi thô | Bỏ lượt mất cache | B0 | B1 / B3 | B2 / B4 | Cổng | Review |
+|---|---|---|---|---|---|---|---|---|
+| 1 · A mốc | 59 | 1,46–1,51M | không mất | 4 · 0,11M | B1 14 · 0,28M | B2 36 · 0,95M | 5 · 0,15M | – |
+| 1 · B mốc | 69 | 1,90–1,97M | không mất | 3 · 0,09M | B1 20 · 0,45M | B2 39 · 1,17M | 7 · 0,22M | – |
+| **1 · A 4.5** | **15** | **0,50–0,54M** | không mất | 2 · 73k | B1 0 *(gộp vào B2)* | B2 12 · 417k | 1 · 26k | – |
+| **1 · B 4.5** | **17** | **0,47–0,50M** | không mất | 2 · 75k | B1 0 | B2 14 · 366k | 1 · 38k | – |
+| 2 · A mốc | 59 | 1,57–1,61M | không mất | 4 · 0,09M | B3 26 · 0,63M | B4 28 · 0,83M | 1 · 0,04M | 0,83–0,85M |
+| 2 · B mốc | 66 | 2,29–2,35M | 1,96–2,02M | 3 · 0,06M | B3 25 · 0,72M | B4 37 · 1,50M | 1 · 0,04M | 0,95–0,96M |
+| **2 · A 4.5** | **21** | **0,69–0,72M** | không mất | 5 · 148k | B3 5 · 185k | B4 10 · 332k | 1 · 39k | **không chạy được** |
+| **2 · B 4.5** | **28** | **0,76–0,79M** | không mất | 7 · 183k | B3 5 · 156k | B4 15 · 401k | 1 · 33k | **không chạy được** |
+
+- Pha 1 giảm 65 % và 75 %, pha 2 (không tính review) giảm 56 % và 67 % (61 % so với số bỏ mất cache của mốc B). Mức giảm vượt xa ngưỡng 25 %, nên dù khác máy vẫn kết luận được hướng: 4.5 rẻ hơn rõ. Từng con số thì chỉ để tham khảo.
+- Mức giảm lớn hơn ước tính trước khi đo (pha 1 cộng thẳng tối đa 0,73–1,21M, thực tế khoảng 1,2M; pha 2 0,38–0,68M chưa tính review, thực tế 1,05–1,2M). Lý do: chi phí là số lượt nhân ngữ cảnh, nên bớt lượt và bớt nội dung nạp cùng lúc thì tiết kiệm nhân lên. Ngữ cảnh cuối còn 172–189k (pha 1) và 231–256k (pha 2), mốc nền 264–318k.
+- B0 của 4.5 lớn hơn mốc: lượt vào nay gồm cả chép khuôn và in luật (mốc tính là B2/B3), pha 2 còn thêm 1–3 lượt đọc file dựng trước dấu hiệu B3 đầu tiên. So theo bước chỉ nên so tổng B0 + B1/B3.
+- Review: subagent trên cloud không có công cụ Agent (công cụ của cả bốn lần chỉ có Bash, Read, Write, Edit, SubagentHandback). Hai lần pha 2 bỏ bước 5 của B4 và ghi "không có review độc lập" vào Cổng 4. Việc 7 chưa đo được; con số pha 2 ở trên không gồm review.
+
+Chi phí theo nhóm (`groupcost.js`; phí lượt + nội dung mang tới cuối; nhóm "tài liệu khác" gồm cả file dự án đọc cùng lượt):
+
+| Nhóm | 1 · A | 1 · B | 2 · A | 2 · B | Mốc nền |
+|---|---|---|---|---|---|
+| SKILL.md (lượt 1) | 34k | 41k | 42k | 50k | 0,15–0,18M |
+| Lượt vào (tài liệu giai đoạn, luật in, file dự án) | 117k (2–3) | 125k (2–3) | 115k (2) | 142k (2) | tài liệu ngoài SKILL.md 0,24–0,34M |
+| Đọc thêm sau lượt vào (site.css, _system.html, concept/c.html) | – | – | 113k (3–4) | 138k (3–5) | – |
+| Đọc mã skill | 31k (4) | 0 | 59k (5) | 112k (6, 15, 19, 20) | 0,25–0,46M |
+| Vòng tự soát `_system.html` | 164k (7–12) | 155k (9–15) | – | – | 0,46–0,65M |
+| Lượt chỉ mở ảnh | 93k (10, 12) | 82k (13, 15) | 119k (13, 15) | 149k (18, 22, 25) | 0,23–0,44M |
+| Vòng B4 sau lần kiểm đầu | – | – | 355k (12–20) | 431k (14–27) | – |
+
+### Soát từng việc của 4.5
+
+1. **Kiểm một lệnh: đã ăn.**
+   - Pha 1: `system-check.mjs` chạy 3 lần mỗi lần chạy (A lượt 7, 9, 11; B lượt 10, 12, 14). Lần cuối ra `Kết luận: SẠCH` trước Cổng 3 ở cả hai. Agent tự gọi `run.mjs` 0 lần, lệnh chụp 0 (mốc: tự cuộn và chụp từng đoạn, A lượt 45–51, B lượt 49–63). Đọc mã skill 1 lệnh (A lượt 4: `head -40` của `themes.mjs` và `system-check.mjs`, để biết đặt `default` khi chỉ có theme tối) và 0 lệnh (B); mốc 10–11 lệnh. Vòng tự soát còn 0,16M (mốc 0,46–0,65M).
+   - Pha 2: `qa-check.py` chạy 3 lần (A lượt 11, 14, 17) và 4 lần (B lượt 13, 16, 21, 24). Không lần nào tự viết bộ cuộn hay file bước mới; chỉ sửa `query` trong `steps-smoke-index.json`. 0 kết quả bị cắt giữa. Đọc mã skill: 1 lệnh mỗi lần (A lượt 5, B lượt 6: đầu `preflight.py`, `qa-check.py`). B còn đọc mã bộ kiểm trong `_qa/` 3 lượt (15 `deep.mjs`, 19–20 `run.mjs`) để tìm nguyên nhân lỗi (script không đếm phần này).
+   - Phần "tự thêm cờ Node 20" không thử được: máy chạy Node 22.
+   - Chưa ăn hết, cả hai lần pha 2:
+     - `qa-check.py` chỉ in dải tên ảnh (`index-2.jpg … index.jpg`), nên phải thêm một lượt `ls` (A lượt 12, B lượt 17; khoảng 20k mỗi lần).
+     - Ảnh `slices` chụp bằng `captureBeyondViewport`, không cuộn, nên section hiện dần bằng `IntersectionObserver` + `opacity` ra trống mà bộ kiểm vẫn báo SẠCH. A thấy ở lượt 13, sửa lượt 14, mở lại ảnh lượt 15. B thấy ở lượt 18, đọc `run.mjs` lượt 19–20, sửa lượt 21, mở lại ảnh lượt 22. Khoảng 0,1–0,15M mỗi lần.
+2. **Gộp lượt: đã ăn.**
+   - Lượt có từ 2 lệnh: 9/15, 8/17, 9/21, 5/28 (mốc 6/59, 23/69, 13/59, 15/66).
+   - Lượt chỉ mở ảnh: 2, 2, 2, 3 lượt, tốn 82–149k (mốc 8–13 lượt, 0,23–0,44M).
+   - Ảnh của một lần kiểm mở hết trong một lượt: pha 1 cả 10–11 ảnh từng màn ở một lượt; pha 2 lần đầu 21 ảnh ở một lượt (A lượt 13, B lượt 18). Lần mở sau chỉ mở ảnh đổi (B lượt 22: 12 ảnh; lượt 25: 1 ảnh). Không ai mở ảnh `-full.png` trước khi trình Cổng 3, chỉ nêu đường dẫn.
+   - Chưa ăn hết: pha 2 B còn 23/28 lượt một lệnh, phần lớn ở vòng gỡ lỗi B4 (lượt 14–27).
+   - `Read` bản chép trước khi sửa: 0 lần Write bị từ chối, 0 lần `rm` rồi viết lại.
+3. **Khuôn `system.html`: ăn phần lớn.**
+   - 0 vòng sửa vì tràn ngang ở 390, 0 vòng vì mẫu chữ.
+   - Còn một vòng ở cả hai lần pha 1: `:where(.sys p)` vẫn đặt `color` cho mọi `<p>`, nên chữ trong vòm không thừa hưởng màu của vòm (`--on-primary` trên than hồng). Lần A lỗi 7 cặp tương phản ở lượt 7 và sửa ở lượt 8 bằng `.hero-arch p{color:inherit}`; lần B lỗi 4 cặp ở lượt 10 (`#B8A693` trên `#E88D48`, 1,07:1) và sửa ở lượt 11. Mỗi lần tốn khoảng 30–40k.
+4. **B1 trên `_system.html`: đã ăn.**
+   - Không trang HTML thử nào ngoài `site/`. Đọc concept (`concept/c.html`) nằm ở lượt 3, chung với lượt đọc khuôn của B2, nên B1 không còn lượt riêng (mốc 0,28–0,45M).
+   - Hai trường hợp khó có trên `_system.html` và ghi trong `DECISIONS.md`: A *Thứ Hai tiệm nghỉ* và *Mẻ đã hết, khổ 390*; B *Ngày nghỉ thứ Hai* và *Mẻ đã hết, chuỗi dài nhất*.
+5. **Tách SKILL.md: đã ăn.** SKILL.md đọc nguyên ở lượt 1, 17,3–17,8k ký tự (mốc 32,9k), mang theo 34–50k (mốc 0,15–0,18M). Pha 2 cả hai lần đọc bằng `cat SKILL.md; ls -R <skills>/sketch-to-site`, không bằng Read.
+6. **In đúng mục: đã ăn.** `fixes-site.js` dòng 1:
+   - `rules-and-conflicts.md`: nguyên 0 cả bốn lần; một phần 4,4k ký tự (pha 1), 10,3k và 13,3k (pha 2). Mốc: 19,2k nguyên cả bốn lần.
+   - `qa-gate.md`: nguyên 0; một phần 8,1k (2 · A, lượt 11) và 12,2k (2 · B, lượt 13–14, in thêm mục 6 khi gỡ lỗi). Mốc: 18k nguyên cả hai lần pha 2.
+   - Lối vào một lượt:
+     - pha 1: lượt 2 có `Read` `b0-b2.md`, `CONCEPT.md`, `DECISIONS.md` và lệnh 1 ở cả hai lần (A thêm một `ls`). Sau đó không đọc lại, không `cat`.
+     - pha 2: lượt 2 có `Read` `b3-b4.md`, `CONCEPT.md`, `DECISIONS.md`, `DESIGN.md`, `templates/BUILD-LOG.md` và lệnh 2 ở cả hai lần. Sau đó không đọc lại bốn file này. Nhưng cả hai phải đọc thêm file để dựng: A lượt 3–4, B lượt 3–5 (`site.css`, `themes.json`, `tokens.css` bằng `cat`, `_system.html`, `concept/c.html`).
+7. **Review `Explore`: chưa đo được.** Subagent không gọi được subagent con trên cloud (xem trên). Không có số về ngữ cảnh khởi đầu, lượt hay chi phí của review, cũng không có khoản mất cache của agent cha khi chờ. Chất lượng review chưa so được.
+
+Lượt mất cache: không có ở cả bốn lần. Lượt dài nhất: 126 s (2 · A lượt 5, nghĩ 116 s); không lượt nào gần 5 phút.
+
+Khác mốc chỉ vì Linux, không tính cho hay chống 4.5:
+- Không có lỗi `print` cp1252 của Python, không có lỗi `--experimental-websocket` (mốc 2 · B hỏng 2 lần vì cờ này).
+- Chromium tìm được trong PATH, không vấp lệnh chụp của Edge.
+- Đường dẫn không có dấu cách, nên lệnh dùng biến không ngoặc kép (`S=<skills>;`) chạy được; đó là lý do phải sửa `expand` của script.
+
+### Chất lượng (chỉ mở ảnh)
+
+- **Pha 1:** ảnh `lo-cui-1440-full.png` của cả hai lần mang rõ concept C: nền muội than, tiêu đề Fraunces, chữ thân Commissioner, số IBM Plex Mono; vòm than hồng ôm "9:30", vòm gạch "6:00" khi đóng cửa, hàng bốn cửa vòm có tro, than, gạch. Font tải đúng, không rơi về font hệ thống. Hai trường hợp khó có trên trang.
+- **Pha 2:** màn đầu 1440 của cả hai lần là vòm than hồng ôm "9:30", H1 Fraunces hai dòng, nút "Giữ bánh qua Zalo" và "Xem đường đi" trong màn đầu; hàng cửa có tro (6:00 đã hết), than (9:30), gạch (15:00, 17:30). Hai lần giống nhau rất nhiều, vì cùng bắt đầu từ `_system.html` của `r3-gate3`.
+- Hai lần hiểu câu "chấp nhận ngoại lệ ở màn đó" khác nhau: A bỏ vật liệu `.ember`, B giữ `.ember` làm ngoại lệ. Lỗi này của prompt đo, như ở mốc nền.
+- Không có review để so với mốc ("làm lại", 3–5 mục Nên sửa).
+
+### Vấp mới so với mốc (mục 4 của báo cáo agent)
+
+- `qa-check.py` in dải tên ảnh, phải `ls` (2 · A, 2 · B).
+- Ảnh `slices` không cuộn, nội dung hiện dần bằng `opacity` ra trống mà bộ kiểm báo sạch (2 · A, 2 · B).
+- `qa_init.py` ghi `query` vào file bước lúc cài; sửa `qa-query` trong trang sau đó không có tác dụng (2 · A lượt 16–17; 2 · B tự thêm `query`).
+- `system-check.mjs` chỉ in mã cảnh báo preflight (P13), nên 1 · A chạy riêng `preflight.py` để biết chi tiết (lượt 8).
+- `system-check.mjs` chỉ chụp ảnh ở 1440; trường hợp khó ở 390 chỉ có số đo, không có ảnh (1 · B).
+- Skill bắt mở lại mọi ảnh từng màn sau lần chạy sạch, dù chỉ 2 màn đổi (1 · A lượt 12, 1 · B lượt 15; khoảng 40–45k mỗi lần).
+- Bộ khói chụp tối đa 8 màn, nên phần cuối `_system.html` không vào ảnh (2 · A).
+- Lặp lại từ mốc: `scroll-behavior:smooth` làm lượt kiểm sâu báo 8 lỗi (2 · B lượt 14–16, 3 lượt; mốc 6 lượt); bỏ Tailwind vì preflight đè nền vòm (2 · A).
+
+### Chỗ tốn nhất còn lại
+
+1. **Vòng B4 sau lần kiểm đầu:** 2 · A lượt 12–20 (0,36M), 2 · B lượt 14–27 (0,43M). Gồm ảnh trống vì không cuộn, `ls` tên ảnh, `query` của file bước, `scroll-behavior:smooth`.
+2. **Vòng tự soát `_system.html`:** 1 · A lượt 7–12 (0,16M), 1 · B lượt 9–15 (0,155M). Gồm vòng sửa vì `:where(.sys p)` đặt màu và lần mở lại 10–11 ảnh sau sửa nhỏ.
+3. **Đọc thêm sau lượt vào ở pha 2:** 2 · A lượt 3–5, 2 · B lượt 3–6 (đọc `site.css`, `_system.html`, `concept/c.html`, đầu `preflight.py`, `qa-check.py`). Phí lượt 35–55k; nội dung thì vẫn cần.
+4. **Mở ảnh ở pha 2:** 2 · A 54 ảnh trong 3 lượt (13, 15, 18), 2 · B 34 ảnh (18, 22, 25); 0,12–0,15M.
+5. **Nền:** ngữ cảnh lúc vào 34–42k và SKILL.md 34–50k, mỗi lần. Phần này khó giảm thêm.
+
+### Đề xuất bước tiếp (ước từ số đo, chưa sửa skill)
+
+| # | Việc | Ước tiết kiệm mỗi lần chạy | Chắc chắn |
+|---|---|---|---|
+| 1 | `run.mjs`: bước `slices` cuộn tới từng màn trước khi chụp (để `IntersectionObserver` chạy), hoặc bộ kiểm báo phần tử `opacity:0` trong khung | pha 2: 0,1–0,15M | cao: cả hai lần pha 2 vấp, và đây là lỗi bộ kiểm báo sạch sai |
+| 2 | `b3-b4.md`: thêm `site/assets/site.css`, `site/_system.html`, `concept/<id>.html` vào `Read` của lượt vào; ghi rõ không cần đọc đầu `preflight.py`, `qa-check.py` | pha 2: 40–70k | cao: cả hai lần |
+| 3 | Khuôn `system.html`: `:where(.sys p)` không đặt `color` (chỉ đặt cho đoạn mô tả của trang, như `.sys-doc p`) | pha 1: 30–40k | cao: cả hai lần |
+| 4 | `qa-check.py` in tên từng ảnh (đủ đường dẫn), không in dải | pha 2: khoảng 20k | cao: cả hai lần |
+| 5 | `qa_init.py`/`run.mjs` đọc `qa-query` của trang lúc chạy, không đóng băng vào file bước | pha 2: 0–60k | trung bình: một lần vấp |
+| 6 | Cấm `scroll-behavior:smooth` trong CSS dùng chung, hoặc `deep.mjs` tắt nó khi kiểm | pha 2: 0–65k | trung bình: một lần vấp (mốc cũng một lần) |
+| 7 | `system-check.mjs` in chi tiết cảnh báo preflight | pha 1: 0–16k | thấp |
+
+- Không đáng làm: rút gọn SKILL.md thêm (còn 34–50k mỗi lần); bỏ lần mở lại ảnh sau sửa nhỏ (40–45k nhưng dễ sót lỗi lan sang màn khác).
+- Việc 7 cần đo riêng: review chỉ chạy được khi agent dựng là phiên chính, không phải subagent. Cách đo: chạy pha 2 trong phiên chính, hoặc từ phiên chính gọi agent `Explore` với prompt review của `b3-b4.md` trên `rc2a`/`rc2b`.
+
+### Sửa script trong lần đo này
+
+Bốn transcript mốc nền không có trên cloud. Cần chạy lại số mốc ở máy Windows để xác nhận các chỗ sửa không đổi số mốc:
+- `phase-site.js`: lượt có `Read` `references/b0-b2.md` hay `b3-b4.md`, khi chưa qua bước nào, là B0. Trước đó lượt vào của pha 1 bị xếp B2 vì lệnh `cp` khuôn. Transcript mốc không có hai file này, nên số mốc không đổi.
+- `phase-site.js`, `fixes-site.js`: `expand` nhận cả biến không ngoặc kép (`S=/đường/dẫn;`), bỏ qua giá trị `$(…)`. Trước đó lệnh `S=<skills>; head -40 $S/…` của 1 · A lượt 4 không được đếm là đọc mã skill. Mốc dùng `S="…"` vì đường dẫn Windows có dấu cách; nếu có lệnh không ngoặc kép thì số "đọc mã skill" của mốc có thể tăng.
+- `attrib.js`: ảnh `.jpg` cũng là "ảnh mở ra xem" (bộ kiểm 4.5 chụp `.jpg`). Nếu mốc pha 2 có mở `.jpg` thì phần đó chuyển từ "đọc file dự án" sang "ảnh".
+- Đếm nhầm còn để nguyên:
+  - `fixes-site.js` dòng 6 "lệnh dùng /x/…" đếm cả chuỗi `'\r\n'` trong lệnh Python (sau khi đổi `\` thành `/`): 2 · A lượt 10, 17; 2 · B lượt 12, 16, 21, 24 đều là lệnh tính dấu của `BUILD-LOG.md`.
+  - `attrib.js` "tra/kiểm font" và `fixes-site.js` "preflight --font" khớp cả biến CSS `var(--font-…)` trong lệnh sửa CSS (2 · B lượt 21).
+
+### Transcript
+
+Phiên `86d5c0dc-2566-593f-8504-e5b654a914f7` (cloud). File nằm ở `transcripts/site-4.5/agent-<id>.jsonl.gz`, kèm `.meta.json`. Không có transcript con (không có review).
+
+| Pha · lần | Agent | Thư mục chạy | Ảnh và `DECISIONS.md` |
+|---|---|---|---|
+| 1 · A | `adb06ab06de563c48` | `/tmp/measure/rc1a` | `runs-4.5/rc1a/` (`lo-cui-1440-full.png`) |
+| 1 · B | `a6d9a00b2ae399f91` | `/tmp/measure/rc1b` | `runs-4.5/rc1b/` |
+| 2 · A | `a0e3083801b5e7949` | `/tmp/measure/rc2a` | `runs-4.5/rc2a/20261004-1755/` (trang chủ 1440, 4 màn) |
+| 2 · B | `a63eed7d8700f5769` | `/tmp/measure/rc2b` | `runs-4.5/rc2b/20261004-1757/` |
+
+Chạy lại script: `gunzip -k transcripts/site-4.5/*.gz`, rồi `SKILLS=<repo>/skills RUNS=/tmp/measure node phase-site.js transcripts/site-4.5/agent-<id>.jsonl`. Đường dẫn trong transcript là `/home/user/tapora-proto-kit/skills` và `/tmp/measure/r…`; đặt `SKILLS=/home/user/tapora-proto-kit/skills` để `<skills>` hiện đúng.
