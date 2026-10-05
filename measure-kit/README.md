@@ -29,6 +29,7 @@ Dùng để đo một lần chạy skill `sketch-to-concept` tốn bao nhiêu l�
 | `transcripts/site-4.5/` | Transcript của bốn lần đo 4.5 trên cloud (`.jsonl.gz` + `.meta.json`). Xem mục *sketch-to-site: sau 4.5 (cloud)* |
 | `runs-4.5/` | Ảnh cả trang `_system.html` (pha 1), ảnh trang chủ 1440 (pha 2) và `DECISIONS.md` của bốn lần đo 4.5 |
 | `transcripts/site-4.5-sua/`, `runs-4.5-sua/` | Như hai thư mục trên, cho bốn lần đo lại sau 4 chỗ sửa (05/10). Xem mục *sketch-to-site: sau 4 chỗ sửa (cloud)* |
+| `transcripts/site-4.5-cuoi/`, `runs-4.5-cuoi/`, `transcripts/review-4.5/` | Bốn lần đo cuối (05/10) và các review B4 bằng `Explore`. Xem mục *sketch-to-site: đo cuối sau mọi chỗ sửa* |
 | `memory-note.md` | Ghi chú tiếng Anh để chép vào memory `token-rollout-plan` |
 
 Token quy đổi = input + 1,25 × ghi cache + 0,1 × đọc cache + 5 × output. Transcript chỉ ghi output lúc bắt đầu stream nên output ước từ số ký tự đã viết (2,5–3,5 ký tự một token); khối thinking không tính được.
@@ -541,3 +542,36 @@ Chất lượng (so với mốc nền: kết luận "làm lại", 3–5 mục N�
 Transcript: `transcripts/review-4.5/agent-<id>.jsonl.gz`.
 
 Gợi ý từ review, chưa làm: bộ khói chụp thêm các trạng thái mà trang khai *(ví dụ nhiều giá trị `qa-query`)*, vì cả hai review và hai lần dựng đều ghi chỉ trạng thái 8:40 được chụp; trang `_system` cần nhiều hơn 8 màn ở 390.
+
+## sketch-to-site: đo cuối sau mọi chỗ sửa (cloud, 05/10/2026)
+
+Skill ở commit `a8587e8` trên `measure/site-4.5` (mọi chỗ sửa gộp vào CHANGELOG 1.5.0): 4 chỗ sửa đợt trước; bộ kiểm nêu phần tử gây tràn ngang và đo hộp tràn khỏi khối cha; `run.mjs` đọc `qa-query` của trang lúc chạy; `<meta name="qa-states">` cho bộ khói đo và chụp màn đầu từng trạng thái; `_system` chụp tới 16 màn, ô màu hai cột ở 390. Test 320 qua, 2 bỏ qua (chỉ Windows), trên 322. Thư mục chạy `/tmp/measure/rf1a`, `rf1b`, `rf2a`, `rf2b`; review chạy từ phiên chính bằng agent `Explore` như lần đo review trước. Không lần nào mất cache.
+
+| Đợt | Pha 1 · A | Pha 1 · B | Pha 2 · A | Pha 2 · B | Review A | Review B |
+|---|---|---|---|---|---|---|
+| Mốc nền 4.4 (Windows) | 59 lượt · 1,46–1,51M | 69 · 1,90–1,97M | 59 · 1,57–1,61M | 66 · 2,29–2,35M | 0,83–0,85M | 0,95–0,96M (+0,33M cha mất cache) |
+| 4.5 lần đầu | 15 · 0,50–0,54M | 17 · 0,47–0,50M | 21 · 0,69–0,72M | 28 · 0,76–0,79M | không chạy | không chạy |
+| Sau 4 chỗ sửa | 17 · 0,52–0,56M | 17 · 0,56–0,60M | 18 · 0,58–0,61M | 17 · 0,55–0,57M | 0,36–0,37M | 0,33M |
+| **Cuối** | **14 · 0,49–0,52M** | **16 · 0,49–0,53M** | **16 · 0,53–0,56M** | **16 · 0,53–0,56M** | **0,44–0,45M** | **0,42–0,43M** |
+
+- **Cả quy trình một lần** (pha 1 + pha 2 + review): khoảng 1,45–1,55M, so với 3,9–5,2M của mốc nền: giảm khoảng 65–70 %. Mức này vượt xa ngưỡng 25 %, nên dù khác máy vẫn kết luận được.
+- **Pha 1:** 0,51M trung bình, ngang hai đợt trước (0,50M và 0,58M); lượt ít nhất từ trước tới giờ (14 và 16).
+- **Pha 2:** 0,545M cả hai lần, thấp nhất; 16 lượt mỗi lần (mốc 59–66).
+- **Review:** tăng từ 0,33–0,37M lên 0,42–0,45M vì có thêm ảnh để xem: ảnh trạng thái ở ba khổ và `_system` nhiều màn hơn (mở 36 và 55 ảnh, đợt trước 30–31). Vẫn khoảng một nửa mốc nền, chạy 3,4–4,7 phút (dưới TTL 5 phút của subagent nếu agent dựng chờ).
+
+Soát các chỗ sửa:
+1. **Phần tử gây tràn, hộp tràn khỏi khối cha: đã ăn.** Pha 1 B lượt 9: lệnh kiểm báo "trong khung" (giờ "15:00" tràn khỏi vòm hẹp trong lưới 3 cột), agent sửa ở gốc bằng `cqi` ở lượt 10. Không lần nào dựng trang dò hay mở ảnh cả trang để tìm chỗ tràn (đợt trước: 19k mỗi lần ở cả hai lần).
+2. **`qa-query` đọc lúc chạy: đã ăn.** Cả hai lần pha 2 khai `qa-query` và `qa-states` trong trang, không sửa file bước nào; `qa-check.py` chạy 2 lần mỗi lần (đợt trước 4 và 2; đợt đầu 3 và 4).
+3. **`qa-states`: đã ăn, và đổi chất lượng review.** Cả hai trang khai 6 trạng thái (A: 11:00, 17:10, 18:10, 18:40, 5:00, thứ Hai; B: 4:30, 11:00, 16:40, 17:50, 19:30, thứ Hai); bộ khói 30 bước. Review B thấy lỗi nút chính trỏ khác mẻ trên vòm ngay trên ảnh `index@gio_16_40.jpg` (vòm "17:30", nút "Giữ bánh mẻ 15:00"); đợt trước lỗi cùng loại chỉ thấy khi đọc mã. Review A dẫn `index@gio_18_10.jpg` (dòng phụ rớt "19:00") và `index@gio_5_00.jpg` (vòm sáng lúc tiệm chưa mở).
+4. **`_system` 16 màn, ô màu hai cột: ăn một phần.** Ở 1440 `_system` chụp đủ (10 màn, đợt trước cắt ở 8). Ở 390 vẫn cắt ở màn 16, vì pha 2 bắt đầu từ `r3-gate3` có `_system.html` dựng bằng khuôn 4.4 (ô màu 180px, một cột ở 390). Khuôn mới (150px) chỉ có ở pha 1, mà `system-check.mjs` chụp ở 1440, nên chưa thấy được trên ảnh 390.
+
+Chất lượng: pha 1 giữ concept C (vòm than hồng, gạch, tro, Fraunces), hai trường hợp khó có trên trang; pha 2 màn đầu như các đợt trước. Hai review kết luận **làm lại** (4 và 3 mục Nên sửa, 7–8 Nhỏ), có `file:dòng` và ảnh; thứ đã khoá ở cổng chỉ nêu. Lỗi chung của cả hai bản dựng mà review bắt: H1 ngắt xấu ở 390, số Zalo gãy dòng (`.num` thiếu `nowrap`), panel mẻ hai cột có cột chết dưới ảnh.
+
+Còn lại, theo transcript và báo cáo agent:
+- `system-check.mjs` chỉ in "1 cảnh báo" preflight, không in dòng nào (cả ba đợt; pha 1 A đợt này lượt 8 chạy riêng `preflight.py`).
+- Mở lại mọi ảnh sau mỗi lần chạy sạch ở pha 1: 22 và 27 ảnh mỗi lần.
+- Review mở ảnh rải trong 8–10 lượt, không một lượt.
+- Lượt vào B3 không có `tokens.css`, `themes.json`: pha 2 B lượt 3 in thêm.
+- `qa-check.py` xếp ảnh trạng thái theo chữ (`@gio_11_00` trước `@gio_5_00`).
+
+Transcript: `transcripts/site-4.5-cuoi/` (`a001f0a3c99a5daac`, `ac98c6295a66d37e4` pha 1; `a2c5ad7e64ae0c948`, `a4266e3aa3b61800b` pha 2), review ở `transcripts/review-4.5/` (`ad345f204fd29b1c4` cho `rf2a`, `a2903d9dc45dcacde` cho `rf2b`). Ảnh và `DECISIONS.md` ở `runs-4.5-cuoi/` (pha 2 gồm cả ảnh trạng thái 1440).
