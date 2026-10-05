@@ -4,6 +4,7 @@
 #          python _qa/run_all.py _qa/.recheck cash        (chỉ các bộ có chữ "cash" trong tên)
 # In một dòng tóm tắt mỗi bộ: số bước, lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung, tương phản dưới ngưỡng, màu sai ý định, bước FAIL, bước có check mà không trả giá trị.
 # Rồi in thư mục ảnh (đường dẫn tuyệt đối) và tên từng ảnh của các bộ vừa chạy, theo thứ tự màn: ghép thư mục với tên là mở được.
+# Lát của trang dài kèm tiêu đề h1–h3 bắt đầu trong lát, trong ngoặc sau tên ảnh (slices.json của run.mjs).
 # Bộ kiểm: [tên, trang, khoá file bước, khổ] trong "suites"; file bước là _qa/steps-<khoá>.json; khổ lấy từ "sizes".
 # Bước trả chuỗi bắt đầu bằng "FAIL" là lỗi. Bộ có tên bắt đầu bằng "scan" thì mọi chuỗi khác rỗng là lỗi (bộ quét chữ).
 # File bước:  {"query": "?id=XT07", "steps": [ {bước}, ... ]}   ("query" không bắt buộc, nối vào URL của trang)
@@ -15,7 +16,7 @@
 #   "shot"   tên ảnh chụp sau bước; "jpeg": true để chụp jpg; "clip": "<css selector>" chỉ chụp khung đó, "scale" phóng ảnh clip
 # Mỗi bộ chạy trong một hồ sơ trình duyệt mới: localStorage trống lúc bắt đầu bộ. File tải xuống (nút xuất) nằm trong hồ sơ đó
 # và bị xoá khi bộ chạy xong, không rơi vào thư mục Downloads của máy; bước kiểm tính năng xuất bằng giao diện (toast, trạng thái).
-import json, os, re, subprocess, sys
+import hashlib, json, os, re, subprocess, sys
 from concurrent.futures import ThreadPoolExecutor
 sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -76,6 +77,15 @@ def run(s, out, deep=False):
                   'contrast': contrast, 'intent': intent, 'deep': deepn, 'deep_ran': ds is not None, 'fails': fails, 'silent': silent}
 
 
+def summary_line(name, r):
+    # Một dòng mỗi bộ: run_all.py và breaktest.py in cùng dạng
+    if 'crash' in r:
+        return f'{name}: LỖI CHẠY {r["crash"]}'
+    return (f'{name}: {r["steps"]} bước · console {r["errors"]} · tràn {r["overflow"]} · cắt {r["cut"]} · tương phản {r["contrast"]} · '
+            f'ý định {r["intent"]}' + (f' · sâu {r["deep"]}' if r.get('deep') else '')
+            + f' · FAIL {len(r["fails"])} {r["fails"] or ""} · im lặng {len(r["silent"])} {r["silent"] or ""}')
+
+
 def shot_order(f):
     # Thứ tự màn: <shot>, <shot>-2, …; số trong tên xếp theo giá trị (index@gio_5_00 trước index@gio_11_00)
     nat = lambda x: [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', x)]
@@ -83,17 +93,39 @@ def shot_order(f):
     return (nat(m.group(1)), int(m.group(2) or 1)) if m else (nat(f), 0)
 
 
-def shot_lines(root, dirs):
+def shot_digests(root):
+    # Dấu (sha1) của mọi ảnh dưới root, khoá là đường dẫn tương đối "theme/bộ/ảnh". Lấy trước khi chụp lại để biết ảnh nào đổi
+    out = {}
+    for base, _, files in os.walk(root):
+        for f in files:
+            if f.endswith(('.jpg', '.png')):
+                p = os.path.join(base, f)
+                out[os.path.relpath(p, root).replace(os.sep, '/')] = hashlib.sha1(open(p, 'rb').read()).hexdigest()
+    return out
+
+
+def shot_lines(root, dirs, before=None):
     # Ảnh của các bộ vừa chạy (dirs: thư mục con của root, ví dụ "smoke-index-390" hay "default/smoke-index-390").
-    # In đường dẫn tuyệt đối của root và tên từng ảnh, để mở thẳng bằng công cụ đọc file, không cần ls
-    rows = []
+    # In đường dẫn tuyệt đối của root và tên từng ảnh, để mở thẳng bằng công cụ đọc file, không cần ls. Lát của trang dài kèm tiêu đề
+    # bắt đầu trong lát (slices.json của run.mjs), để chọn đúng lát cần xem.
+    # before: dấu của lần chụp trước (shot_digests). Có thì thêm dòng ảnh nào đổi hay mới, để vòng sửa sau chỉ mở lại các ảnh đó
+    rows, now = [], []
     for d in dirs:
         p = os.path.join(root, d)
         files = sorted((f for f in os.listdir(p) if f.endswith(('.jpg', '.png'))), key=shot_order) if os.path.isdir(p) else []
         if files:
-            rows.append(f'  {d}: {", ".join(files)}')
+            sp = os.path.join(p, 'slices.json')
+            lab = json.load(open(sp, encoding='utf-8')) if os.path.exists(sp) else {}
+            rows.append(f'  {d}: ' + ', '.join(f + (f' ({" · ".join(lab[f])})' if lab.get(f) else '') for f in files))
+            now += [f'{d}/{f}' for f in files]
     if not rows:
         return []
+    if before is not None:
+        changed = [k for k in now if before.get(k) != hashlib.sha1(open(os.path.join(root, k), 'rb').read()).hexdigest()]
+        rows.append('  chưa có ảnh của lần chụp trước để so: mở các ảnh cần xem' if not before
+                    else '  không ảnh nào đổi so với lần chụp trước' if not changed
+                    else '  mọi ảnh đều đổi so với lần chụp trước' if len(changed) == len(now)
+                    else f'  đổi so với lần chụp trước (chỉ cần mở lại các ảnh này): {", ".join(changed)}')
     return ['Ảnh (mở cùng một lượt):', f'  thư mục: {os.path.abspath(root).replace(os.sep, "/")}/'] + rows
 
 
@@ -110,12 +142,7 @@ if __name__ == '__main__':
         if r is None:
             continue
         summary[name] = r
-        if 'crash' in r:
-            print(f'{name}: LỖI CHẠY {r["crash"]}')
-        else:
-            print(f'{name}: {r["steps"]} bước · console {r["errors"]} · tràn {r["overflow"]} · cắt {r["cut"]} · tương phản {r["contrast"]} · '
-                  f'ý định {r["intent"]}' + (f' · sâu {r["deep"]}' if r.get('deep') else '')
-                  + f' · FAIL {len(r["fails"])} {r["fails"] or ""} · im lặng {len(r["silent"])} {r["silent"] or ""}')
+        print(summary_line(name, r))
     for line in shot_lines(out, [s[0] for s in todo]):
         print(line)
     os.makedirs(out, exist_ok=True)

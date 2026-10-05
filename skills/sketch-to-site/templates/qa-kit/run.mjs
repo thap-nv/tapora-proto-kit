@@ -4,7 +4,8 @@
 // Node 20 cần cờ --experimental-websocket: thiếu cờ thì script tự chạy lại chính nó với cờ. Node 22 trở lên có sẵn WebSocket.
 // Trình duyệt: biến QA_BROWSER, rồi "browser" trong qa.config.json, rồi tự dò Edge/Chrome/Chromium theo hệ điều hành.
 // Bước có "shot": chụp khung nhìn vào <shot>.png (.jpg khi "jpeg"); "clip": "<selector>" chỉ chụp một khối;
-// "full": true chụp cả trang thành một ảnh; "slices": n chụp cả trang theo từng màn cao bằng khung nhìn: <shot>, <shot>-2, … tối đa n ảnh.
+// "full": true chụp cả trang thành một ảnh; "slices": n chụp cả trang theo từng màn cao bằng khung nhìn: <shot>, <shot>-2, … tối đa n ảnh,
+// "all" thì hết trang. Kèm slices.json: tiêu đề h1–h3 bắt đầu trong từng lát, để danh sách ảnh nói lát nào chứa phần nào.
 // Trước khi chụp "full"/"slices", trang được cuộn qua phần sẽ chụp rồi về chỗ cũ, để phần hiện dần khi cuộn tới có trong ảnh.
 import { spawn, spawnSync } from 'node:child_process';
 import { writeFileSync, readFileSync, mkdtempSync, mkdirSync, rmSync, existsSync } from 'node:fs';
@@ -262,11 +263,14 @@ for (const s of steps.steps) {
       const m = (await send('Page.getLayoutMetrics')).result || {};
       const size = m.cssContentSize || m.contentSize || { width: +w, height: +h };
       const vw = (await send('Runtime.evaluate', { expression: 'document.documentElement.clientWidth', returnByValue: true })).result?.result?.value || +w;
-      const total = Math.min(Math.ceil(size.height), 15000);
+      // "slices": n chụp tối đa n màn; "all" chụp hết trang (trần 60 màn). Mỗi lát chỉ cao một màn nên lát không chịu trần 15 000px của ảnh cả trang:
+      // đo ba skill sửa, _system ở 390 cao 23 856px, cắt ở 15 000px thì mục Component không có ảnh
+      const cap = s.slices === 'all' ? 60 : s.slices === true ? 12 : +s.slices;
+      const total = s.full ? Math.min(Math.ceil(size.height), 15000) : Math.min(Math.ceil(size.height), cap * +h);
       // captureBeyondViewport không cuộn trang: phần hiện dần khi cuộn tới (IntersectionObserver + opacity) ra ảnh trống mà phép đo vẫn sạch
       // (đo 4.5: cả hai lần B4 vấp). Cuộn qua cả phần sẽ chụp từng nửa màn như người xem, đợi chuyển động chạy xong, rồi về chỗ cũ mới chụp.
       // behavior 'instant' để scroll-behavior:smooth của trang không làm chậm từng lần cuộn
-      const upto = s.full ? total : Math.min(total, (s.slices === true ? 12 : +s.slices) * +h);
+      const upto = total;
       const at = (await send('Runtime.evaluate', { expression: 'scrollY', returnByValue: true })).result?.result?.value || 0;
       for (let y = 0; y < upto; y += Math.ceil(+h / 2)) {
         await send('Runtime.evaluate', { expression: `window.scrollTo({ top: ${y}, behavior: 'instant' })` });
@@ -284,8 +288,18 @@ for (const s of steps.steps) {
       };
       if (s.full) await shoot(0, total, s.shot);
       else {
-        const n = Math.min(Math.ceil(total / +h), s.slices === true ? 12 : +s.slices);
-        for (let i = 0; i < n; i++) await shoot(i * +h, Math.min(+h, total - i * +h), s.shot + (i ? '-' + (i + 1) : ''));
+        const n = Math.ceil(total / +h);
+        // Tiêu đề h1–h3 đang hiện, theo toạ độ tài liệu: lát nào chứa phần nào của trang, ghi vào slices.json để danh sách ảnh in kèm tên
+        const heads = JSON.parse((await send('Runtime.evaluate', { expression: `JSON.stringify([...document.querySelectorAll('h1,h2,h3')].filter(e => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden').map(e => [Math.round(e.getBoundingClientRect().top + scrollY), e.textContent.trim().replace(/\\s+/g, ' ')]).filter(x => x[1]))`, returnByValue: true })).result?.result?.value || '[]');
+        const lf = join(outdir, 'slices.json');
+        const map = existsSync(lf) ? JSON.parse(readFileSync(lf, 'utf8')) : {};
+        for (let i = 0; i < n; i++) {
+          const name = s.shot + (i ? '-' + (i + 1) : '');
+          await shoot(i * +h, Math.min(+h, total - i * +h), name);
+          const t = heads.filter(([y]) => y >= i * +h && y < (i + 1) * +h).map(([, x]) => x.length > 32 ? x.slice(0, 31) + '…' : x);
+          if (t.length) map[name + ext] = t.length > 4 ? [...t.slice(0, 3), `+${t.length - 3}`] : t;
+        }
+        writeFileSync(lf, JSON.stringify(map, null, 1));
       }
     } else if (!s.clip || box) {
       const sh = await send('Page.captureScreenshot', opt);

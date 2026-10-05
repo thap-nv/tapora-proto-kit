@@ -7,7 +7,7 @@ description: >-
 # Handover Check · Kiểm tổng trước bàn giao
 
 > **v1.3 (05/10/2026)** · Ít lượt: B1 đọc nhật ký bằng một lệnh `handover.py ledger`; B3 chạy tổng bằng một lệnh `qa-check.py` *(cài hoặc cập nhật bộ kiểm, chạy tổng, in kết quả gọn và tên từng ảnh)*; bảng UX và luật sửa in đúng mục. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
-> **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này. Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`: hai chương trình này không đọc được.
+> **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này. Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`: hai chương trình này không đọc được. Lệnh `python` tự viết mà in tiếng Việt thì đặt `PYTHONIOENCODING=utf-8` trước lệnh: console Windows (cp1252) dừng giữa chừng với `UnicodeEncodeError`.
 > Lệnh dưới đây là của bộ kiểm trong `<skills>/sketch-to-site/templates/qa-kit/`. Lệnh `python _qa/…` chạy từ thư mục prototype, tức thư mục chứa `_qa/`. Dự án ghi lệnh riêng trong `AGENTS.md` hoặc `CLAUDE.md` thì theo đó.
 
 ## 1. Mốc và nhật ký
@@ -47,7 +47,7 @@ Một lượt: `Read` `FEATURE-DECISIONS.md`, cùng lúc với lệnh:
 python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype> --update; cd <thư-mục-prototype> && python _qa/handover.py ledger
 ```
 - `--update` chép đè script của bộ kiểm bằng bản của kit đang dùng, không đụng cấu hình, file bước, mốc, nhật ký.
-- `ledger` in mỗi lần sửa từ lần bàn giao trước một dòng *(giờ, ghi chú, file, số `check` đổi)*, rồi trang sửa trực tiếp, trang chỉ đổi qua file dùng chung, ảnh Hub có trang đã đụng, và file đổi sau lần kiểm nhanh cuối mà chưa vào nhật ký. Đừng đọc `ledger.jsonl`: nó giữ cả giá trị từng `check`, có thể rất dài.
+- `ledger` in mỗi lần sửa từ lần bàn giao trước một dòng *(giờ, ghi chú, file, số `check` đổi)*, rồi trang sửa trực tiếp, trang chỉ đổi qua file dùng chung, ảnh Hub có trang đã đụng, và file đổi sau lần kiểm nhanh cuối mà chưa vào nhật ký. Dòng `Ảnh Hub` luôn có: không khai báo `thumbs` thì B2 không có ảnh Hub để chụp, khỏi mở `qa.config.json`. Đừng đọc `ledger.jsonl`: nó giữ cả giá trị từng `check`, có thể rất dài.
 
 Rút ra, cùng các dòng của `FEATURE-DECISIONS.md` từ lần bàn giao trước: màn nào đã đụng · dòng nào ghi *chưa có bước kiểm* · màn trong ảnh Hub có đổi không · có tính năng thêm hay bỏ không. File chưa vào nhật ký là sửa ngoài quy trình: xử ở B4.
 
@@ -79,10 +79,15 @@ Thoát 0 khi sạch, 1 khi còn lỗi hay khác biệt không gán được, 2 k
 | **File không có trong ledger** | Có người sửa ngoài quy trình. Xem `git diff` của file đó rồi xếp vào một trong hai loại trên |
 | **Bộ mất** | Bộ có ở mốc mà lần này không chạy. Hỏi vì sao trước khi chốt |
 
-Danh sách bị cắt ở 15 dòng: phần còn lại tìm trong `handover.json` của thư mục chạy bằng `grep`, chỉ khi cần cho một mục cụ thể.
+Mọi mục đều in kể cả khi bằng 0: `nợ cũ n` ở dòng của từng theme, các dòng `Bộ mới`, `Bộ có trong last-green mà lần này không chạy`, `Khác biệt KHÔNG gán được`, `Nợ cũ`, `Lỗi`. Bảng số của B6 lấy từ đó, không cần mở `handover.json`. Danh sách bị cắt ở 15 dòng: phần còn lại tìm trong `handover.json` của thư mục chạy bằng `grep`, chỉ khi cần cho một mục cụ thể.
 
 ### B5 · UX 12 điểm, một lần
-In bảng: `sed -n '/^### Nhóm F/,/^### Nhóm G/p' <skills>/evolve-site/references/regression-qa.md`. Chấm trên các màn đã đụng từ lần bàn giao trước *(hai dòng trang của `ledger`)*, **trừ** màn đã chấm trong một đợt `evolve-site` Cấp 2–3. Mỗi điểm ✅ hoặc ❌, kèm `file:dòng` *(tìm bằng `grep -n`, không in cả file)*. Kết quả 7–9/12: đưa vào danh sách cần sửa.
+Chấm gì, theo từng dòng nhật ký từ lần bàn giao trước *(ghi chú bắt đầu bằng `tweak:` hay `evolve:`; cấp của đợt `evolve-site` ở `FEATURE-DECISIONS.md`)*:
+- phần của mọi lần `tweak` và của đợt `evolve-site` Cấp 0–1 *(hai skill này dồn UX sang đây)*, kể cả khi trang chứa nó sau đó có đợt `evolve-site`: đợt đó chỉ soát phần của nó;
+- phần của đợt `evolve-site` Cấp 2–3: bỏ, đã chấm ở Cổng 3 của đợt đó;
+- không chấm `_system.html`: trang design system, không phải màn của khách.
+
+Không còn phần nào phải chấm thì ghi lý do vào `QA.md`, không in bảng. Còn thì in bảng: `sed -n '/^### Nhóm F/,/^### Nhóm G/p' <skills>/evolve-site/references/regression-qa.md`. Mỗi điểm ✅ hoặc ❌, kèm `file:dòng` *(tìm bằng `grep -n`, không in cả file)*. Kết quả 7–9/12: đưa vào danh sách cần sửa. Ảnh của màn đã đụng: lát có tiêu đề trong ngoặc của khối đó *(danh sách ảnh của B3 ghi tiêu đề h1–h3 bắt đầu trong từng lát)*, mở mọi ảnh cần trong một lượt.
 
 Màn app mobile *(`<html data-surface="app">`)*: soát thêm mục *App mobile* ở `sketch-to-site/references/qa-gate.md` mục 4 *(in: `sed -n '/^### App mobile/,/^## 5\./p' <skills>/sketch-to-site/references/qa-gate.md`)* trên các màn đó. Hệ thống nhiều bề mặt: đi lại mọi dòng của bảng luồng xuyên bề mặt có dính tới màn đã đụng.
 
