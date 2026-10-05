@@ -274,6 +274,10 @@ for (const s of steps.steps) {
       }
       await send('Runtime.evaluate', { expression: `window.scrollTo({ top: ${at}, behavior: 'instant' })` });
       await sleep(700);
+      // Ảnh ổn định giữa các lần chạy: chuyển động hữu hạn cho chạy xong, chuyển động lặp vô hạn (spinner, nhấp nháy) về khung đầu và dừng.
+      // system-check.mjs so ảnh với lần trước để báo màn nào đổi; spinner đang quay làm màn đó lần nào cũng "đổi"
+      await send('Runtime.evaluate', { expression: `document.getAnimations().forEach(a => { try { if (a.effect && a.effect.getComputedTiming().iterations === Infinity) { a.pause(); a.currentTime = 0; } else a.finish(); } catch (e) {} })` });
+      await sleep(50);
       const shoot = async (y, height, name) => {
         const sh = await send('Page.captureScreenshot', { ...opt, captureBeyondViewport: true, clip: { x: 0, y, width: vw, height, scale: 1 } });
         writeFileSync(join(outdir, name + ext), Buffer.from(sh.result.data, 'base64'));

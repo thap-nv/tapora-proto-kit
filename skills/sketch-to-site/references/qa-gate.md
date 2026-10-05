@@ -219,7 +219,7 @@ Mã nguồn đọc bằng grep -n hay đọc đúng đoạn cần dẫn, không 
 
 Xem trước khi nói: ảnh của lần chạy mới nhất trong {thư mục prototype}/_qa/handover/, trang web chụp hết trang theo từng màn (<trang>.jpg, <trang>-2.jpg, …), màn đầu của từng trạng thái khác của trang là <trang>@<trạng thái>.jpg:
 {danh sách ảnh}
-Mở trong một lượt mọi ảnh 1440 và 390 ở mọi theme, cả trang _system ở 1440; mở 768 khi trang có bảng hay lưới nhiều cột. Khổ hay theme nào chưa có ảnh thì ghi vào mục Không đánh giá được, không đoán.
+Ngay sau khi đọc các file .md ở trên, mở mọi ảnh cần xem trong MỘT tin nhắn (nhiều lệnh Read cùng lúc), trước khi đọc mã: ảnh 1440 và 390 của từng trang ở mọi theme, kể cả <trang>@<trạng thái>; trang _system chỉ ở 1440. Ảnh 768 của trang chỉ mở khi trang có bảng hay lưới nhiều cột; _system ở 390 và 768 thì không mở. Đừng mở vài ảnh mỗi lượt. Khổ hay theme nào chưa có ảnh thì ghi vào mục Không đánh giá được, không đoán.
 
 Soát theo thứ tự:
 1. Điểm nhìn đầu: mỗi màn có một chỗ mắt dừng trước; không bốn thẻ bằng nhau.

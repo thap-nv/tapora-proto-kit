@@ -122,10 +122,10 @@ Lệnh 1 chép khuôn của B2 *(dùng nguyên hoặc sẽ điền)*, in luật 
 S="<skills>/sketch-to-site"; P="<thư-mục-prototype>"; mkdir -p "$P/site/assets" && cp "$S/templates/themes.json" "$S/templates/tokens.css" "$S/templates/color.js" "$S/templates/theme.js" "$P/site/assets/" && cp "$S/templates/system.html" "$P/site/_system.html"; sed -n '/^### A\.1/,/^## C\./p;/^### D\.2/,/^### D\.3/p' "$S/references/rules-and-conflicts.md"; grep '^### ' "$S/references/style-catalogue.md"
 ```
 
-Lệnh 2 in luật mà B3 dùng *(mục A, B, D.1–D.4, E)*, màn then chốt của concept *(`concept/<id>.html`, id ở `CONCEPT.md` mục 1)* và danh sách file đã có trong `site/`:
+Lệnh 2 in luật mà B3 dùng *(mục A, B, D.1–D.4, E)*, màn then chốt của concept *(`concept/<id>.html`, id ở `CONCEPT.md` mục 1)*, danh sách file đã có trong `site/` và tên mọi token *(giá trị ở `DESIGN.md`)*:
 
 ```bash
-S="<skills>/sketch-to-site"; P="<thư-mục-prototype>"; sed -n '/^### A\.1/,/^## C\./p;/^### D\.1/,/^### D\.5/p;/^## E\./,/^## F\./p' "$S/references/rules-and-conflicts.md"; id=$(sed -n 's/.*\*\*Concept:\*\* *\([a-z0-9-]*\).*/\1/p' "$P/CONCEPT.md" | head -1); [ -f "$P/concept/$id.html" ] && { echo "== concept/$id.html"; cat "$P/concept/$id.html"; }; ls "$P/site" "$P/site/assets"
+S="<skills>/sketch-to-site"; P="<thư-mục-prototype>"; sed -n '/^### A\.1/,/^## C\./p;/^### D\.1/,/^### D\.5/p;/^## E\./,/^## F\./p' "$S/references/rules-and-conflicts.md"; id=$(sed -n 's/.*\*\*Concept:\*\* *\([a-z0-9-]*\).*/\1/p' "$P/CONCEPT.md" | head -1); [ -f "$P/concept/$id.html" ] && { echo "== concept/$id.html"; cat "$P/concept/$id.html"; }; ls "$P/site" "$P/site/assets"; echo "== token"; grep -oh -- '--[a-z][a-z0-9-]*:' "$P/site/assets/tokens.css" "$P/site/assets/themes.css" | sort -u | tr '\n' ' '
 ```
 
 **Ít lượt.** Mỗi lượt đọc lại cả ngữ cảnh, nên cuối một giai đoạn mỗi lượt tốn 25–35k token. Đo ở bản 4.4: 59–69 lượt mỗi giai đoạn, 75–85 % lượt chỉ có một lệnh gọi.

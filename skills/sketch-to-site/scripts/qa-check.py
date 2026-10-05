@@ -76,8 +76,10 @@ flush()
 # 3. Ảnh của lần chạy: <thư mục chạy>/<theme>/<bộ>/<ảnh>. In đường dẫn tuyệt đối của thư mục và tên từng ảnh, theo thứ tự màn
 #    (<shot>, <shot>-2, …), để mở thẳng bằng Read. Đo 4.5: in dải "index-2.jpg … index.jpg" nên cả hai lần B4 phải thêm một lượt ls.
 def shot_order(f):
+    # Số trong tên xếp theo giá trị: index@gio_5_00 trước index@gio_11_00
+    nat = lambda x: [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', x)]
     m = re.match(r'(.*?)(?:-(\d+))?\.(?:jpg|png)$', f)
-    return (m.group(1), int(m.group(2) or 1)) if m else (f, 0)
+    return (nat(m.group(1)), int(m.group(2) or 1)) if m else (nat(f), 0)
 
 
 root = os.path.join(proto, run_dir) if run_dir else ''
