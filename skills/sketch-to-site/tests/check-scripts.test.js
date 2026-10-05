@@ -160,6 +160,15 @@ test('run.mjs: nêu phần tử gây tràn ngang trang và hộp tràn khỏi kh
   assert.deepEqual(JSON.parse(ok.r.stdout).find(s => s.step === 's').dims.wide, []);
 });
 
+// Spinner đang quay làm ảnh mỗi lần một khác; system-check.mjs so ảnh để báo màn đổi
+test('run.mjs: ảnh "slices" ổn định giữa hai lần chạy khi trang có chuyển động lặp vô hạn', t => {
+  const page = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Quay</title><style>body{margin:0}.s{width:40px;height:40px;margin:40px;border:6px solid #333;border-top-color:#e60;border-radius:50%;animation:q .7s linear infinite}@keyframes q{to{transform:rotate(360deg)}}</style></head><body><div class="s"></div></body></html>`;
+  const a = runMjs(t, page, [{ name: 'v', shot: 'v', slices: 1 }]);
+  if (a.r.status === 4) return t.skip('không có trình duyệt');
+  const b = runMjs(t, page, [{ name: 'v', wait: 1100, shot: 'v', slices: 1 }]);
+  assert.ok(fs.readFileSync(path.join(a.out, 'v.png')).equals(fs.readFileSync(path.join(b.out, 'v.png'))), 'hai ảnh khác nhau');
+});
+
 test('qa_init.py: bộ khói của trang web và _system chụp hết trang theo từng màn; màn app không', t => {
   const dir = tmp(t, 'qas-');
   fs.mkdirSync(path.join(dir, 'site'));
@@ -247,10 +256,23 @@ test('system-check.mjs: themes.mjs, preflight, đo _system.html ở 1440 và 390
     assert.ok(fs.existsSync(path.join(shots, `${th}-1440-2.png`)), `thiếu màn thứ hai ${th}`);
   }
   assert.match(r.stdout, /^Ảnh \(mở cùng một lượt\):/m);
-  assert.match(r.stdout, /_shots\/system\/light-1440\.png … light-1440-\d+\.png \(\d+ màn\) · cả trang: light-1440-full\.png/);
+  // Thư mục tuyệt đối và tên từng ảnh (đo 4.5: in dải tên nên agent phải ls)
+  assert.match(r.stdout, new RegExp(`^ {2}thư mục: ${dir.replace(/\\/g, '/').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/_shots/system/$`, 'm'));
+  assert.match(r.stdout, /^ {2}light: light-1440\.png, light-1440-2\.png[^\n]* · cả trang: light-1440-full\.png$/m);
+  assert.match(r.stdout, /^ {2}lần chạy đầu: mở mọi màn$/m);
   assert.match(r.stdout, /^Kết luận: SẠCH/m);
   assert.ok(r.stdout.length < 3000, `kết quả dài ${r.stdout.length} ký tự`);
   assert.ok(!fs.existsSync(path.join(dir, '_qa')), 'không tạo _qa/: thư mục đó là của bộ kiểm ở B4');
+
+  // Lần chạy sau: báo màn nào đổi để chỉ mở lại màn đó (đo 4.5: mở lại cả 10–11 màn sau mỗi đợt sửa nhỏ). Không sửa gì thì không màn nào đổi;
+  // cảnh báo preflight không chặn (P13) in cả dòng, đường dẫn tính từ thư mục prototype
+  const f = path.join(dir, 'site', '_system.html');
+  fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace('<button type="button" class="demo-btn">Giữ bánh</button>', '<button type="button" class="demo-btn">Giữ bánh</button><a href="#" class="demo-btn">Xem</a>'));
+  const again = systemCheck(dir);
+  assert.match(again.stdout, /^ {2}site\/_system\.html:\d+ {2}P13 {2}CẢNH BÁO/m);
+  assert.match(again.stdout, /^ {2}đổi so với lần chạy trước \(chỉ cần mở lại các màn này\): /m);
+  const same = systemCheck(dir);
+  assert.match(same.stdout, /^ {2}không màn nào đổi so với lần chạy trước$/m);
 });
 
 test('system-check.mjs: còn component mẫu thì báo và thoát 1; cặp màu không đạt thì dừng ngay, không ghi themes.css', t => {
