@@ -41,6 +41,28 @@ Dùng để đo một lần chạy skill `sketch-to-concept` tốn bao nhiêu l�
 | `r4b-bangiao/`, `r5b-sau-tweak/`, `r6b-sau-evolve/` | `r4-bangiao`, `r5-sau-tweak`, `r6-sau-evolve` với bộ kiểm của `54b403a`: `qa_init.py --update` rồi `moc-lf.py`. Chép ra rồi mới chạy |
 | `moc-lf.py` | Chuẩn bị thư mục bắt đầu: file bước `_qa/steps-*.json` về xuống dòng LF, và dấu `_qa/…` trong manifest của `last-green`, `current` lấy lại theo file hiện tại. Chỉ dùng cho thư mục đo |
 | `transcripts/edit-sau-sua/`, `runs-edit-sau-sua/` | Transcript nén của ba lần đo lại sau `54b403a`, và `FEATURE-DECISIONS.md`, `QA.md`, ảnh chính của từng lần. Xem mục *Ba skill sửa: sau 6 chỗ sửa* |
+| `cloud-setup.sh` | Chuẩn bị máy cho một lần đo, trong một lệnh: kiểm node, python, trình duyệt (Linux chưa có thì cài Chromium), mạng; lấy bản skill cần đo ra worktree ở đúng commit; in dòng biến `SKILLS`, `RUNS`. `bash measure-kit/cloud-setup.sh <moi> [<cu>] [--tests]`. Xem mục *Nhánh `measure` và cách lấy bản skill* |
+
+## Nhánh `measure` và cách lấy bản skill (từ 05/10/2026)
+
+- Bộ đo nằm trên nhánh `measure`. Trên máy Windows, nhánh này mở ở thư mục riêng `W:/Dummy/[Tool] Working/tapora-measure` (git worktree), còn thư mục repo chính giữ nhánh tính năng, nên không phải chuyển nhánh qua lại.
+- Không merge `measure` vào `main`, và không đưa code skill vào đây. Nhánh chỉ đổi khi bộ đo đổi: script, đề đo, thư mục bắt đầu, kết quả.
+- **Skill đo theo commit.** Bản cần đo phải đã commit, và đo trên cloud thì phải đã push. Chạy `bash measure-kit/cloud-setup.sh <moi> [<cu>]`:
+  - lệnh lấy bản đó ra worktree tạm `<tmp>/wt/moi/tapora-proto-kit` (và `…/cu/…`);
+  - `paths.js` đọc đường dẫn dạng này thành `<skills:moi>`, `<skills:cu>`;
+  - mọi lệnh của lần đo dùng thư mục `skills` của worktree, kể cả `node --test`;
+  - ghi hash đã đo vào mục kết quả.
+- Muốn xem nhanh phần chưa commit (chỉ trên máy) thì cho `SKILLS` trỏ vào thư mục repo chính. Số đo khi đó không gắn với hash nào, nên không dùng làm mốc.
+- **Prompt cũ** (`prompt-site-*.md`, `prompt-edit-*.md`) được viết khi skill nằm cùng cây với `measure-kit/`, trên nhánh `measure/site-4.5`.
+  - Nhánh đó đã xoá ngày 05/10. Commit cuối của nó, `4c037af`, chỉ sửa skill, và nội dung đã nằm trong `main` qua bản 1.5.0 (`61c7bbd`).
+  - Dùng lại prompt cũ thì đổi `$REPO/skills` và `skills/…` thành thư mục `skills` của worktree, và đổi bước kiểm nhánh thành `measure`.
+- **Cloud:**
+  - Subagent không gọi được subagent con. Skill nào gọi subagent (worker và tree test của `sketch-to-map`, review B4 của `sketch-to-site`) thì mỗi lần đo là **một phiên cloud riêng**, và skill chạy trong phiên chính.
+    - Cuối phiên, chép transcript của chính phiên đó (file `.jsonl` mới nhất trong `~/.claude/projects/*/`, không phải thư mục `subagents/`) vào `transcripts/…`, nén bằng `gzip -9`, rồi commit.
+    - Skill không gọi subagent con thì chạy như cũ: mỗi lần đo là một subagent chạy nền.
+  - So trong cùng môi trường: mốc và bản mới cùng chạy trên cloud, hoặc cùng chạy trên máy Windows.
+  - Chỉ commit `measure-kit/`, và push lên `measure` sau **mỗi** lần đo, vì máy cloud bị xoá khi hết phiên. `.claude/settings.json` đã tắt dòng ghi công; vẫn kiểm lại bằng `git log -1 --format=%B`.
+- **Lịch sử:** kết quả tới hết ngày 05/10 nằm trên `measure-kit/run-4.5`, nhánh này vẫn giữ trên origin để tra lại. `measure` tạo từ nhánh đó, rồi gỡ `skills/` và các file plugin.
 
 Token quy đổi = input + 1,25 × ghi cache + 0,1 × đọc cache + 5 × output. Transcript chỉ ghi output lúc bắt đầu stream nên output ước từ số ký tự đã viết (2,5–3,5 ký tự một token); khối thinking không tính được.
 
