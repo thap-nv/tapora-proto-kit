@@ -23,7 +23,7 @@ Dùng để đo một lần chạy skill `sketch-to-concept` tốn bao nhiêu l�
 | `prompt-site-moc-nen.md` | Prompt của phiên đo mốc nền sketch-to-site (đã dùng 04/10) |
 | `prompt-site-sau-sua.md` | Prompt của phiên đo sketch-to-site sau 7 đề xuất (bản 4.5), cùng thư mục bắt đầu và prompt chạy như mốc nền |
 | `prompt-site-cloud.md` | Như `prompt-site-sau-sua.md`, cho phiên chạy trên Claude Code cloud: bước kiểm môi trường, đường dẫn repo thay cho `W:/…`, lưu transcript và ảnh vào `measure-kit/` rồi push lên nhánh đo. Xem mục *Chạy trên cloud* |
-| `paths.js` | Đường dẫn của máy chạy đo, dùng chung cho `phase-site.js`, `fixes-site.js`, `attrib.js`, `turns.js`, `dump.js`. Mặc định là máy Windows của các mốc; máy khác đặt `SKILLS` (thư mục skills của repo) và `RUNS` (thư mục cha của các `<DIR>`) |
+| `paths.js` | Đường dẫn của máy chạy đo, dùng chung cho `phase-site.js`, `fixes-site.js`, `phase-edit.js`, `fixes-edit.js`, `attrib.js`, `turns.js`, `dump.js`. Mặc định là máy Windows của các mốc; máy khác đặt `SKILLS` (thư mục skills của repo) và `RUNS` (thư mục cha của các `<DIR>`). Hai worktree `…/cu/tapora-proto-kit` và `…/moi/tapora-proto-kit` hiện là `<skills:cu>`, `<skills:moi>` |
 | `r2-chosen/sample/` | sketch-to-site pha 1: `r1-board` đã chốt Cổng 2 = C, một nền, nhịp như concept (`DECISIONS.md`, `CONCEPT.md`). Chép ra rồi mới chạy |
 | `r3-gate3/sample/` | sketch-to-site pha 2: kết quả pha 1 lần A, Cổng 3 đang mở. Chép ra rồi mới chạy |
 | `transcripts/site-4.5/` | Transcript của bốn lần đo 4.5 trên cloud (`.jsonl.gz` + `.meta.json`). Xem mục *sketch-to-site: sau 4.5 (cloud)* |
@@ -31,6 +31,10 @@ Dùng để đo một lần chạy skill `sketch-to-concept` tốn bao nhiêu l�
 | `transcripts/site-4.5-sua/`, `runs-4.5-sua/` | Như hai thư mục trên, cho bốn lần đo lại sau 4 chỗ sửa (05/10). Xem mục *sketch-to-site: sau 4 chỗ sửa (cloud)* |
 | `transcripts/site-4.5-cuoi/`, `runs-4.5-cuoi/`, `transcripts/review-4.5/` | Bốn lần đo cuối (05/10) và các review B4 bằng `Explore`. Xem mục *sketch-to-site: đo cuối sau mọi chỗ sửa* |
 | `memory-note.md` | Ghi chú tiếng Anh để chép vào memory `token-rollout-plan` |
+| `phase-edit.js` | `tweak-site`, `evolve-site`, `handover-check`: lượt, token quy đổi, phần mất cache và thời gian theo bước của từng skill (skill và bản `cu`/`moi` nhận từ prompt). `--list` in bước của từng lượt. Cách nhận bước ghi ở đầu file |
+| `fixes-edit.js` | Ba skill sửa: tài liệu đọc nguyên hay một phần, đọc mã script, lệnh của bộ kiểm (`quick.py` có hay không `--shots`, `run_all.py` theo thư mục ra, `handover.py ledger`, `qa-check.py`), tự chụp, ảnh mở theo lượt, `ledger.jsonl` đọc nguyên, lượt mất cache, ba lượt đầu |
+| `prompt-edit-cu-moi.md` | Prompt của phiên đo ba skill sửa, bản cũ (`2fbc10d`) so với bản mới (`70bd133`). Xem mục *Ba skill sửa: bản cũ và bản mới* |
+| `r4-bangiao/` | Ba skill sửa, kịch bản T: site đã bàn giao (pha 2 lần A của lần đo Windows, Cổng 4 "Chốt.", mốc bàn giao đã promote) trong `sample/`, cộng `AGENTS.md` của dự án. Chép ra rồi mới chạy |
 
 Token quy đổi = input + 1,25 × ghi cache + 0,1 × đọc cache + 5 × output. Transcript chỉ ghi output lúc bắt đầu stream nên output ước từ số ký tự đã viết (2,5–3,5 ký tự một token); khối thinking không tính được.
 
@@ -724,3 +728,35 @@ Không đáng làm để giảm token:
 - Bản gốc nằm ở `~/.claude/projects/w--Dummy--Tool--Working-tapora-proto-kit/29ddcf7f-01fa-4e4e-a5e5-80ea87e757fb/subagents/`.
 - Bản nén nằm ở `transcripts/site-4.5-win/agent-<id>.jsonl.gz`, kèm `.meta.json`.
 - Ảnh pha 2 gồm cả ảnh trạng thái 1440.
+
+## Ba skill sửa: bản cũ và bản mới (chuẩn bị 05/10/2026, chưa đo)
+
+Đợt `70bd133` chuyển cách giảm token của `sketch-to-concept` và `sketch-to-site` sang `evolve-site` 1.9, `tweak-site` 1.3 và `handover-check` 1.3 (gộp vào CHANGELOG 1.5.0). Ba skill này chưa có mốc nền, nên phiên đo chạy cùng việc trên bản cũ (`2fbc10d`: evolve-site 1.8, tweak-site 1.2, handover-check 1.2) và bản mới, mỗi bản là một git worktree trong scratchpad của phiên đo. Prompt của phiên đo: `prompt-edit-cu-moi.md`.
+
+### Ba kịch bản, nối tiếp nhau
+
+| Kịch bản | Skill | Thư mục bắt đầu | Lời người dùng (rút gọn; nguyên văn ở prompt) | Dừng ở |
+|---|---|---|---|---|
+| T | `tweak-site` | `r4-bangiao` | Thêm nút gọi điện cạnh nút Xem đường đi ở khối giờ mở cửa | Báo cáo của skill |
+| E | `evolve-site` | `r5-sau-tweak` | Thêm hộp giữ bánh (sheet ở điện thoại, hộp thoại ở máy tính), các cổng chỉ định sẵn | Cổng 3 |
+| H | `handover-check` | `r6-sau-evolve` | Kiểm tổng trước khi gửi link cho khách | Cổng nghiệm thu, không promote |
+
+- Kịch bản T là Cấp 1 không cờ, có tiền lệ (nút `btn-ghost` Xem đường đi), nên đi thẳng `tweak-site`. Kịch bản E là Cấp 2 (lớp phủ). Trang chưa có lớp phủ nào nên dính cờ T; lời người dùng chỉ định sẵn lối vào, phương án hiển thị và quyền thêm component, để skill bỏ được Cổng 1 và Cổng 2 theo luật "câu lệnh đã chỉ định tường minh". Kịch bản H kiểm tổng sau hai lần sửa đó.
+- `r5-sau-tweak` và `r6-sau-evolve` do phiên đo dựng từ một lần chạy bản mới (bước 5 và 7 của prompt), như `r3-gate3` dựng từ pha 1. Bản cũ ở kịch bản sau vì vậy bắt đầu từ thư mục do bản mới sửa; `qa_init.py --update` của bản cũ chép lại script bộ kiểm cũ, còn `FEATURE-DECISIONS.md` cùng khuôn ở hai bản.
+- Mỗi kịch bản 4 lần, chạy theo cặp cũ và mới song song. Tổng 12 lần, ước 8–15M token quy đổi, phần lớn ở kịch bản E.
+
+### Thư mục bắt đầu `r4-bangiao`
+
+- `sample/` là prototype của pha 2 lần A trong lần đo Windows (`rw2a` của phiên `29ddcf7f`, skill `54fe187`): một trang chủ và `_system.html`, theme `dark`, 6 bộ khói, lần chạy tổng cuối sạch (`20261005-1317`: 27 bước, mọi mục 0).
+- Đã làm thêm, không tính vào số đo:
+  - ghi đáp án Cổng 4 "Chốt." vào `DECISIONS.md`;
+  - `python _qa/handover.py promote _qa/handover/20261005-1317` thành mốc bàn giao đầu;
+  - bỏ `_qa/handover/`, `_qa/__pycache__`, `_qa/.kit-source`;
+  - `AGENTS.md` của dự án lấy từ khuôn `AGENTS-qa.md` của bản cũ (bản prototype nhận lúc bàn giao), để không gợi ý `--shots` cho bên chạy bản cũ.
+- Script bộ kiểm trong `_qa/` là bản `54fe187`, giống bản cũ. `run.mjs`, `probes.js`, `color.js`, `deep.mjs` giống nhau ở cả hai bản, nên `qa_init.py --update` không làm mốc lệch.
+- Git bỏ qua `_qa/current/` theo `_qa/.gitignore` của bộ kiểm. Với `r4-bangiao`, `current/` trùng `last-green/` (promote chép nguyên), nên prompt dựng lại nó sau khi chép. `r5-sau-tweak` và `r6-sau-evolve` có `current/` riêng (kèm `ledger.jsonl`): commit thì `git add -f`.
+
+### Script
+
+- `phase-edit.js` chia bước như sau. `tweak-site`: vào, tìm, đọc, sửa, kiểm, ảnh, nhật ký, báo cáo, theo dấu hiệu của chính lượt (sửa rồi kiểm lại thì quay về "sửa"). `evolve-site`: B1, B2 · cổng, B3, B4, Cổng 3. `handover-check`: B0–B1, B2, B3, B4, B5, B6, Cổng. Hai skill sau chỉ tăng bước. Lượt mở ảnh gộp với lượt ghi nhật ký (cách của `tweak-site` 1.3) được tính vào "nhật ký".
+- Hai script đã chạy thử trên transcript giả lập của cả ba skill và trên transcript thật `a2c62bc41dd58df22` (pha 2 Windows). Phiên đo vẫn soát `--list` trên lần chạy thật đầu tiên của mỗi kịch bản trước khi lấy số.
