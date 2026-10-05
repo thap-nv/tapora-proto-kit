@@ -1,0 +1,216 @@
+[
+ {
+  "step": "load",
+  "errors": [],
+  "check": null,
+  "dims": null
+ },
+ {
+  "step": "mo-tu-man-dau",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "sheet-hay-hop-thoai",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "me-het-khong-chon-duoc",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "bat-buoc-ten-va-banh",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "chon-so-luong",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "chep-va-mo-zalo",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "mo-tu-khung-me",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "thoat-esc",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "mo-tu-khung-me-da-het",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "thoat-backdrop",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "thoat-nut-dong",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "loi-chep-bi-chan",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "sang-18-40",
+  "errors": [],
+  "check": null,
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "het-ca-ngay-giu-cho-mai",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "sang-thu-hai",
+  "errors": [],
+  "check": null,
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "thu-hai-giu-cho-thu-ba",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 390,
+   "cw": 390,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ }
+]

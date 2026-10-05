@@ -71,7 +71,8 @@ for (const f of process.argv.slice(2)) {
   const codeRe = /\b(sed|grep|head|tail|cat|awk|wc)\b(?:(?!&&)[^;\n])*?(skills\/[^\s"';]+|_qa\/[\w.-]+)\.(py|mjs|js)\b/;
   const code = calls.filter(c => c.name === 'Read' && /\.(py|mjs|js)$/.test(fileOf(c)) && (inSkills(fileOf(c)) || /\/_qa\//.test(fileOf(c))) || codeRe.test(cmdOf(c)));
   // Lệnh 2 của evolve-site 1.9 in phần chú thích đầu run_all.py: đúng cách skill dạy, đếm riêng
-  const head = code.filter(c => /sed -n '\/\^#\/!q;p'/.test(cmdOf(c)));
+  // Lệnh `sed -n '/^#/!q;p'` có dấu ; trong ngoặc nên codeRe không bắt được: tìm trên mọi lệnh
+  const head = calls.filter(c => /sed -n '\/\^#\/!q;p'[^;&|]*run_all\.py/.test(cmdOf(c)));
   console.log(`     đọc mã skill hay bộ kiểm (script, qa-kit, _qa/*.py): ${list(code.filter(c => !head.includes(c)))} · ${Math.round(code.filter(c => !head.includes(c)).reduce((n, c) => n + text(c).length, 0) / 100) / 10}k ký tự · in đầu run_all.py theo lệnh 2: ${list(head)}`);
   const proj = {};
   for (const c of calls) if (c.name === 'Read' && !inSkills(fileOf(c)) && !/\.(png|jpe?g)$/i.test(fileOf(c))) {

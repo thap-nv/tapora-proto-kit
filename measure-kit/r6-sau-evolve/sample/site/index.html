@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lò Bánh Củi Cô Ba · bánh mì lò củi ở Đà Lạt</title>
+<meta name="description" content="Bánh mì nướng lò củi ở 14 Hai Bà Trưng, Phường 1, Đà Lạt. Bốn mẻ mỗi ngày lúc 6:00, 9:30, 15:00, 17:30; mẻ nào hết là hết. Giữ bánh qua Zalo 0909 123 456.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Lò Bánh Củi Cô Ba">
+<meta property="og:description" content="Bốn mẻ bánh lò củi mỗi ngày ở Đà Lạt. Mẻ nào hết là hết. Giữ bánh qua Zalo.">
+<!-- og:image: chờ ảnh thật 1200×630 (mặt tiền tiệm hoặc khay bánh ở miệng lò) -->
+<!-- Giờ hiện tại của prototype: mặc định 8:40 thứ Bảy (minh hoạ, DECISIONS.md Giả định B1).
+     Đổi bằng ?gio=11:00 và ?thu=2 (2 là thứ Hai, 3 đến 7 là thứ Ba đến thứ Bảy, cn là Chủ nhật). -->
+<meta name="qa-query" content="?gio=8:40">
+<meta name="qa-states" content="?gio=11:00 | ?gio=13:00 | ?gio=18:40 | ?thu=2 | ?gio=19:30">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<script src="assets/theme.js"></script>
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Commissioner:wght@400;500;600&family=Fraunces:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/themes.css">
+<link rel="stylesheet" href="assets/site.css">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body class="lb">
+<a class="skip" href="#noi-dung">Bỏ qua tới nội dung</a>
+
+<!-- 1. Đầu trang -->
+<header class="site-head">
+  <a class="wordmark" href="index.html">Lò Bánh Củi Cô Ba</a>
+  <nav class="nav" aria-label="Trong trang">
+    <a class="nav-link" href="#me-hom-nay">Mẻ hôm nay</a>
+    <a class="nav-link" href="#noi-quy">Nội quy</a>
+    <a class="nav-link" href="#duong-di">Đường đi</a>
+  </nav>
+</header>
+
+<main id="noi-dung">
+  <!-- 2. Màn đầu: một vòm lò lớn ôm mẻ đáng xem nhất lúc này -->
+  <section class="wrap hero" aria-labelledby="h1">
+    <div class="hero-arch arch fire" role="img" aria-label="Mẻ kế, đang trong lò 9:30. Ra lò sau 50 phút (minh hoạ)." data-hero>
+      <p class="label">Mẻ kế · đang trong lò</p>
+      <p class="when">9:30</p>
+      <p class="sub">Ra lò sau 50 phút</p>
+    </div>
+    <div class="sill" aria-hidden="true"></div>
+    <h1 id="h1"><span class="ln">Bốn mẻ bánh lò củi mỗi ngày.</span> <span class="ln">Mẻ nào hết là hết.</span></h1>
+    <div class="hero-cta">
+      <button type="button" class="btn btn-primary btn-block-sm" data-hold aria-haspopup="dialog"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Giữ bánh qua Zalo</button>
+      <a class="btn btn-ghost btn-block-sm" href="https://www.google.com/maps/search/?api=1&amp;query=14%20Hai%20B%C3%A0%20Tr%C6%B0ng%2C%20Ph%C6%B0%E1%BB%9Dng%201%2C%20%C4%90%C3%A0%20L%E1%BA%A1t" target="_blank" rel="noopener"><i class="ph ph-map-pin" aria-hidden="true"></i>Xem đường đi</a>
+    </div>
+    <p class="hero-note">Giờ <span data-clock>8:40 thứ Bảy</span> và trạng thái mẻ là minh hoạ.</p>
+  </section>
+
+  <!-- 3. Bốn lần mở cửa lò: tương tác đặc trưng -->
+  <section class="wrap sec reveal" id="me-hom-nay" aria-labelledby="h-cua">
+    <h2 class="sec-title" id="h-cua">Bốn lần mở cửa lò</h2>
+    <p class="lede">Bánh của Cô Ba nướng trong lò củi, ra lò bốn lần một ngày: <span class="num">6:00 ·</span> <span class="num">9:30 ·</span> <span class="num">15:00 ·</span> <span class="num">17:30</span>. Bấm một cửa để xem mẻ đó: món, giá, còn hay hết.</p>
+    <div class="doors doors-wrap" role="tablist" aria-label="Bốn mẻ trong ngày" data-doors>
+      <button type="button" role="tab" id="d0" aria-controls="panel" aria-selected="false" tabindex="-1" class="door arch ash"><span class="t">6:00</span><span class="s">Đã hết</span></button>
+      <button type="button" role="tab" id="d1" aria-controls="panel" aria-selected="true" tabindex="0" class="door arch fire"><span class="t">9:30</span><span class="s">Đang nướng</span></button>
+      <button type="button" role="tab" id="d2" aria-controls="panel" aria-selected="false" tabindex="-1" class="door arch brick"><span class="t">15:00</span><span class="s">Chưa vào lò</span></button>
+      <button type="button" role="tab" id="d3" aria-controls="panel" aria-selected="false" tabindex="-1" class="door arch brick"><span class="t">17:30</span><span class="s">Chưa vào lò</span></button>
+    </div>
+    <div class="sill" aria-hidden="true"></div>
+    <div class="cq panel-wrap">
+      <div id="panel" role="tabpanel" aria-labelledby="d1" class="batch">
+        <div class="ph-box arch">Ảnh: khay bánh mẻ 9:30 ở miệng lò củi, 1200×900</div>
+        <div>
+          <p class="label muted">Mẻ 9:30</p>
+          <h3>Đang nướng</h3>
+          <p class="muted batch-note">Vào lò lúc 8:35, ra lò sau 50 phút (minh hoạ). Nhắn Zalo trước để Cô Ba để phần.</p>
+          <ul class="items">
+            <li><span class="name">Bánh mì que củi</span><span class="price">8.000 ₫</span></li>
+            <li><span class="name">Bánh mì đặc ruột</span><span class="price">6.000 ₫</span></li>
+            <li><span class="name">Bánh sừng bò bơ Đà Lạt</span><span class="price">22.000 ₫</span></li>
+            <li><span class="name">Bánh nho Bảo Lộc</span><span class="price">18.000 ₫</span></li>
+          </ul>
+          <p class="fine">Mỗi mẻ ra đủ 4 món: giả định, chờ Cô Ba xác nhận.</p>
+          <div class="msg">
+            <p class="label muted">Tin nhắn mẫu · mẻ 9:30</p>
+            <p><q>Cô Ba ơi, giữ giúp con 4 bánh mì que củi mẻ 9:30. Con tên [tên bạn], khoảng 9:45 con tới lấy.</q></p>
+            <div class="msg-row"><button type="button" class="btn btn-ghost btn-sm" data-copy><i class="ph ph-copy" aria-hidden="true"></i>Chép tin nhắn</button><span class="fine">Sửa số bánh, tên và giờ lấy rồi gửi.</span></div>
+            <p role="status" data-copy-status></p>
+          </div>
+          <button type="button" class="btn btn-primary btn-block-sm" data-hold="1" aria-haspopup="dialog"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Giữ bánh mẻ 9:30 qua Zalo</button>
+          <p class="fine">Cô Ba trả lời trên Zalo là bánh đã được giữ. Máy chưa có Zalo thì nhắn hoặc gọi <span class="num">0909 123 456</span>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Nội quy cạnh lò · giờ mở và đường đi -->
+  <section class="wrap sec reveal" id="noi-quy" aria-labelledby="h-noiquy">
+    <div class="info">
+      <div>
+        <h2 class="sec-title" id="h-noiquy">Nội quy cạnh lò</h2>
+        <ol class="rules">
+          <li><span class="n">1</span><p>Bánh ra lò bốn lần một ngày: <span class="num">6:00 ·</span> <span class="num">9:30 ·</span> <span class="num">15:00 ·</span> <span class="num">17:30</span>.</p></li>
+          <li><span class="n">2</span><p>Mẻ nào hết là hết, chờ mẻ sau.</p></li>
+          <li><span class="n">3</span><p>Muốn chắc có bánh, nhắn Zalo <span class="num">0909 123 456</span> để giữ trước.</p></li>
+        </ol>
+      </div>
+      <div class="info-side" id="duong-di">
+        <span class="chip is-open" data-chip><i class="ph ph-clock" aria-hidden="true"></i><span data-chip-text>Đang mở · đóng lúc 19:00</span></span>
+        <h3>Mở 5:30 đến 19:00, nghỉ thứ Hai</h3>
+        <p class="addr">14 Hai Bà Trưng, Phường 1, Đà Lạt</p>
+        <p>Zalo <span class="num">0909 123 456</span></p>
+        <div class="info-cta">
+          <a class="btn btn-ghost" href="https://www.google.com/maps/search/?api=1&amp;query=14%20Hai%20B%C3%A0%20Tr%C6%B0ng%2C%20Ph%C6%B0%E1%BB%9Dng%201%2C%20%C4%90%C3%A0%20L%E1%BA%A1t" target="_blank" rel="noopener"><i class="ph ph-map-pin" aria-hidden="true"></i>Xem đường đi</a>
+          <a class="btn btn-ghost" href="tel:+84909123456"><i class="ph ph-phone" aria-hidden="true"></i>Gọi <span class="num">0909 123 456</span></a>
+        </div>
+        <div class="ph-box">Ảnh: mặt tiền tiệm ở 14 Hai Bà Trưng, 1600×1000</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- 5. Chân trang -->
+<footer class="site-foot">
+  <div class="wrap foot-in">
+    <p class="foot-name">Lò Bánh Củi Cô Ba</p>
+    <p>14 Hai Bà Trưng, Phường 1, Đà Lạt · Zalo <span class="num">0909 123 456</span> · mở 5:30 đến 19:00, nghỉ thứ Hai</p>
+    <p>Giờ <span data-clock>8:40 thứ Bảy</span> và trạng thái từng mẻ trên trang là minh hoạ, chưa nối dữ liệu thật.</p>
+  </div>
+</footer>
+
+<div class="toast is-ok" id="toast" role="status" hidden><i class="ph ph-check-circle ic" aria-hidden="true"></i><span>Đã chép tin nhắn mẫu. Mở Zalo rồi dán vào ô chat.</span></div>
+
+<!-- Hộp giữ bánh (evolve-site, 05/10/2026): mở từ nút Giữ bánh qua Zalo ở màn đầu và nút giữ bánh trong panel mẻ.
+     Dưới 768px là sheet trượt từ đáy, từ 768px là hộp thoại giữa màn. Ô mẻ và dòng bánh do script dựng từ BATCHES, PRODUCTS -->
+<dialog class="hold" id="hold" aria-labelledby="hold-title" data-hold-dialog>
+  <form class="hold-in" novalidate>
+    <div class="hold-head">
+      <h2 class="hold-title" id="hold-title">Giữ bánh</h2>
+      <button type="button" class="btn-icon" data-hold-close aria-label="Đóng hộp giữ bánh"><i class="ph ph-x" aria-hidden="true"></i></button>
+    </div>
+    <div class="hold-body">
+      <fieldset class="hold-field">
+        <legend class="label muted">Mẻ</legend>
+        <div class="pick" data-hold-batches></div>
+        <p class="fine" data-hold-note></p>
+      </fieldset>
+      <fieldset class="hold-field" aria-describedby="hold-items-err">
+        <legend class="label muted">Bánh và số lượng</legend>
+        <ul class="qty-list" data-hold-items></ul>
+        <p class="field-err" id="hold-items-err" hidden><i class="ph ph-warning-circle" aria-hidden="true"></i><span>Chọn ít nhất một bánh.</span></p>
+      </fieldset>
+      <div class="hold-field">
+        <label class="label muted" for="hold-name">Tên của bạn</label>
+        <input class="input" id="hold-name" name="ten" type="text" autocomplete="name" maxlength="40" aria-describedby="hold-name-err">
+        <p class="field-err" id="hold-name-err" hidden><i class="ph ph-warning-circle" aria-hidden="true"></i><span>Nhập tên để Cô Ba biết giữ cho ai.</span></p>
+      </div>
+      <div class="msg">
+        <p class="label muted">Tin nhắn sẽ chép</p>
+        <p><q data-hold-preview></q></p>
+      </div>
+    </div>
+    <div class="hold-foot">
+      <button type="submit" class="btn btn-primary" data-hold-submit><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Chép tin nhắn và mở Zalo</button>
+      <p role="status" data-hold-status></p>
+      <a class="btn btn-ghost" href="https://zalo.me/0909123456" target="_blank" rel="noopener" data-hold-fallback hidden><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Mở Zalo</a>
+      <p class="fine">Cô Ba trả lời trên Zalo là bánh đã được giữ. Máy chưa có Zalo thì nhắn hoặc gọi <span class="num">0909 123 456</span>.</p>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+  const ZALO = 'https://zalo.me/0909123456';
+  const PRODUCTS = [['Bánh mì que củi', '8.000 ₫'], ['Bánh mì đặc ruột', '6.000 ₫'], ['Bánh sừng bò bơ Đà Lạt', '22.000 ₫'], ['Bánh nho Bảo Lộc', '18.000 ₫']];
+  // Giờ ra lò và giá: thật (người dùng nói). Giờ vào lò (55 phút trước khi ra) và giờ hết mẻ: minh hoạ, chưa nối dữ liệu
+  const BATCHES = [{ t: 360, het: 490 }, { t: 570, het: 710 }, { t: 900, het: 1000 }, { t: 1050, het: 1105 }];
+  const BAKE = 55, OPEN = 330, CLOSE = 1140;
+  const DAY = { 2: 'thứ Hai', 3: 'thứ Ba', 4: 'thứ Tư', 5: 'thứ Năm', 6: 'thứ Sáu', 7: 'thứ Bảy', 8: 'Chủ nhật' };
+  const LABEL = { het: 'Đã hết', con: 'Còn bánh', nuong: 'Đang nướng', chua: 'Chưa vào lò', nghi: 'Lò nghỉ' };
+  // Cổng 3 giữ concept: ba vật liệu. Mẻ đã ra lò còn bánh dùng gạch, nhãn "Còn bánh"
+  const MAT = { het: 'ash', con: 'brick', nuong: 'fire', chua: 'brick', nghi: 'brick' };
+
+  // Giờ của prototype: ?gio=11:00, ?thu=2 (thứ Hai) ... 7 (thứ Bảy), cn. Mặc định 8:40 thứ Bảy (minh hoạ)
+  const q = new URLSearchParams(location.search);
+  const parseTime = s => { const m = /^(\d{1,2})(?:[:h.](\d{2}))?$/.exec((s || '').trim()); if (!m) return null; const h = +m[1], mi = +(m[2] || 0); return h < 24 && mi < 60 ? h * 60 + mi : null; };
+  const parseDay = s => { s = (s || '').trim().toLowerCase(); if (s === 'cn' || s === '8' || s === '1') return 8; const n = +s; return n >= 2 && n <= 7 ? n : null; };
+  const tq = parseTime(q.get('gio')), dq = parseDay(q.get('thu'));
+  const now = tq === null ? 520 : tq;
+  const day = dq === null ? 7 : dq;
+
+  const fmt = m => Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const restDay = day === 2;
+  const nextMorning = day === 2 || day === 8 ? 'sáng thứ Ba' : 'sáng mai';
+  const state = b => restDay ? 'nghi' : now >= b.het ? 'het' : now >= b.t ? 'con' : now >= b.t - BAKE ? 'nuong' : 'chua';
+  const states = BATCHES.map(state);
+
+  document.querySelectorAll('[data-clock]').forEach(el => { el.textContent = fmt(now) + ' ' + DAY[day]; });
+
+  // Vòm màn đầu: mẻ đáng xem nhất lúc này
+  function hero() {
+    const iN = states.indexOf('nuong'), iC = states.indexOf('con'), iX = states.indexOf('chua');
+    if (restDay) return { mat: 'brick', label: 'Thứ Hai lò nghỉ', when: '6:00', sub: 'Mẻ đầu sáng thứ Ba' };
+    if (now >= CLOSE) return { mat: 'brick', label: 'Tiệm đã đóng cửa', when: '6:00', sub: 'Mẻ đầu ' + nextMorning };
+    if (iN >= 0) { const b = BATCHES[iN]; return { mat: 'fire', label: 'Mẻ kế · đang trong lò', when: fmt(b.t), sub: 'Ra lò sau ' + (b.t - now) + ' phút' }; }
+    if (iX >= 0) {
+      const b = BATCHES[iX];
+      const sub = iC >= 0 ? 'Mẻ ' + fmt(BATCHES[iC].t) + ' còn bánh ở quầy'
+        : now < OPEN ? 'Tiệm mở cửa lúc 5:30'
+        : iX > 0 ? 'Mẻ ' + fmt(BATCHES[iX - 1].t) + ' đã hết'
+        : 'Vào lò lúc ' + fmt(b.t - BAKE);
+      return { mat: 'brick', label: 'Mẻ kế · chưa vào lò', when: fmt(b.t), sub };
+    }
+    if (iC >= 0) return { mat: 'brick', label: 'Mẻ kế · ' + nextMorning, when: '6:00', sub: 'Mẻ ' + fmt(BATCHES[iC].t) + ' còn bánh ở quầy' };
+    return { mat: 'ash', label: 'Hôm nay hết bánh', when: '6:00', sub: 'Mẻ đầu ' + nextMorning };
+  }
+  const H = hero(), arch = document.querySelector('[data-hero]');
+  arch.classList.remove('fire', 'brick', 'ash'); arch.classList.add(H.mat);
+  arch.querySelector('.label').textContent = H.label;
+  arch.querySelector('.when').textContent = H.when;
+  arch.querySelector('.sub').textContent = H.sub;
+  arch.setAttribute('aria-label', H.label.replace(' · ', ', ') + ' ' + H.when + '. ' + H.sub + ' (minh hoạ).');
+
+  // Chip giờ mở
+  const chip = document.querySelector('[data-chip]');
+  const C = restDay ? ['is-closed', 'Thứ Hai nghỉ · mở lại 5:30 thứ Ba']
+    : now < OPEN ? ['is-closed', 'Chưa mở · mở lúc 5:30']
+    : now >= CLOSE ? ['is-closed', day === 8 ? 'Đã đóng · mở lại 5:30 thứ Ba' : 'Đã đóng · mở lại 5:30 sáng mai']
+    : ['is-open', 'Đang mở · đóng lúc 19:00'];
+  chip.className = 'chip ' + C[0];
+  chip.querySelector('[data-chip-text]').textContent = C[1];
+
+  // Ô cửa vòm: tab của từng mẻ
+  const tabs = [...document.querySelectorAll('[data-doors] [role=tab]')];
+  tabs.forEach((t, i) => { t.classList.remove('fire', 'brick', 'ash'); t.classList.add(MAT[states[i]]); t.querySelector('.s').textContent = LABEL[states[i]]; });
+
+  // Mẻ mà nút giữ bánh trỏ tới: mẻ đã hết thì trỏ mẻ kế còn trong ngày, hết cả ngày thì mẻ 6:00 hôm sau
+  function target(i) {
+    const s = states[i];
+    if (s === 'nghi') return { i, t: BATCHES[i].t, day: 'thứ Ba' };
+    if (s !== 'het') return { i, t: BATCHES[i].t, day: '' };
+    for (let k = i + 1; k < BATCHES.length; k++) if (states[k] !== 'het') return { i: k, t: BATCHES[k].t, day: '' };
+    return { i: 0, t: BATCHES[0].t, day: nextMorning };
+  }
+  function note(i) {
+    const b = BATCHES[i], s = states[i], tg = target(i);
+    if (s === 'nghi') return 'Thứ Hai lò nghỉ. Mẻ ' + fmt(b.t) + ' ra lò lại vào thứ Ba; nhắn hôm nay để giữ trước.';
+    if (s === 'het') return 'Hết lúc ' + fmt(b.het) + ' (minh hoạ). Mẻ nào hết là hết: '
+      + (tg.day ? 'lò mở lại ' + fmt(tg.t) + ' ' + tg.day + '.' : states[tg.i] === 'con' ? 'mẻ ' + fmt(tg.t) + ' còn bánh ở quầy.' : 'mẻ kế là ' + fmt(tg.t) + '.');
+    if (s === 'con') return 'Ra lò lúc ' + fmt(b.t) + ', còn bánh ở quầy (minh hoạ). Nhắn Zalo trước để Cô Ba để phần.';
+    if (s === 'nuong') return 'Vào lò lúc ' + fmt(b.t - BAKE) + ', ra lò sau ' + (b.t - now) + ' phút (minh hoạ). Nhắn Zalo trước để Cô Ba để phần.';
+    return 'Vào lò lúc ' + fmt(b.t - BAKE) + ' (minh hoạ), ra lò ' + fmt(b.t) + '. Giữ trước qua Zalo, tới lấy sau ' + fmt(b.t) + '.'
+      + (i === BATCHES.length - 1 ? ' Mẻ cuối ngày, tiệm đóng 19:00.' : '');
+  }
+  function message(i) {
+    const tg = target(i);
+    const base = tg.day ? tg.t : Math.max(tg.t, now);
+    const pick = Math.ceil((base + 15) / 5) * 5;
+    return 'Cô Ba ơi, giữ giúp con 4 bánh mì que củi mẻ ' + fmt(tg.t) + (tg.day ? ' ' + tg.day : '') + '. Con tên [tên bạn], khoảng ' + fmt(pick) + ' con tới lấy.';
+  }
+
+  const panel = document.getElementById('panel');
+  let current = '';
+  function show(i) {
+    const b = BATCHES[i], s = states[i], tg = target(i), gone = s === 'het';
+    tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
+    panel.setAttribute('aria-labelledby', tabs[i].id);
+    panel.classList.toggle('is-gone', gone);
+    panel.style.animation = 'none'; void panel.offsetWidth; panel.style.animation = '';
+    current = message(i);
+    panel.innerHTML =
+      '<div class="ph-box arch">Ảnh: khay bánh mẻ ' + fmt(b.t) + ' ở miệng lò củi, 1200×900</div>'
+      + '<div><p class="label muted">Mẻ ' + fmt(b.t) + '</p>'
+      + '<h3>' + esc(s === 'nghi' ? 'Thứ Hai lò nghỉ' : LABEL[s]) + '</h3>'
+      + '<p class="muted batch-note">' + esc(note(i)) + '</p>'
+      + '<ul class="items' + (gone ? ' is-gone' : '') + '">' + PRODUCTS.map(p => '<li><span class="name">' + esc(p[0]) + '</span><span class="price">' + esc(p[1]) + '</span></li>').join('') + '</ul>'
+      + '<p class="fine">Mỗi mẻ ra đủ 4 món: giả định, chờ Cô Ba xác nhận.</p>'
+      + '<div class="msg"><p class="label muted">Tin nhắn mẫu · mẻ ' + fmt(tg.t) + '</p>'
+      + '<p><q>' + esc(current) + '</q></p>'
+      + '<div class="msg-row"><button type="button" class="btn btn-ghost btn-sm" data-copy><i class="ph ph-copy" aria-hidden="true"></i>Chép tin nhắn</button><span class="fine">Sửa số bánh, tên và giờ lấy rồi gửi.</span></div>'
+      + '<p role="status" data-copy-status></p></div>'
+      + '<button type="button" class="btn btn-primary btn-block-sm" data-hold="' + tg.i + '" aria-haspopup="dialog"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Giữ bánh mẻ ' + fmt(tg.t) + (tg.day ? ' ' + tg.day : '') + ' qua Zalo</button>'
+      + '<p class="fine">Cô Ba trả lời trên Zalo là bánh đã được giữ. Máy chưa có Zalo thì nhắn hoặc gọi <span class="num">0909 123 456</span>.</p></div>';
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => show(i));
+    t.addEventListener('keydown', e => {
+      const n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+      if (n === undefined) return;
+      e.preventDefault(); const k = (n + tabs.length) % tabs.length; tabs[k].focus(); show(k);
+    });
+  });
+  const first = restDay ? 0 : ['nuong', 'con', 'chua'].map(s => states.indexOf(s)).find(k => k >= 0);
+  show(first === undefined ? BATCHES.length - 1 : first);
+
+  // Chép tin nhắn mẫu: chép được thì toast (thoáng qua), bị chặn thì báo lỗi cạnh chỗ chép
+  const toast = document.getElementById('toast'), toastText = toast.querySelector('span'), COPIED = toastText.textContent;
+  let timer;
+  function say(msg) {
+    toastText.textContent = msg;
+    toast.hidden = false; clearTimeout(timer); timer = setTimeout(() => { toast.hidden = true; }, 4000);
+  }
+  panel.addEventListener('click', async e => {
+    if (!e.target.closest('[data-copy]')) return;
+    const st = panel.querySelector('[data-copy-status]');
+    let ok = false;
+    try { await navigator.clipboard.writeText(current); ok = true; } catch (err) { ok = false; }
+    if (ok) {
+      st.className = ''; st.textContent = '';
+      say(COPIED);
+    } else {
+      st.className = 'is-bad';
+      st.textContent = 'Trình duyệt không cho chép. Bấm giữ câu mẫu để chép tay, hoặc nhắn số 0909 123 456.';
+    }
+  });
+
+  // Hộp giữ bánh (evolve-site, 05/10/2026): hai nút giữ bánh mở hộp thay vì mở Zalo ngay.
+  // Chọn mẻ (mẻ đã hết thì tắt), chọn bánh và số lượng, nhập tên; tên và ít nhất một bánh là bắt buộc.
+  // Nút chính chép tin nhắn soạn từ lựa chọn rồi mở Zalo. Hôm nay không còn mẻ nào (hết cả ngày, đã đóng cửa, thứ Hai):
+  // bốn mẻ của ngày làm kế đều chọn được, như nút giữ bánh đang trỏ mẻ hôm sau (DESIGN.md mục 5, vùng dữ liệu)
+  const hold = document.getElementById('hold'), holdForm = hold.querySelector('form');
+  const MAX_QTY = 99;
+  const ahead = restDay || states.every(s => s === 'het');
+  const nextDay = day === 2 || day === 8 ? 'thứ Ba' : 'mai';
+  const part = t => (t < 720 ? 'sáng ' : 'chiều ') + nextDay;
+  const lowerFirst = s => s.charAt(0).toLowerCase() + s.slice(1);
+  hold.querySelector('[data-hold-batches]').innerHTML = BATCHES.map((b, i) => {
+    const gone = !ahead && states[i] === 'het';
+    const sub = ahead ? part(b.t).replace(/^./, c => c.toUpperCase()) : LABEL[states[i]];
+    return '<label class="pick-opt"><input type="radio" name="me" value="' + i + '"' + (gone ? ' disabled' : '') + '>'
+      + '<span class="t">' + fmt(b.t) + '</span><span class="s">' + esc(sub) + '</span></label>';
+  }).join('');
+  hold.querySelector('[data-hold-note]').textContent = ahead
+    ? (restDay ? 'Thứ Hai lò nghỉ' : now >= CLOSE ? 'Tiệm đã đóng cửa' : 'Hôm nay đã hết bánh') + ': giữ cho mẻ ' + (nextDay === 'mai' ? 'ngày mai' : 'thứ Ba') + '.'
+    : 'Mẻ đã hết thì không chọn được. Trạng thái mẻ là minh hoạ.';
+  hold.querySelector('[data-hold-items]').innerHTML = PRODUCTS.map((p, k) => {
+    const n = esc(lowerFirst(p[0]));
+    return '<li data-qty="' + k + '"><span class="qty-name"><span class="name">' + esc(p[0]) + '</span><span class="price">' + esc(p[1]) + '</span></span>'
+      + '<span class="qty" role="group" aria-label="Số ' + n + '">'
+      + '<button type="button" data-step="down" aria-label="Bớt một ' + n + '"><i class="ph ph-minus" aria-hidden="true"></i></button>'
+      + '<input type="text" inputmode="numeric" maxlength="2" value="0" autocomplete="off" aria-label="Số ' + n + '">'
+      + '<button type="button" data-step="up" aria-label="Thêm một ' + n + '"><i class="ph ph-plus" aria-hidden="true"></i></button></span></li>';
+  }).join('');
+
+  const radios = [...holdForm.querySelectorAll('input[name=me]')];
+  const rows = [...holdForm.querySelectorAll('[data-qty]')];
+  const nameIn = document.getElementById('hold-name'), nameErr = document.getElementById('hold-name-err'), itemsErr = document.getElementById('hold-items-err');
+  const preview = hold.querySelector('[data-hold-preview]'), holdMsg = hold.querySelector('.msg'), hStatus = hold.querySelector('[data-hold-status]');
+  const fallback = hold.querySelector('[data-hold-fallback]'), submit = hold.querySelector('[data-hold-submit]'), submitIc = submit.querySelector('i');
+  let opener = null, tried = false;
+
+  const qtyOf = r => parseInt(r.querySelector('input').value, 10) || 0;
+  // Nút bớt, thêm hết lượt thì aria-disabled (không disabled): nút đang có focus không đánh rơi focus
+  function sync(r) {
+    const n = qtyOf(r);
+    r.querySelector('[data-step=down]').setAttribute('aria-disabled', String(n <= 0));
+    r.querySelector('[data-step=up]').setAttribute('aria-disabled', String(n >= MAX_QTY));
+    r.classList.toggle('is-on', n > 0);
+  }
+  function setQty(r, n) { r.querySelector('input').value = String(Math.max(0, Math.min(MAX_QTY, n))); sync(r); }
+  // Tin nhắn theo khuôn câu mẫu của panel mẻ; giờ tới lấy = giờ ra lò (đã ra lò thì giờ hiện tại) + 15 phút, tròn 5 phút
+  function holdText() {
+    const i = +(radios.find(r => r.checked)?.value ?? 0), t = BATCHES[i].t;
+    const pick = Math.ceil(((ahead ? t : Math.max(t, now)) + 15) / 5) * 5;
+    const items = rows.map((r, k) => qtyOf(r) ? qtyOf(r) + ' ' + lowerFirst(PRODUCTS[k][0]) : '').filter(Boolean);
+    const list = items.length > 1 ? items.slice(0, -1).join(', ') + ' và ' + items[items.length - 1] : items[0] || '[số bánh]';
+    const who = nameIn.value.trim().replace(/\s+/g, ' ') || '[tên bạn]';
+    return 'Cô Ba ơi, giữ giúp con ' + list + ' mẻ ' + fmt(t) + (ahead ? ' ' + part(t) : '') + '. Con tên ' + who + ', khoảng ' + fmt(pick) + ' con tới lấy.';
+  }
+  function check(focus) {
+    const noItem = !rows.some(qtyOf), noName = !nameIn.value.trim();
+    itemsErr.hidden = !noItem;
+    nameErr.hidden = !noName;
+    nameIn.setAttribute('aria-invalid', String(noName));
+    if (focus) (noItem ? rows[0].querySelector('[data-step=up]') : noName ? nameIn : null)?.focus();
+    return !noItem && !noName;
+  }
+  function refresh() { preview.textContent = holdText(); if (tried) check(false); }
+
+  function openHold(i, from) {
+    opener = from; tried = false;
+    radios.forEach(r => { r.checked = +r.value === i; });
+    itemsErr.hidden = true; nameErr.hidden = true; nameIn.removeAttribute('aria-invalid');
+    hStatus.className = ''; hStatus.textContent = ''; fallback.hidden = true;
+    refresh();
+    hold.showModal();
+  }
+  // Màn đầu: chọn sẵn mẻ sớm nhất chưa hết. Panel mẻ: chọn sẵn mẻ mà nút trong panel đang ghi (data-hold = mẻ đích)
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-hold]');
+    if (!b) return;
+    e.preventDefault();
+    openHold(b.dataset.hold === '' ? (ahead ? 0 : states.findIndex(s => s !== 'het')) : +b.dataset.hold, b);
+  });
+
+  // Ba lối thoát: nút X, phím Esc, bấm ra ngoài hộp. Đóng thì focus về nút đã mở hộp
+  const shut = () => { if (hold.open) hold.close(); };
+  hold.addEventListener('close', () => { opener?.focus(); });
+  hold.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); shut(); } });
+  hold.addEventListener('click', e => {
+    if (e.target !== hold) return;
+    const r = hold.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) shut();
+  });
+  hold.querySelector('[data-hold-close]').addEventListener('click', shut);
+
+  holdForm.addEventListener('click', e => {
+    const b = e.target.closest('[data-step]');
+    if (!b || b.getAttribute('aria-disabled') === 'true') return;
+    const r = b.closest('[data-qty]');
+    setQty(r, qtyOf(r) + (b.dataset.step === 'up' ? 1 : -1));
+    refresh();
+  });
+  holdForm.addEventListener('input', e => {
+    const r = e.target.closest('[data-qty]');
+    if (r) { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 2); sync(r); }
+    refresh();
+  });
+  holdForm.addEventListener('change', e => {
+    const r = e.target.closest('[data-qty]');
+    if (r) setQty(r, qtyOf(r));
+    refresh();
+  });
+
+  // Chép rồi mở Zalo. Chép bị chặn: không mở Zalo, báo dưới nút chính (cạnh chỗ chép), cuộn tới tin nhắn để chép tay
+  // và hiện nút Mở Zalo
+  holdForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    tried = true;
+    if (!check(true)) return;
+    const text = holdText();
+    submit.setAttribute('aria-busy', 'true'); submitIc.className = 'spin';
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (err) { ok = false; }
+    submit.removeAttribute('aria-busy'); submitIc.className = 'ph ph-chat-circle-text';
+    if (!ok) {
+      hStatus.className = 'is-bad';
+      hStatus.textContent = 'Trình duyệt không cho chép. Bấm giữ tin nhắn ở trên để chép tay, rồi bấm Mở Zalo.';
+      fallback.hidden = false;
+      holdMsg.scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    const w = window.open(ZALO, '_blank');
+    if (!w) {
+      hStatus.className = 'is-ok';
+      hStatus.textContent = 'Đã chép tin nhắn. Trình duyệt chặn mở cửa sổ mới: bấm Mở Zalo rồi dán vào ô chat.';
+      fallback.hidden = false;
+      holdMsg.scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    try { w.opener = null; } catch (err) { /* cửa sổ đã sang zalo.me khác nguồn: không cắt được opener, Zalo vẫn mở */ }
+    shut();
+    say('Đã chép tin nhắn giữ bánh. Dán vào ô chat Zalo rồi gửi Cô Ba.');
+  });
+  rows.forEach(r => setQty(r, 0));
+  refresh();
+
+  // Section hiện dần một lần khi cuộn tới (IntersectionObserver, không nghe sự kiện cuộn)
+  const items = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add('is-in'); io.unobserve(en.target); } }), { rootMargin: '0px 0px -8% 0px' });
+    items.forEach(el => io.observe(el));
+  } else items.forEach(el => el.classList.add('is-in'));
+})();
+</script>
+</body>
+</html>

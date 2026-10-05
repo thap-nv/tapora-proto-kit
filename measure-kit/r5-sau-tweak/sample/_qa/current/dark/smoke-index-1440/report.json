@@ -1,0 +1,86 @@
+[
+ {
+  "step": "load",
+  "errors": [],
+  "check": null,
+  "dims": null
+ },
+ {
+  "step": "view",
+  "errors": [],
+  "check": "Lò Bánh Củi Cô Ba · bánh mì lò củi ở Đà Lạt",
+  "dims": {
+   "sw": 1440,
+   "cw": 1440,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "trạng thái ?gio=11:00",
+  "errors": [],
+  "check": null,
+  "dims": {
+   "sw": 1440,
+   "cw": 1440,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "trạng thái ?gio=13:00",
+  "errors": [],
+  "check": null,
+  "dims": {
+   "sw": 1440,
+   "cw": 1440,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "trạng thái ?gio=18:40",
+  "errors": [],
+  "check": null,
+  "dims": {
+   "sw": 1440,
+   "cw": 1440,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "trạng thái ?thu=2",
+  "errors": [],
+  "check": null,
+  "dims": {
+   "sw": 1440,
+   "cw": 1440,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "trạng thái ?gio=19:30",
+  "errors": [],
+  "check": null,
+  "dims": {
+   "sw": 1440,
+   "cw": 1440,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ }
+]

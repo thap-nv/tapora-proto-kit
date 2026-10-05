@@ -1,0 +1,22 @@
+{
+ "steps": [
+  {
+   "name": "view",
+   "wait": 600,
+   "check": "document.title",
+   "shot": "_system",
+   "jpeg": true,
+   "slices": 16
+  },
+  {
+   "name": "system-demo",
+   "wait": 100,
+   "check": "document.querySelector('[data-system-demo]') ? 'FAIL: còn component mẫu (data-system-demo): thay bằng component thật của dự án' : 'PASS'"
+  },
+  {
+   "name": "system-pairs",
+   "wait": 100,
+   "check": "(() => { const bad = [...document.querySelectorAll('[data-pair][data-verdict=\"khong\"]')].map(e => e.dataset.pair); const miss = ((document.querySelector('[data-sys-missing]') || {}).textContent || '').trim(); return bad.length ? 'FAIL: ' + bad.length + ' cặp dưới ngưỡng: ' + bad.slice(0, 6).join(', ') : miss ? 'FAIL: thiếu biến ' + miss : 'PASS ' + document.querySelectorAll('[data-pair]').length + ' cặp'; })()"
+  }
+ ]
+}

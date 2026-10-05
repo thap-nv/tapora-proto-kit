@@ -1,0 +1,99 @@
+{
+ "steps": [
+  {
+   "name": "mo-tu-man-dau",
+   "js": "document.querySelector('.hero [data-hold]')?.click()",
+   "wait": 500,
+   "check": "(()=>{const d=document.querySelector('[data-hold-dialog]');if(!d?.open)return 'FAIL: nút Giữ bánh qua Zalo ở màn đầu chưa mở hộp giữ bánh';if(!d.contains(document.activeElement))return 'FAIL: focus chưa vào trong hộp';const r=d.querySelector('input[name=me]:checked');return r?.value==='1'?'PASS':'FAIL: lúc 8:40 phải chọn sẵn mẻ 9:30 (mẻ sớm nhất chưa hết), đang chọn '+(r?r.value:'không mẻ nào')})()",
+   "shot": "giu-banh-mo",
+   "jpeg": true
+  },
+  {
+   "name": "sheet-hay-hop-thoai",
+   "check": "(()=>{const d=document.querySelector('[data-hold-dialog]');if(!d?.open)return 'FAIL: hộp chưa mở';const f=document.createElement('div');f.style.cssText='position:fixed;inset:0;visibility:hidden';document.body.appendChild(f);const v=f.getBoundingClientRect();f.remove();const r=d.getBoundingClientRect(),W=v.width,H=v.height;if(W<768)return Math.abs(r.bottom-H)<2&&r.width>=W-1?'PASS':'FAIL: điện thoại phải là sheet sát đáy, rộng hết màn (đáy '+Math.round(r.bottom)+'/'+H+', rộng '+Math.round(r.width)+'/'+W+')';return Math.abs((r.top+r.bottom)/2-H/2)<2&&Math.abs((r.left+r.right)/2-W/2)<2&&r.width<W-64?'PASS':'FAIL: máy tính phải là hộp thoại giữa màn'})()"
+  },
+  {
+   "name": "me-het-khong-chon-duoc",
+   "check": "(()=>{const r=[...document.querySelectorAll('[data-hold-dialog] input[name=me]')];if(r.length!==4)return 'FAIL: cần 4 mẻ để chọn, có '+r.length;return r[0].disabled&&!r[1].disabled&&!r[2].disabled&&!r[3].disabled?'PASS':'FAIL: lúc 8:40 mẻ 6:00 đã hết phải tắt, ba mẻ còn lại phải chọn được'})()"
+  },
+  {
+   "name": "bat-buoc-ten-va-banh",
+   "js": "document.querySelector('[data-hold-submit]')?.click()",
+   "wait": 400,
+   "check": "(()=>{const d=document.querySelector('[data-hold-dialog]');if(!d?.open)return 'FAIL: thiếu tên và bánh thì hộp phải còn mở';const n=document.getElementById('hold-name'),e1=document.getElementById('hold-name-err'),e2=document.getElementById('hold-items-err');if(n?.getAttribute('aria-invalid')!=='true')return 'FAIL: ô tên chưa báo lỗi (aria-invalid)';if(!e1||e1.hidden||!e1.textContent.trim())return 'FAIL: chưa có lời báo thiếu tên';if(!e2||e2.hidden||!e2.textContent.trim())return 'FAIL: chưa có lời báo thiếu bánh';return window.__zalo?'FAIL: không được mở Zalo khi còn lỗi':'PASS'})()",
+   "shot": "giu-banh-loi",
+   "jpeg": true
+  },
+  {
+   "name": "chon-so-luong",
+   "js": "(()=>{const b=document.querySelectorAll('[data-hold-dialog] [data-qty]')[0]?.querySelector('[data-step=up]');b?.click();b?.click()})()",
+   "check": "(()=>{const q=document.querySelectorAll('[data-hold-dialog] [data-qty]');if(q.length!==4)return 'FAIL: cần 4 loại bánh có ô số lượng, có '+q.length;const v=q[0].querySelector('input')?.value;const m=q[1].querySelector('[data-step=down]');if(v!=='2')return 'FAIL: bấm thêm hai lần phải ra 2, đang '+v;if(m?.getAttribute('aria-disabled')!=='true')return 'FAIL: nút bớt của bánh đang 0 phải tắt (aria-disabled)';return document.getElementById('hold-items-err')?.hidden?'PASS':'FAIL: đã chọn bánh mà lời báo thiếu bánh chưa tắt'})()"
+  },
+  {
+   "name": "chep-va-mo-zalo",
+   "js": "(()=>{window.__zalo=[];window.__chep='';window.open=u=>{window.__zalo.push(u);return {}};Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async t=>{window.__chep=t}}});const n=document.getElementById('hold-name');if(n){n.value='Hồng Nhung';n.dispatchEvent(new Event('input',{bubbles:true}))}document.querySelector('[data-hold-submit]')?.click()})()",
+   "wait": 600,
+   "check": "(()=>{const want='Cô Ba ơi, giữ giúp con 2 bánh mì que củi mẻ 9:30. Con tên Hồng Nhung, khoảng 9:45 con tới lấy.';if(window.__chep!==want)return 'FAIL: tin nhắn chép ra là: '+window.__chep;if(window.__zalo?.[0]!=='https://zalo.me/0909123456')return 'FAIL: chưa mở Zalo 0909 123 456';if(document.querySelector('[data-hold-dialog]')?.open)return 'FAIL: chép và mở Zalo xong thì hộp phải đóng';if(document.getElementById('toast')?.hidden!==false)return 'FAIL: chưa báo đã chép';return document.activeElement?.matches('.hero [data-hold]')?'PASS':'FAIL: focus chưa về nút đã mở hộp'})()"
+  },
+  {
+   "name": "mo-tu-khung-me",
+   "js": "(()=>{document.getElementById('d3')?.click();document.querySelector('#panel [data-hold]')?.click()})()",
+   "wait": 500,
+   "check": "(()=>{const d=document.querySelector('[data-hold-dialog]');if(!d?.open)return 'FAIL: nút giữ bánh trong khung mẻ chưa mở hộp';const r=d.querySelector('input[name=me]:checked');if(r?.value!=='3')return 'FAIL: bấm từ khung mẻ 17:30 phải chọn sẵn mẻ 17:30';if(!document.getElementById('hold-name-err')?.hidden||!document.getElementById('hold-items-err')?.hidden)return 'FAIL: mở lại thì không hiện lời báo lỗi cũ';return document.getElementById('hold-name')?.value==='Hồng Nhung'?'PASS':'FAIL: mở lại phải giữ tên đã nhập'})()"
+  },
+  {
+   "name": "thoat-esc",
+   "js": "document.querySelector('[data-hold-dialog]')?.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))",
+   "wait": 300,
+   "check": "(()=>{const d=document.querySelector('[data-hold-dialog]');if(!d||d.open)return 'FAIL: Esc chưa đóng hộp';return document.activeElement?.matches('#panel [data-hold]')?'PASS':'FAIL: focus chưa về nút giữ bánh trong khung mẻ'})()"
+  },
+  {
+   "name": "mo-tu-khung-me-da-het",
+   "js": "(()=>{document.getElementById('d0')?.click();document.querySelector('#panel [data-hold]')?.click()})()",
+   "wait": 500,
+   "check": "(()=>{const d=document.querySelector('[data-hold-dialog]');if(!d?.open)return 'FAIL: nút trong khung mẻ đã hết chưa mở hộp';return d.querySelector('input[name=me]:checked')?.value==='1'?'PASS':'FAIL: khung mẻ 6:00 đã hết có nút trỏ mẻ 9:30, hộp phải chọn sẵn mẻ 9:30'})()"
+  },
+  {
+   "name": "thoat-backdrop",
+   "js": "document.querySelector('[data-hold-dialog]')?.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:1,clientY:1}))",
+   "wait": 300,
+   "check": "(()=>{const d=document.querySelector('[data-hold-dialog]');return d&&!d.open?'PASS':'FAIL: bấm ra ngoài hộp chưa đóng hộp'})()"
+  },
+  {
+   "name": "thoat-nut-dong",
+   "js": "(()=>{document.querySelector('.hero [data-hold]')?.click();document.querySelector('[data-hold-close]')?.click()})()",
+   "wait": 300,
+   "check": "(()=>{const d=document.querySelector('[data-hold-dialog]');if(!d||d.open)return 'FAIL: nút Đóng chưa đóng hộp';return document.activeElement?.matches('.hero [data-hold]')?'PASS':'FAIL: focus chưa về nút ở màn đầu'})()"
+  },
+  {
+   "name": "loi-chep-bi-chan",
+   "js": "(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('chặn')}}});window.__zalo=[];document.querySelector('.hero [data-hold]')?.click();document.querySelectorAll('[data-hold-dialog] [data-qty]')[2]?.querySelector('[data-step=up]')?.click();document.querySelector('[data-hold-submit]')?.click()})()",
+   "wait": 500,
+   "check": "(()=>{const d=document.querySelector('[data-hold-dialog]');if(!d?.open)return 'FAIL: chép bị chặn thì hộp phải còn mở';const s=d.querySelector('[data-hold-status]');if(!s?.classList.contains('is-bad')||!s.textContent.trim())return 'FAIL: chưa báo chép bị chặn cạnh tin nhắn';const f=d.querySelector('[data-hold-fallback]');if(!f||f.hidden)return 'FAIL: chưa có lối mở Zalo dự phòng';return window.__zalo.length===0?'PASS':'FAIL: chép bị chặn thì không tự mở Zalo'})()",
+   "shot": "giu-banh-chep-loi",
+   "jpeg": true
+  },
+  {
+   "name": "sang-18-40",
+   "js": "location.href=location.pathname+'?gio=18:40'"
+  },
+  {
+   "name": "het-ca-ngay-giu-cho-mai",
+   "js": "document.querySelector('.hero [data-hold]')?.click()",
+   "wait": 500,
+   "check": "(()=>{const d=document.querySelector('[data-hold-dialog]');if(!d?.open)return 'FAIL: hộp chưa mở';const r=[...d.querySelectorAll('input[name=me]')];if(r.length!==4||r.some(x=>x.disabled))return 'FAIL: hết bánh cả ngày thì bốn mẻ ngày mai đều chọn được';if(d.querySelector('input[name=me]:checked')?.value!=='0')return 'FAIL: phải chọn sẵn mẻ 6:00 sáng mai';const p=d.querySelector('[data-hold-preview]')?.textContent||'';return p.includes('mẻ 6:00 sáng mai')?'PASS':'FAIL: tin nhắn phải ghi mẻ 6:00 sáng mai, đang: '+p})()",
+   "shot": "giu-banh-mai",
+   "jpeg": true
+  },
+  {
+   "name": "sang-thu-hai",
+   "js": "location.href=location.pathname+'?thu=2'"
+  },
+  {
+   "name": "thu-hai-giu-cho-thu-ba",
+   "js": "(()=>{document.getElementById('d2')?.click();document.querySelector('#panel [data-hold]')?.click()})()",
+   "wait": 500,
+   "check": "(()=>{const d=document.querySelector('[data-hold-dialog]');if(!d?.open)return 'FAIL: hộp chưa mở';if(d.querySelector('input[name=me]:checked')?.value!=='2')return 'FAIL: bấm từ khung mẻ 15:00 phải chọn sẵn mẻ 15:00';const p=d.querySelector('[data-hold-preview]')?.textContent||'';return p.includes('mẻ 15:00 chiều thứ Ba')?'PASS':'FAIL: thứ Hai lò nghỉ, tin nhắn phải ghi mẻ 15:00 chiều thứ Ba, đang: '+p})()"
+  }
+ ]
+}

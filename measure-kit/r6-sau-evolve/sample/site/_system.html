@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design system · Lò Bánh Củi Cô Ba</title>
+<meta name="description" content="Design system sống của Lò Bánh Củi Cô Ba: màu, chữ, hình khối, chuyển động và component thật của trang.">
+<!-- Trang design system sống. Mẫu từ sketch-to-site/templates/system.html; B2 chép thành site/_system.html (04/10/2026).
+     Màu, Chữ, Hình khối, Chuyển động: tự vẽ từ CSS variables của theme đang bật, đo mọi cặp bằng color.js.
+     Component: component THẬT của dự án, cùng CSS với site/index.html (assets/site.css).
+     Trạng thái tĩnh dùng thuộc tính thật (disabled, aria-busy, aria-invalid, aria-selected, aria-pressed) và gắn
+     data-demo-state="<trạng thái>" để lượt kiểm sâu không bấm thử. Hover, focus, nhấn để sống: bộ kiểm đo bằng chuột và bàn phím thật. -->
+<script src="assets/theme.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Commissioner:wght@400;500;600&family=Fraunces:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/themes.css">
+<link rel="stylesheet" href="assets/site.css">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="assets/color.js"></script>
+<style>
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body, system-ui, sans-serif);font-size:var(--text-base);line-height:var(--leading-normal)}
+  .sys{max-width:1180px;margin:0 auto;padding:40px 16px 80px}
+  .sys h1{font-family:var(--font-display, inherit);font-size:var(--text-3xl);line-height:var(--leading-tight);margin:0 0 8px}
+  .sys h2{font-family:var(--font-display, inherit);font-size:var(--text-xl);line-height:var(--leading-tight);margin:48px 0 16px}
+  .sys p{max-width:65ch;margin:0 0 12px;color:var(--muted)}
+  .sys-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0}
+  .sys-bar button{font:inherit;padding:6px 12px;border-radius:var(--radius-sm);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer}
+  .sys-bar button[aria-pressed="true"]{background:var(--selected);border-color:var(--ring)}
+  .sys-bar button:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  .sys-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr));gap:12px}
+  .sys-sw{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+  .sys-sw i{display:block;height:56px;border-bottom:1px solid var(--line)}
+  .sys-sw span{display:block;padding:8px 10px;font-size:var(--text-sm);color:var(--ink)}
+  .sys-sw code{display:block;padding:0 10px 10px;font:var(--text-xs)/1.4 var(--font-mono, ui-monospace, monospace);color:var(--muted);overflow-wrap:anywhere}
+  .sys-scroll{overflow-x:auto}
+  .sys-table{width:100%;border-collapse:collapse;font-size:var(--text-sm);background:var(--surface);border:1px solid var(--line)}
+  .sys-table th,.sys-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  .sys-table .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .sys-table [data-verdict="khong"] td:last-child{color:var(--danger-text);font-weight:600}
+  .sys-table [data-verdict="sat"] td:last-child{color:var(--warning);font-weight:600}
+  .sys-type > div{display:grid;grid-template-columns:minmax(0,160px) minmax(0,1fr);gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line)}
+  .sys-type code{font:var(--text-xs)/1.4 var(--font-mono, ui-monospace, monospace);color:var(--muted)}
+  .sys-type span{overflow-wrap:anywhere}
+  .sys-shape{display:flex;flex-wrap:wrap;gap:16px}
+  .sys-shape div{width:140px;height:88px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;text-align:center;font-size:var(--text-sm)}
+  .sys-move{display:inline-block;padding:10px 16px;background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius);transition:transform var(--dur-base) var(--ease-out)}
+  .sys-move:hover{transform:translateX(24px)}
+  .sys-move:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  [data-sys-missing]:empty{display:none}
+  .sys [data-sys-missing]{padding:12px;border-radius:var(--radius);background:var(--danger-soft);color:var(--danger-text)}
+  /* Khung trình bày component (chỉ của trang này). Component dùng CSS của assets/site.css */
+  .sys [data-system="components"] p{max-width:none;margin:0;color:inherit}
+  .sys [data-system="components"] p.muted{color:var(--muted)}
+  .sys [data-system="components"] p.sys-cap{margin:0 0 8px;max-width:65ch;color:var(--muted);font-size:var(--text-sm)}
+  .sys .sys-h3{font-size:var(--text-lg);margin:48px 0 12px}
+  .sys-cell .sill{margin-top:-10px}
+  .demo-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;margin:12px 0}
+  .sys-cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,232px),1fr));gap:24px 16px;align-items:start}
+  .sys-cells > *{min-width:0}
+  .sys-cell{display:grid;gap:10px;justify-items:center}
+  .sys-cell > *{max-width:100%}
+  .sys-cells .hero-arch{width:100%;padding:0 16px}
+  .sys-w320{width:100%;max-width:288px}
+  .sys-w275{width:100%;max-width:275px}
+  .sys-split{display:grid;gap:32px}
+  @media (min-width:900px){.sys-split{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+  .sys .toast{position:static;transform:none;animation:none;width:auto}
+  .sys-frame{border:1px dashed var(--line);padding:16px}
+  .sys [data-system="components"] .foot-name{color:var(--ink)}
+  /* Hộp giữ bánh bày đứng yên: không cuộn thân hộp, giữ màu chữ phụ và chữ lỗi của component */
+  .sys .hold-demo{max-width:36rem}
+  .sys .hold-demo .hold-in{max-height:none}
+  .sys [data-system="components"] .hold p.fine{color:var(--muted)}
+  .sys [data-system="components"] .hold p.field-err{color:var(--danger-text)}
+  .sys [data-system="components"] .hold-foot > * + *{margin-top:8px}
+</style>
+</head>
+<body class="lb">
+<a class="skip" href="#h-comp">Bỏ qua tới component</a>
+<main class="sys">
+  <h1>Design system</h1>
+  <p>Lò Bánh Củi Cô Ba · concept <em>Cửa lò mở bốn lần</em>. Màu, chữ, hình khối và chuyển động đọc thẳng từ token của theme đang bật. Site có một theme, nền tối như concept.</p>
+  <div class="sys-bar" data-sys-themes></div>
+
+  <section aria-labelledby="h-mau">
+    <h2 id="h-mau">Màu</h2>
+    <p data-sys-missing></p>
+    <div class="sys-grid" data-sys-swatches></div>
+    <h2>Tương phản</h2>
+    <div class="sys-scroll"><table class="sys-table"><thead><tr><th>Cặp</th><th>Biến</th><th class="num">Tỉ lệ</th><th>Mức</th></tr></thead><tbody data-sys-pairs></tbody></table></div>
+  </section>
+
+  <section aria-labelledby="h-chu"><h2 id="h-chu">Chữ</h2><div class="sys-type" data-sys-type></div></section>
+  <section aria-labelledby="h-hinh"><h2 id="h-hinh">Hình khối</h2><div class="sys-shape" data-sys-shape></div></section>
+  <section aria-labelledby="h-chuyen"><h2 id="h-chuyen">Chuyển động</h2><p data-sys-motion></p><span class="sys-move" tabindex="0">Di chuột vào đây</span></section>
+
+  <section aria-labelledby="h-comp" data-system="components">
+    <h2 id="h-comp">Component</h2>
+    <p class="sys-cap">Component thật của trang, cùng CSS với <code>site/index.html</code> (<code>assets/site.css</code>). Giờ và trạng thái mẻ là minh hoạ.</p>
+
+    <h3 class="sys-h3">Đầu trang</h3>
+    <div class="sys-frame">
+      <header class="site-head" style="padding:0">
+        <a class="wordmark" href="#h-comp">Lò Bánh Củi Cô Ba</a>
+        <nav class="nav" aria-label="Mẫu điều hướng trong trang">
+          <a class="nav-link" href="#h-cua" aria-current="true" data-demo-state="selected">Mẻ hôm nay</a>
+          <a class="nav-link" href="#h-noiquy">Nội quy</a>
+          <a class="nav-link" href="#h-noiquy">Đường đi</a>
+        </nav>
+      </header>
+    </div>
+
+    <h3 class="sys-h3">Nút</h3>
+    <p class="sys-cap">Một nút chính mỗi màn: giữ bánh qua Zalo. Site không có hành động nguy hiểm, nên không có nút nguy hiểm. Trạng thái tắt và đang chép chỉ có trong hộp giữ bánh (mục Hộp giữ bánh bên dưới).</p>
+    <div class="demo-row">
+      <a class="btn btn-primary" href="https://zalo.me/0909123456" target="_blank" rel="noopener"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Giữ bánh qua Zalo</a>
+      <a class="btn btn-ghost" href="https://www.google.com/maps/search/?api=1&amp;query=14%20Hai%20B%C3%A0%20Tr%C6%B0ng%2C%20Ph%C6%B0%E1%BB%9Dng%201%2C%20%C4%90%C3%A0%20L%E1%BA%A1t" target="_blank" rel="noopener"><i class="ph ph-map-pin" aria-hidden="true"></i>Xem đường đi</a>
+      <button type="button" class="btn btn-ghost btn-sm" data-copy="Cô Ba ơi, giữ giúp con 4 bánh mì que mẻ 9:30. Con tên Hồng Nhung, khoảng 9:45 con tới lấy."><i class="ph ph-copy" aria-hidden="true"></i>Chép tin nhắn</button>
+    </div>
+    <p class="sys-cap">Chuỗi dài nhất: nhãn nút của mẻ cuối, khổ 320 (nút giãn hết bề ngang dưới 768px).</p>
+    <div class="sys-w320"><a class="btn btn-primary btn-block-sm" style="width:100%" href="https://zalo.me/0909123456" target="_blank" rel="noopener"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Giữ bánh mẻ 17:30 qua Zalo</a></div>
+    <p class="sys-cap" style="margin-top:16px">Dòng minh hoạ dưới hàng nút màn đầu (<code>.hero-note</code>): giờ của prototype là minh hoạ, đổi bằng <code>?gio=</code>, <code>?thu=</code>.</p>
+    <p class="hero-note muted" style="margin-top:0">Giờ 8:40 thứ Bảy và trạng thái mẻ là minh hoạ.</p>
+
+    <h3 class="sys-h3">Vòm màn đầu · mọi trạng thái trong ngày</h3>
+    <p class="sys-cap">Vòm ôm mẻ đáng xem nhất lúc này. Vật liệu đổi theo trạng thái; than hồng chỉ có khi một mẻ đang trong lò.</p>
+    <div class="sys-cells">
+      <div class="sys-cell">
+        <div class="hero-arch arch fire" role="img" aria-label="Mẻ 9:30 đang trong lò, ra lò sau 50 phút"><p class="label">Mẻ kế · đang trong lò</p><p class="when">9:30</p><p class="sub">Ra lò sau 50 phút</p></div>
+        <div class="sill" style="width:100%" aria-hidden="true"></div>
+        <p class="sys-cap">Đang nướng · than hồng</p>
+      </div>
+      <div class="sys-cell">
+        <div class="hero-arch arch brick" role="img" aria-label="Mẻ kế 15:00 chưa vào lò, mẻ 9:30 còn bánh ở quầy"><p class="label">Mẻ kế · chưa vào lò</p><p class="when">15:00</p><p class="sub">Mẻ 9:30 còn bánh ở quầy</p></div>
+        <div class="sill" style="width:100%" aria-hidden="true"></div>
+        <p class="sys-cap">Còn bánh · cửa gạch của mẻ kế, còn bánh là một dòng chữ (Cổng 3: giữ concept, chấp nhận ngoại lệ ở màn này)</p>
+      </div>
+      <div class="sys-cell">
+        <div class="hero-arch arch brick" role="img" aria-label="Tiệm đã đóng cửa, mẻ đầu 6:00 sáng mai"><p class="label">Tiệm đã đóng cửa</p><p class="when">6:00</p><p class="sub">Mẻ đầu sáng mai</p></div>
+        <div class="sill" style="width:100%" aria-hidden="true"></div>
+        <p class="sys-cap">Sau 19:00 · cửa gạch đóng</p>
+      </div>
+      <div class="sys-cell">
+        <div class="hero-arch arch ash" role="img" aria-label="Hôm nay hết bánh, mẻ đầu 6:00 sáng mai"><p class="label">Hôm nay hết bánh</p><p class="when">6:00</p><p class="sub">Mẻ đầu sáng mai</p></div>
+        <div class="sill" style="width:100%" aria-hidden="true"></div>
+        <p class="sys-cap">Hết mẻ cuối · tro nguội</p>
+      </div>
+      <div class="sys-cell">
+        <div class="hero-arch arch brick" role="img" aria-label="Thứ Hai lò nghỉ, mẻ đầu 6:00 sáng thứ Ba"><p class="label">Thứ Hai lò nghỉ</p><p class="when">6:00</p><p class="sub">Mẻ đầu sáng thứ Ba</p></div>
+        <div class="sill" style="width:100%" aria-hidden="true"></div>
+        <p class="sys-cap">Lò nghỉ, ngoài giờ · cửa gạch đóng</p>
+      </div>
+      <div class="sys-cell">
+        <div class="sys-w275"><div class="hero-arch arch fire" style="width:100%" role="img" aria-label="Mẻ 17:30 đang trong lò, ra lò sau 35 phút"><p class="label">Mẻ kế · đang trong lò</p><p class="when">17:30</p><p class="sub">Ra lò sau 35 phút</p></div></div>
+        <p class="sys-cap">Chuỗi dài nhất: giờ năm ký tự trong vòm hẹp nhất (275px, khổ 320)</p>
+      </div>
+    </div>
+
+    <h3 class="sys-h3" id="h-cua">Ô cửa vòm và panel mẻ · tương tác đặc trưng</h3>
+    <p class="sys-cap">Bấm một cửa, hoặc dùng phím mũi tên, để mở mẻ đó. Đang chọn: cửa nhấc lên, viền chữ chính. Hover: nhấc 3px. Focus: vòng cam.</p>
+    <div class="doors" role="tablist" aria-label="Bốn mẻ trong ngày" data-doors>
+      <button type="button" role="tab" id="d0" aria-controls="dpanel" aria-selected="false" tabindex="-1" class="door arch ash"><span class="t">6:00</span><span class="s">Đã hết</span></button>
+      <button type="button" role="tab" id="d1" aria-controls="dpanel" aria-selected="true" tabindex="0" class="door arch fire"><span class="t">9:30</span><span class="s">Đang nướng</span></button>
+      <button type="button" role="tab" id="d2" aria-controls="dpanel" aria-selected="false" tabindex="-1" class="door arch brick"><span class="t">15:00</span><span class="s">Chưa vào lò</span></button>
+      <button type="button" role="tab" id="d3" aria-controls="dpanel" aria-selected="false" tabindex="-1" class="door arch brick"><span class="t">17:30</span><span class="s">Chưa vào lò</span></button>
+    </div>
+    <div class="sill" aria-hidden="true" style="max-width:36rem"></div>
+    <div class="cq" style="margin-top:24px"><div id="dpanel" role="tabpanel" aria-labelledby="d1" class="batch"></div></div>
+
+    <div class="sys-split" style="margin-top:32px">
+      <div>
+        <p class="sys-cap">Cửa của mẻ đã ra lò mà còn bánh: gạch, nhãn Còn bánh (Cổng 3: giữ concept). Lúc 16:36 (minh hoạ).</p>
+        <div class="doors" style="max-width:24rem" aria-hidden="true">
+          <span class="door arch ash" data-demo-state="gone"><span class="t">6:00</span><span class="s">Đã hết</span></span>
+          <span class="door arch ash" data-demo-state="gone"><span class="t">9:30</span><span class="s">Đã hết</span></span>
+          <span class="door arch brick" data-demo-state="default"><span class="t">15:00</span><span class="s">Còn bánh</span></span>
+          <span class="door arch fire" data-demo-state="default"><span class="t">17:30</span><span class="s">Đang nướng</span></span>
+        </div>
+        <div class="sill" aria-hidden="true" style="max-width:24rem"></div>
+        <p class="sys-cap" style="margin-top:24px">Thứ Hai lò nghỉ: bốn cửa gạch, vẫn bấm xem giờ và món.</p>
+        <div class="doors" style="max-width:24rem" aria-hidden="true">
+          <span class="door arch brick" data-demo-state="default"><span class="t">6:00</span><span class="s">Lò nghỉ</span></span>
+          <span class="door arch brick" data-demo-state="default"><span class="t">9:30</span><span class="s">Lò nghỉ</span></span>
+          <span class="door arch brick" data-demo-state="default"><span class="t">15:00</span><span class="s">Lò nghỉ</span></span>
+          <span class="door arch brick" data-demo-state="default"><span class="t">17:30</span><span class="s">Lò nghỉ</span></span>
+        </div>
+      </div>
+      <div>
+        <p class="sys-cap">Nội dung khó: mẻ đã hết, khổ 320, món tên dài nhất, giá không xuống dòng.</p>
+        <div class="sys-w320 cq">
+          <div class="doors" aria-hidden="true">
+            <span class="door arch ash" data-demo-state="gone"><span class="t">6:00</span><span class="s">Đã hết</span></span>
+            <span class="door arch ash" data-demo-state="gone"><span class="t">9:30</span><span class="s">Đã hết</span></span>
+            <span class="door arch ash" data-demo-state="gone"><span class="t">15:00</span><span class="s">Đã hết</span></span>
+            <span class="door arch ash" data-demo-state="selected" style="transform:translateY(-6px);outline:2px solid var(--ink);outline-offset:3px"><span class="t">17:30</span><span class="s">Đã hết</span></span>
+          </div>
+          <div class="sill" aria-hidden="true"></div>
+          <div class="batch is-gone" style="margin-top:24px">
+            <div class="ph-box arch" style="aspect-ratio:4/3">Ảnh: khay bánh mẻ 17:30 ở miệng lò củi, 1200×900</div>
+            <div>
+              <p class="label muted">Mẻ 17:30</p>
+              <h3>Đã hết</h3>
+              <p class="muted" style="margin-top:8px">Hết lúc 18:25 (minh hoạ). Mẻ nào hết là hết: lò mở lại 6:00 sáng mai.</p>
+              <ul class="items is-gone">
+                <li><span class="name">Bánh mì que củi</span><span class="price">8.000 ₫</span></li>
+                <li><span class="name">Bánh mì đặc ruột</span><span class="price">6.000 ₫</span></li>
+                <li><span class="name">Bánh sừng bò bơ Đà Lạt</span><span class="price">22.000 ₫</span></li>
+                <li><span class="name">Bánh nho Bảo Lộc</span><span class="price">18.000 ₫</span></li>
+              </ul>
+              <a class="btn btn-primary btn-block-sm" style="margin-top:20px;width:100%" href="https://zalo.me/0909123456" target="_blank" rel="noopener">Giữ bánh mẻ 6:00 sáng mai</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="sys-h3">Tin nhắn mẫu · thông báo</h3>
+    <p class="sys-cap">Link Zalo không điền sẵn chữ, nên panel mẻ đưa câu mẫu để chép. Chép được: báo xanh. Trình duyệt chặn chép: báo lỗi cạnh chỗ chép, kèm cách làm tiếp.</p>
+    <div class="sys-split">
+      <div class="msg">
+        <p class="label muted">Tin nhắn mẫu</p>
+        <p><q>Cô Ba ơi, giữ giúp con 4 bánh mì que củi mẻ 9:30. Con tên [tên bạn], khoảng 9:45 con tới lấy.</q></p>
+        <div class="msg-row"><button type="button" class="btn btn-ghost btn-sm" data-copy="Cô Ba ơi, giữ giúp con 4 bánh mì que củi mẻ 9:30. Con tên [tên bạn], khoảng 9:45 con tới lấy."><i class="ph ph-copy" aria-hidden="true"></i>Chép tin nhắn</button><span class="fine">Sửa số bánh, tên và giờ lấy rồi gửi.</span></div>
+        <p role="status" class="is-ok" data-demo-state="success">Đã chép. Mở Zalo rồi dán vào ô chat.</p>
+      </div>
+      <div class="msg">
+        <p class="label muted">Tin nhắn mẫu</p>
+        <p><q>Cô Ba ơi, giữ giúp con 2 bánh sừng bò bơ Đà Lạt và 2 bánh nho Bảo Lộc mẻ 17:30. Con tên Trần Minh Khoa, khoảng 18:00 con tới lấy.</q></p>
+        <p role="status" class="is-bad" data-demo-state="error">Trình duyệt không cho chép. Bấm giữ câu trên để chép tay, hoặc nhắn số 0909 123 456.</p>
+      </div>
+    </div>
+    <div class="demo-row" style="margin-top:16px">
+      <div class="toast is-ok" role="status" data-demo-state="success"><i class="ph ph-check-circle ic" aria-hidden="true"></i><span>Đã chép tin nhắn mẫu. Dán vào Zalo để gửi Cô Ba.</span></div>
+      <p class="note is-info">Máy chưa có Zalo thì nhắn hoặc gọi <span class="num">0909 123 456</span> từ điện thoại.</p>
+    </div>
+
+    <h3 class="sys-h3" id="h-giu">Hộp giữ bánh · sheet và hộp thoại</h3>
+    <p class="sys-cap">Mở từ nút Giữ bánh qua Zalo ở màn đầu và nút giữ bánh trong panel mẻ (bấm từ panel thì chọn sẵn mẻ đó). Dưới 768px là sheet sát đáy, rộng hết màn; từ 768px là hộp thoại giữa màn trên lớp phủ <code>--scrim</code>. Đóng bằng nút X, phím Esc hoặc bấm ra ngoài, focus về lại nút đã mở. Mẫu dưới đây đứng yên trong trang; giờ và trạng thái mẻ là minh hoạ.</p>
+    <div class="sys-split">
+      <div>
+        <p class="sys-cap">Đã điền: mẻ 9:30 đang chọn, mẻ 6:00 đã hết không chọn được, 2 bánh mì que củi, có tên.</p>
+        <div class="hold hold-demo" role="group" aria-label="Mẫu hộp giữ bánh đã điền">
+          <div class="hold-in">
+            <div class="hold-head"><p class="hold-title">Giữ bánh</p><button type="button" class="btn-icon" aria-label="Đóng hộp giữ bánh"><i class="ph ph-x" aria-hidden="true"></i></button></div>
+            <div class="hold-body">
+              <fieldset class="hold-field">
+                <legend class="label muted">Mẻ</legend>
+                <div class="pick">
+                  <label class="pick-opt" data-demo-state="disabled"><input type="radio" name="me-a" value="0" disabled><span class="t">6:00</span><span class="s">Đã hết</span></label>
+                  <label class="pick-opt" data-demo-state="selected"><input type="radio" name="me-a" value="1" checked><span class="t">9:30</span><span class="s">Đang nướng</span></label>
+                  <label class="pick-opt"><input type="radio" name="me-a" value="2"><span class="t">15:00</span><span class="s">Chưa vào lò</span></label>
+                  <label class="pick-opt"><input type="radio" name="me-a" value="3"><span class="t">17:30</span><span class="s">Chưa vào lò</span></label>
+                </div>
+                <p class="fine">Mẻ đã hết thì không chọn được. Trạng thái mẻ là minh hoạ.</p>
+              </fieldset>
+              <fieldset class="hold-field">
+                <legend class="label muted">Bánh và số lượng</legend>
+                <ul class="qty-list">
+                  <li class="is-on" data-demo-state="selected"><span class="qty-name"><span class="name">Bánh mì que củi</span><span class="price">8.000 ₫</span></span><span class="qty" role="group" aria-label="Số bánh mì que củi"><button type="button" aria-label="Bớt một bánh mì que củi" aria-disabled="false"><i class="ph ph-minus" aria-hidden="true"></i></button><input type="text" inputmode="numeric" maxlength="2" value="2" autocomplete="off" aria-label="Số bánh mì que củi"><button type="button" aria-label="Thêm một bánh mì que củi" aria-disabled="false"><i class="ph ph-plus" aria-hidden="true"></i></button></span></li>
+                  <li><span class="qty-name"><span class="name">Bánh mì đặc ruột</span><span class="price">6.000 ₫</span></span><span class="qty" role="group" aria-label="Số bánh mì đặc ruột"><button type="button" aria-label="Bớt một bánh mì đặc ruột" aria-disabled="true" data-demo-state="disabled"><i class="ph ph-minus" aria-hidden="true"></i></button><input type="text" inputmode="numeric" maxlength="2" value="0" autocomplete="off" aria-label="Số bánh mì đặc ruột"><button type="button" aria-label="Thêm một bánh mì đặc ruột" aria-disabled="false"><i class="ph ph-plus" aria-hidden="true"></i></button></span></li>
+                  <li><span class="qty-name"><span class="name">Bánh sừng bò bơ Đà Lạt</span><span class="price">22.000 ₫</span></span><span class="qty" role="group" aria-label="Số bánh sừng bò bơ Đà Lạt"><button type="button" aria-label="Bớt một bánh sừng bò bơ Đà Lạt" aria-disabled="true" data-demo-state="disabled"><i class="ph ph-minus" aria-hidden="true"></i></button><input type="text" inputmode="numeric" maxlength="2" value="0" autocomplete="off" aria-label="Số bánh sừng bò bơ Đà Lạt"><button type="button" aria-label="Thêm một bánh sừng bò bơ Đà Lạt" aria-disabled="false"><i class="ph ph-plus" aria-hidden="true"></i></button></span></li>
+                  <li><span class="qty-name"><span class="name">Bánh nho Bảo Lộc</span><span class="price">18.000 ₫</span></span><span class="qty" role="group" aria-label="Số bánh nho Bảo Lộc"><button type="button" aria-label="Bớt một bánh nho Bảo Lộc" aria-disabled="true" data-demo-state="disabled"><i class="ph ph-minus" aria-hidden="true"></i></button><input type="text" inputmode="numeric" maxlength="2" value="0" autocomplete="off" aria-label="Số bánh nho Bảo Lộc"><button type="button" aria-label="Thêm một bánh nho Bảo Lộc" aria-disabled="false"><i class="ph ph-plus" aria-hidden="true"></i></button></span></li>
+                </ul>
+              </fieldset>
+              <div class="hold-field">
+                <label class="label muted" for="demo-ten-a">Tên của bạn</label>
+                <input class="input" id="demo-ten-a" type="text" value="Hồng Nhung" autocomplete="off">
+              </div>
+              <div class="msg">
+                <p class="label muted">Tin nhắn sẽ chép</p>
+                <p><q>Cô Ba ơi, giữ giúp con 2 bánh mì que củi mẻ 9:30. Con tên Hồng Nhung, khoảng 9:45 con tới lấy.</q></p>
+              </div>
+            </div>
+            <div class="hold-foot">
+              <button type="button" class="btn btn-primary"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Chép tin nhắn và mở Zalo</button>
+              <p class="fine">Cô Ba trả lời trên Zalo là bánh đã được giữ. Máy chưa có Zalo thì nhắn hoặc gọi <span class="num">0909 123 456</span>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="sys-cap">Rỗng và lỗi: hôm nay đã hết bánh nên bốn mẻ là của ngày mai; bấm Chép khi chưa chọn bánh, chưa nhập tên. Tin nhắn hiện chỗ trống cần điền.</p>
+        <div class="hold hold-demo" role="group" aria-label="Mẫu hộp giữ bánh còn thiếu tên và bánh">
+          <div class="hold-in">
+            <div class="hold-head"><p class="hold-title">Giữ bánh</p><button type="button" class="btn-icon" aria-label="Đóng hộp giữ bánh"><i class="ph ph-x" aria-hidden="true"></i></button></div>
+            <div class="hold-body">
+              <fieldset class="hold-field">
+                <legend class="label muted">Mẻ</legend>
+                <div class="pick">
+                  <label class="pick-opt" data-demo-state="selected"><input type="radio" name="me-b" value="0" checked><span class="t">6:00</span><span class="s">Sáng mai</span></label>
+                  <label class="pick-opt"><input type="radio" name="me-b" value="1"><span class="t">9:30</span><span class="s">Sáng mai</span></label>
+                  <label class="pick-opt"><input type="radio" name="me-b" value="2"><span class="t">15:00</span><span class="s">Chiều mai</span></label>
+                  <label class="pick-opt"><input type="radio" name="me-b" value="3"><span class="t">17:30</span><span class="s">Chiều mai</span></label>
+                </div>
+                <p class="fine">Hôm nay đã hết bánh: giữ cho mẻ ngày mai.</p>
+              </fieldset>
+              <fieldset class="hold-field" aria-describedby="demo-banh-b-err">
+                <legend class="label muted">Bánh và số lượng</legend>
+                <ul class="qty-list">
+                  <li><span class="qty-name"><span class="name">Bánh mì que củi</span><span class="price">8.000 ₫</span></span><span class="qty" role="group" aria-label="Số bánh mì que củi"><button type="button" aria-label="Bớt một bánh mì que củi" aria-disabled="true"><i class="ph ph-minus" aria-hidden="true"></i></button><input type="text" inputmode="numeric" maxlength="2" value="0" autocomplete="off" aria-label="Số bánh mì que củi"><button type="button" aria-label="Thêm một bánh mì que củi" aria-disabled="false"><i class="ph ph-plus" aria-hidden="true"></i></button></span></li>
+                  <li><span class="qty-name"><span class="name">Bánh mì đặc ruột</span><span class="price">6.000 ₫</span></span><span class="qty" role="group" aria-label="Số bánh mì đặc ruột"><button type="button" aria-label="Bớt một bánh mì đặc ruột" aria-disabled="true"><i class="ph ph-minus" aria-hidden="true"></i></button><input type="text" inputmode="numeric" maxlength="2" value="0" autocomplete="off" aria-label="Số bánh mì đặc ruột"><button type="button" aria-label="Thêm một bánh mì đặc ruột" aria-disabled="false"><i class="ph ph-plus" aria-hidden="true"></i></button></span></li>
+                  <li><span class="qty-name"><span class="name">Bánh sừng bò bơ Đà Lạt</span><span class="price">22.000 ₫</span></span><span class="qty" role="group" aria-label="Số bánh sừng bò bơ Đà Lạt"><button type="button" aria-label="Bớt một bánh sừng bò bơ Đà Lạt" aria-disabled="true"><i class="ph ph-minus" aria-hidden="true"></i></button><input type="text" inputmode="numeric" maxlength="2" value="0" autocomplete="off" aria-label="Số bánh sừng bò bơ Đà Lạt"><button type="button" aria-label="Thêm một bánh sừng bò bơ Đà Lạt" aria-disabled="false"><i class="ph ph-plus" aria-hidden="true"></i></button></span></li>
+                  <li><span class="qty-name"><span class="name">Bánh nho Bảo Lộc</span><span class="price">18.000 ₫</span></span><span class="qty" role="group" aria-label="Số bánh nho Bảo Lộc"><button type="button" aria-label="Bớt một bánh nho Bảo Lộc" aria-disabled="true"><i class="ph ph-minus" aria-hidden="true"></i></button><input type="text" inputmode="numeric" maxlength="2" value="0" autocomplete="off" aria-label="Số bánh nho Bảo Lộc"><button type="button" aria-label="Thêm một bánh nho Bảo Lộc" aria-disabled="false"><i class="ph ph-plus" aria-hidden="true"></i></button></span></li>
+                </ul>
+                <p class="field-err" id="demo-banh-b-err" data-demo-state="error"><i class="ph ph-warning-circle" aria-hidden="true"></i><span>Chọn ít nhất một bánh.</span></p>
+              </fieldset>
+              <div class="hold-field">
+                <label class="label muted" for="demo-ten-b">Tên của bạn</label>
+                <input class="input" id="demo-ten-b" type="text" value="" autocomplete="off" aria-invalid="true" aria-describedby="demo-ten-b-err" data-demo-state="error">
+                <p class="field-err" id="demo-ten-b-err" data-demo-state="error"><i class="ph ph-warning-circle" aria-hidden="true"></i><span>Nhập tên để Cô Ba biết giữ cho ai.</span></p>
+              </div>
+              <div class="msg">
+                <p class="label muted">Tin nhắn sẽ chép</p>
+                <p><q>Cô Ba ơi, giữ giúp con [số bánh] mẻ 6:00 sáng mai. Con tên [tên bạn], khoảng 6:15 con tới lấy.</q></p>
+              </div>
+            </div>
+            <div class="hold-foot">
+              <button type="button" class="btn btn-primary"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Chép tin nhắn và mở Zalo</button>
+              <p class="fine">Cô Ba trả lời trên Zalo là bánh đã được giữ. Máy chưa có Zalo thì nhắn hoặc gọi <span class="num">0909 123 456</span>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="sys-cap" style="margin-top:24px">Chép bị chặn: không tự mở Zalo, báo dưới nút chính (cạnh chỗ chép), thân hộp cuộn tới tin nhắn để chép tay, hiện nút viền Mở Zalo. Đang chép: nút chính <code>aria-busy</code>, icon thành vòng quay. Ô số lượng chạm 99: nút thêm mờ.</p>
+    <div class="sys-split">
+      <div class="hold hold-demo" role="group" aria-label="Mẫu chân hộp khi trình duyệt chặn chép">
+        <div class="hold-in">
+          <div class="hold-body">
+            <div class="msg">
+              <p class="label muted">Tin nhắn sẽ chép</p>
+              <p><q>Cô Ba ơi, giữ giúp con 2 bánh mì que củi và 1 bánh sừng bò bơ Đà Lạt mẻ 15:00. Con tên Trần Minh Khoa, khoảng 15:15 con tới lấy.</q></p>
+            </div>
+          </div>
+          <div class="hold-foot">
+            <button type="button" class="btn btn-primary"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Chép tin nhắn và mở Zalo</button>
+            <p role="status" class="is-bad" data-demo-state="error">Trình duyệt không cho chép. Bấm giữ tin nhắn ở trên để chép tay, rồi bấm Mở Zalo.</p>
+            <a class="btn btn-ghost" href="https://zalo.me/0909123456" target="_blank" rel="noopener"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Mở Zalo</a>
+          </div>
+        </div>
+      </div>
+      <div class="hold hold-demo" role="group" aria-label="Mẫu nút đang chép và ô số lượng chạm 99">
+        <div class="hold-in">
+          <div class="hold-body">
+            <ul class="qty-list">
+              <li class="is-on" data-demo-state="selected"><span class="qty-name"><span class="name">Bánh mì đặc ruột</span><span class="price">6.000 ₫</span></span><span class="qty" role="group" aria-label="Số bánh mì đặc ruột"><button type="button" aria-label="Bớt một bánh mì đặc ruột" aria-disabled="false"><i class="ph ph-minus" aria-hidden="true"></i></button><input type="text" inputmode="numeric" maxlength="2" value="99" autocomplete="off" aria-label="Số bánh mì đặc ruột"><button type="button" aria-label="Thêm một bánh mì đặc ruột" aria-disabled="true" data-demo-state="disabled"><i class="ph ph-plus" aria-hidden="true"></i></button></span></li>
+            </ul>
+          </div>
+          <div class="hold-foot">
+            <button type="button" class="btn btn-primary" aria-busy="true" data-demo-state="loading"><span class="spin" aria-hidden="true"></span>Chép tin nhắn và mở Zalo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="sys-h3" id="h-noiquy">Nội quy cạnh lò · giờ mở và đường đi</h3>
+    <div class="sys-split">
+      <ol class="rules" style="margin-top:0">
+        <li><span class="n">1</span><p>Bánh ra lò bốn lần một ngày: <span class="num">6:00 ·</span> <span class="num">9:30 ·</span> <span class="num">15:00 ·</span> <span class="num">17:30</span>.</p></li>
+        <li><span class="n">2</span><p>Mẻ nào hết là hết, chờ mẻ sau.</p></li>
+        <li><span class="n">3</span><p>Muốn chắc có bánh, nhắn Zalo <span class="num">0909 123 456</span> để giữ trước.</p></li>
+      </ol>
+      <div>
+        <div class="demo-row" style="margin-top:0">
+          <span class="chip is-open" data-demo-state="open"><i class="ph ph-clock" aria-hidden="true"></i>Đang mở · đóng lúc 19:00</span>
+          <span class="chip is-closed" data-demo-state="closed"><i class="ph ph-clock" aria-hidden="true"></i>Thứ Hai nghỉ · mở lại 5:30 thứ Ba</span>
+        </div>
+        <h3 style="font-size:var(--text-lg);margin-top:12px">Mở 5:30 đến 19:00, nghỉ thứ Hai</h3>
+        <p style="margin-top:12px">14 Hai Bà Trưng, Phường 1, Đà Lạt</p>
+        <p style="margin-top:4px">Zalo <span class="num">0909 123 456</span></p>
+        <a class="btn btn-ghost" style="margin-top:20px" href="https://www.google.com/maps/search/?api=1&amp;query=14%20Hai%20B%C3%A0%20Tr%C6%B0ng%2C%20Ph%C6%B0%E1%BB%9Dng%201%2C%20%C4%90%C3%A0%20L%E1%BA%A1t" target="_blank" rel="noopener"><i class="ph ph-map-pin" aria-hidden="true"></i>Xem đường đi</a>
+      </div>
+    </div>
+
+    <h3 class="sys-h3">Chân trang</h3>
+    <div class="sys-frame" style="padding:0">
+      <div class="site-foot" style="margin-top:0;border-top:0">
+        <div class="wrap foot-in">
+          <p class="foot-name">Lò Bánh Củi Cô Ba</p>
+          <p>14 Hai Bà Trưng, Phường 1, Đà Lạt · Zalo <span class="num">0909 123 456</span> · mở 5:30 đến 19:00, nghỉ thứ Hai</p>
+          <p>Giờ 8:40 thứ Bảy và trạng thái từng mẻ trên trang là minh hoạ, chưa nối dữ liệu thật.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="sys-h3">Khung ảnh chờ ảnh thật</h3>
+    <div class="sys-cells">
+      <div class="ph-box arch" style="aspect-ratio:4/3;width:100%">Ảnh: khay bánh mẻ 9:30 ở miệng lò củi, 1200×900</div>
+      <div class="ph-box" style="aspect-ratio:16/10;width:100%">Ảnh: mặt tiền tiệm ở 14 Hai Bà Trưng, 1600×1000</div>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+  const C = window.ColorKit, root = document.documentElement;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const v = k => getComputedStyle(root).getPropertyValue('--' + k).trim();
+  const $ = s => document.querySelector(s);
+  function render() {
+    if (!C) { $('[data-sys-missing]').textContent = 'Thiếu assets/color.js: chép từ sketch-to-site/templates/color.js.'; return; }
+    const cur = window.theme ? theme.get() : '';
+    const list = window.theme ? theme.list() : [];
+    $('[data-sys-themes]').innerHTML = list.length
+      ? list.map(n => `<button type="button" data-set="${esc(n)}" aria-pressed="${n === cur}">${esc(n)}</button>`).join('')
+      : '<span>Chưa có themes.css: chạy scripts/themes.mjs.</span>';
+    const names = C.SEEDS.concat(C.DERIVED.filter(k => !C.SEEDS.includes(k)));
+    const vars = {}, missing = [];
+    for (const k of names) { const x = v(k); if (x) vars[k] = x; else missing.push('--' + k); }
+    for (let i = 1; v('chart-' + i); i++) vars['chart-' + i] = v('chart-' + i);
+    $('[data-sys-missing]').textContent = missing.join(' ');
+    $('[data-sys-swatches]').innerHTML = Object.keys(vars).map(k =>
+      `<div class="sys-sw"><i style="background:var(--${esc(k)})"></i><span>--${esc(k)}</span><code>${esc(vars[k])}</code></div>`).join('');
+    const pairs = C.PAIRS.concat(Object.keys(vars).filter(k => k.startsWith('chart-')).map(k => [k, 'surface', 3, `Màu biểu đồ ${k.slice(6)} trên thẻ`]));
+    const TEXT = { dat: 'Đạt', sat: 'Sát ngưỡng', khong: 'Không đạt' };
+    $('[data-sys-pairs]').innerHTML = C.measure(vars, pairs).map(r =>
+      `<tr data-pair="${esc(r.fg)}/${esc(r.bg)}" data-verdict="${r.verdict}"><td>${esc(r.label)}</td>`
+      + `<td><code>--${esc(r.fg)}</code> trên <code>--${esc(r.bg)}</code>${r.under ? ` phủ <code>--${esc(r.under)}</code>` : ''}</td>`
+      + `<td class="num">${r.ratio.toFixed(2).replace('.', ',')}:1</td><td>${TEXT[r.verdict]} (cần ${String(r.need).replace('.', ',')})</td></tr>`).join('');
+    const sizes = ['4xl', '3xl', '2xl', 'xl', 'lg', 'base', 'sm', 'xs'].filter(k => v('text-' + k));
+    const rootPx = parseFloat(getComputedStyle(root).fontSize);
+    const px = k => { const x = v('text-' + k); return parseFloat(x) * (x.endsWith('rem') ? rootPx : 1); };
+    const base = sizes.includes('base') ? px('base') : 16;
+    $('[data-sys-type]').innerHTML = sizes.map(k => `<div><code>--text-${k} · ${Math.round(px(k))}px · ×${(px(k) / base).toFixed(2)}</code>`
+      + `<span style="font-size:var(--text-${k});line-height:var(--leading-tight)">Chữ Việt có dấu: Ấn tượng ở Đà Lạt</span></div>`).join('');
+    root.dataset.scaleRatio = sizes.length ? (px(sizes[0]) / base).toFixed(2) : '';
+    $('[data-sys-shape]').innerHTML = ['radius-sm', 'radius', 'radius-lg'].map(k => `<div style="border-radius:var(--${k})">--${k}<br>${esc(v(k))}</div>`).join('')
+      + [1, 2, 3, 4].map(i => `<div style="border-radius:var(--radius);box-shadow:var(--shadow-${i})">--shadow-${i}</div>`).join('');
+    $('[data-sys-motion]').textContent = ['dur-fast', 'dur-base', 'dur-slow', 'ease-out', 'ease-in', 'ease-emphasis'].map(k => `--${k}: ${v(k) || 'chưa khai'}`).join(' · ');
+  }
+  document.addEventListener('click', e => { const b = e.target.closest('[data-set]'); if (b) { theme.set(b.dataset.set); render(); } });
+  render();
+})();
+
+// Ô cửa vòm: cùng hành vi với trang (tab, phím mũi tên, Home, End). Giờ 8:40 và trạng thái là minh hoạ
+(() => {
+  const PRODUCTS = [['Bánh mì que củi', '8.000 ₫'], ['Bánh mì đặc ruột', '6.000 ₫'], ['Bánh sừng bò bơ Đà Lạt', '22.000 ₫'], ['Bánh nho Bảo Lộc', '18.000 ₫']];
+  const BATCHES = [
+    { t: '6:00', state: 'Đã hết', note: 'Hết lúc 8:10 (minh hoạ). Mẻ nào hết là hết: mẻ kế là 9:30.', cta: 'Giữ bánh mẻ 9:30 qua Zalo', gone: true },
+    { t: '9:30', state: 'Đang nướng', note: 'Ra lò sau 50 phút (minh hoạ). Nhắn Zalo trước để Cô Ba để phần.', cta: 'Giữ bánh mẻ 9:30 qua Zalo' },
+    { t: '15:00', state: 'Chưa vào lò', note: 'Mẻ chiều. Giữ trước qua Zalo, tới lấy sau 15:00.', cta: 'Giữ bánh mẻ 15:00 qua Zalo' },
+    { t: '17:30', state: 'Chưa vào lò', note: 'Mẻ cuối ngày, tiệm đóng 19:00.', cta: 'Giữ bánh mẻ 17:30 qua Zalo' },
+  ];
+  const tabs = [...document.querySelectorAll('[data-doors] [role=tab]')];
+  const panel = document.getElementById('dpanel');
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  function show(i) {
+    const b = BATCHES[i];
+    tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
+    panel.setAttribute('aria-labelledby', tabs[i].id);
+    panel.classList.toggle('is-gone', !!b.gone);
+    panel.style.animation = 'none'; void panel.offsetWidth; panel.style.animation = '';
+    panel.innerHTML =
+      `<div class="ph-box arch">Ảnh: khay bánh mẻ ${esc(b.t)} ở miệng lò củi, 1200×900</div>`
+      + `<div><p class="label muted">Mẻ ${esc(b.t)}</p><h3>${esc(b.state)}</h3><p class="muted" style="margin-top:8px">${esc(b.note)}</p>`
+      + `<ul class="items${b.gone ? ' is-gone' : ''}">` + PRODUCTS.map(p => `<li><span class="name">${esc(p[0])}</span><span class="price">${esc(p[1])}</span></li>`).join('') + '</ul>'
+      + '<p class="muted" style="margin-top:8px;font-size:var(--text-sm)">Mỗi mẻ ra đủ 4 món: giả định, chờ Cô Ba xác nhận.</p>'
+      + `<a class="btn btn-primary btn-block-sm" style="margin-top:20px" href="https://zalo.me/0909123456" target="_blank" rel="noopener"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>${esc(b.cta)}</a></div>`;
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => show(i));
+    t.addEventListener('keydown', e => {
+      const n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+      if (n === undefined) return;
+      e.preventDefault(); const k = (n + tabs.length) % tabs.length; tabs[k].focus(); show(k);
+    });
+  });
+  show(1);
+
+  // Chép tin nhắn mẫu: báo kết quả bằng toast (role=status)
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-copy]'); if (!b) return;
+    let ok = false;
+    try { await navigator.clipboard.writeText(b.dataset.copy); ok = true; } catch {}
+    let t = document.getElementById('sys-toast');
+    if (!t) { t = document.createElement('div'); t.id = 'sys-toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+    t.className = 'toast ' + (ok ? 'is-ok' : 'is-bad');
+    t.innerHTML = ok ? '<i class="ph ph-check-circle ic" aria-hidden="true"></i><span>Đã chép tin nhắn mẫu. Dán vào Zalo để gửi Cô Ba.</span>'
+      : '<i class="ph ph-warning-circle ic" aria-hidden="true"></i><span>Trình duyệt không cho chép. Bấm giữ câu mẫu để chép tay.</span>';
+    t.hidden = false; clearTimeout(t._h); t._h = setTimeout(() => { t.hidden = true; }, 4000);
+  });
+})();
+</script>
+</body>
+</html>

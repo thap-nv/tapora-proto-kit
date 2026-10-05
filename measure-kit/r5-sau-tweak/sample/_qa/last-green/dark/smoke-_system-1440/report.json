@@ -1,0 +1,58 @@
+[
+ {
+  "step": "load",
+  "errors": [],
+  "check": null,
+  "dims": null
+ },
+ {
+  "step": "view",
+  "errors": [],
+  "check": "Design system · Lò Bánh Củi Cô Ba",
+  "dims": {
+   "sw": 1440,
+   "cw": 1440,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "system-demo",
+  "errors": [],
+  "check": "PASS",
+  "dims": {
+   "sw": 1440,
+   "cw": 1440,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "system-pairs",
+  "errors": [],
+  "check": "PASS 26 cặp",
+  "dims": {
+   "sw": 1440,
+   "cw": 1440,
+   "cut": [],
+   "wide": [],
+   "contrast": [],
+   "intent": []
+  }
+ },
+ {
+  "step": "deep",
+  "errors": [],
+  "check": null,
+  "dims": null,
+  "deep": {
+   "states": [],
+   "keyboard": [],
+   "interactive": []
+  }
+ }
+]

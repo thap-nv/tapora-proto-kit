@@ -1,0 +1,9 @@
+# Kết quả chạy, sinh lại được. last-green/ nên commit để cả nhóm dùng chung một mốc
+handover/
+current/
+.quick-run/
+.recheck/
+.tdd/
+.thumbs/
+__pycache__/
+.kit-source

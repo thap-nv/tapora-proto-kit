@@ -1,0 +1,13 @@
+{
+ "steps": [
+  {
+   "name": "view",
+   "wait": 600,
+   "check": "document.title",
+   "shot": "index",
+   "jpeg": true,
+   "slices": 8
+  }
+ ],
+ "states": true
+}

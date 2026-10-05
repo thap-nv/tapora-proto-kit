@@ -35,6 +35,8 @@ Dùng để đo một lần chạy skill `sketch-to-concept` tốn bao nhiêu l�
 | `fixes-edit.js` | Ba skill sửa: tài liệu đọc nguyên hay một phần, đọc mã script, lệnh của bộ kiểm (`quick.py` có hay không `--shots`, `run_all.py` theo thư mục ra, `handover.py ledger`, `qa-check.py`), tự chụp, ảnh mở theo lượt, `ledger.jsonl` đọc nguyên, lượt mất cache, ba lượt đầu |
 | `prompt-edit-cu-moi.md` | Prompt của phiên đo ba skill sửa, bản cũ (`2fbc10d`) so với bản mới (`70bd133`). Xem mục *Ba skill sửa: bản cũ và bản mới* |
 | `r4-bangiao/` | Ba skill sửa, kịch bản T: site đã bàn giao (pha 2 lần A của lần đo Windows, Cổng 4 "Chốt.", mốc bàn giao đã promote) trong `sample/`, cộng `AGENTS.md` của dự án. Chép ra rồi mới chạy |
+| `r5-sau-tweak/`, `r6-sau-evolve/` | Kịch bản E và H: `r4-bangiao` sau lần tweak `rtm1`, và sau lần evolve `rem1` (đáp án Cổng 3 "Chốt tích hợp." đã ghi). `_qa/current/` bị `.gitignore` của bộ kiểm bỏ qua: commit thì `git add -f` |
+| `transcripts/edit-cu-moi/`, `runs-edit/` | Transcript nén của 12 lần đo ba skill sửa, và `FEATURE-DECISIONS.md`, `QA.md`, ảnh chính của từng lần. Xem mục *Ba skill sửa: bản cũ và bản mới* |
 
 Token quy đổi = input + 1,25 × ghi cache + 0,1 × đọc cache + 5 × output. Transcript chỉ ghi output lúc bắt đầu stream nên output ước từ số ký tự đã viết (2,5–3,5 ký tự một token); khối thinking không tính được.
 
@@ -729,7 +731,7 @@ Không đáng làm để giảm token:
 - Bản nén nằm ở `transcripts/site-4.5-win/agent-<id>.jsonl.gz`, kèm `.meta.json`.
 - Ảnh pha 2 gồm cả ảnh trạng thái 1440.
 
-## Ba skill sửa: bản cũ và bản mới (chuẩn bị 05/10/2026, chưa đo)
+## Ba skill sửa: bản cũ và bản mới (đo 05/10/2026)
 
 Đợt `70bd133` chuyển cách giảm token của `sketch-to-concept` và `sketch-to-site` sang `evolve-site` 1.9, `tweak-site` 1.3 và `handover-check` 1.3 (gộp vào CHANGELOG 1.5.0). Ba skill này chưa có mốc nền, nên phiên đo chạy cùng việc trên bản cũ (`2fbc10d`: evolve-site 1.8, tweak-site 1.2, handover-check 1.2) và bản mới, mỗi bản là một git worktree trong scratchpad của phiên đo. Prompt của phiên đo: `prompt-edit-cu-moi.md`.
 
@@ -760,3 +762,267 @@ Không đáng làm để giảm token:
 
 - `phase-edit.js` chia bước như sau. `tweak-site`: vào, tìm, đọc, sửa, kiểm, ảnh, nhật ký, báo cáo, theo dấu hiệu của chính lượt (sửa rồi kiểm lại thì quay về "sửa"). `evolve-site`: B1, B2 · cổng, B3, B4, Cổng 3. `handover-check`: B0–B1, B2, B3, B4, B5, B6, Cổng. Hai skill sau chỉ tăng bước. Lượt mở ảnh gộp với lượt ghi nhật ký (cách của `tweak-site` 1.3) được tính vào "nhật ký".
 - Hai script đã chạy thử trên transcript giả lập của cả ba skill và trên transcript thật `a2c62bc41dd58df22` (pha 2 Windows). Phiên đo vẫn soát `--list` trên lần chạy thật đầu tiên của mỗi kịch bản trước khi lấy số.
+- Sửa trong phiên đo, sau khi soát `--list` trên lần chạy thật (số dưới đây lấy bằng bản đã sửa):
+  - **Lượt cuối là "báo cáo" ở cả ba skill.** Subagent giờ nộp báo cáo bằng lệnh `SubagentHandback`, không còn lượt chỉ có chữ. Lượt chỉ có lệnh đó được tính là lượt cuối.
+  - **tweak:**
+    - `grep` file dự án bằng đường dẫn tương đối, hay ngoài thư mục skills, trước lần sửa đầu: "tìm".
+    - `sed -n`/`cat`/`head` vào `site/` hay `DESIGN.md` trước lần sửa: "đọc".
+    - `qa_init.py` sau lần sửa: "kiểm", vì skill bản cũ chạy nó ngay trước lần kiểm.
+    - Sau lần sửa, đọc `run.mjs` hay chạy `quick.py --help` là đi tìm cách chụp: "ảnh".
+    - Sau lần sửa, lệnh có `FEATURE-DECISIONS` là tra khuôn: "nhật ký".
+    - Lượt 1 luôn là "vào".
+  - **evolve:**
+    - Ảnh trong `_qa/.tdd/` trước B4 là gỡ lỗi bộ tính năng, vẫn tính B3.
+    - Ghi khối "Cổng 3" chỉ được nhận khi đã vào B4. Khối tính năng ghi ở B3 có sẵn tiêu đề Cổng 3 của khuôn: trước khi sửa, rem1 bị tính Cổng 3 từ lượt 9.
+  - **Ghi file qua Bash** (`cat >>`, `tee`, python `open(p,'w')` với `p='…'`) được nhận như Write/Edit cho `FEATURE-DECISIONS.md`, `DECISIONS.md`, `DESIGN.md`, `QA.md`. rec1 ghi khối Cổng 3 bằng `cat >>`.
+  - **`paths.js`** rút gọn cả dạng `/c/Users/…` của Git Bash. rec1 viết đường dẫn theo dạng này.
+  - **`fixes-edit.js`** nhận "in đầu `run_all.py` theo lệnh 2" trên mọi lệnh. Dấu `;` trong `sed -n '/^#/!q;p'` làm biểu thức dò mã không bắt được.
+- `handover-check` bản cũ chạy `handover.py run` nền rồi đọc tài liệu B5 trong lúc chờ. Vì bước chỉ tăng, các lượt đọc kết quả sau đó bị tính vào B5, nên cột bước của H bản cũ chỉ gần đúng. Tổng và số lượt thì đúng.
+
+### Phiên đo
+
+- Phiên `ac00c53b-eae8-478b-9364-5016754d3c25`, máy Windows của các mốc (Node 20, Python 3.14, Edge, Git Bash), model Opus 5.5. Test 335/335 qua trước khi đo.
+- Hai worktree: `<SP>/cu/tapora-proto-kit` (`2fbc10d`) và `<SP>/moi/tapora-proto-kit` (`70bd133`). `<SP>` là `C:/Users/thapnv/AppData/Local/Temp/claude/w--Dummy--Tool--Working-tapora-proto-kit/ac00c53b-eae8-478b-9364-5016754d3c25/scratchpad`.
+- 12 lần chạy, mỗi lần là một subagent `general-purpose` chạy nền. Mỗi cặp cũ–mới khởi động cùng lúc.
+- Cặp đầu của mỗi kịch bản có lượt 1 không đọc được cache (`đọc cache 0k`) ở kịch bản T (cả rtc1 và rtm1, khoảng 26k mỗi bên). Từ cặp sau, lượt 1 đọc 22k. Hai bên trong cùng cặp vì vậy vẫn so thẳng được.
+
+### Thư mục bắt đầu đã chọn
+
+- **`r5-sau-tweak` từ `rtm1`**: lệnh kiểm nhanh `ĐẠT` (`quick · 2 file đổi · 6 bộ (dark) · 27 bước · … → ĐẠT`), có dòng nhật ký trong `FEATURE-DECISIONS.md`. Đạt ngay lần đầu, không cần `rtm2`.
+  - Lần sửa: nút "Gọi 0909 123 456" (`.btn-ghost`, `ph-phone`, `tel:+84909123456`), hàng `.info-cta` mới trong `site.css`.
+  - Dự án chưa có `FEATURE-DECISIONS.md`, nên lần chạy tự tạo file từ khuôn của `evolve-site`.
+  - Script bộ kiểm trong `_qa/` là bản mới, vì `qa_init.py --update` của `rtm1` đã chép đè `quick.py`, `run_all.py`, `handover.py`.
+- **`r6-sau-evolve` từ `rem1`**: tới Cổng 3, lệnh kiểm nhanh cuối `quick · 3 file đổi · 8 bộ (dark) · 59 bước · … → ĐẠT`.
+  - Đã ghi vào khối Cổng 3 của tính năng: `**Quyết định nghiệm thu (nguyên văn):** "Chốt tích hợp."`.
+  - Bỏ `_qa/truoc/` (64 ảnh mốc của lần evolve, 3,7 MB) sau khi đo: bốn lần đo H chỉ thấy nó trong kết quả `ls`, không so với nó; handover so với `last-green/`. `FEATURE-DECISIONS.md` vẫn nhắc tới thư mục này.
+- Cả hai bỏ `_qa/__pycache__`, `.kit-source`, `.quick-run`, `.tdd`, giữ `_qa/current/` kèm `ledger.jsonl`. `quick.py --dry` in `File đổi từ lần kiểm trước: không`.
+- **Nhiễm từ bản mới**, như đã đoán ở trên: rec1 lượt 10 đọc đầu `quick.py` của `r5` (bản mới, có `--shots`) trước khi `qa_init --update` chép lại bản cũ. Rồi lượt 36 gọi `--shots` thì lỗi. rec2 cũng gọi `--shots` (lượt 35, 37). Mỗi lần tốn khoảng một lượt, 30k, dưới 2 % tổng.
+
+### Prompt chạy (nguyên văn)
+
+Phần đầu chung. `<SK>` là `<SP>/cu/tapora-proto-kit/skills` hay `<SP>/moi/tapora-proto-kit/skills`, `<DIR>` là `<SP>/<tên lần>`, cả hai viết tuyệt đối:
+
+```text
+Đây là một lần chạy đo đạc. Hãy làm đúng theo skill như một lần chạy thật, không tự rút gọn hay tối ưu.
+Chạy skill <skill>: đọc và làm theo `<SK>/<skill>/SKILL.md`. `<skills>` = `<SK>`. Không gọi skill qua công cụ Skill.
+Dự án: "Lò Bánh Củi Cô Ba", tiệm bánh mì nhỏ ở Đà Lạt, site giới thiệu một trang, đã bàn giao. Thư mục dự án (tuyệt đối): `<DIR>`, có `AGENTS.md`. Thư mục prototype: `<DIR>/docs/prototypes/sample`.
+Chỉ ghi file trong `<DIR>`. Không sửa `<SK>` hay repo tapora-proto-kit. Bạn không hỏi được người dùng.
+```
+
+Thêm sau phần đầu, theo kịch bản:
+
+```text
+T  Lời người dùng (nguyên văn): "Thêm nút gọi điện cạnh nút Xem đường đi ở khối giờ mở cửa cuối trang, gọi số 0909 123 456."
+   Làm xong thì báo cáo như skill yêu cầu.
+   Câu trả lời cuối: (1) báo cáo của skill; (2) file đã tạo hoặc đã sửa; (3) bước tốn lượt hoặc vấp, mỗi bước một dòng.
+
+E  Lời người dùng (nguyên văn): "Thêm hộp giữ bánh. Bấm nút Giữ bánh qua Zalo ở màn đầu, hay nút giữ bánh trong khung của từng mẻ, thì mở hộp giữ bánh thay vì mở Zalo ngay. Trong hộp: chọn mẻ (mẻ đã hết thì không chọn được; bấm từ khung một mẻ thì chọn sẵn mẻ đó), chọn bánh và số lượng trong bốn loại bánh, nhập tên. Tên và ít nhất một bánh là bắt buộc. Nút chính Chép tin nhắn và mở Zalo: chép tin nhắn soạn từ các lựa chọn rồi mở Zalo 0909 123 456. Chỉ định cho các cổng: lối vào là chính các nút giữ bánh đang có, không cần phím tắt hay lối vào nhanh, khách nào cũng thấy; trên điện thoại là sheet trượt từ đáy, trên máy tính là hộp thoại giữa màn; được thêm component mới (sheet, hộp thoại, ô chọn số lượng) bằng token sẵn có, không thêm màu hay font."
+   Làm theo skill tới Cổng 3 rồi dừng: viết câu hỏi Cổng 3 ra trong câu trả lời cuối. Cổng nào skill vẫn phải hỏi thì viết câu hỏi đó ra và dừng ở đó.
+   Câu trả lời cuối: (1) câu hỏi ở cổng đã dừng, kèm số thật; (2) file đã tạo hoặc đã sửa; (3) có dùng subagent không, vì sao; (4) bước tốn lượt hoặc vấp, mỗi bước một dòng.
+
+H  Lời người dùng (nguyên văn): "Kiểm tổng trước khi gửi link cho khách."
+   Làm theo skill tới cổng nghiệm thu bàn giao rồi dừng: viết câu hỏi ra trong câu trả lời cuối. Không promote.
+   Câu trả lời cuối: (1) câu hỏi ở cổng, kèm số thật; (2) file đã tạo hoặc đã sửa; (3) bước tốn lượt hoặc vấp, mỗi bước một dòng.
+```
+
+(Chữ `T`, `E`, `H` và thụt đầu dòng chỉ để chia khối ở đây; prompt thật không có.)
+
+### Số đo
+
+- Quy đổi thô lấy từ `parts2.js`. "Bỏ mất cache" trừ phần ghi lại ngữ cảnh ở lượt mất cache (`fixes-edit.js` dòng 9).
+- Số theo bước lấy từ `phase-edit.js`, dạng `lượt · quy đổi`.
+- Mỗi bên chỉ hai lần. Chênh dưới khoảng 15 % chưa nói được gì.
+
+**T · `tweak-site`** (cả 4 lần đều khai Cấp 1 · cờ C, vì phải thêm hàng nút `.info-cta` vào `site.css` dùng chung):
+
+| Lần | Lượt | Quy đổi | Phút | vào | tìm | đọc | sửa | kiểm | ảnh | nhật ký | báo cáo |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| cũ 1 `rtc1` | 23 | 0,28–0,29M | 4,0 | 2 · 57k | 4 · 46k | 5 · 48k | 1 · 12k | 2 · 19k | 4 · 39k | 4 · 44k | 1 · 16k |
+| mới 1 `rtm1` | 10 | 0,17M | 3,1 | 1 · 45k | 2 · 31k | 2 · 25k | 1 · 19k | 1 · 12k | 1 · 11k | 1 · 12k | 1 · 15k |
+| cũ 2 `rtc2` | 20 | 0,24–0,25M | 3,6 | 1 · 19k | 4 · 59k | 2 · 20k | 1 · 15k | 2 · 21k | 8 · 80k | 1 · 12k | 1 · 16k |
+| mới 2 `rtm2` | 11 | 0,15–0,16M | 3,1 | 1 · 19k | 3 · 38k | 3 · 39k | 1 · 17k | 1 · 11k | (trong nhật ký) | 1 · 13k | 1 · 17k |
+
+- **−40 % và −37 %**, số lượt 23/20 → 10/11. Không lần nào mất cache.
+- Phần giảm đến từ:
+  - "ảnh": bản cũ không có lệnh chụp nên tự dựng bộ chụp (4 và 8 lượt, 39k và 80k); bản mới 0–1 lượt.
+  - "vào + tìm + đọc" ít lượt hơn.
+
+**E · `evolve-site`** (cả 4 lần đều tới Cổng 3, không hỏi Cổng 1–2, khai Cấp 2 · cờ L, T, C):
+
+| Lần | Lượt | Quy đổi thô | Bỏ mất cache | Phút | B1 | B2 · cổng | B3 | B4 | Cổng 3 |
+|---|---|---|---|---|---|---|---|---|---|
+| cũ 1 `rec1` | 55 | 1,67–1,72M | 1,67–1,72M | 25,1 | 8 · 206k | 12 · 284k | 15 · 538k | 18 · 578k | 2 · 82k |
+| mới 1 `rem1` | 19 | 1,04–1,10M | 0,87–0,93M | 24,1 | 2 · 44k | 1 · 31k | 9 · 663k (mất cache 170k) | 5 · 229k | 2 · 94k |
+| cũ 2 `rec2` | 55 | 1,95–2,01M | 1,63–1,69M | 22,5 | 5 · 139k | 15 · 355k | 14 · 478k | 19 · 923k (mất cache 318k) | 2 · 82k |
+| mới 2 `rem2` | 19 | 1,21–1,27M | 0,83–0,89M | 23,7 | 3 · 74k | 1 · 42k | 7 · 528k (mất cache 131k) | 5 · 467k (mất cache 246k) | 3 · 117k |
+
+- **Bỏ mất cache: −47 % và −48 %. Số thô: −37 % cả hai cặp.** Số lượt 55 → 19. Thời gian không đổi (22,5–25,1 phút).
+- **Trước khi dựng** (tới lượt viết file bước đầu): cũ 490k và 494k (lượt 1–20), mới 146k và 142k (lượt 1–4 và 1–5), giảm khoảng 70 %.
+  - Bản cũ đọc nguyên `SKILL.md` 31,7k ký tự, đọc mã `run_all.py`/`quick.py`/`run.mjs` 3 và 6 lệnh (22,8k và 19,3k ký tự), và mỗi lệnh một lượt.
+- **B4**: bản cũ 578k, và 605k khi bỏ mất cache; bản mới 229k và 221k, giảm khoảng 62 %. Bản cũ chụp `_qa/sau/` bằng `run_all.py` và mở ảnh qua 5 lượt. Bản mới dùng một lệnh `quick.py --shots`.
+- **B3 (dựng)** giảm ít: cũ 478–538k, mới 371–422k (bỏ lượt vào 2 và phần mất cache).
+- **Mất cache:**
+  - Hai lần là do lượt dựng dài quá 5 phút, chỉ gặp khi chạy dạng subagent:
+    - rem1 lượt 8: lượt 7 nghĩ 313s, viết 80s;
+    - rem2 lượt 7: lượt 6 nghĩ 393s, viết 55s.
+  - Hai lần là cache bị xoá phía máy chủ, không do lượt dài:
+    - rec2 lượt 45: đọc cache tụt về 0 sau 15 giây;
+    - rem2 lượt 13: tụt về 22k sau 89 giây.
+
+**H · `handover-check`** (cả 4 lần dừng ở cổng nghiệm thu, kết luận SẠCH, không promote):
+
+| Lần | Lượt | Quy đổi thô | Bỏ mất cache | Phút | B0–B1 | B3 | B5 | B6 | Cổng |
+|---|---|---|---|---|---|---|---|---|---|
+| cũ 1 `rhc1` | 28 | 0,37–0,39M | 0,37–0,39M | 5,2 | 7 · 80k | 1 · 21k | 15 · 188k | 4 · 70k | 1 · 19k |
+| mới 1 `rhm1` | 15 | 0,22–0,23M | 0,22–0,23M | 4,6 | 4 · 61k | 1 · 9k | 7 · 92k | 2 · 39k | 1 · 19k |
+| cũ 2 `rhc2` | 33 | 0,69–0,70M | 0,53–0,54M | 6,0 | 7 · 82k | – | 21 · 346k | 4 · 243k (mất cache 163k) | 1 · 21k |
+| mới 2 `rhm2` | 16 | 0,23–0,24M | 0,23–0,24M | 5,3 | 5 · 70k | 1 · 9k | 7 · 94k | 2 · 39k | 1 · 19k |
+
+- **−41 % và −56 %** (bỏ mất cache; số thô cặp 2 là −66 %). Số lượt 28/33 → 15/16.
+- Mất cache ở rhc2 lượt 29 là cache bị xoá phía máy chủ: lượt 28 chỉ 24 giây.
+- Không có B2 (dự án không có ảnh Hub) và B4 (không có khác biệt nào phải gán) ở cả 4 lần. Cột B của bản cũ chỉ gần đúng (xem mục Script).
+
+**Một vòng T + E + H** (bỏ mất cache): cũ 2,36M và 2,44M, mới 1,30M và 1,25M, tức **−45 % và −49 %**. Số lượt 106/108 → 44/46.
+
+### Soát từng việc của bản mới
+
+**tweak-site 1.3** (`rtm1` / `rtm2`):
+
+| Việc | rtm1 | rtm2 |
+|---|---|---|
+| Lượt tìm có `qa_init --update` và `quick.py --dry` cùng lượt `grep` | có, lượt 2 | có, lượt 2 |
+| Đọc một lượt | **không**: lượt 4–5 (`index.html`, rồi `site.css` và khuôn `FEATURE-DECISIONS`) | **không**: lượt 5–7 (`index.html`, khuôn và hai SKILL.md, rồi `site.css`) |
+| Sửa một lượt | có, lượt 6 | có, lượt 8 |
+| Kiểm bằng `quick.py --note … --shots` | có, lượt 7 | có, lượt 9 |
+| Mở một ảnh cùng lượt ghi nhật ký | có, lượt 8; thêm lượt 9 vì `index-5.jpg` chỉ là dải chân trang cao 30px | có, lượt 10 |
+| Không tự chụp, không đọc mã script | có (0 · 0) | có (0 · 0) |
+
+- Tìm vẫn tốn 2–3 lượt:
+  - `grep … | head -40` bị các file `concept/*.html` chiếm hết dòng, phải `grep` lại (lượt 3 ở cả hai);
+  - rtm2 còn tốn thêm lượt 4 để tìm `FEATURE-DECISIONS.md`.
+- "Đọc một lượt" chưa ăn vì hai lý do:
+  - chỉ khi đọc `index.html` mới biết phải sửa `site.css` (cờ C nhận muộn, cả 4 lần đều khai lại từ "cờ: không" sang C);
+  - dự án không có `FEATURE-DECISIONS.md`, nên phải đi tìm khuôn.
+- So với bản cũ:
+  - rtc1 và rtc2 tự chụp bằng `run.mjs` với file bước tạm (lượt 17 và 14);
+  - đọc mã `run.mjs` (lượt 16 và 12);
+  - chạy `quick.py --help` để tìm cờ chụp.
+
+**evolve-site 1.9** (`rem1` / `rem2`):
+
+| Việc | rem1 | rem2 |
+|---|---|---|
+| Lượt vào 1 gồm `Read b1-b2.md`, file dự án và lệnh 1 | có, lượt 2 (kèm `README.md` của prototype, không có, lỗi vô hại) | có, lượt 2 (như rem1) |
+| Ảnh mốc bằng `run_all.py _qa/truoc smoke-index` | có, lượt 4 (thêm `smoke-_system`) | có, lượt 4, lượt riêng vì chưa biết tên bộ trước khi đọc `qa.config.json` |
+| Lượt vào 2 gồm `Read b3-b4.md`, file sẽ sửa và lệnh 2 | có, lượt 4; `index.html`, `site.css`, `_system.html` đã đọc ở lượt 3; đọc thêm `tokens.css` dù lệnh 2 đã in tên token | có, lượt 5 (`b3-b4.md`, `_system.html`, lệnh 2) |
+| Không đọc mã `run_all.py` ngoài phần đầu lệnh 2 in | có (0 lệnh; cũ 3 và 6 lệnh) | có (0) |
+| Thấy đỏ rồi xanh với `run_all.py _qa/.tdd` | có: đỏ lượt 6 (`FAIL 14`), còn 1 đỏ ở 1440 lượt 9, xanh lượt 13 | có: đỏ lượt 9 (`FAIL 12`), xanh lượt 11 ngay lần dựng đầu |
+| B4 bằng `quick.py --shots` cùng lượt với `sed` in `regression-qa.md` | có, lượt 13 | có, lượt 12 |
+| Mở mọi ảnh trong một lượt | **một phần**: lần kiểm đầu mở ở lượt 14; sau vòng sửa mở lại 17 ảnh ở lượt 17 | **một phần**: lượt 13 (9 ảnh), lượt 15 (7 ảnh) sau vòng sửa, lượt 18 mở 4 lát `_system` 390 không tới mục mới |
+| Không tự chụp | có | có |
+
+**handover-check 1.3** (`rhm1` / `rhm2`):
+
+| Việc | rhm1 | rhm2 |
+|---|---|---|
+| B1 một lượt với `handover.py ledger` | **một phần**: `ledger` ở lượt 3 cùng `qa_init` và `FEATURE-DECISIONS.md`, nhưng B0–B1 tốn 4 lượt | **một phần**: lượt 3; B0–B1 tốn 5 lượt |
+| Không đọc `ledger.jsonl` | có (cũ: cả hai đọc nguyên, 2,9k và 13k ký tự) | có |
+| B3 bằng `qa-check.py` | có, lượt 5 | có, lượt 6 |
+| Bảng UX in bằng `sed` | có, lượt 6 (Nhóm F) | có, lượt 7 |
+| Không đọc mã script | có (cũ: 1 lệnh mỗi lần) | có |
+
+- B0–B1 tốn thêm lượt ở cả hai lần:
+  - lượt 2 `ls` và đọc `AGENTS.md` để biết đã có bộ kiểm hay chưa;
+  - lượt 4 (rhm2 thêm lượt 5) đọc `qa.config.json` để chắc `thumbs.items` rỗng, vì `ledger` không in dòng "Ảnh Hub" khi rỗng.
+- Bản cũ chạy `handover.py run` nền (rhc1 lượt 8, rhc2 lượt 11), đọc log 2–3 lượt, đọc `handover.json` bằng python. rhc2 ghi log ra `<SP>/rhc2-handover-run.log`, ngoài `<DIR>`, rồi xoá.
+
+### Chỗ tốn nhất của bản mới (số của `groupcost.js`, không gồm phần mất cache)
+
+1. **Lượt dựng của evolve và lần mất cache sau nó:**
+   - rem1 lượt 7–8, 268k, cộng 170k mất cache vì lượt 7 dài 6,6 phút.
+   - rem2 lượt 10–11, 175k.
+   - rem2 lượt 6–7, 191k, cộng 131k mất cache: heredoc Bash ghi khối tính năng, file bước và python trong một lệnh bị lỗi `unexpected EOF`, không ghi được gì. Lượt 8 viết lại bằng Edit/Write.
+   - Phần dựng là cần thiết. Phần kiểm soát được là heredoc hỏng và lượt dài quá 5 phút; lượt dài chỉ gây mất cache khi chạy dạng subagent.
+2. **Vòng B4 của evolve, kiểm, xem ảnh, sửa, kiểm lại:** rem1 lượt 13–17, 264k; rem2 lượt 12–16, 238k.
+   - Mở lại ảnh sau khi sửa: rem1 lượt 17, 17 ảnh; rem2 lượt 15, 7 ảnh.
+   - Bẻ thử lần đầu hỏng vì python in tiếng Việt ra console cp1252: rem2 lượt 15–16, 92k. rem1 gặp cùng lỗi ở lượt 11–12, khi in report.
+3. **Gỡ bước đỏ của bộ tính năng:** rem1 lượt 9–12, 131k. Bước `sheet-hay-hop-thoai` đo `clientWidth` 1440 thay vì khung `position:fixed` 1425 (trừ rãnh thanh cuộn). Một lần chạy, một lỗi do agent viết bước.
+4. **Ảnh không nói lát nào chứa phần nào của trang:**
+   - tweak: rtm1 lượt 9, 9k;
+   - handover: rhm1 lượt 8 và rhm2 lượt 8, 13k mỗi lần; cả hai mở `index-4`/`index-5` là dải chân trang rồi mở lại `index-3`/`index-4`;
+   - evolve: rem2 lượt 18, 35k, 4 lát `_system` 390 không tới mục mới, vì bộ khói 390 chỉ chụp 16 lát.
+5. **`FEATURE-DECISIONS.md` không có trong dự án đã bàn giao:** cả 4 lần tweak phải tra khuôn ở `evolve-site`.
+   - rtm2 lượt 4 và 6: 29k, có `cat` cả `evolve-site/SKILL.md` và `handover-check/SKILL.md`.
+   - rtm1 lượt 5: một phần của 20k.
+   - rtc1 lượt 19–20: 23k.
+
+Vấp khác trong báo cáo của agent:
+- **evolve:**
+  - lệnh 1 `grep` tài liệu yêu cầu với `--exclude-dir=prototypes` bỏ sót `DECISIONS.md`, `CONCEPT.md` (rem1, rem2);
+  - một Edit vô ích vì chuỗi cũ và mới giống nhau (rem1 lượt 9).
+- **handover:**
+  - `qa-check.py` không in dòng nợ cũ khi bằng 0, nên rhm1 lượt 9 và rhm2 lượt 13 đọc `handover.json` để chắc (15k);
+  - đếm chỗ dùng ở B6 bằng `grep` khớp cả `data-hold-*`, `hold-*`, phải đếm lại (rhm1 lượt 11–12, 25k);
+  - luật B5 "trừ màn đã chấm trong evolve Cấp 2–3" mơ hồ với site một trang (cả 4 lần).
+- **Python và cp1252 trên Windows:** 5 trên 12 lần gặp `UnicodeEncodeError` khi python do agent viết in tiếng Việt: rem1, rem2, rec1, rhc1, rhc2.
+
+### Chất lượng (chỉ mở ảnh)
+
+- **T:**
+  - Ảnh 390 của cả 4 lần: hai nút viền cùng kiểu, icon `phone`, không tràn.
+  - Bản mới là ảnh `quick.py --shots`. Bản cũ chụp lại bằng `run_all.py _qa/.xem smoke-index-390`, vì agent đã xoá ảnh tự chụp.
+  - rtm1 ghi cả số "Gọi 0909 123 456" nên hai nút xếp hai dòng. Ba lần kia ghi "Gọi điện", hai nút cùng một hàng.
+  - Không lần nào kém hơn.
+- **E**, ảnh `giu-banh-mo` 390 và 1440 của bộ tính năng:
+  - Cả 4 lần đều có sheet sát đáy ở 390 và hộp thoại giữa màn ở 1440.
+  - Mẻ 6:00 gạch "Đã hết" và không chọn được, mẻ 9:30 chọn sẵn.
+  - Mỗi bánh có ô số lượng −/+, nút chính "Chép tin nhắn và mở Zalo" ghim ở chân.
+  - Ở 390, phần dưới thân hộp khuất sau chân hộp lúc mới mở: ô tên ở rec1, rem1, rem2; khung tin nhắn ở rec2. Ở 1440×900 khung tin nhắn phải cuộn trong hộp; cả 4 lần đều tự nêu điểm này ở Cổng 3.
+  - Hai bản ngang nhau.
+  - Cả 4 lần đều giữ khối tin nhắn mẫu và nút Chép cũ trong panel mẻ, và hỏi thêm ở Cổng 3 (rem1, rem2, rec2) hay ghi thành điểm cần biết (rec1).
+- **H:**
+  - Cả 4 báo cáo ghi đủ 3 dòng nhật ký (1 tweak, 2 evolve), 0 khác biệt đã gán hay không gán được, 4 file đổi đều có trong nhật ký, 2 bộ mới của tính năng.
+  - Cả 4 lần đều ghi bù phần `DESIGN.md` mà lần tweak bỏ sót (icon `phone`, hàng `.info-cta`, nút Gọi ở sơ đồ trang), và sửa số `.field-err` 3 → 2.
+  - Bản mới chấm UX khối giờ mở của lần tweak với 5 ảnh. Bản cũ không mở ảnh nào và không chấm lại, với lý do trang chủ đã chấm trong đợt evolve.
+  - Bản cũ nêu mẫu khối giờ mở trên `_system.html` chưa có nút Gọi; bản mới nêu hai nút lệch nhau ở 390/768.
+  - Chất lượng không giảm; bản mới soát kỹ hơn ở UX.
+
+### Đề xuất bước tiếp (ước từ số đo; chưa sửa skill)
+
+| # | Việc | Ước tiết kiệm | Chắc chắn |
+|---|---|---|---|
+| 1 | Một lệnh bẻ thử của bộ kiểm (ví dụ `run_all.py _qa/.recheck <bộ> --break <file> <chuỗi cũ> <chuỗi mới>`: chép, bẻ, chạy, trả lại, in số chỗ bẻ), thay cho python agent tự viết | 30–90k mỗi lần evolve có bước phủ định | khá: rem2 92k, rec1 2 lượt; rem1 không có bước phủ định |
+| 2 | `quick.py --shots` nêu ảnh đổi so với lần trước (như `system-check.mjs`), B4 chỉ mở lại các ảnh đó | 20–40k mỗi lần evolve có vòng sửa | khá cao: cơ chế đã ăn ở `sketch-to-site` pha 1 |
+| 3 | Lệnh chụp in lát nào chứa `id`/tiêu đề nào (`index-4.jpg: #duong-di`), và bộ khói `_system` ở 390 đủ lát | 10–35k mỗi lần | cao: 4 trên 6 lần bản mới đoán sai lát |
+| 4 | `handover.py ledger` luôn in dòng "Ảnh Hub" (cả khi rỗng); `qa-check.py` luôn in dòng nợ cũ; B0 của `handover-check` đọc `AGENTS.md` trong lượt `ledger` | 25–40k mỗi lần handover | cao: cả hai lần bản mới |
+| 5 | `tweak-site`: chưa có `FEATURE-DECISIONS.md` thì tạo từ khuôn `<skills>/evolve-site/templates/FEATURE-DECISIONS.md` (phần đầu và bảng nhật ký); lệnh tìm `grep` chỉ trong `site/` (bỏ `concept/`) | 10–30k mỗi lần tweak | cao: 4 trên 4 lần tra khuôn, 3 lần `grep` lại |
+| 6 | Dòng chung trong `AGENTS.md` của bộ kiểm và các file giai đoạn: python in tiếng Việt thì đặt `PYTHONIOENCODING=utf-8` | 10–30k mỗi lần gặp | khá: 5 trên 12 lần |
+
+- Cộng lại khoảng 0,1–0,2M cho một vòng T + E + H, tức 8–15 % của 1,25–1,30M. Mức này gần ngưỡng dao động, nên phải đo cả vòng mới thấy rõ.
+- Không đáng làm để giảm token:
+  - **Né lượt dựng dài** (mất cache 130–170k ở cả hai lần evolve bản mới): chỉ gặp khi chạy dạng subagent; phiên chính có TTL 1 giờ.
+  - **Cờ C nhận muộn ở tweak**: cần đọc trang mới biết; chỉ tốn một lượt khai báo lại.
+
+### Transcript và dữ liệu
+
+| Kịch bản | Lần | Agent | Thư mục chạy | Ảnh và file |
+|---|---|---|---|---|
+| T | cũ 1 | `ab787ecb697e5c0a3` | `rtc1` | `runs-edit/rtc1/` |
+| T | mới 1 | `aa4e833296b177c33` | `rtm1` | `runs-edit/rtm1/` |
+| T | cũ 2 | `aafcbfc9d40cfe7be` | `rtc2` | `runs-edit/rtc2/` |
+| T | mới 2 | `aac34aea632ce7858` | `rtm2` | `runs-edit/rtm2/` |
+| E | cũ 1 | `a504a1f555c4966f2` | `rec1` | `runs-edit/rec1/` |
+| E | mới 1 | `a34ba1fccc7b14a1d` | `rem1` | `runs-edit/rem1/` |
+| E | cũ 2 | `afb1c68eada87aee3` | `rec2` | `runs-edit/rec2/` |
+| E | mới 2 | `a3851b831e98a1693` | `rem2` | `runs-edit/rem2/` |
+| H | cũ 1 | `a2c82a831315f4a53` | `rhc1` | `runs-edit/rhc1/QA.md` |
+| H | mới 1 | `a57290f774eed9205` | `rhm1` | `runs-edit/rhm1/QA.md` |
+| H | cũ 2 | `ade370de3f12acdc1` | `rhc2` | `runs-edit/rhc2/QA.md` |
+| H | mới 2 | `a69bfbbd641703733` | `rhm2` | `runs-edit/rhm2/QA.md` |
+
+- Bản gốc nằm ở `~/.claude/projects/w--Dummy--Tool--Working-tapora-proto-kit/ac00c53b-eae8-478b-9364-5016754d3c25/subagents/`. Bản nén nằm ở `transcripts/edit-cu-moi/agent-<id>.jsonl.gz`, kèm `.meta.json`.
+- `runs-edit/<tên>/` của T và E có `FEATURE-DECISIONS.md` của lần đó, cộng ảnh chính:
+  - T: `goi-390.jpg`;
+  - E: `giu-banh-mo-390` và `giu-banh-mo-1440`;
+  - H: chỉ có `QA.md`, vì `FEATURE-DECISIONS.md` của H giống `r6-sau-evolve`.
+- `r5-sau-tweak/` và `r6-sau-evolve/` có `sample/_qa/current/`, mà `_qa/.gitignore` của bộ kiểm bỏ qua. Muốn giữ khi commit thì `git add -f`.

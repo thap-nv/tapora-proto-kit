@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lò Bánh Củi Cô Ba · bánh mì lò củi ở Đà Lạt</title>
+<meta name="description" content="Bánh mì nướng lò củi ở 14 Hai Bà Trưng, Phường 1, Đà Lạt. Bốn mẻ mỗi ngày lúc 6:00, 9:30, 15:00, 17:30; mẻ nào hết là hết. Giữ bánh qua Zalo 0909 123 456.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Lò Bánh Củi Cô Ba">
+<meta property="og:description" content="Bốn mẻ bánh lò củi mỗi ngày ở Đà Lạt. Mẻ nào hết là hết. Giữ bánh qua Zalo.">
+<!-- og:image: chờ ảnh thật 1200×630 (mặt tiền tiệm hoặc khay bánh ở miệng lò) -->
+<!-- Giờ hiện tại của prototype: mặc định 8:40 thứ Bảy (minh hoạ, DECISIONS.md Giả định B1).
+     Đổi bằng ?gio=11:00 và ?thu=2 (2 là thứ Hai, 3 đến 7 là thứ Ba đến thứ Bảy, cn là Chủ nhật). -->
+<meta name="qa-query" content="?gio=8:40">
+<meta name="qa-states" content="?gio=11:00 | ?gio=13:00 | ?gio=18:40 | ?thu=2 | ?gio=19:30">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<script src="assets/theme.js"></script>
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Commissioner:wght@400;500;600&family=Fraunces:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/themes.css">
+<link rel="stylesheet" href="assets/site.css">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body class="lb">
+<a class="skip" href="#noi-dung">Bỏ qua tới nội dung</a>
+
+<!-- 1. Đầu trang -->
+<header class="site-head">
+  <a class="wordmark" href="index.html">Lò Bánh Củi Cô Ba</a>
+  <nav class="nav" aria-label="Trong trang">
+    <a class="nav-link" href="#me-hom-nay">Mẻ hôm nay</a>
+    <a class="nav-link" href="#noi-quy">Nội quy</a>
+    <a class="nav-link" href="#duong-di">Đường đi</a>
+  </nav>
+</header>
+
+<main id="noi-dung">
+  <!-- 2. Màn đầu: một vòm lò lớn ôm mẻ đáng xem nhất lúc này -->
+  <section class="wrap hero" aria-labelledby="h1">
+    <div class="hero-arch arch fire" role="img" aria-label="Mẻ kế, đang trong lò 9:30. Ra lò sau 50 phút (minh hoạ)." data-hero>
+      <p class="label">Mẻ kế · đang trong lò</p>
+      <p class="when">9:30</p>
+      <p class="sub">Ra lò sau 50 phút</p>
+    </div>
+    <div class="sill" aria-hidden="true"></div>
+    <h1 id="h1"><span class="ln">Bốn mẻ bánh lò củi mỗi ngày.</span> <span class="ln">Mẻ nào hết là hết.</span></h1>
+    <div class="hero-cta">
+      <a class="btn btn-primary btn-block-sm" href="https://zalo.me/0909123456" target="_blank" rel="noopener"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Giữ bánh qua Zalo</a>
+      <a class="btn btn-ghost btn-block-sm" href="https://www.google.com/maps/search/?api=1&amp;query=14%20Hai%20B%C3%A0%20Tr%C6%B0ng%2C%20Ph%C6%B0%E1%BB%9Dng%201%2C%20%C4%90%C3%A0%20L%E1%BA%A1t" target="_blank" rel="noopener"><i class="ph ph-map-pin" aria-hidden="true"></i>Xem đường đi</a>
+    </div>
+    <p class="hero-note">Giờ <span data-clock>8:40 thứ Bảy</span> và trạng thái mẻ là minh hoạ.</p>
+  </section>
+
+  <!-- 3. Bốn lần mở cửa lò: tương tác đặc trưng -->
+  <section class="wrap sec reveal" id="me-hom-nay" aria-labelledby="h-cua">
+    <h2 class="sec-title" id="h-cua">Bốn lần mở cửa lò</h2>
+    <p class="lede">Bánh của Cô Ba nướng trong lò củi, ra lò bốn lần một ngày: <span class="num">6:00 ·</span> <span class="num">9:30 ·</span> <span class="num">15:00 ·</span> <span class="num">17:30</span>. Bấm một cửa để xem mẻ đó: món, giá, còn hay hết.</p>
+    <div class="doors doors-wrap" role="tablist" aria-label="Bốn mẻ trong ngày" data-doors>
+      <button type="button" role="tab" id="d0" aria-controls="panel" aria-selected="false" tabindex="-1" class="door arch ash"><span class="t">6:00</span><span class="s">Đã hết</span></button>
+      <button type="button" role="tab" id="d1" aria-controls="panel" aria-selected="true" tabindex="0" class="door arch fire"><span class="t">9:30</span><span class="s">Đang nướng</span></button>
+      <button type="button" role="tab" id="d2" aria-controls="panel" aria-selected="false" tabindex="-1" class="door arch brick"><span class="t">15:00</span><span class="s">Chưa vào lò</span></button>
+      <button type="button" role="tab" id="d3" aria-controls="panel" aria-selected="false" tabindex="-1" class="door arch brick"><span class="t">17:30</span><span class="s">Chưa vào lò</span></button>
+    </div>
+    <div class="sill" aria-hidden="true"></div>
+    <div class="cq panel-wrap">
+      <div id="panel" role="tabpanel" aria-labelledby="d1" class="batch">
+        <div class="ph-box arch">Ảnh: khay bánh mẻ 9:30 ở miệng lò củi, 1200×900</div>
+        <div>
+          <p class="label muted">Mẻ 9:30</p>
+          <h3>Đang nướng</h3>
+          <p class="muted batch-note">Vào lò lúc 8:35, ra lò sau 50 phút (minh hoạ). Nhắn Zalo trước để Cô Ba để phần.</p>
+          <ul class="items">
+            <li><span class="name">Bánh mì que củi</span><span class="price">8.000 ₫</span></li>
+            <li><span class="name">Bánh mì đặc ruột</span><span class="price">6.000 ₫</span></li>
+            <li><span class="name">Bánh sừng bò bơ Đà Lạt</span><span class="price">22.000 ₫</span></li>
+            <li><span class="name">Bánh nho Bảo Lộc</span><span class="price">18.000 ₫</span></li>
+          </ul>
+          <p class="fine">Mỗi mẻ ra đủ 4 món: giả định, chờ Cô Ba xác nhận.</p>
+          <div class="msg">
+            <p class="label muted">Tin nhắn mẫu · mẻ 9:30</p>
+            <p><q>Cô Ba ơi, giữ giúp con 4 bánh mì que củi mẻ 9:30. Con tên [tên bạn], khoảng 9:45 con tới lấy.</q></p>
+            <div class="msg-row"><button type="button" class="btn btn-ghost btn-sm" data-copy><i class="ph ph-copy" aria-hidden="true"></i>Chép tin nhắn</button><span class="fine">Sửa số bánh, tên và giờ lấy rồi gửi.</span></div>
+            <p role="status" data-copy-status></p>
+          </div>
+          <a class="btn btn-primary btn-block-sm" href="https://zalo.me/0909123456" target="_blank" rel="noopener"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Giữ bánh mẻ 9:30 qua Zalo</a>
+          <p class="fine">Cô Ba trả lời trên Zalo là bánh đã được giữ. Máy chưa có Zalo thì nhắn hoặc gọi <span class="num">0909 123 456</span>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Nội quy cạnh lò · giờ mở và đường đi -->
+  <section class="wrap sec reveal" id="noi-quy" aria-labelledby="h-noiquy">
+    <div class="info">
+      <div>
+        <h2 class="sec-title" id="h-noiquy">Nội quy cạnh lò</h2>
+        <ol class="rules">
+          <li><span class="n">1</span><p>Bánh ra lò bốn lần một ngày: <span class="num">6:00 ·</span> <span class="num">9:30 ·</span> <span class="num">15:00 ·</span> <span class="num">17:30</span>.</p></li>
+          <li><span class="n">2</span><p>Mẻ nào hết là hết, chờ mẻ sau.</p></li>
+          <li><span class="n">3</span><p>Muốn chắc có bánh, nhắn Zalo <span class="num">0909 123 456</span> để giữ trước.</p></li>
+        </ol>
+      </div>
+      <div class="info-side" id="duong-di">
+        <span class="chip is-open" data-chip><i class="ph ph-clock" aria-hidden="true"></i><span data-chip-text>Đang mở · đóng lúc 19:00</span></span>
+        <h3>Mở 5:30 đến 19:00, nghỉ thứ Hai</h3>
+        <p class="addr">14 Hai Bà Trưng, Phường 1, Đà Lạt</p>
+        <p>Zalo <span class="num">0909 123 456</span></p>
+        <div class="info-cta">
+          <a class="btn btn-ghost" href="https://www.google.com/maps/search/?api=1&amp;query=14%20Hai%20B%C3%A0%20Tr%C6%B0ng%2C%20Ph%C6%B0%E1%BB%9Dng%201%2C%20%C4%90%C3%A0%20L%E1%BA%A1t" target="_blank" rel="noopener"><i class="ph ph-map-pin" aria-hidden="true"></i>Xem đường đi</a>
+          <a class="btn btn-ghost" href="tel:+84909123456"><i class="ph ph-phone" aria-hidden="true"></i>Gọi <span class="num">0909 123 456</span></a>
+        </div>
+        <div class="ph-box">Ảnh: mặt tiền tiệm ở 14 Hai Bà Trưng, 1600×1000</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- 5. Chân trang -->
+<footer class="site-foot">
+  <div class="wrap foot-in">
+    <p class="foot-name">Lò Bánh Củi Cô Ba</p>
+    <p>14 Hai Bà Trưng, Phường 1, Đà Lạt · Zalo <span class="num">0909 123 456</span> · mở 5:30 đến 19:00, nghỉ thứ Hai</p>
+    <p>Giờ <span data-clock>8:40 thứ Bảy</span> và trạng thái từng mẻ trên trang là minh hoạ, chưa nối dữ liệu thật.</p>
+  </div>
+</footer>
+
+<div class="toast is-ok" id="toast" role="status" hidden><i class="ph ph-check-circle ic" aria-hidden="true"></i><span>Đã chép tin nhắn mẫu. Mở Zalo rồi dán vào ô chat.</span></div>
+
+<script>
+(() => {
+  const ZALO = 'https://zalo.me/0909123456';
+  const PRODUCTS = [['Bánh mì que củi', '8.000 ₫'], ['Bánh mì đặc ruột', '6.000 ₫'], ['Bánh sừng bò bơ Đà Lạt', '22.000 ₫'], ['Bánh nho Bảo Lộc', '18.000 ₫']];
+  // Giờ ra lò và giá: thật (người dùng nói). Giờ vào lò (55 phút trước khi ra) và giờ hết mẻ: minh hoạ, chưa nối dữ liệu
+  const BATCHES = [{ t: 360, het: 490 }, { t: 570, het: 710 }, { t: 900, het: 1000 }, { t: 1050, het: 1105 }];
+  const BAKE = 55, OPEN = 330, CLOSE = 1140;
+  const DAY = { 2: 'thứ Hai', 3: 'thứ Ba', 4: 'thứ Tư', 5: 'thứ Năm', 6: 'thứ Sáu', 7: 'thứ Bảy', 8: 'Chủ nhật' };
+  const LABEL = { het: 'Đã hết', con: 'Còn bánh', nuong: 'Đang nướng', chua: 'Chưa vào lò', nghi: 'Lò nghỉ' };
+  // Cổng 3 giữ concept: ba vật liệu. Mẻ đã ra lò còn bánh dùng gạch, nhãn "Còn bánh"
+  const MAT = { het: 'ash', con: 'brick', nuong: 'fire', chua: 'brick', nghi: 'brick' };
+
+  // Giờ của prototype: ?gio=11:00, ?thu=2 (thứ Hai) ... 7 (thứ Bảy), cn. Mặc định 8:40 thứ Bảy (minh hoạ)
+  const q = new URLSearchParams(location.search);
+  const parseTime = s => { const m = /^(\d{1,2})(?:[:h.](\d{2}))?$/.exec((s || '').trim()); if (!m) return null; const h = +m[1], mi = +(m[2] || 0); return h < 24 && mi < 60 ? h * 60 + mi : null; };
+  const parseDay = s => { s = (s || '').trim().toLowerCase(); if (s === 'cn' || s === '8' || s === '1') return 8; const n = +s; return n >= 2 && n <= 7 ? n : null; };
+  const tq = parseTime(q.get('gio')), dq = parseDay(q.get('thu'));
+  const now = tq === null ? 520 : tq;
+  const day = dq === null ? 7 : dq;
+
+  const fmt = m => Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const restDay = day === 2;
+  const nextMorning = day === 2 || day === 8 ? 'sáng thứ Ba' : 'sáng mai';
+  const state = b => restDay ? 'nghi' : now >= b.het ? 'het' : now >= b.t ? 'con' : now >= b.t - BAKE ? 'nuong' : 'chua';
+  const states = BATCHES.map(state);
+
+  document.querySelectorAll('[data-clock]').forEach(el => { el.textContent = fmt(now) + ' ' + DAY[day]; });
+
+  // Vòm màn đầu: mẻ đáng xem nhất lúc này
+  function hero() {
+    const iN = states.indexOf('nuong'), iC = states.indexOf('con'), iX = states.indexOf('chua');
+    if (restDay) return { mat: 'brick', label: 'Thứ Hai lò nghỉ', when: '6:00', sub: 'Mẻ đầu sáng thứ Ba' };
+    if (now >= CLOSE) return { mat: 'brick', label: 'Tiệm đã đóng cửa', when: '6:00', sub: 'Mẻ đầu ' + nextMorning };
+    if (iN >= 0) { const b = BATCHES[iN]; return { mat: 'fire', label: 'Mẻ kế · đang trong lò', when: fmt(b.t), sub: 'Ra lò sau ' + (b.t - now) + ' phút' }; }
+    if (iX >= 0) {
+      const b = BATCHES[iX];
+      const sub = iC >= 0 ? 'Mẻ ' + fmt(BATCHES[iC].t) + ' còn bánh ở quầy'
+        : now < OPEN ? 'Tiệm mở cửa lúc 5:30'
+        : iX > 0 ? 'Mẻ ' + fmt(BATCHES[iX - 1].t) + ' đã hết'
+        : 'Vào lò lúc ' + fmt(b.t - BAKE);
+      return { mat: 'brick', label: 'Mẻ kế · chưa vào lò', when: fmt(b.t), sub };
+    }
+    if (iC >= 0) return { mat: 'brick', label: 'Mẻ kế · ' + nextMorning, when: '6:00', sub: 'Mẻ ' + fmt(BATCHES[iC].t) + ' còn bánh ở quầy' };
+    return { mat: 'ash', label: 'Hôm nay hết bánh', when: '6:00', sub: 'Mẻ đầu ' + nextMorning };
+  }
+  const H = hero(), arch = document.querySelector('[data-hero]');
+  arch.classList.remove('fire', 'brick', 'ash'); arch.classList.add(H.mat);
+  arch.querySelector('.label').textContent = H.label;
+  arch.querySelector('.when').textContent = H.when;
+  arch.querySelector('.sub').textContent = H.sub;
+  arch.setAttribute('aria-label', H.label.replace(' · ', ', ') + ' ' + H.when + '. ' + H.sub + ' (minh hoạ).');
+
+  // Chip giờ mở
+  const chip = document.querySelector('[data-chip]');
+  const C = restDay ? ['is-closed', 'Thứ Hai nghỉ · mở lại 5:30 thứ Ba']
+    : now < OPEN ? ['is-closed', 'Chưa mở · mở lúc 5:30']
+    : now >= CLOSE ? ['is-closed', day === 8 ? 'Đã đóng · mở lại 5:30 thứ Ba' : 'Đã đóng · mở lại 5:30 sáng mai']
+    : ['is-open', 'Đang mở · đóng lúc 19:00'];
+  chip.className = 'chip ' + C[0];
+  chip.querySelector('[data-chip-text]').textContent = C[1];
+
+  // Ô cửa vòm: tab của từng mẻ
+  const tabs = [...document.querySelectorAll('[data-doors] [role=tab]')];
+  tabs.forEach((t, i) => { t.classList.remove('fire', 'brick', 'ash'); t.classList.add(MAT[states[i]]); t.querySelector('.s').textContent = LABEL[states[i]]; });
+
+  // Mẻ mà nút giữ bánh trỏ tới: mẻ đã hết thì trỏ mẻ kế còn trong ngày, hết cả ngày thì mẻ 6:00 hôm sau
+  function target(i) {
+    const s = states[i];
+    if (s === 'nghi') return { i, t: BATCHES[i].t, day: 'thứ Ba' };
+    if (s !== 'het') return { i, t: BATCHES[i].t, day: '' };
+    for (let k = i + 1; k < BATCHES.length; k++) if (states[k] !== 'het') return { i: k, t: BATCHES[k].t, day: '' };
+    return { i: 0, t: BATCHES[0].t, day: nextMorning };
+  }
+  function note(i) {
+    const b = BATCHES[i], s = states[i], tg = target(i);
+    if (s === 'nghi') return 'Thứ Hai lò nghỉ. Mẻ ' + fmt(b.t) + ' ra lò lại vào thứ Ba; nhắn hôm nay để giữ trước.';
+    if (s === 'het') return 'Hết lúc ' + fmt(b.het) + ' (minh hoạ). Mẻ nào hết là hết: '
+      + (tg.day ? 'lò mở lại ' + fmt(tg.t) + ' ' + tg.day + '.' : states[tg.i] === 'con' ? 'mẻ ' + fmt(tg.t) + ' còn bánh ở quầy.' : 'mẻ kế là ' + fmt(tg.t) + '.');
+    if (s === 'con') return 'Ra lò lúc ' + fmt(b.t) + ', còn bánh ở quầy (minh hoạ). Nhắn Zalo trước để Cô Ba để phần.';
+    if (s === 'nuong') return 'Vào lò lúc ' + fmt(b.t - BAKE) + ', ra lò sau ' + (b.t - now) + ' phút (minh hoạ). Nhắn Zalo trước để Cô Ba để phần.';
+    return 'Vào lò lúc ' + fmt(b.t - BAKE) + ' (minh hoạ), ra lò ' + fmt(b.t) + '. Giữ trước qua Zalo, tới lấy sau ' + fmt(b.t) + '.'
+      + (i === BATCHES.length - 1 ? ' Mẻ cuối ngày, tiệm đóng 19:00.' : '');
+  }
+  function message(i) {
+    const tg = target(i);
+    const base = tg.day ? tg.t : Math.max(tg.t, now);
+    const pick = Math.ceil((base + 15) / 5) * 5;
+    return 'Cô Ba ơi, giữ giúp con 4 bánh mì que củi mẻ ' + fmt(tg.t) + (tg.day ? ' ' + tg.day : '') + '. Con tên [tên bạn], khoảng ' + fmt(pick) + ' con tới lấy.';
+  }
+
+  const panel = document.getElementById('panel');
+  let current = '';
+  function show(i) {
+    const b = BATCHES[i], s = states[i], tg = target(i), gone = s === 'het';
+    tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
+    panel.setAttribute('aria-labelledby', tabs[i].id);
+    panel.classList.toggle('is-gone', gone);
+    panel.style.animation = 'none'; void panel.offsetWidth; panel.style.animation = '';
+    current = message(i);
+    panel.innerHTML =
+      '<div class="ph-box arch">Ảnh: khay bánh mẻ ' + fmt(b.t) + ' ở miệng lò củi, 1200×900</div>'
+      + '<div><p class="label muted">Mẻ ' + fmt(b.t) + '</p>'
+      + '<h3>' + esc(s === 'nghi' ? 'Thứ Hai lò nghỉ' : LABEL[s]) + '</h3>'
+      + '<p class="muted batch-note">' + esc(note(i)) + '</p>'
+      + '<ul class="items' + (gone ? ' is-gone' : '') + '">' + PRODUCTS.map(p => '<li><span class="name">' + esc(p[0]) + '</span><span class="price">' + esc(p[1]) + '</span></li>').join('') + '</ul>'
+      + '<p class="fine">Mỗi mẻ ra đủ 4 món: giả định, chờ Cô Ba xác nhận.</p>'
+      + '<div class="msg"><p class="label muted">Tin nhắn mẫu · mẻ ' + fmt(tg.t) + '</p>'
+      + '<p><q>' + esc(current) + '</q></p>'
+      + '<div class="msg-row"><button type="button" class="btn btn-ghost btn-sm" data-copy><i class="ph ph-copy" aria-hidden="true"></i>Chép tin nhắn</button><span class="fine">Sửa số bánh, tên và giờ lấy rồi gửi.</span></div>'
+      + '<p role="status" data-copy-status></p></div>'
+      + '<a class="btn btn-primary btn-block-sm" href="' + ZALO + '" target="_blank" rel="noopener"><i class="ph ph-chat-circle-text" aria-hidden="true"></i>Giữ bánh mẻ ' + fmt(tg.t) + (tg.day ? ' ' + tg.day : '') + ' qua Zalo</a>'
+      + '<p class="fine">Cô Ba trả lời trên Zalo là bánh đã được giữ. Máy chưa có Zalo thì nhắn hoặc gọi <span class="num">0909 123 456</span>.</p></div>';
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => show(i));
+    t.addEventListener('keydown', e => {
+      const n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+      if (n === undefined) return;
+      e.preventDefault(); const k = (n + tabs.length) % tabs.length; tabs[k].focus(); show(k);
+    });
+  });
+  const first = restDay ? 0 : ['nuong', 'con', 'chua'].map(s => states.indexOf(s)).find(k => k >= 0);
+  show(first === undefined ? BATCHES.length - 1 : first);
+
+  // Chép tin nhắn mẫu: chép được thì toast (thoáng qua), bị chặn thì báo lỗi cạnh chỗ chép
+  const toast = document.getElementById('toast');
+  let timer;
+  panel.addEventListener('click', async e => {
+    if (!e.target.closest('[data-copy]')) return;
+    const st = panel.querySelector('[data-copy-status]');
+    let ok = false;
+    try { await navigator.clipboard.writeText(current); ok = true; } catch (err) { ok = false; }
+    if (ok) {
+      st.className = ''; st.textContent = '';
+      toast.hidden = false; clearTimeout(timer); timer = setTimeout(() => { toast.hidden = true; }, 4000);
+    } else {
+      st.className = 'is-bad';
+      st.textContent = 'Trình duyệt không cho chép. Bấm giữ câu mẫu để chép tay, hoặc nhắn số 0909 123 456.';
+    }
+  });
+
+  // Section hiện dần một lần khi cuộn tới (IntersectionObserver, không nghe sự kiện cuộn)
+  const items = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add('is-in'); io.unobserve(en.target); } }), { rootMargin: '0px 0px -8% 0px' });
+    items.forEach(el => io.observe(el));
+  } else items.forEach(el => el.classList.add('is-in'));
+})();
+</script>
+</body>
+</html>

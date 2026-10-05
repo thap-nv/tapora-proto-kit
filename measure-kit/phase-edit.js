@@ -1,20 +1,21 @@
 // Chi phí theo bước của tweak-site, evolve-site, handover-check. node phase-edit.js <a.jsonl> … [--list]
 // Skill nhận từ prompt ("Chạy skill tweak-site" …). Mỗi lượt (một message id) thuộc một bước, theo dấu hiệu trong lệnh gọi của lượt đó.
 // tweak-site: bước theo dấu hiệu cao nhất của chính lượt (sửa rồi kiểm lại thì quay về "sửa"); lượt không có dấu hiệu theo lượt trước.
-//   tìm      grep/rg trong site/ · qa_init.py · quick.py --dry · quick.py --note "trước tweak…"
-//   đọc      Read file dự án (site/, FEATURE-DECISIONS.md, DESIGN.md, AGENTS.md) trước lần sửa đầu
+//   tìm      grep/rg trong site/ · grep/rg ngoài thư mục skills trước lần sửa đầu · qa_init.py · quick.py --dry · quick.py --note "trước tweak…"
+//   đọc      Read file dự án (site/, FEATURE-DECISIONS.md, DESIGN.md, AGENTS.md) · sed -n/cat/head/tail site/ hay DESIGN.md, trước lần sửa đầu
 //   sửa      Write/Edit vào site/ (hay sed -i, python, cat > vào site/)
-//   kiểm     quick.py --note (không phải "trước tweak") · preflight.py · run_all.py
-//   ảnh      Read ảnh · lệnh chụp (run.mjs, --screenshot, playwright)
-//   nhật ký  Write/Edit FEATURE-DECISIONS.md
-//   báo cáo  lượt cuối không có lệnh gọi
+//   kiểm     quick.py --note (không phải "trước tweak") · preflight.py · run_all.py · qa_init.py sau lần sửa (skill bản cũ chạy nó ngay trước lần kiểm)
+//   ảnh      Read ảnh · lệnh chụp (run.mjs, --screenshot, playwright) · sau lần sửa: đọc run.mjs, quick.py --help (đi tìm cách chụp)
+//   nhật ký  Write/Edit FEATURE-DECISIONS.md · sau lần sửa: lệnh hay Read có FEATURE-DECISIONS (tra khuôn)
+//   báo cáo  lượt cuối: chữ, hoặc chỉ lệnh SubagentHandback (cả ba skill)
 //   Trước dấu hiệu đầu là "vào" (đọc SKILL.md và tài liệu skill).
 // evolve-site và handover-check: bước chỉ tăng (sửa ở B4 vẫn là B4).
 //   evolve  B1: mặc định từ đầu (SKILL.md, b1-b2.md, DESIGN.md, dữ liệu, qa_init, quick --dry, run_all _qa/truoc, preflight --save)
 //           B2 · cổng: integration-patterns.md · search.py · ghi FEATURE-DECISIONS.md có "Cổng 1" hay "Cổng 2" khi chưa sửa site/
 //           B3: Read references/b3-b4.md · ghi steps-*.json, qa.config.json, site/, BUILD-LOG.md · run_all.py _qa/.tdd · themes.mjs
-//           B4: quick.py --note (không phải "trước evolve") · regression-qa.md (sau khi đã sửa site/) · laws-of-ux · Read ảnh sau khi đã sửa site/
-//           Cổng 3: ghi FEATURE-DECISIONS.md có "Cổng 3" · lượt cuối
+//           B4: quick.py --note (không phải "trước evolve") · regression-qa.md (sau khi đã sửa site/) · laws-of-ux · Read ảnh ngoài _qa/.tdd/ sau khi đã sửa site/
+//               (ảnh _qa/.tdd/ trước B4 là gỡ lỗi bộ tính năng, vẫn là B3)
+//           Cổng 3: ghi FEATURE-DECISIONS.md có "Cổng 3" khi đã vào B4 (khối tính năng ghi ở B3 có sẵn tiêu đề Cổng 3 của khuôn) · lượt cuối
 //   handover B0–B1: mặc định (SKILL.md, qa_init, handover.py ledger, ledger.jsonl, FEATURE-DECISIONS.md, quick --dry)
 //           B2: handover.py thumbs · ghi steps-*.json · quick.py --note "handover…"
 //           B3: handover.py run · qa-check.py
@@ -76,6 +77,12 @@ const py = f => run('python3?', f);
 const quickNote = cmd => py('quick\\.py').test(cmd) && /--note/.test(cmd);
 const siteWrite = c => writes(c) && /\/site\//.test(P(c))
   || /\bsed\s+-i\b|\.write\(|write_text|cat\s*>/.test(CMD(c)) && /\/site\//.test(CMD(c));
+// Ghi file qua Bash (cat >>, tee, python open(…,'w'|'a')): f là regex tên file, không neo
+const shWrite = (cmd, f) => new RegExp(String.raw`(?:cat\s*>>?|tee(?:\s+-a)?)\s*["']?[^\s;&|"'<>]*` + f.source).test(cmd)
+  || /\bpython3?\b/.test(cmd) && new RegExp(String.raw`(?:\bp\s*=\s*|open\(\s*)["'][^"']*` + f.source + `["']`).test(cmd) && /open\([^)]*['"][wa]['"]|write_text|\.write\(/.test(cmd);
+// Write/Edit vào file khớp re, hay ghi qua Bash; nội dung ghi lấy từ lệnh khi ghi qua Bash
+const writesTo = (c, re, f) => writes(c) && re.test(P(c)) || shWrite(CMD(c), f);
+const body = c => BODY(c) || CMD(c);
 const img = c => c.name === 'Read' && /\.(png|jpe?g)$/i.test(P(c));
 const SHOT = /(msedge|chrome|chromium)(?:(?!&&)[^;\n|])*--screenshot|playwright\s+screenshot|\bnode\b(?:(?!&&)[^;\n|])*run\.mjs/i;
 
@@ -83,30 +90,35 @@ const SHOT = /(msedge|chrome|chromium)(?:(?!&&)[^;\n|])*--screenshot|playwright\
 const MARK = {
   'tweak-site'(c, st) {
     const p = P(c), cmd = CMD(c);
-    if (writes(c) && /FEATURE-DECISIONS\.md$/.test(p)) return 6;
+    if (writesTo(c, /FEATURE-DECISIONS\.md$/, /FEATURE-DECISIONS\.md/)) return 6;
+    if (st.edited && /FEATURE-DECISIONS/.test(p + ' ' + cmd)) return 6;
     if (img(c) || SHOT.test(cmd)) return 5;
+    if (st.edited && (/run\.mjs/.test(cmd) || py('quick\\.py\\s+--help').test(cmd))) return 5;
     if (quickNote(cmd) && !/trước tweak/.test(cmd) || py('preflight\\.py').test(cmd) || py('run_all\\.py').test(cmd)) return 4;
+    if (st.edited && py('qa_init\\.py').test(cmd)) return 4;
     if (siteWrite(c)) return 3;
     if (!st.edited && c.name === 'Read' && /\/(site\/|FEATURE-DECISIONS\.md$|DESIGN\.md$|AGENTS\.md$|CLAUDE\.md$)/.test(p)) return 2;
-    if (/\b(grep|rg)\b[^;\n|]*\/site\b/.test(cmd) || py('qa_init\\.py').test(cmd) || py('quick\\.py').test(cmd)) return 1;
+    if (!st.edited && /\b(sed\s+-n|cat|head|tail)\b[^;\n|]*(site\/|DESIGN\.md)/.test(cmd)) return 2;
+    if (!st.edited && /\b(grep|rg)\b/.test(cmd) && !/tapora-proto-kit\/skills/.test(cmd)) return 1;
+    if (/\b(grep|rg)\b[^;\n|]*\/site\b/.test(cmd) || py('qa_init\\.py').test(cmd) || py('quick\\.py\\s+--(dry|note)').test(cmd)) return 1;
     return -1;
   },
   'evolve-site'(c, st) {
     const p = P(c), cmd = CMD(c), s = p + ' ' + cmd;
-    if (writes(c) && /FEATURE-DECISIONS\.md$/.test(p) && /Cổng 3/.test(BODY(c)) && st.edited) return 4;
+    if (writesTo(c, /FEATURE-DECISIONS\.md$/, /FEATURE-DECISIONS\.md/) && /Cổng 3/.test(body(c)) && st.edited && st.cur >= 3) return 4;
     if (quickNote(cmd) && !/trước evolve/.test(cmd)) return 3;
-    if (st.edited && (/regression-qa\.md/.test(s) || /laws-of-ux/.test(s) || img(c))) return 3;
+    if (st.edited && (/regression-qa\.md/.test(s) || /laws-of-ux/.test(s) || img(c) && !/\/_qa\/\.tdd\//.test(p))) return 3;
     if (c.name === 'Read' && /evolve-site\/references\/b3-b4\.md$/.test(p)) return 2;
     if (writes(c) && /\/_qa\/(steps-[^\/]+\.json|qa\.config\.json)$|BUILD-LOG\.md$/.test(p) || siteWrite(c)) return 2;
     if (py('run_all\\.py').test(cmd) && /\.tdd/.test(cmd) || run('node', 'themes\\.mjs').test(cmd)) return 2;
     if (/integration-patterns\.md|search\.py/.test(s)) return 1;
-    if (!st.edited && writes(c) && /FEATURE-DECISIONS\.md$/.test(p) && /Cổng [12]/.test(BODY(c))) return 1;
+    if (!st.edited && writesTo(c, /FEATURE-DECISIONS\.md$/, /FEATURE-DECISIONS\.md/) && /Cổng [12]/.test(body(c))) return 1;
     return -1;
   },
   'handover-check'(c) {
     const p = P(c), cmd = CMD(c), s = p + ' ' + cmd;
-    if (writes(c) && /\/DECISIONS\.md$/.test(p)) return 6;
-    if (writes(c) && /(DESIGN|QA)\.md$/.test(p)) return 5;
+    if (writesTo(c, /\/DECISIONS\.md$/, /(?<![\w-])DECISIONS\.md/)) return 6;
+    if (writesTo(c, /(DESIGN|QA)\.md$/, /(?:DESIGN|QA)\.md/)) return 5;
     if (/regression-qa\.md|laws-of-ux|qa-gate\.md/.test(s)) return 4;
     if (py('run_all\\.py').test(cmd) && /\.recheck/.test(cmd) || /handover\.json|git\s+(-C\s+\S+\s+)?diff|compare\.py/.test(cmd) || img(c)) return 3;
     if (py('handover\\.py\\s+run').test(cmd) || py('qa-check\\.py').test(cmd)) return 2;
@@ -125,10 +137,13 @@ for (const f of args.filter(a => !a.startsWith('--'))) {
   const S = STEPS[skill], monotonic = skill !== 'tweak-site', last = S.length - 1, st = { edited: false };
   let cur = 0;
   turns.forEach((t, i) => {
+    st.cur = cur;
     const m = Math.max(-1, ...t.calls.map(c => MARK[skill](c, st)));
     if (t.calls.some(siteWrite)) st.edited = true;
     if (monotonic) { if (m > cur) cur = m; } else if (m >= 0) cur = m;
-    if (i === turns.length - 1 && !t.calls.length) cur = last;
+    if (!monotonic && i === 0) cur = 0; // tweak: lượt 1 (đọc SKILL.md, có khi kèm AGENTS.md) luôn là "vào"
+    // Lượt cuối: chữ, hoặc chỉ lệnh SubagentHandback (subagent nộp báo cáo qua công cụ này)
+    if (i === turns.length - 1 && t.calls.every(c => c.name === 'SubagentHandback')) cur = last;
     t.step = cur;
   });
   const agg = S.map(() => ({ n: 0, cost: 0, miss: 0, ms: 0, at: [] }));
