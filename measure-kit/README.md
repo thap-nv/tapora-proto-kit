@@ -44,6 +44,8 @@ Dùng để đo một lần chạy skill `sketch-to-concept` tốn bao nhiêu l�
 | `r7-map/` | Đề đo của `sketch-to-map`: `sample/` là thư mục bắt đầu (Cổng 1–2 đã chốt, 7 tài liệu yêu cầu theo khuôn BA), `key.json` là đáp án. **Chép `sample/` ra rồi mới chạy; không chép `key.json`.** Xem mục *sketch-to-map: đề đo r7-map* |
 | `mapscore.js` | Chấm bản đồ chức năng của một lần chạy theo đáp án: `node mapscore.js <key.json> <thư-mục-chạy hay features.js hay file .md> [--json] [--all]`. `--selfcheck <key.json> <thư-mục-tài-liệu>` soát chính đáp án |
 | `prompt-map-moc-cu.md` | Prompt của phiên đo mốc cũ: `sketch-to-site` B1 ở `66e55cb` đọc đề `r7-map` và lập sơ đồ trang |
+| `treetest-prompt.md`, `treescore.js` | Bài thử tìm (tree test): prompt người thử (ba vai a, b, c; subagent `Explore`, cây và việc dán vào prompt) và script chấm: `node treescore.js <viec.json> <kết-quả> …` in thành công, đi thẳng, gần đúng theo việc và theo tầng |
+| `flowscan.js` | Quét mã một prototype đã dựng: mỗi trang đếm nút chính, tab, lớp phủ, ô nhập, viền dày, liên kết đá sang trang khác (tách *lối tắt hành động* với *điều hướng*), chỗ tự chuyển trang, và trang đích có đường về không. `node flowscan.js <thư-mục-site> [--json] [--all]` |
 | `cloud-setup.sh` | Chuẩn bị máy cho một lần đo, trong một lệnh: kiểm node, python, trình duyệt (Linux chưa có thì cài Chromium), mạng; lấy bản skill cần đo ra worktree ở đúng commit; in dòng biến `SKILLS`, `RUNS`. `bash measure-kit/cloud-setup.sh <moi> [<cu>] [--tests]`. Xem mục *Nhánh `measure` và cách lấy bản skill* |
 
 ## Nhánh `measure` và cách lấy bản skill (từ 05/10/2026)
@@ -1358,3 +1360,19 @@ Soát tay `mapscore.js` lần đầu: K17 bị chấm trượt dù A1 có lớp 
 - Bản đồ dày ở vài màn (A1 có 4 lớp phủ và một chế độ xếp lớp; A2 gom 7 loại việc), nhưng phần *tìm được và gọn* chưa đo được bằng đề này.
 
 **Dữ liệu:** transcript `transcripts/map-moc-cu/agent-afc2df761a334005b.jsonl.gz` (+ `.meta.json`), phiên `ff1a1681-5d0f-48ae-8ce9-f4e28f9ca839`. `DESIGN.md`, `DECISIONS.md` của lần chạy ở `runs-map/rm0a/`.
+
+### Mốc bố cục: tree test (đo 05/10/2026)
+
+Cây chỉ có nhãn, dựng từ sơ đồ trang của `rm0a` *(menu theo vai, tab của app, tab, mục và nút của từng trang; bỏ mô tả và mã yêu cầu)*: `r7-map/treetest/rm0a-cay.md`. 10 việc viết theo lời người dùng, có tầng và nút đích: `r7-map/treetest/viec.json`. Ba người thử `Explore` (vai a, b, c của `treetest-prompt.md`), chạy song song, khoảng 30k token mỗi người.
+
+| | `rm0a` |
+|---|---|
+| Thành công | **30/30 (100 %)** |
+| Đi thẳng | 26/30 (87 %) |
+| Quay lui | T4 *ai đã sửa điểm danh*: 2/3 người vào Điểm danh trước · T6 *trả lời yêu cầu đổi lịch*: 1/3 vào Thông báo trước · T10 *phụ huynh xin đổi buổi*: 1/3 vào yêu cầu đang chờ trước |
+
+Đối chiếu với một prototype thật dựng bằng 4.x: cũng 100 % thành công, 93 % đi thẳng.
+
+**Đọc kết quả:** tree test bằng mô hình **chạm trần**. Người thử đọc được cả cây, và nhãn của cả hai bản đều rõ, nên số này không phân biệt bố cục tốt với bố cục kém. Chỉ dùng như bước soát nhãn rẻ, không làm cổng chặn. Chỗ yếu của bố cục phải đo bằng số đếm được ở mức luồng (`flowscan.js`) và bằng người bấm thử ở cổng.
+
+Kết quả từng người: `r7-map/treetest/rm0a-a.json`, `rm0a-b.json`, `rm0a-c.json`. Chấm lại: `node treescore.js r7-map/treetest/viec.json r7-map/treetest/rm0a-*.json`.

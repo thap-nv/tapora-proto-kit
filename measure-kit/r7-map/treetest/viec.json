@@ -1,0 +1,26 @@
+{
+  "cay": "rm0a-cay.md",
+  "ghi_chu": "10 việc cho cây của r7-map. Không đưa 'expect' cho người thử. tier: 1 hằng ngày, 2 hằng tuần, 3 hiếm, 4 theo ngữ cảnh hay hàng loạt.",
+  "tasks": [
+    { "id": "T1", "role": "Lễ tân", "tier": 2, "expect": ["Q3.4.8"],
+      "say": "Phụ huynh gọi báo cả nhà đi nước ngoài ba tuần, muốn cho bé tạm nghỉ mà không mất số buổi đã đóng." },
+    { "id": "T2", "role": "Lễ tân", "tier": 4, "expect": ["Q1.5"],
+      "say": "Bơm lọc của bể vừa hỏng, các lớp từ 14 giờ tới 18 giờ hôm nay phải nghỉ. Bạn cần xử lý các buổi đó và báo cho phụ huynh." },
+    { "id": "T3", "role": "Quản lý", "tier": 3, "expect": ["Q10.1"],
+      "say": "Từ tháng sau, gói 12 buổi tăng giá. Bạn cần cập nhật giá." },
+    { "id": "T4", "role": "Quản lý", "tier": 3, "expect": ["Q9", "Q9.1", "Q9.2", "Q3.4.5"],
+      "say": "Một phụ huynh khiếu nại con bị trừ buổi hôm thứ Ba dù có đi học. Bạn muốn biết ai đã sửa điểm danh buổi đó." },
+    { "id": "T5", "role": "Lễ tân", "tier": 2, "expect": ["Q2.4", "Q4.2.2", "Q1.4.2"],
+      "say": "Lớp Cơ bản 17:30 vừa có một bé nghỉ hẳn. Bạn muốn gọi người đang đợi chỗ ở lớp đó." },
+    { "id": "T6", "role": "Lễ tân", "tier": 1, "expect": ["Q2.2"],
+      "say": "Sáng nay có phụ huynh nhắn qua app xin đổi buổi học của con. Bạn cần trả lời." },
+    { "id": "T7", "role": "Quản lý", "tier": 3, "expect": ["Q7.3"],
+      "say": "Kế toán xin số doanh thu tháng 9 dạng file để làm sổ." },
+    { "id": "T8", "role": "Quản lý", "tier": 2, "expect": ["Q1.6"],
+      "say": "HLV Hùng báo ốm sáng nay; lớp 17:30 của anh ấy cần người dạy." },
+    { "id": "T9", "role": "HLV", "tier": 2, "expect": ["H1.4"],
+      "say": "Hôm qua bạn lỡ đánh dấu bé Na vắng, nhưng bé có đi học. Bạn cần sửa lại." },
+    { "id": "T10", "role": "Phụ huynh (app)", "tier": 1, "expect": ["P1.3.2"],
+      "say": "Thứ Năm này con bạn có lịch khám răng trùng giờ học. Bạn muốn xin cho con học vào hôm khác." }
+  ]
+}

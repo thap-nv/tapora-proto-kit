@@ -1,0 +1,96 @@
+## Web quản trị · vai Quản lý
+- [Q1] Lịch
+  - [Q1.1] Tuần trước · Tuần này · Tuần sau
+  - [Q1.2] Xem theo: Tuần · Ngày
+  - [Q1.3] Lọc: Bể · Cấp độ · HLV
+  - [Q1.4] Lưới lịch (bấm một ô lớp) → Ngăn chi tiết lớp
+    - [Q1.4.1] Học viên của lớp
+    - [Q1.4.2] Danh sách chờ
+  - [Q1.5] Nút: Huỷ buổi do sự cố
+  - [Q1.6] Nút: Đổi người dạy
+  - [Q1.7] Nút: Xếp học viên vào lớp
+- [Q2] Việc cần xử lý
+  - [Q2.1] Hôm nay
+  - [Q2.2] Yêu cầu đổi lịch từ app — nút: Đổi lịch · Từ chối
+  - [Q2.3] Chuyển khoản chờ xác nhận
+  - [Q2.4] Lớp vừa có chỗ, người đang chờ
+  - [Q2.5] Gọi mời gia hạn
+  - [Q2.6] Đề nghị hoàn tiền — nút: Duyệt · Từ chối
+  - [Q2.7] Báo nghỉ hôm nay
+- [Q3] Học viên
+  - [Q3.1] Ô tìm: tên, mã, số điện thoại
+  - [Q3.2] Lọc: trạng thái · cấp độ · gói
+  - [Q3.3] Nút: Đăng ký học viên mới → Đăng ký học viên: Phụ huynh · Học viên · Học thử · Lưu hồ sơ
+  - [Q3.4] Bảng học viên (bấm một dòng) → Hồ sơ học viên
+    - [Q3.4.1] Gói hiện tại
+    - [Q3.4.2] Tab Buổi học
+    - [Q3.4.3] Tab Thanh toán
+    - [Q3.4.4] Tab Gọi gia hạn và ghi chú
+    - [Q3.4.5] Tab Nhật ký
+    - [Q3.4.6] Nút: Bán gói → Bán gói và thu tiền
+    - [Q3.4.7] Nút: Đổi lịch
+    - [Q3.4.8] Nút: Bảo lưu
+    - [Q3.4.9] Nút: Đề nghị hoàn tiền
+    - [Q3.4.10] Nút: Ngừng học
+- [Q4] Lớp
+  - [Q4.1] Lọc: cấp độ · ngày · giờ · HLV · còn chỗ
+  - [Q4.2] Bảng lớp theo khoá (bấm một lớp) → Chi tiết lớp
+    - [Q4.2.1] Học viên đang học
+    - [Q4.2.2] Danh sách chờ
+    - [Q4.2.3] Buổi sắp tới và đã qua
+  - [Q4.3] Khoá học
+  - [Q4.4] Nút: Mở lớp mới
+- [Q5] Điểm danh
+  - [Q5.1] Buổi dạy hôm nay
+  - [Q5.2] Danh sách học viên của buổi: Có mặt · Vắng có phép · Vắng không phép
+  - [Q5.3] Nút: Có mặt tất cả · Lưu điểm danh
+  - [Q5.4] Nút: Sửa điểm danh
+- [Q6] Thông báo
+  - [Q6.1] Đã gửi và hẹn giờ
+  - [Q6.2] Nút: Soạn thông báo
+- [Q7] Báo cáo
+  - [Q7.1] Tab Chuyên cần
+  - [Q7.2] Tab Doanh thu
+  - [Q7.3] Nút: Xuất Excel
+- Nhóm Quản trị
+  - [Q8] Nhân viên: Bảng nhân viên · Nút Thêm nhân viên · Khoá, mở khoá
+  - [Q9] Nhật ký
+    - [Q9.1] Lọc: loại thao tác · người làm · học viên · khoảng ngày
+    - [Q9.2] Bảng nhật ký thao tác
+  - [Q10] Cài đặt
+    - [Q10.1] Tab Bảng giá
+    - [Q10.2] Tab Ngày nghỉ lễ
+    - [Q10.3] Tab Nhắc lịch
+
+## Web quản trị · vai Lễ tân
+Menu: Lịch [Q1] · Việc cần xử lý [Q2] · Học viên [Q3] · Lớp [Q4] · Thông báo [Q6] · Báo cáo [Q7, chỉ có tab Chuyên cần]. Bên trong mỗi mục giống vai Quản lý.
+
+## Web quản trị · vai HLV
+- [H1] Điểm danh
+  - [H1.1] Buổi dạy hôm nay
+  - [H1.2] Danh sách học viên của buổi: Có mặt · Vắng có phép · Vắng không phép
+  - [H1.3] Nút: Có mặt tất cả · Lưu điểm danh
+  - [H1.4] Nút: Sửa điểm danh
+- [H2] Lịch dạy (lịch các lớp của mình)
+- [H3] Học viên lớp tôi (bấm một dòng) → Hồ sơ học viên, chỉ xem
+
+## App phụ huynh · 4 tab
+- [P1] Lịch
+  - [P1.1] Đổi con
+  - [P1.2] Buổi gần nhất
+  - [P1.3] Các buổi sắp tới (bấm một buổi) → Chi tiết buổi
+    - [P1.3.1] Nút: Báo nghỉ
+    - [P1.3.2] Nút: Gửi yêu cầu đổi lịch
+  - [P1.4] Yêu cầu đổi lịch đang chờ
+- [P2] Gói học
+  - [P2.1] Đổi con
+  - [P2.2] Số buổi còn lại
+  - [P2.3] Hạn dùng · Bảo lưu
+  - [P2.4] Lịch sử đóng tiền
+- [P3] Thông báo (bấm một thông báo) → Chi tiết thông báo
+- [P4] Tài khoản
+  - [P4.1] Các con
+  - [P4.2] Nhắc lịch trước giờ học
+  - [P4.3] Yêu cầu đổi lịch
+  - [P4.4] Liên hệ quầy
+  - [P4.5] Đăng xuất
