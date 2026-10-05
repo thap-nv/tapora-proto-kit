@@ -582,3 +582,145 @@ Các chỗ còn lại ở trên đã sửa (commit `54fe187`, gộp vào CHANGEL
 - Lệnh 2 in tên mọi token (khoảng 1k ký tự trên `r3-gate3`).
 - Prompt review: mở mọi ảnh trong một tin nhắn trước khi đọc mã, `_system` chỉ ở 1440.
 - `qa-check.py` xếp ảnh trạng thái theo số; thử trên bản chép `rf2b`: `@gio_4_30, @gio_11_00, @gio_16_40, …`.
+
+## sketch-to-site: sau 4.5 trên Windows, cùng máy với mốc nền (05/10/2026)
+
+Đo skill ở HEAD của `measure/site-4.5` (`8627382`, skill như `54fe187`: mọi chỗ sửa gộp vào CHANGELOG 1.5.0, kể cả các chỗ nhỏ sau lần đo cuối trên cloud). Máy Windows của mốc nền: Node 20.19.5, Python 3.14, Edge (lệnh kiểm tự dò), Git Bash, model Opus 5.5. Test 323/323 qua, kể cả 2 test chỉ chạy trên Windows. Cùng thư mục bắt đầu (`r2-chosen`, `r3-gate3`) và prompt nguyên văn của mốc nền. Hai lần mỗi pha chạy song song, subagent `general-purpose` chạy nền. Thư mục chạy `rw1a`, `rw1b`, `rw2a`, `rw2b` trong scratchpad của phiên `29ddcf7f-01fa-4e4e-a5e5-80ea87e757fb`.
+
+Khác các lần đo cloud ở hai chỗ:
+- Cùng máy với mốc nền, nên tổng token so thẳng được; ngưỡng là 15 %, không phải 25 %.
+- Trên máy này subagent gọi được subagent con. Pha 2 vì vậy chạy review `Explore` trong chính lần chạy, chờ kết quả, rồi sửa theo review. Trên cloud, review chạy riêng từ phiên chính và không có vòng sửa sau review.
+
+Trước khi đo, chạy lại `phase-site.js` (cả `--list`), `fixes-site.js` và `attrib.js` bản trong repo trên bốn transcript mốc nền, so với bản cũ ở `~/.claude/projects/…/measure-kit/`:
+- `phase-site.js` và `fixes-site.js`: giống hệt.
+- `attrib.js`: chỉ khác ở hai lần pha 2, vì giờ tính ảnh `.jpg` là ảnh (khoảng 100k chuyển từ "đọc file dự án" sang "ảnh"). Tổng không đổi.
+- Số mốc nền vì vậy giữ nguyên.
+
+### Số đo
+
+Quy đổi thô lấy từ `parts2.js`. "Bỏ mất cache" trừ phần ghi lại ngữ cảnh ở lượt mất cache (`fixes-site.js` dòng 9). Số theo bước lấy từ `phase-site.js`.
+
+| Pha · lần | Lượt | Quy đổi thô | Bỏ mất cache | Phút | B0 | B1 / B3 | B2 / B4 | Cổng | Mốc nền 4.4 |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 · A | 12 | 0,64–0,69M | 0,53–0,58M | 16,4 | 2 · 66k | B1 1 · 27k | B2 8 · 527k | 1 · 41k | 59 lượt · 1,46–1,51M · 18,3' |
+| 1 · B | 10 | 0,59–0,63M | 0,49–0,53M | 15,2 | 2 · 67k | – | B2 7 · 505k | 1 · 37k | 69 · 1,90–1,97M · 24,2' |
+| 2 · A | 19 | 1,26–1,31M + review 0,33–0,35M | 0,85–0,90M + review | 25,8 | 4 · 139k | B3 3 · 339k | B4 10 · 712k | 2 · 89k | 59 · 1,57–1,61M + review 0,83–0,85M |
+| 2 · B | 15 | 1,21–1,27M + review 0,33–0,34M | 0,84–0,90M + review | 26,8 | 3 · 124k | B3 2 · 302k | B4 8 · 715k | 2 · 90k | 66 · 2,29–2,35M + 0,95–0,96M (bỏ mất cache 1,96–2,02M + 0,72–0,73M) |
+
+- **Pha 1:** −55 % và −68 % số thô; −62 % và −73 % khi bỏ mất cache. Ngang lần đo cuối trên cloud (14 và 16 lượt, 0,49–0,53M).
+- **Pha 2, kể cả review:** −50 % và −56 % khi bỏ mất cache.
+  - Phần trước review (lượt vào → gọi review, cộng Cổng 4) khoảng 0,55–0,61M, ngang cloud (0,53–0,56M).
+  - Vòng sửa sau review tốn 0,29–0,30M. Cloud không có vòng này.
+- **Cả quy trình một lần** (pha 1 + pha 2 + review):
+
+  | | Lần A | Lần B |
+  |---|---|---|
+  | Số thô | 2,23–2,35M (mốc 3,86–3,97M) → −39–44 % | 2,13–2,24M (mốc 5,14–5,28M) → −56–60 % |
+  | Bỏ mất cache | 1,71–1,83M (mốc 3,86–3,97M) → −53–57 % | 1,66–1,77M (mốc 4,58–4,72M) → −61–65 % |
+
+  Mốc nền A không có vòng sửa sau review: review chạy nền, về sau khi đã bàn giao. Mức giảm thật của A vì vậy còn lớn hơn số trên một chút.
+- **Đính chính số cloud:** "cả quy trình 1,45–1,55M" ở mục đo cuối trên cloud thiếu vòng sửa sau review. Một lần chạy thật, trong phiên chính, tốn khoảng 1,7–1,8M, giảm 53–65 % so với mốc, không phải 65–70 %.
+
+Mất cache. Mốc nền không có lượt nào quá 5 phút. Bản 4.5 ít lượt hơn nên mỗi lượt làm nhiều hơn, và cả 4 lần đều mất cache:
+
+| Lần | Lượt mất cache | Tốn thêm | Lượt trước đó |
+|---|---|---|---|
+| 1 · A | 6 | 107k | lượt 5 nghĩ 472s, viết 54s |
+| 1 · B | 6 | 103k | lượt 5 nghĩ 263s, viết 167s |
+| 2 · A | 6 | 131k | lượt 5 dựng trang: nghĩ 431s, viết 78s |
+| 2 · A | 11 | 281k | chờ review 7,0 phút |
+| 2 · B | 5 | 103k | lượt 4 dựng: nghĩ 457s, viết 139s |
+| 2 · B | 9 | 264k | chờ review 7,6 phút |
+
+Cả hai loại chỉ có khi skill chạy dưới dạng subagent (TTL 5 phút). Phiên chính có TTL 1 giờ.
+
+### Soát từng việc của 4.5
+
+1. **Kiểm một lệnh: đã ăn.**
+   - Pha 1: `system-check.mjs` chạy 2 lần mỗi lần, lần cuối `Kết luận: SẠCH` trước Cổng 3 (A lượt 10, B lượt 8). Agent tự gọi `run.mjs` 0 lần, chụp tay 0 lệnh, đọc mã skill 0 lệnh (mốc: 10–11 lệnh, 0,27–0,31M).
+   - Pha 2: `qa-check.py` chạy 3 lần (A lượt 8, 13, 16) và 2 lần (B lượt 6, 11). Không tự viết bộ cuộn hay file bước, không sửa file bước, không kết quả nào bị cắt giữa, đọc mã 0 lệnh (mốc 0,25–0,46M).
+   - Node 20 trên Windows: không lần nào hỏng vì thiếu `--experimental-websocket`. Đây là lần đầu phần tự thêm cờ được thử thật; cloud chạy Node 22.
+2. **Gộp lượt: đã ăn.**
+   - Lượt có từ 2 lệnh: 8/12, 6/10, 10/19, 9/15 (mốc 6/59, 23/69, 13/59, 15/66).
+   - Lượt chỉ mở ảnh: pha 1 mỗi lần 2 lượt, 80–85k (mốc 8 và 13 lượt, 0,23M và 0,44M); pha 2 A 1 lượt, B 0, vì ảnh mở cùng lượt sửa `BUILD-LOG.md` (mốc 12 và 9 lượt, 0,43M và 0,31M).
+   - Ảnh của mỗi lần kiểm đều mở trong một lượt, ở cả 4 lần và cả hai review.
+3. **Khuôn `system.html`: đã ăn.** Không vòng sửa nào vì tràn ngang ở 390, vì `.sys p`/`.sys h2` đè component hay vì mẫu chữ. Vòng sửa của pha 1 là lỗi CSS và nội dung của agent:
+   - danh sách nội quy giãn theo cột bên: cả hai lần (`align-content:start`);
+   - in đậm giả chữ mono: B;
+   - chữ mồ côi, bộ chọn số bánh vẫn hiện khi mẻ đã hết: A;
+   - hàng cửa thứ Hai dính sát khay: B.
+4. **B1 trên `_system.html`: đã ăn.** Không có trang HTML thử nào ngoài `site/`. Hai trường hợp khó có trên `_system.html` (khu "Trường hợp khó") và trong `DECISIONS.md` (A dòng 77, B dòng 79). Chi phí B1: A một lượt đọc `concept/c.html` (27k); B không có lượt riêng (mốc 0,28–0,46M).
+5. **Tách SKILL.md: đã ăn.**
+   - SKILL.md 17,9k ký tự, đọc một lần, mang theo 26–37k (mốc 32,9k ký tự, 0,15–0,18M).
+   - Lối vào một lượt:
+     - pha 1, lượt 2 của cả hai lần: `b0-b2.md`, `CONCEPT.md`, `DECISIONS.md` và lệnh 1;
+     - pha 2, lượt 2 của cả hai lần: `b3-b4.md`, bốn file dự án (`BUILD-LOG.md` chưa có nên đọc khuôn), `_system.html`, `site.css` và lệnh 2 (có tên token).
+   - Không đọc lại, không `cat` các file đó, không đọc `tokens.css` hay `themes.json`.
+   - Vấp: pha 2 tốn thêm lượt 3 (A thêm lượt 4) để tìm danh sách lựa chọn câu 3 của Cổng 3 (15k và 32k). Xem đề xuất 4.
+6. **In đúng mục bằng `sed`: đã ăn.**
+   - `rules-and-conflicts.md` không lần nào bị đọc nguyên: pha 1 4,4k ký tự; pha 2 25k, gồm cả `concept/c.html`, `ls`, tên token của lệnh 2 và mục F (mốc 19,2k đọc nguyên mỗi lần).
+   - `qa-gate.md`: 8,4k ký tự, một phần (mốc 18k đọc nguyên).
+7. **Review `Explore`, chờ kết quả: đã ăn. Lần đầu đo được trong chính lần chạy.**
+   - Cả hai lần gọi `Explore` chờ kết quả (`requestShape: foreground`). Kết quả về trước khi bàn giao, và agent sửa hết 4 mục Nên sửa.
+   - Khởi đầu 26k (mốc 37–38k); 15 và 14 lượt; 0,33–0,35M và 0,33–0,34M (mốc 0,83–0,85M và 0,95–0,96M): giảm 60–65 %.
+   - Mở ảnh trong **một** lượt (31 và 37 ảnh): chỗ sửa prompt ở `54fe187` đã ăn; cloud mở trong 5–10 lượt.
+   - Review chạy 7,0 và 7,6 phút, nên agent cha mất cache khi chờ (bảng trên).
+
+Các chỗ sửa ở `54fe187`:
+- **`system-check.mjs` nêu màn đổi, B2 chỉ mở lại các màn đó: đã ăn.** A mở lại 5/10 màn (lượt 11), B 4/11 (lượt 9), đúng danh sách lệnh in. Lần đo cuối trên cloud mở lại 22 và 27 ảnh.
+- **Lệnh 2 in tên token: đã ăn.** Pha 2 không đọc thêm `tokens.css`, `themes.json`.
+- **Prompt review mở mọi ảnh trong một tin nhắn, `_system` chỉ ở 1440: đã ăn.**
+- **Chưa thử được:**
+  - dòng cảnh báo preflight trong `system-check.mjs`: cả 4 lần 0 cảnh báo;
+  - xếp ảnh trạng thái theo số: cả hai trang chỉ khai giờ hai chữ số.
+
+### Chất lượng (chỉ mở ảnh)
+
+- **Pha 1:** `lo-cui-1440-full.png` của cả hai lần mang rõ concept C: nền muội than, Fraunces, vòm than hồng/gạch/tro, hàng bốn cửa. Hai trường hợp khó có khu riêng trên trang.
+- **Pha 2:** màn đầu 1440 như mốc nền và các đợt cloud: vòm than hồng ôm "9:30", H1 hai dòng, nút giữ bánh trong màn đầu (B ghi "Giữ bánh mẻ 9:30 qua Zalo"). Cả hai hiểu "ngoại lệ ở màn đó" là bỏ `.ember`.
+- **Review:** cả hai kết luận **làm lại**, 4 Nên sửa (A thêm 4 Nhỏ, B thêm 7 Nhỏ), có `file:dòng` và toạ độ trên ảnh. Mỗi review có một lỗi chỉ thấy qua mã:
+  - A: nút giữ bánh mẻ hôm sau mất chữ "sáng mai" (`index.html:240`);
+  - B: không có link `tel:` nào.
+
+  Tốt ngang hoặc hơn mốc nền.
+- **Lỗi lặp ở mọi lần pha 2** (cả 4 lần cloud cuối và 2 lần này): số Zalo gãy dòng (`.num` thiếu `nowrap`), H1 ngắt xấu ở 390/768, khung ảnh trong panel hai cột giãn hoặc để cột chết. `.num` đến từ `site.css` của `r3-gate3` (bản 4.4), nên ít nhất một phần là do đầu vào cố định.
+
+### Chỗ tốn nhất còn lại (số của `groupcost.js`, không gồm phần mất cache)
+
+1. **Vòng sửa sau review**, pha 2: A lượt 11–17, 297k; B lượt 9–13, 288k.
+   - Một lượt riêng chỉ để in mục F (A 11, B 9).
+   - Mở lại ảnh sau khi sửa: B lượt 12 mở lại cả 37 ảnh; A lượt 14 mở 17 ảnh, lượt 17 mở 5 ảnh.
+   - A lượt 15–17: tự gây lỗi khoảng cách dấu "·" khi sửa.
+2. **Dựng** (cần thiết): pha 2 A lượt 5–7 312k, B lượt 4–5 295k; viết design system ở pha 1 228–239k.
+3. **Lượt vào B3** mang theo 160–186k nội dung cần dùng.
+4. **Lần kiểm đầu và ảnh ở pha 2**: 170–172k, với 33–37 ảnh trong một lượt.
+5. **Review đi dò `_qa/`** (`handover.json`, `report.json`, `deep.mjs`) để biết kết quả bộ kiểm: A lượt 4–9, B lượt 4–7, khoảng 50–75k và 1 phút mỗi review.
+
+### Đề xuất bước tiếp (ước từ số đo; chưa sửa skill)
+
+| # | Việc | Ước tiết kiệm mỗi lần chạy | Chắc chắn |
+|---|---|---|---|
+| 1 | Prompt review (`qa-gate.md` mục 7) kèm các dòng số của `qa-check.py` (console, FAIL, tràn, cắt, tương phản, ý định, sâu), để review không phải dò `_qa/` | 50–75k và khoảng 1 phút | cao: cả hai review đều dò, 3–6 lượt |
+| 2 | `qa-check.py` nêu màn đổi so với lần chạy trước như `system-check.mjs`; bước 2 của B4 chỉ mở lại các màn đó | 20–50k | khá cao: cơ chế này đã ăn ở pha 1 (4–5 trên 10–11 ảnh) |
+| 3 | In mục F (1,9k ký tự) cùng lượt gọi review, không đợi review về mới in | 25–35k (một lượt ở ngữ cảnh 250–280k) | cao: cả hai lần tốn một lượt riêng |
+| 4 | Khối Cổng 3 trong `DECISIONS.md` ghi các lựa chọn đã hỏi, để lần vào lại đối được đáp án không khớp nguyên văn | 15–32k | cao, nhưng chỉ có lợi khi vào lại ở phiên mới với đáp án không nguyên văn; prompt đo luôn gặp trường hợp này |
+| 5 | Lệnh 1 của pha 1 in `concept/<id>.html` như lệnh 2 | 0–27k | thấp: chỉ A tốn lượt riêng |
+
+Cả 5 việc cộng lại khoảng 0,1–0,2M mỗi lần chạy, tức 6–10 % của 1,7–1,8M, dưới mức dao động giữa hai lần chạy. Phần token mà skill tự quyết đã tới mức lợi giảm dần.
+
+Không đáng làm để giảm token:
+- **Thêm kiểm máy cho các lỗi lặp** (số gãy dòng, H1 mồ côi, khung ảnh giãn, đậm giả, danh sách giãn trong lưới). Bắt sớm chỉ dời vòng sửa lên trước chứ không bỏ được nó: review vẫn tìm ra lỗi logic ở mỗi lần, nên vòng sửa sau review vẫn còn. Đáng làm nếu vì chất lượng.
+- **Né mất cache** (lượt dựng dài, chờ review 7 phút): chỉ có khi chạy dưới dạng subagent.
+
+### Transcript và dữ liệu
+
+| Pha · lần | Agent | Review | Thư mục chạy | Ảnh và `DECISIONS.md` |
+|---|---|---|---|---|
+| 1 · A | `ae2f12f475cf539cc` | – | `rw1a` | `runs-4.5-win/rw1a/lo-cui-1440-full.png` |
+| 1 · B | `addbba5d57be6865c` | – | `rw1b` | `runs-4.5-win/rw1b/lo-cui-1440-full.png` |
+| 2 · A | `a2c62bc41dd58df22` | `a8c649812f5c97013` (Explore, chờ) | `rw2a` | `runs-4.5-win/rw2a/20261005-1317/` |
+| 2 · B | `a7e241d76636f5e2b` | `a841ce86e65c8bb62` (Explore, chờ) | `rw2b` | `runs-4.5-win/rw2b/20261005-1317/` |
+
+- Bản gốc nằm ở `~/.claude/projects/w--Dummy--Tool--Working-tapora-proto-kit/29ddcf7f-01fa-4e4e-a5e5-80ea87e757fb/subagents/`.
+- Bản nén nằm ở `transcripts/site-4.5-win/agent-<id>.jsonl.gz`, kèm `.meta.json`.
+- Ảnh pha 2 gồm cả ảnh trạng thái 1440.
