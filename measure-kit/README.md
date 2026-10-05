@@ -517,3 +517,27 @@ Transcript (phiên `86d5c0dc-…`), ảnh và `DECISIONS.md`:
 File transcript ở `transcripts/site-4.5-sua/agent-<id>.jsonl.gz`, kèm `.meta.json`.
 
 Chất lượng: pha 1 mang rõ concept C (vòm than hồng, vòm gạch, hàng bốn cửa tro/than/gạch, Fraunces), hai trường hợp khó có trên trang. Pha 2 màn đầu 1440 như lần trước: vòm "9:30", H1 hai dòng, nút "Giữ bánh mẻ 9:30 qua Zalo" trong màn đầu. Cả hai lần pha 2 hiểu "ngoại lệ ở màn đó" là bỏ `.ember`.
+
+### Review B4 bằng agent `Explore` (đo 05/10)
+
+Subagent trên cloud không gọi được subagent con, nên review chạy từ phiên chính: mỗi lần một agent `Explore`, prompt nguyên văn `qa-gate.md` mục 7, `{danh sách ảnh}` đúng dạng `qa-check.py` mới in. Đầu vào là kết quả hai lần đo lại pha 2 (`rd2a`, `rd2b`, lần chạy bộ kiểm mới nhất). Chạy song song, chạy nền; phiên chính không chờ nên không có khoản mất cache của agent cha.
+
+| Review | Agent | Ngữ cảnh lượt 1 | Lượt | Quy đổi | Phút | Mốc nền (`general-purpose`) |
+|---|---|---|---|---|---|---|
+| `rd2a` | `a6752bcb4dedc27e9` | 32k | 20 | 0,36–0,37M | 3,9 | A: 0,83–0,85M, khởi đầu 37–38k |
+| `rd2b` | `af5b7f7e8338b6173` | 32k | 17 | 0,33M | 4,0 | B: 0,95–0,96M (thêm 0,33M agent cha mất cache khi chờ 8,8 phút) |
+
+- Giảm khoảng 60 % so với mốc nền, nhiều hơn ước tính 0,06–0,08M lúc lên kế hoạch: ngoài loại agent, prompt mới đưa sẵn danh sách ảnh và bắt đọc mã bằng `grep -n`. Review chạy dưới 4 phút, nên khi agent dựng chờ review (subagent, TTL 5 phút) sẽ không mất cache như mốc nền B, nếu vẫn dưới 5 phút.
+- Chưa theo luật mở ảnh một lượt: `rd2a` mở 31 ảnh trong 8 lượt, `rd2b` 30 ảnh trong 5 lượt (một vài ảnh mỗi lượt, xen lệnh đọc mã). Không đọc lại file nào; `rd2b` lượt 11 `cat -n site.css` cả file (14,2k ký tự), `rd2a` lượt 14 đọc `index.html` 218 dòng (16,3k).
+
+Chất lượng (so với mốc nền: kết luận "làm lại", 3–5 mục Nên sửa có ảnh và `file:dòng`):
+- Cả hai kết luận **làm lại** (một vòng sửa ngắn, không chặn). `rd2a` 7 Nên sửa, 5 Nhỏ; `rd2b` 4 Nên sửa, 7 Nhỏ. Mỗi mục có `file:dòng` và ảnh cụ thể (khổ, tên ảnh, toạ độ).
+- Bằng chứng đúng khi soát lại: `.num` thiếu `white-space:nowrap` (`site.css:12`/`:13`, số Zalo gãy dòng ở 390 và 768, cả hai review cùng thấy); nút màn đầu `rd2a` chỉ mở `zalo.me` trần (`index.html:50`); câu lặp "để Cô Ba để phần" (`index.html:174`); khung ảnh `aspect-ratio:auto; min-height` giãn theo cột (`rd2b` `site.css:139`).
+- `rd2b` mục 1 là lỗi logic chỉ thấy qua mã: khi mẻ trước còn bánh, nút chính và panel mở sẵn trỏ mẻ chưa vào lò (`index.html:164–167`). Bộ kiểm không thấy vì chỉ chụp `?gio=8:40`.
+- Thứ đã khoá ở cổng (vòm gạch giữa hai mẻ, bề rộng hàng cửa 36rem) được nêu riêng, không đề xuất đổi.
+- Hai review cùng ghi ở *Không đánh giá được*: bộ khói chỉ chụp một trạng thái giờ; `slices: 8` cắt mất phần dưới `_system` (nhất là ở 390, 33–35 ô màu xếp một cột); lượt kiểm sâu chỉ chạy ở 1440; không có ảnh khổ 320 của trang thật.
+- Đánh giá: tốt ngang hoặc hơn mốc nền (nhiều mục Nên sửa hơn, có một lỗi logic thật), với chưa tới nửa chi phí.
+
+Transcript: `transcripts/review-4.5/agent-<id>.jsonl.gz`.
+
+Gợi ý từ review, chưa làm: bộ khói chụp thêm các trạng thái mà trang khai *(ví dụ nhiều giá trị `qa-query`)*, vì cả hai review và hai lần dựng đều ghi chỉ trạng thái 8:40 được chụp; trang `_system` cần nhiều hơn 8 màn ở 390.
