@@ -341,8 +341,12 @@ test('qa_init.py: trang nạp store.js có bộ dữ liệu rỗng và dữ li�
   const cfg = readJson(path.join(dir, '_qa', 'qa.config.json'));
   assert.ok(cfg.suites.some(s => s[0] === 'du-lieu-rong-index' && s[3] === 'desktop'));
   assert.ok(cfg.suites.some(s => s[0] === 'du-lieu-dai-index' && s[3] === 'mobile'));
-  assert.equal(readJson(path.join(dir, '_qa', 'steps-du-lieu-rong-index.json')).query, '?data=empty');
-  assert.equal(readJson(path.join(dir, '_qa', 'steps-du-lieu-dai-index.json')).query, '?data=stress');
+  // ?data= ghép sau qa-query của trang lúc chạy (run.mjs), không chép qa-query vào file bước
+  for (const [k, v] of [['rong', 'data=empty'], ['dai', 'data=stress']]) {
+    const st = readJson(path.join(dir, '_qa', `steps-du-lieu-${k}-index.json`));
+    assert.equal(st.query_add, v);
+    assert.equal(st.query, undefined);
+  }
 });
 
 test('qa_init.py --update: gợi ý theme mới trong themes.json và trang _system chưa có trong cấu hình', t => {

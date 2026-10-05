@@ -4,7 +4,8 @@
 // 1. scripts/themes.mjs: tính vai dẫn xuất, đo mọi cặp ở mọi theme, ghi themes.css. Có cặp không đạt thì in cặp đó rồi dừng (thoát 1).
 // 2. scripts/preflight.py <site>/: dòng tổng, rồi từng dòng LỖI và cảnh báo P19, P20.
 // 3. <site>/_system.html ở mọi theme của themes.json, đo trên trang render (templates/qa-kit/run.mjs):
-//    1440 và 390: lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung, tương phản trên nền thật, màu theo ý định;
+//    1440 và 390: lỗi console, tràn ngang (kèm phần tử gây ra), chữ tràn hoặc bị cắt trong khung (kể cả hộp tràn khỏi khối cha),
+//    tương phản trên nền thật, màu theo ý định;
 //    1440: còn component mẫu (data-system-demo) không, cặp màu trên trang. Chụp ở 1440 vào <thư-mục-prototype>/_shots/system/:
 //    <theme>-1440.png, <theme>-1440-2.png, … (từng màn, để soát) và <theme>-1440-full.png (cả trang, để trình ở Cổng 3).
 // In ngắn: mỗi phần một dòng số, tối đa 8 dòng chi tiết. Thoát 0 khi sạch, 1 khi còn mục cần sửa, 4 khi không có trình duyệt.
@@ -107,7 +108,7 @@ for (const [n, w, r] of results) {
   const view = rep.find(s => s.step === 'view') || {};
   const d = view.dims || { sw: 0, cw: 0, cut: [], contrast: [], intent: [] };
   const consoleErrs = rep.flatMap(s => s.errors || []);
-  const over = d.sw > d.cw ? [`tràn ngang: trang rộng ${d.sw}px trong khung ${d.cw}px`] : [];
+  const over = d.sw > d.cw ? [`tràn ngang: trang rộng ${d.sw}px trong khung ${d.cw}px${(d.wide || []).length ? ', do ' + d.wide.join(', ') : ''}`] : [];
   const counts = [['console', consoleErrs.length], ['tràn ngang', over.length], ['trong khung', d.cut.length], ['tương phản', d.contrast.length], ['ý định', d.intent.length]];
   const details = [...consoleErrs.map(e => 'console: ' + e.slice(0, 160)), ...over, ...d.cut.map(x => 'trong khung: ' + x),
     ...d.contrast.map(x => 'tương phản: ' + x), ...d.intent.map(x => 'ý định: ' + x)];
