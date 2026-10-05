@@ -118,6 +118,7 @@ Kết quả có thêm `tương phản mới`, `ý định mới` và `nợ cũ`.
 Dự án có bộ kiểm `_qa/`: bước kiểm của tính năng được viết **trước khi dựng** *(`references/b3-b4.md`, B3, Kiểm trước, dựng sau)*. Bước đó đã đỏ khi chưa có code, nên đã chứng minh được là nó bắt được thiếu sót. Ở B4 còn hai việc:
 - Bộ của tính năng chạy xanh: `FAIL 0` và `im lặng 0`.
 - **Bẻ thử các bước phủ định** *(vai không được thấy, không được làm; tên bắt đầu bằng `phu-dinh-`)*: các bước này đúng sẵn khi tính năng chưa có nên chưa từng đỏ. Tạm làm hỏng *(bỏ chặn quyền)*: QA phải kêu. Trả lại như cũ: QA phải im. Kiểm **số chỗ đã bẻ > 0** trước khi đọc kết quả: một phép bẻ không thay được gì trông giống hệt một phép thử đạt.
+  - Bộ kiểm `_qa/` làm cả ba việc bằng một lệnh: `python _qa/breaktest.py <bộ> <file> "<chuỗi cũ>" "<chuỗi mới>"`. Lệnh tạm thay chuỗi, chạy bộ, trả file lại đúng từng byte, chạy lại, rồi in số chỗ đã bẻ và kết luận `BẮT ĐƯỢC` hay `KHÔNG BẮT ĐƯỢC`. Bẻ 0 chỗ thì lệnh không chạy. Đừng tự viết đoạn python sửa file rồi trả lại.
 
 Dự án có script QA riêng *(không phải bộ kiểm `_qa/`)*: thêm trạng thái của tính năng mới vào script đó *(mở, đóng, rỗng, lỗi, và từng vai ở nhóm G)*, rồi bẻ thử như trên.
 

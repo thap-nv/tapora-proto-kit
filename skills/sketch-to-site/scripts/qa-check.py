@@ -73,22 +73,15 @@ for l in out:
     print(l)
 flush()
 
-# 3. Ảnh của lần chạy: <thư mục chạy>/<theme>/<bộ>/<ảnh>. In đường dẫn tuyệt đối của thư mục và tên từng ảnh, theo thứ tự màn
-#    (<shot>, <shot>-2, …), để mở thẳng bằng Read. Đo 4.5: in dải "index-2.jpg … index.jpg" nên cả hai lần B4 phải thêm một lượt ls.
-def shot_order(f):
-    # Số trong tên xếp theo giá trị: index@gio_5_00 trước index@gio_11_00
-    nat = lambda x: [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', x)]
-    m = re.match(r'(.*?)(?:-(\d+))?\.(?:jpg|png)$', f)
-    return (nat(m.group(1)), int(m.group(2) or 1)) if m else (nat(f), 0)
-
-
+# 3. Ảnh của lần chạy: <thư mục chạy>/<theme>/<bộ>/<ảnh>. In đường dẫn tuyệt đối của thư mục và tên từng ảnh theo thứ tự màn, lát kèm
+#    tiêu đề trong lát, bằng shot_lines của bộ kiểm trong dự án (vừa cập nhật ở bước 1), để mở thẳng đúng ảnh bằng Read.
+#    Đo 4.5: in dải "index-2.jpg … index.jpg" nên cả hai lần B4 phải thêm một lượt ls; đo ba skill sửa: không nói lát nào chứa gì, mở nhầm lát.
 root = os.path.join(proto, run_dir) if run_dir else ''
 if root and os.path.isdir(root):
-    print(f'Ảnh (mở cùng một lượt):')
-    print(f'  thư mục: {fwd(os.path.abspath(root))}/')
-    for th in sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d))):
-        for suite in sorted(os.listdir(os.path.join(root, th))):
-            files = sorted((f for f in os.listdir(os.path.join(root, th, suite)) if f.endswith(('.jpg', '.png'))), key=shot_order)
-            if files:
-                print(f'  {th}/{suite}: {", ".join(files)}')
+    sys.path.insert(0, os.path.join(proto, '_qa'))
+    import run_all
+    dirs = [f'{th}/{suite}' for th in sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d)))
+            for suite in sorted(os.listdir(os.path.join(root, th))) if os.path.isdir(os.path.join(root, th, suite))]
+    for l in run_all.shot_lines(root, dirs):
+        print(l)
 sys.exit(run.returncode)

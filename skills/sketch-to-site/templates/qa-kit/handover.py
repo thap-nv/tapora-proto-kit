@@ -97,9 +97,11 @@ def cmd_run(a):
 
     print(f'Thư mục chạy: {os.path.relpath(out, Q.ROOT)}')
     print(f'preflight: {pf_line}' + (f'  ({Q.shown(Q.PREFLIGHT)})' if Q.PREFLIGHT else ''))
+    # Nợ cũ của từng theme đếm theo mục đã gộp, như dòng Nợ cũ bên dưới: QA.md cần cột này cho từng theme
     for th, t in per_theme.items():
+        nd = Q.debt_count(Q.group_debt([x for x in debt_rows if x[0] == th]))
         print(f'{th}: {t["suites"]} bộ · {t["steps"]} bước · console {t["errors"]} · FAIL {t["fails"]} · im lặng {t["silent"]} · '
-              f'tràn mới {t["over"]} · cắt mới {t["cut"]} · tương phản mới {t["contrast"]} · ý định mới {t["intent"]} · sâu mới {t["deep"]} · check đổi so với last-green {t["changed"]}')
+              f'tràn mới {t["over"]} · cắt mới {t["cut"]} · tương phản mới {t["contrast"]} · ý định mới {t["intent"]} · sâu mới {t["deep"]} · check đổi so với last-green {t["changed"]} · nợ cũ {nd}')
     # Lượt sâu có chạy thật không: "sâu mới 0" một mình không phân biệt được "đã kiểm, sạch" với "không kiểm"
     deep_ran = [n for n in Q.SUITE_NAMES if any(r.get('deep_ran') for (th, nm), r in res.items() if nm == n)]
     deep_missed = [n for n in Q.SUITE_NAMES if n in Q.DEEP_SUITES and n not in deep_ran]
@@ -126,10 +128,9 @@ def cmd_run(a):
                 print('      ' + line)
             if len(attributed.get(i, [])) > 30:
                 print(f'      … còn {len(attributed[i]) - 30} dòng')
-        if new_suites:
-            print('\nBộ mới (chưa có trong last-green):', ', '.join(new_suites))
-        if lost_suites:
-            print('Bộ có trong last-green mà lần này không chạy:', ', '.join(lost_suites))
+        # Bộ mới, bộ mất, nợ cũ in cả khi trống: thiếu dòng thì người đọc phải mở handover.json để chắc là 0
+        print('\nBộ mới (chưa có trong last-green):', ', '.join(new_suites) if new_suites else 'không')
+        print('Bộ có trong last-green mà lần này không chạy:', ', '.join(lost_suites) if lost_suites else 'không')
         print(f'\nKhác biệt KHÔNG gán được cho lần sửa nào ({len(unattributed)}): cần xem từng dòng')
         for line in unattributed:
             print('  ' + line)
@@ -142,6 +143,8 @@ def cmd_run(a):
               '(đủ danh sách trong handover.json). Hỏi người dùng: sửa trước, hay nhận vào mốc (promote)?')
         for line in Q.debt_lines(groups):
             print(line)
+    else:
+        print('\nNợ cũ (0): không có')
     print(f'\nLỗi ({len(bad)}):')
     for line in bad:
         print('  ' + line)
@@ -227,6 +230,9 @@ def cmd_ledger(a):
     if thumbs:
         hit = [p for p in thumbs if p in direct + shared]
         print('Ảnh Hub có trang đã đụng:', ', '.join(hit) + ' (chụp lại: python _qa/handover.py thumbs)' if hit else 'không')
+    else:
+        # In cả khi không khai báo: không có dòng này thì handover-check mở qa.config.json chỉ để biết B2 không có gì để chụp
+        print('Ảnh Hub: không khai báo ("thumbs" trong qa.config.json), B2 không có ảnh Hub để chụp lại')
     cur = Q.load_json(os.path.join(Q.CUR, 'manifest.json'))
     if cur is None:
         print('Chưa có mốc _qa/current/: dự án chưa promote lần nào.')

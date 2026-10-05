@@ -57,6 +57,24 @@ test('run.mjs: "full" chụp cả trang một ảnh, "slices" chụp từng màn
   assert.deepEqual(fs.readdirSync(capped.out).filter(f => f.startsWith('man')).sort(), ['man-2.png', 'man.png']);
 });
 
+// Đo ba skill sửa (05/10/2026): _system ở 390 cao 23 856px (28 màn) mà bộ khói chụp 16 màn và cắt ở 15 000px, nên mục Component
+// ở 390 không có ảnh; agent đoán lát nào chứa phần cần xem, mở nhầm dải chân trang (4 trên 6 lần)
+test('run.mjs: "slices": "all" chụp hết trang, kể cả quá 15 000px; slices.json ghi tiêu đề h1–h3 bắt đầu trong từng lát', t => {
+  const TALL = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Cao</title><style>body{margin:0}h2{margin:0}section{height:900px}section:last-child{background:#d00000}</style></head>
+<body>${Array.from({ length: 20 }, (_, i) => `<section><h2>Khối ${i + 1}</h2>${i === 4 ? '<h3>Mục con</h3><h3 hidden>Ẩn</h3>' : ''}</section>`).join('')}</body></html>`;
+  const { r, out } = runMjs(t, TALL, [{ name: 'man', shot: 'man', slices: 'all' }]);
+  if (r.status === 4) return t.skip('không có trình duyệt');
+  assert.equal(r.status, 0, r.stderr);
+  const shots = fs.readdirSync(out).filter(f => /^man(-\d+)?\.png$/.test(f));
+  assert.equal(shots.length, 20, shots.join(', '));
+  // Lát cuối bắt đầu ở 17 100px, quá trần 15 000px của ảnh cả trang: vẫn có nội dung, không trống
+  assert.deepEqual(pngPixel(path.join(out, 'man-20.png'), 720, 450), [208, 0, 0]);
+  const labels = JSON.parse(fs.readFileSync(path.join(out, 'slices.json'), 'utf8'));
+  assert.deepEqual(labels['man.png'], ['Khối 1']);
+  assert.deepEqual(labels['man-5.png'], ['Khối 5', 'Mục con']);
+  assert.deepEqual(labels['man-20.png'], ['Khối 20']);
+});
+
 // Điểm ảnh của PNG 8 bit RGB/RGBA không xen dòng (ảnh của run.mjs): giải nén IDAT, bỏ bộ lọc từng dòng
 function pngPixel(f, x, y) {
   const b = fs.readFileSync(f), w = b.readUInt32BE(16), type = b[25], bpp = type === 6 ? 4 : 3, idat = [];
@@ -181,22 +199,25 @@ test('qa_init.py: bộ khói của trang web và _system chụp hết trang theo
   const steps = k => JSON.parse(fs.readFileSync(path.join(dir, '_qa', `steps-smoke-${k}.json`), 'utf8'));
   const view = k => steps(k).steps[0];
   assert.equal(view('index').slices, 8);
-  // Đo 4.5: _system 8 màn cắt mất component ở 390 (cả hai review ghi "không đánh giá được")
-  assert.equal(view('_system').slices, 16);
+  // Đo 4.5: _system 8 màn cắt mất component ở 390 (cả hai review ghi "không đánh giá được"); đo ba skill sửa: 16 màn vẫn cắt
+  // (_system ở 390 cao 28 màn), nên chụp hết trang
+  assert.equal(view('_system').slices, 'all');
   assert.equal(view('man').slices, undefined);
   // Trang web đo và chụp các trạng thái khai ở qa-states; _system và màn app thì không
   assert.equal(steps('index').states, true);
   assert.equal(steps('_system').states, undefined);
   assert.equal(steps('man').states, undefined);
 
-  // --update trên bộ cài cũ: _system 8 màn thành 16, trang web thêm "states"
-  for (const [k, f] of [['_system', st => { delete st.states; st.steps[0].slices = 8; }], ['index', st => { delete st.states; }]]) {
-    const st = steps(k); f(st); fs.writeFileSync(path.join(dir, '_qa', `steps-smoke-${k}.json`), JSON.stringify(st));
+  // --update trên bộ cài cũ: _system 8 hay 16 màn thành "all", trang web thêm "states"
+  for (const n of [8, 16]) {
+    for (const [k, f] of [['_system', st => { delete st.states; st.steps[0].slices = n; }], ['index', st => { delete st.states; }]]) {
+      const st = steps(k); f(st); fs.writeFileSync(path.join(dir, '_qa', `steps-smoke-${k}.json`), JSON.stringify(st));
+    }
+    const u = spawnSync(PYTHON, [QA_INIT, dir, '--update'], { encoding: 'utf8', env });
+    assert.equal(u.status, 0, u.stdout + u.stderr);
+    assert.equal(view('_system').slices, 'all', `bộ cài cũ ${n} màn`);
+    assert.equal(steps('index').states, true);
   }
-  const u = spawnSync(PYTHON, [QA_INIT, dir, '--update'], { encoding: 'utf8', env });
-  assert.equal(u.status, 0, u.stdout + u.stderr);
-  assert.equal(view('_system').slices, 16);
-  assert.equal(steps('index').states, true);
 });
 
 // Đo 4.5: bộ khói chỉ chụp trạng thái của qa-query (8:40); lỗi ở giờ khác (nút chính trỏ sai mẻ lúc 7:00) chỉ review đọc mã mới thấy
@@ -326,14 +347,22 @@ test('qa-check.py: cài bộ kiểm khi chưa có, chạy handover, in gọn và
   assert.match(r.stdout, /^Ảnh \(mở cùng một lượt\):$/m);
   // Thư mục ảnh tuyệt đối, tên từng ảnh theo thứ tự màn (không in dải "index-2.jpg … index.jpg": đo 4.5 phải thêm một lượt ls)
   assert.match(r.stdout, new RegExp(`^ {2}thư mục: ${dir.replace(/\\/g, '/').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/_qa/handover/\\d{8}-\\d{4}/$`, 'm'));
-  assert.match(r.stdout, /^ {2}default\/smoke-index-1440: index\.jpg, index-2\.jpg, index-3\.jpg$/m);
+  // Lát kèm tiêu đề bắt đầu trong lát (đo ba skill sửa: handover mở nhầm dải chân trang ở cả hai lần bản mới)
+  assert.match(r.stdout, /^ {2}default\/smoke-index-1440: index\.jpg \(Lò Bánh Củi Cô Ba\), index-2\.jpg, index-3\.jpg$/m);
   assert.doesNotMatch(r.stdout, / … /);
   assert.match(r.stdout, /^Kết luận: /m);
   assert.ok(r.stdout.length < 6000, `kết quả dài ${r.stdout.length} ký tự`);
   assert.equal(r.status, 0, r.stdout + r.stderr);
 
+  // Lần sau, đã có mốc: nợ cũ, bộ mới, bộ mất in cả khi bằng 0 (đo ba skill sửa: cả hai lần handover đọc handover.json chỉ để chắc)
+  const run1 = /^Thư mục chạy: (\S+)$/m.exec(r.stdout)[1];
+  assert.equal(spawnSync(PYTHON, [path.join('_qa', 'handover.py'), 'promote', run1], { cwd: dir, encoding: 'utf8', env }).status, 0);
   const again = qaCheck(dir);
   assert.match(again.stdout, /^Bộ kiểm: đã có, cập nhật script/m);
+  assert.match(again.stdout, /^default: 3 bộ · [^\n]* · check đổi so với last-green 0 · nợ cũ 0$/m);
+  assert.match(again.stdout, /^Bộ mới \(chưa có trong last-green\): không$/m);
+  assert.match(again.stdout, /^Bộ có trong last-green mà lần này không chạy: không$/m);
+  assert.match(again.stdout, /^Nợ cũ \(0\): không có$/m);
   assert.equal(again.status, 0, again.stdout + again.stderr);
 });
 

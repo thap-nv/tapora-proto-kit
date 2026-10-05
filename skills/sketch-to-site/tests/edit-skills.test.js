@@ -186,6 +186,38 @@ test('run_all.shot_lines: đường dẫn tuyệt đối, ảnh theo thứ tự 
   assert.equal(lines.length, 3);
 });
 
+// Đo ba skill sửa (05/10/2026): 4 trên 6 lần bản mới mở nhầm lát (dải chân trang) vì danh sách không nói lát nào chứa gì;
+// evolve mở lại 7–17 ảnh sau vòng sửa dù chỉ vài ảnh đổi
+test('run_all.shot_lines: tên lát kèm tiêu đề trong lát (slices.json); có dấu lần chụp trước thì nêu ảnh nào đổi', t => {
+  const dir = prototype(t);
+  const od = path.join(dir, 'o', 'smoke-index-390');
+  fs.mkdirSync(od, { recursive: true });
+  for (const [f, x] of [['index.jpg', 'a'], ['index-2.jpg', 'b'], ['index-3.jpg', 'c']]) fs.writeFileSync(path.join(od, f), x);
+  fs.writeFileSync(path.join(od, 'slices.json'), JSON.stringify({ 'index.jpg': ['Bốn lần mở cửa lò'], 'index-3.jpg': ['Nội quy cạnh lò', 'Mở 5:30 đến 19:00'] }));
+  const lines = before => {
+    const r = spawnSync(PYTHON, ['-c', `import sys; sys.path.insert(0, '_qa'); import run_all; print('\\n'.join(run_all.shot_lines('o', ['smoke-index-390'], ${before})))`], { cwd: dir, encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
+    assert.equal(r.status, 0, r.stderr);
+    return r.stdout.trim().split(/\r?\n/);
+  };
+  const plain = lines('None');
+  assert.equal(plain[2], '  smoke-index-390: index.jpg (Bốn lần mở cửa lò), index-2.jpg, index-3.jpg (Nội quy cạnh lò · Mở 5:30 đến 19:00)');
+  assert.equal(plain.length, 3, 'không có dấu lần trước thì không nói gì về ảnh đổi');
+  assert.match(lines('{}').at(-1), /^  chưa có ảnh của lần chụp trước để so: mở các ảnh cần xem$/);
+  // Dấu lấy bằng shot_digests trước khi chụp lại: index.jpg đổi nội dung, index-2.jpg giữ, index-3.jpg mới
+  const prev = "run_all.shot_digests('o')";
+  fs.rmSync(path.join(od, 'index-3.jpg'));
+  const snap = spawnSync(PYTHON, ['-c', `import sys, json; sys.path.insert(0, '_qa'); import run_all; print(json.dumps(${prev}))`], { cwd: dir, encoding: 'utf8' });
+  assert.equal(snap.status, 0, snap.stderr);
+  assert.deepEqual(Object.keys(JSON.parse(snap.stdout)).sort(), ['smoke-index-390/index-2.jpg', 'smoke-index-390/index.jpg']);
+  fs.writeFileSync(path.join(od, 'index.jpg'), 'a2');
+  fs.writeFileSync(path.join(od, 'index-3.jpg'), 'c');
+  assert.equal(lines(snap.stdout.trim()).at(-1), '  đổi so với lần chụp trước (chỉ cần mở lại các ảnh này): smoke-index-390/index.jpg, smoke-index-390/index-3.jpg');
+  assert.equal(lines(`{'smoke-index-390/index.jpg': '', 'smoke-index-390/index-2.jpg': '', 'smoke-index-390/index-3.jpg': ''}`).at(-1), '  mọi ảnh đều đổi so với lần chụp trước');
+  fs.writeFileSync(path.join(od, 'index.jpg'), 'a');
+  const same = spawnSync(PYTHON, ['-c', `import sys, json; sys.path.insert(0, '_qa'); import run_all; print(json.dumps(${prev}))`], { cwd: dir, encoding: 'utf8' }).stdout.trim();
+  assert.equal(lines(same).at(-1), '  không ảnh nào đổi so với lần chụp trước');
+});
+
 test('handover.py ledger: mỗi lần sửa một dòng, trang sửa trực tiếp và trang chỉ đổi qua CSS dùng chung, file chưa vào nhật ký', t => {
   const dir = prototype(t, ['index', 'dat-lich']);
   const py = (...a) => spawnSync(PYTHON, a, { cwd: dir, encoding: 'utf8' });
@@ -206,6 +238,8 @@ test('handover.py ledger: mỗi lần sửa một dòng, trang sửa trực ti�
   assert.match(r.stdout, /^Trang chỉ đổi qua file dùng chung: dat-lich$/m);
   assert.match(r.stdout, /^File đổi sau lần kiểm nhanh cuối, chưa vào nhật ký: site\/dat-lich\.html$/m);
   assert.doesNotMatch(r.stdout, /xxxxxxxxxx/, 'không in giá trị check');
+  // Không khai "thumbs" vẫn in dòng Ảnh Hub (đo ba skill sửa: cả hai lần handover mở qa.config.json chỉ để biết điều này)
+  assert.match(r.stdout, /^Ảnh Hub: không khai báo \("thumbs" trong qa\.config\.json\), B2 không có ảnh Hub để chụp lại$/m);
 });
 
 test('quick.py --shots: chụp các bộ bị ảnh hưởng, in thư mục và tên từng ảnh ngay trên dòng kết quả cuối', t => {
@@ -222,9 +256,16 @@ test('quick.py --shots: chụp các bộ bị ảnh hưởng, in thư mục và 
   assert.ok(at > 0, q.stdout);
   assert.match(lines[at + 1], /^  thư mục: \S.*\/_qa\/\.quick-run\/$/);
   for (const px of ['1440', '768', '390']) assert.ok(lines.some(l => l.startsWith(`  default/smoke-index-${px}: index.jpg`)), `thiếu ảnh khổ ${px}\n${q.stdout}`);
-  assert.match(lines[lines.length - 1], /^quick · 1 file đổi · [^\n]*→ ĐẠT, đã lưu mốc current$/);
+  assert.ok(lines.includes('  chưa có ảnh của lần chụp trước để so: mở các ảnh cần xem'), q.stdout);
+  // Dòng cuối luôn có nợ cũ, kể cả khi bằng 0 (đo ba skill sửa: handover-check đọc handover.json chỉ để chắc nợ cũ bằng 0)
+  assert.match(lines[lines.length - 1], /^quick · 1 file đổi · [^\n]* · nợ cũ 0 → ĐẠT, đã lưu mốc current$/);
   const shot = path.join(dir, '_qa', '.quick-run', 'default', 'smoke-index-390', 'index.jpg');
   assert.ok(fs.statSync(shot).size > 1000, 'ảnh có thật');
+  // Sửa chỉ đụng khổ 390: lần --shots sau chỉ nêu ảnh 390 là đổi; ảnh 1440 và 768 giữ nguyên từng byte
+  fs.appendFileSync(path.join(dir, 'site', 'assets', 'site.css'), '@media (max-width:500px){h1{color:#5a1e00}}\n');
+  const q3 = py(path.join('_qa', 'quick.py'), '--note', 'tweak: màu tiêu đề ở điện thoại', '--shots');
+  assert.equal(q3.status, 0, q3.stdout + q3.stderr);
+  assert.ok(q3.stdout.split(/\r?\n/).includes('  đổi so với lần chụp trước (chỉ cần mở lại các ảnh này): default/smoke-index-390/index.jpg'), q3.stdout);
   // Không --shots thì không chụp, không in danh sách ảnh
   fs.writeFileSync(path.join(dir, 'site', 'index.html'), fs.readFileSync(path.join(dir, 'site', 'index.html'), 'utf8').replace('đã sửa', 'sửa lần hai'));
   const q2 = py(path.join('_qa', 'quick.py'), '--note', 'tweak: sửa lần hai');
@@ -232,10 +273,102 @@ test('quick.py --shots: chụp các bộ bị ảnh hưởng, in thư mục và 
   assert.doesNotMatch(q2.stdout, /Ảnh \(mở cùng một lượt\)/);
 });
 
+// Đo ba skill sửa (05/10/2026): bẻ thử bằng python tự viết tốn 30–90k mỗi lần evolve (in tiếng Việt ra cp1252 hỏng giữa chừng, bẻ 0 chỗ mà tưởng đạt)
+test('breaktest.py: tạm thay chuỗi, chạy bộ, trả file lại đúng từng byte rồi chạy lại; báo bắt được hay không; bẻ 0 chỗ thì không chạy', t => {
+  const dir = prototype(t);
+  assert.ok(fs.existsSync(path.join(dir, '_qa', 'breaktest.py')), 'qa_init.py chép breaktest.py');
+  const cfgf = path.join(dir, '_qa', 'qa.config.json');
+  const cfg = JSON.parse(fs.readFileSync(cfgf, 'utf8'));
+  cfg.suites.push(['tinh-nang-an-1440', 'index', 'tinh-nang-an', 'desktop']);
+  fs.writeFileSync(cfgf, JSON.stringify(cfg, null, 1));
+  fs.writeFileSync(path.join(dir, '_qa', 'steps-tinh-nang-an.json'), JSON.stringify({ steps: [
+    { name: 'phu-dinh-an-nut-xoa', check: "document.querySelector('#xoa') ? 'FAIL: khách thấy nút Xoá' : 'PASS'" }] }));
+  const page = path.join(dir, 'site', 'index.html');
+  const orig = fs.readFileSync(page);
+  const bt = (...a) => {
+    const x = spawnSync(PYTHON, [path.join('_qa', 'breaktest.py'), ...a], { cwd: dir, encoding: 'utf8', timeout: 300000 });
+    return { ...x, stdout: x.stdout.replace(/\r\n/g, '\n') };
+  };
+
+  const zero = bt('tinh-nang-an', 'site/index.html', 'không có chuỗi này', 'x');
+  assert.equal(zero.status, 2, zero.stdout + zero.stderr);
+  assert.match(zero.stdout, /^Bẻ 0 chỗ trong site\/index\.html: chuỗi cũ không có trong file\. Không chạy\.$/m);
+  assert.ok(fs.readFileSync(page).equals(orig));
+  assert.equal(bt('khong-co-bo', 'site/index.html', 'Nội dung mẫu.', 'x').status, 2);
+
+  const r = bt('tinh-nang-an', 'site/index.html', '<p>Nội dung mẫu.</p>', '<p>Nội dung mẫu.</p><button id="xoa">Xoá</button>');
+  if (/Không tìm thấy Edge/.test(r.stdout + r.stderr)) return t.skip('không có trình duyệt');
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /^Bẻ 1 chỗ trong site\/index\.html$/m);
+  assert.match(r.stdout, /^Khi bẻ:\n {2}tinh-nang-an-1440: 1 bước · [^\n]*FAIL 1 \['phu-dinh-an-nut-xoa'\]/m);
+  assert.match(r.stdout, /^Sau khi trả lại \(file khớp bản gốc\):\n {2}tinh-nang-an-1440: 1 bước · [^\n]*FAIL 0 /m);
+  assert.match(r.stdout, /^Kết luận: BẮT ĐƯỢC · khi bẻ FAIL 1 \(phu-dinh-an-nut-xoa\), trả lại FAIL 0$/m);
+  assert.ok(fs.readFileSync(page).equals(orig), 'file trả lại đúng từng byte');
+
+  const miss = bt('tinh-nang-an', 'site/index.html', 'Nội dung mẫu.', 'Nội dung khác.');
+  assert.equal(miss.status, 1, miss.stdout + miss.stderr);
+  assert.match(miss.stdout, /^Kết luận: KHÔNG BẮT ĐƯỢC · khi bẻ FAIL 0: bước phủ định không canh chỗ vừa bẻ$/m);
+  assert.ok(fs.readFileSync(page).equals(orig));
+});
+
+// Sáu chỗ sửa sau lần đo ba skill sửa (05/10/2026)
+test('tweak-site: chưa có FEATURE-DECISIONS.md thì tạo từ khuôn trong lượt tìm; grep chỉ trong thư mục trang; chọn lát theo tiêu đề', () => {
+  const s3 = section(TWEAK(), '## 3. Quy trình', '## 4.');
+  const find = section(s3, '2. **Tìm**', '3. **');
+  assert.match(find, /`grep -rn "<chuỗi>" <thư-mục-trang>`/);
+  assert.match(find, /không quét `concept\/`/);
+  // Cả 4 lần tweak đo được phải tra khuôn ở evolve-site (rtm2 cat cả hai SKILL.md, 29k)
+  const mk = "[ -f FEATURE-DECISIONS.md ] || sed '/^## Tính năng/,$d' <skills>/evolve-site/templates/FEATURE-DECISIONS.md > FEATURE-DECISIONS.md";
+  assert.ok(find.includes(mk), 'lệnh tạo FEATURE-DECISIONS.md');
+  const head = read('evolve-site/templates/FEATURE-DECISIONS.md').split(/^## Tính năng/m)[0];
+  assert.match(head, /^## Nhật ký thay đổi nhỏ$/m);
+  assert.match(head, /^\| <dd\/mm\/yyyy> \|/m);
+  assert.match(section(s3, '8. **Ghi một dòng**', '9. **'), /thay dòng mẫu `<dd\/mm\/yyyy>`/);
+  assert.match(section(s3, '6. **Cấp 1: xem một ảnh**', '7. **'), /lát có tiêu đề của khối vừa sửa trong ngoặc/);
+});
+
+test('evolve-site B4: bẻ thử bằng breaktest.py, sau vòng sửa chỉ mở ảnh đổi; regression-qa mục 3 dùng cùng lệnh', () => {
+  const b4 = section(E2(), '### B4', '### 🛑 Cổng 3');
+  assert.match(b4, /python _qa\/breaktest\.py <bộ của tính năng> <file> "<chuỗi cũ>" "<chuỗi mới>"/);
+  assert.match(b4, /đổi so với lần chụp trước/);
+  assert.match(b4, /tiêu đề trong ngoặc/);
+  assert.match(section(read('evolve-site/references/regression-qa.md'), '## 3.', '\n\nKhông thêm'), /python _qa\/breaktest\.py/);
+});
+
+test('handover-check: dòng Ảnh Hub luôn có ở ledger; nợ cũ, bộ mới, bộ mất đọc từ kết quả, không mở handover.json; chọn lát theo tiêu đề', () => {
+  const md = HAND();
+  assert.match(section(md, '### B1', '### B2'), /[Dd]òng `Ảnh Hub` luôn có/);
+  const b4 = section(md, '### B4', '### B5');
+  assert.match(b4, /`nợ cũ n` ở dòng của từng theme/);
+  assert.match(b4, /không cần mở `handover\.json`/);
+  assert.match(section(md, '### B5', '### B6'), /tiêu đề trong ngoặc/);
+});
+
+// Đo ba skill sửa: "trừ màn đã chấm trong evolve Cấp 2–3" đọc được hai cách với site một trang. Bản cũ bỏ cả phần của lần tweak
+// (trang chủ đã chấm trong đợt evolve sau đó), bản mới chấm phần đó; một lần tốn 35k để tra qa-gate.md xem có chấm _system không
+test('handover-check B5: chấm phần của mọi lần tweak, bỏ phần evolve Cấp 2–3 đã chấm ở Cổng 3, không chấm _system.html', () => {
+  const b5 = section(HAND(), '### B5', '### B6');
+  assert.match(b5, /phần của mọi lần `tweak`[^\n]*kể cả khi trang chứa nó sau đó có đợt `evolve-site`/);
+  assert.match(b5, /phần của đợt `evolve-site` Cấp 2–3: bỏ, đã chấm ở Cổng 3/);
+  assert.match(b5, /không chấm `_system\.html`/);
+  assert.doesNotMatch(b5, /\*\*trừ\*\* màn đã chấm/);
+  // tweak-site hứa dồn UX sang handover-check: lời hứa đó phải còn
+  assert.match(section(TWEAK(), '## 4. Không làm ở đây', '## 5.'), /UX 12 điểm/);
+});
+
+test('bốn SKILL.md dựng và sửa site, cùng AGENTS-qa.md, ghi PYTHONIOENCODING=utf-8 cho lệnh python in tiếng Việt; AGENTS-qa.md có breaktest.py', () => {
+  for (const f of ['evolve-site/SKILL.md', 'tweak-site/SKILL.md', 'handover-check/SKILL.md', 'sketch-to-site/SKILL.md', 'sketch-to-site/templates/AGENTS-qa.md']) {
+    assert.match(read(f), /PYTHONIOENCODING=utf-8/, f);
+  }
+  assert.match(read('sketch-to-site/templates/AGENTS-qa.md'), /python _qa\/breaktest\.py/);
+  assert.ok(EVO().length <= 18000);
+});
+
 test('CHANGELOG 1.5.0 ghi phiên bản mới của ba skill và các lệnh mới; plugin vẫn 1.5.0', () => {
   const latest = fs.readFileSync(path.join(SKILLS, '..', 'CHANGELOG.md'), 'utf8').split(/^## /m)[1];
   assert.ok(latest.startsWith('1.5.0 ('));
-  for (const s of ['`evolve-site` 1.9', '`tweak-site` 1.3', '`handover-check` 1.3', 'references/b1-b2.md', 'quick.py --shots', 'handover.py ledger', 'evolve-site` 1.1–1.3']) {
+  for (const s of ['`evolve-site` 1.9', '`tweak-site` 1.3', '`handover-check` 1.3', 'references/b1-b2.md', 'quick.py --shots', 'handover.py ledger', 'evolve-site` 1.1–1.3',
+    'breaktest.py', '"slices": "all"', 'slices.json', 'PYTHONIOENCODING=utf-8']) {
     assert.ok(latest.includes(s), `CHANGELOG 1.5.0 thiếu ${s}`);
   }
 });

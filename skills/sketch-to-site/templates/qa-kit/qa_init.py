@@ -82,7 +82,8 @@ def is_app_screen(html):
     return bool(m and re.search(r'data-surface\s*=\s*["\']app["\']', m.group(0), re.I))
 
 
-SYSTEM_SLICES = 16
+# _system chụp hết trang: ở 390 trang này cao tới 28 màn (đo ba skill sửa), 16 màn cắt mất phần lớn mục Component
+SYSTEM_SLICES = 'all'
 
 
 def qa_query(html):
@@ -114,7 +115,7 @@ def read_site(site):
     return out
 
 
-KIT_FILES = ['run.mjs', 'run_all.py', 'qalib.py', 'quick.py', 'handover.py', 'compare.py', 'probes.js', 'qadiff.py', 'deep.mjs']
+KIT_FILES = ['run.mjs', 'run_all.py', 'qalib.py', 'quick.py', 'handover.py', 'breaktest.py', 'compare.py', 'probes.js', 'qadiff.py', 'deep.mjs']
 # Lõi màu dùng chung nằm ở templates/ của skill (bảng concept, themes.mjs, _system.html cùng dùng), không ở qa-kit/
 SHARED_FILES = [('color.js', os.path.join(SKILL, 'templates', 'color.js'))]
 GITIGNORE = '# Kết quả chạy, sinh lại được. last-green/ nên commit để cả nhóm dùng chung một mốc\nhandover/\ncurrent/\n.quick-run/\n.recheck/\n.tdd/\n.thumbs/\n__pycache__/\n.kit-source\n'
@@ -160,9 +161,10 @@ if os.path.exists(cfg_path):
             continue
         st = json.load(open(sf, encoding='utf-8'))
         view = (st.get('steps') or [{}])[0]
-        if p == '_system' and view.get('slices') == 8:
+        if p == '_system' and view.get('slices') in (8, 16):
+            n = view['slices']
             view['slices'] = SYSTEM_SLICES; json.dump(st, open(sf, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-            print(f'{os.path.basename(sf)}: chụp tới {SYSTEM_SLICES} màn (8 màn cắt mất phần dưới của _system)')
+            print(f'{os.path.basename(sf)}: chụp hết trang ({n} màn cắt mất phần dưới của _system)')
         elif p != '_system' and view.get('slices') and 'states' not in st:
             st['states'] = True; json.dump(st, open(sf, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
             print(f'{os.path.basename(sf)}: thêm "states" (đo và chụp màn đầu mỗi trạng thái của <meta name="qa-states">)')
@@ -198,7 +200,7 @@ else:
             # Trang web chụp hết trang theo từng màn (<key>.jpg, <key>-2.jpg, …, tối đa 8): chỉ màn đầu thì phần dưới không ai xem.
             # Màn app chụp khung máy nên một ảnh là đủ
             # Trang web còn đo và chụp màn đầu của từng trạng thái khai ở <meta name="qa-states"> (run.mjs, "states"). _system dài hơn trang
-            # thường (bảng màu, thang chữ, component, hai trường hợp khó) nên chụp tới 16 màn: đo 4.5, 8 màn cắt mất component ở 390
+            # thường (bảng màu, thang chữ, component, hai trường hợp khó) nên chụp hết trang: đo 4.5, 8 màn cắt mất component ở 390; 16 màn vẫn cắt
             view = {'name': 'view', 'wait': 600, 'check': 'document.title', 'shot': key, 'jpeg': True}
             if not app:
                 view['slices'] = SYSTEM_SLICES if p == '_system' else 8

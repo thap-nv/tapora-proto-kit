@@ -7,7 +7,7 @@ description: >-
 # Evolve Site · Mở rộng & Cập nhật Prototype có sẵn
 
 > **v1.9 (05/10/2026)** · Quy trình tách theo giai đoạn: `references/b1-b2.md` *(B1, Cổng 1, B2, Cổng 2)* và `references/b3-b4.md` *(B3, B4, Cổng 3)*, mỗi giai đoạn vào bằng một lượt *(mục 3)*. B4 kiểm và chụp bằng một lệnh `quick.py --shots`; ảnh mốc Cấp 2–3 bằng `run_all.py`. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
-> **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này. Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`: hai chương trình này không đọc được.
+> **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này. Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`: hai chương trình này không đọc được. Lệnh `python` tự viết mà in tiếng Việt thì đặt `PYTHONIOENCODING=utf-8` trước lệnh: console Windows (cp1252) dừng giữa chừng với `UnicodeEncodeError`.
 > Việc của skill: thêm, sửa, bỏ tính năng trong prototype có sẵn sao cho phần mới **trông như đã thiết kế cùng ngày với bản đầu**: không tự chế token, không làm gãy dữ liệu đang chạy, không làm vỡ trải nghiệm cũ.
 
 ---
