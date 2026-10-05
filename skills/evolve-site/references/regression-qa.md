@@ -2,7 +2,7 @@
 
 > Quy tắc: **"Thêm cái mới nhưng không được làm vỡ cái cũ."**
 > Trước khi mở Cổng 3 để nghiệm thu với người dùng, trợ lý bắt buộc phải hoàn thành danh mục kiểm thử hồi quy này và ghi nhận bằng chứng cụ thể.
-> File này nói **cách** kiểm. Nhóm nào áp cho cấp nào, và kiểm thêm theo cờ nào: bảng B4 trong `SKILL.md`.
+> File này nói **cách** kiểm. Nhóm nào áp cho cấp nào, và kiểm thêm theo cờ nào: bảng B4 trong `references/b3-b4.md`.
 
 ---
 
@@ -42,7 +42,7 @@ Kiểm tra trên 2 độ phân giải chuẩn:
   * Modal/Drawer trên mobile nên tự động chuyển thành Bottom Sheet (trượt từ đáy lên) hoặc chiếm toàn màn hình để dễ thao tác bằng ngón cái.
   * Chiều cao vùng bấm nút ≥ 44px (Fitts's Law).
 - [ ] **Nền tối** *(nếu site có `data-theme="dark"` hoặc `prefers-color-scheme`)*: phần mới đọc được ở cả hai nền, không có màu viết cứng. Xem ảnh trong thư mục theme `dark` của lần chạy.
-- [ ] **Trang mới:** thêm bộ khói ở 1440, 768, 390 *(màn app: 1440 và 390)*. Trang đọc `?id=` thì có `<meta name="qa-query">` và `"query"` trong file bước *(`rules-and-conflicts.md` D.5)*.
+- [ ] **Trang mới:** thêm bộ khói ở 1440, 768, 390 *(màn app: 1440 và 390)*. Trang đọc `?id=` thì có `<meta name="qa-query">` trong `<head>` *(`rules-and-conflicts.md` D.5; `run.mjs` đọc thẻ đó ở mỗi lần chạy, file bước chỉ ghi `"query"` khi cần tham số khác)*.
 - [ ] **Màn app mobile** *(`<html data-surface="app">`)*:
   * Bước `tap-targets` **PASS** ở 390 trên mọi nền tảng đang làm *(theme `android` nếu có)*. Màn mới thêm thì thêm bước đó vào bộ khói của nó *(chép từ bộ khói của màn cũ)*.
   * Phần mới theo quy ước của từng nền tảng *(`mobile-app.md` mục 2)*; ảnh 1440 là khung máy: không lọt dưới thanh trạng thái hay thanh home.
@@ -115,9 +115,10 @@ Kết quả có thêm `tương phản mới`, `ý định mới` và `nợ cũ`.
 
 ## 3. Cho QA lớn theo tính năng
 
-Dự án có bộ kiểm `_qa/`: bước kiểm của tính năng được viết **trước khi dựng** *(SKILL.md, B3, Kiểm trước, dựng sau)*. Bước đó đã đỏ khi chưa có code, nên đã chứng minh được là nó bắt được thiếu sót. Ở B4 còn hai việc:
+Dự án có bộ kiểm `_qa/`: bước kiểm của tính năng được viết **trước khi dựng** *(`references/b3-b4.md`, B3, Kiểm trước, dựng sau)*. Bước đó đã đỏ khi chưa có code, nên đã chứng minh được là nó bắt được thiếu sót. Ở B4 còn hai việc:
 - Bộ của tính năng chạy xanh: `FAIL 0` và `im lặng 0`.
 - **Bẻ thử các bước phủ định** *(vai không được thấy, không được làm; tên bắt đầu bằng `phu-dinh-`)*: các bước này đúng sẵn khi tính năng chưa có nên chưa từng đỏ. Tạm làm hỏng *(bỏ chặn quyền)*: QA phải kêu. Trả lại như cũ: QA phải im. Kiểm **số chỗ đã bẻ > 0** trước khi đọc kết quả: một phép bẻ không thay được gì trông giống hệt một phép thử đạt.
+  - Bộ kiểm `_qa/` làm cả ba việc bằng một lệnh: `python _qa/breaktest.py <bộ> <file> "<chuỗi cũ>" "<chuỗi mới>"`. Lệnh tạm thay chuỗi, chạy bộ, trả file lại đúng từng byte, chạy lại, rồi in số chỗ đã bẻ và kết luận `BẮT ĐƯỢC` hay `KHÔNG BẮT ĐƯỢC`. Bẻ 0 chỗ thì lệnh không chạy. Đừng tự viết đoạn python sửa file rồi trả lại.
 
 Dự án có script QA riêng *(không phải bộ kiểm `_qa/`)*: thêm trạng thái của tính năng mới vào script đó *(mở, đóng, rỗng, lỗi, và từng vai ở nhóm G)*, rồi bẻ thử như trên.
 

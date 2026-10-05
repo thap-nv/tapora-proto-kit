@@ -1,13 +1,23 @@
 // Bộ chạy thử: mở 1 trang, thực hiện chuỗi bước (JS), chụp ảnh từng bước, gom lỗi console.
-// node [--experimental-websocket] run.mjs <file.html> <steps.json> <outdir> [w] [h] [mobile]
+// node run.mjs <file.html> <steps.json> <outdir> [w] [h] [mobile]
 // Mỗi bước còn đo tương phản và màu theo ý định (probes.js, cần color.js cạnh file này); QA_DEEP=1 thêm lượt kiểm sâu (deep.mjs).
-// Node 20 cần cờ --experimental-websocket; Node 22 trở lên có sẵn WebSocket. run_all.py tự thêm cờ khi cần.
+// Node 20 cần cờ --experimental-websocket: thiếu cờ thì script tự chạy lại chính nó với cờ. Node 22 trở lên có sẵn WebSocket.
 // Trình duyệt: biến QA_BROWSER, rồi "browser" trong qa.config.json, rồi tự dò Edge/Chrome/Chromium theo hệ điều hành.
-import { spawn } from 'node:child_process';
+// Bước có "shot": chụp khung nhìn vào <shot>.png (.jpg khi "jpeg"); "clip": "<selector>" chỉ chụp một khối;
+// "full": true chụp cả trang thành một ảnh; "slices": n chụp cả trang theo từng màn cao bằng khung nhìn: <shot>, <shot>-2, … tối đa n ảnh,
+// "all" thì hết trang. Kèm slices.json: tiêu đề h1–h3 bắt đầu trong từng lát, để danh sách ảnh nói lát nào chứa phần nào.
+// Trước khi chụp "full"/"slices", trang được cuộn qua phần sẽ chụp rồi về chỗ cũ, để phần hiện dần khi cuộn tới có trong ảnh.
+import { spawn, spawnSync } from 'node:child_process';
 import { writeFileSync, readFileSync, mkdtempSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname, delimiter } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
+
+if (typeof WebSocket === 'undefined' && !process.env.QA_WS_FLAG) {
+  const r = spawnSync(process.execPath, ['--experimental-websocket', fileURLToPath(import.meta.url), ...process.argv.slice(2)],
+    { stdio: 'inherit', env: { ...process.env, QA_WS_FLAG: '1' } });
+  process.exit(r.status ?? 1);
+}
 
 const [file, stepsFile, outdir, w = '1440', h = '900', mobile = '0'] = process.argv.slice(2);
 const steps = JSON.parse(readFileSync(stepsFile, 'utf8'));
@@ -79,6 +89,20 @@ function layoutCheck() {
       const over = Math.max(hi - (b.right - parseFloat(bs.borderRightWidth)), (b.left + parseFloat(bs.borderLeftWidth)) - lo);
       if (over > 2 && !tiny(b.width, b.height, bs) && bs.textOverflow !== 'ellipsis') add(box, `chữ tràn khung ${Math.round(over)}px`);
     }
+    // Hộp tràn khỏi khối cha (cha không cắt, overflow visible): cột lưới 1fr giãn theo min-content, flex item không co, ảnh aspect-ratio giãn theo hàng.
+    // Chữ vẫn nằm trong hộp của nó nên phép đo chữ ở trên không thấy; ảnh thì thấy hộp đè sang hàng xóm. Đo 4.5: cả hai lần B2 chỉ thấy khi mở ảnh.
+    // Bỏ qua phần tử định vị tuyệt đối, có transform hay lề âm (tràn lề cố ý), và cha inline hoặc display:contents (không có hộp riêng)
+    const par = e.parentElement;
+    if (par && par !== document.body && !/^(absolute|fixed)$/.test(cs.position) && cs.transform === 'none' && cs.display !== 'inline' && !/^table/.test(cs.display)
+      && parseFloat(cs.marginLeft) >= 0 && parseFloat(cs.marginRight) >= 0) {
+      const ps = getComputedStyle(par);
+      if (ps.overflowX === 'visible' && !/^(inline|contents)$/.test(ps.display) && !/^table/.test(ps.display)) {
+        const pr = par.getBoundingClientRect();
+        const inner = [pr.left + parseFloat(ps.borderLeftWidth) + parseFloat(ps.paddingLeft), pr.right - parseFloat(ps.borderRightWidth) - parseFloat(ps.paddingRight)];
+        const over = Math.max(r.right - inner[1], inner[0] - r.left);
+        if (over > 2 && pr.width >= 2) add(e, `tràn khỏi khối cha ${name(par)} ${Math.round(over)}px`);
+      }
+    }
     if (text || e.matches('a[href], button, input:not([type=hidden]), select, textarea, [role=button], [role=tab]')) {
       for (let p = e.parentElement; p && p !== document.documentElement; p = p.parentElement) {
         const ox = getComputedStyle(p).overflowX;
@@ -90,6 +114,25 @@ function layoutCheck() {
         if (cut > 2) { add(e, `bị cắt ${Math.round(cut)}px (khung ${name(p)})`); break; }
       }
     }
+  }
+  return out;
+}
+// Trang rộng hơn khung: tìm phần tử gây ra, là phần tử đầu tiên vượt mép phải trên đường từ body xuống (cha còn trong khung), không bị khối nào cắt.
+// Đo 4.5: chỉ báo "trang rộng 2540px" nên cả hai lần B2 phải tự dò phần tử (trang thử, mở ảnh cả trang)
+function wideCheck() {
+  const W = document.documentElement.clientWidth;
+  if (document.documentElement.scrollWidth <= W) return [];
+  const name = e => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
+  const right = e => e.getBoundingClientRect().right + scrollX;
+  const clipped = e => { for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) if (getComputedStyle(p).overflowX !== 'visible') return true; return false; };
+  const out = [];
+  for (const e of document.body.querySelectorAll('*')) {
+    if (out.length >= 3) break;
+    const cs = getComputedStyle(e);
+    if (cs.display === 'none' || cs.position === 'fixed' || right(e) <= W + 1) continue;
+    if (e.parentElement !== document.body && right(e.parentElement) > W + 1) continue;
+    if (clipped(e)) continue;
+    out.push(`${name(e)} tới ${Math.round(right(e))}px`);
   }
   return out;
 }
@@ -159,7 +202,16 @@ mainFrame = (await send('Page.getFrameTree')).result?.frameTree?.frame?.id ?? nu
 await send('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, deviceScaleFactor: 1, mobile: mobile === '1' });
 // QA_QUERY: tham số thêm cho mọi bộ, ví dụ ?theme=dark để chạy lại các bộ trên một theme khác
 const extra = (process.env.QA_QUERY || '').replace(/^\?/, '');
-const qs = steps.query ? steps.query + (extra ? '&' + extra : '') : (extra ? '?' + extra : '');
+// Tham số mẫu: "query" của file bước nếu có (bộ viết tay); không thì <meta name="qa-query"> của trang, đọc ở mỗi lần chạy nên sửa thẻ meta là
+// bộ khói nhận ngay (đo 4.5: qa_init.py chép query vào file bước lúc cài, sửa trang sau đó không có tác dụng), cộng "query_add" (?data= của bộ dữ liệu)
+const pageMeta = name => {
+  const tag = (readFileSync(file, 'utf8').match(new RegExp(`<meta\\b[^>]*\\bname\\s*=\\s*["']${name}["'][^>]*>`, 'i')) || [''])[0];
+  return ((tag.match(/\bcontent\s*=\s*["']([^"']*)["']/i) || [])[1] || '').trim().replace(/&amp;/g, '&');
+};
+const pageQuery = () => { const c = pageMeta('qa-query'); return c ? '?' + c.replace(/^\?/, '') : ''; };
+const baseQuery = steps.query !== undefined ? steps.query : pageQuery();
+const addQuery = [steps.query_add, extra].filter(Boolean).join('&');
+const qs = baseQuery ? baseQuery + (addQuery ? '&' + addQuery : '') : (addQuery ? '?' + addQuery : '');
 // Nền sáng/tối không theo máy đang chạy: ép prefers-color-scheme theo tham số của lần chạy (có theme=dark thì tối, còn lại sáng)
 await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: /[?&]theme=dark(&|$)/.test(qs) ? 'dark' : 'light' }] });
 // Đợi trang tải xong rồi mới chạy bước: script trong <head> tải chậm (CDN) chặn dựng trang, đo sớm thì document.body còn null.
@@ -171,6 +223,17 @@ navigating = false; // tài nguyên treo không bao giờ tải xong: chỉ đ�
 // Theme theo tên (?theme=<tên>, themes.css): prefers-color-scheme theo --theme-mode của theme đang bật, để phần theo media của trang khớp theme
 const tm = (await send('Runtime.evaluate', { expression: `getComputedStyle(document.documentElement).getPropertyValue('--theme-mode').replace(/["'\\s]/g, '')`, returnByValue: true })).result?.result?.value;
 if (tm === 'dark' || tm === 'light') await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: tm }] });
+// Đo tương phản và màu theo ý định ở mọi bước (probes.js); lỗi của phép đo thành một dòng, không làm hỏng cả bước.
+// Không đo được (trang chưa có body, đang chuyển trang): báo lỗi ở bước đó, không làm sập cả bộ
+async function measureDims() {
+  const probed = await inject();
+  const safe = f => `(()=>{try{return __qa.${f}()}catch(e){return ['LỖI ĐO '+e.message]}})()`;
+  const measure = probed ? `,contrast:${safe('contrast')},intent:${safe('intent')}` : '';
+  const dimsReply = await send('Runtime.evaluate', { expression: `JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,cut:(${layoutCheck})(),wide:(${wideCheck})()${measure}})`, returnByValue: true });
+  const dims = dimsReply.result?.result?.value;
+  if (dims === undefined) errors.push('EVAL không đo được bố cục: ' + String(dimsReply.result?.exceptionDetails?.exception?.description || dimsReply.error?.message || 'không có giá trị').split('\n')[0]);
+  return dims;
+}
 const report = [{ step: 'load', errors: errors.slice().concat(PROBE_SRC ? [] : ['PROBES thiếu color.js hoặc probes.js cạnh run.mjs: chạy qa_init.py --update']), check: null, dims: null }];
 for (const s of steps.steps) {
   errors = [];
@@ -179,14 +242,7 @@ for (const s of steps.steps) {
   if (navigating) { await waitLoad(LOAD_TIMEOUT); navigating = false; } // bước vừa chuyển trang: đợi trang mới tải xong rồi mới kiểm
   let val = null;
   if (s.check) { const r = await send('Runtime.evaluate', { expression: s.check, returnByValue: true }); val = r.result?.result?.value; }
-  // Đo tương phản và màu theo ý định ở mọi bước (probes.js); lỗi của phép đo thành một dòng, không làm hỏng cả bước
-  const probed = await inject();
-  const safe = f => `(()=>{try{return __qa.${f}()}catch(e){return ['LỖI ĐO '+e.message]}})()`;
-  const measure = probed ? `,contrast:${safe('contrast')},intent:${safe('intent')}` : '';
-  const dimsReply = await send('Runtime.evaluate', { expression: `JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,cut:(${layoutCheck})()${measure}})`, returnByValue: true });
-  const dims = dimsReply.result?.result?.value;
-  // Không đo được (trang chưa có body, đang chuyển trang): báo lỗi ở bước này, không làm sập cả bộ
-  if (dims === undefined) errors.push('EVAL không đo được bố cục: ' + String(dimsReply.result?.exceptionDetails?.exception?.description || dimsReply.error?.message || 'không có giá trị').split('\n')[0]);
+  const dims = await measureDims();
   // QA_NOSHOT: bỏ chụp ảnh (quick.py); bước vẫn chạy và vẫn kiểm như cũ
   if (s.shot && !process.env.QA_NOSHOT) {
     const opt = { format: s.jpeg ? 'jpeg' : 'png' };
@@ -201,12 +257,77 @@ for (const s of steps.steps) {
       // Khung chưa có (pha "thấy đỏ" của evolve-site) hay selector sai: báo lỗi ở bước này, không sập cả bộ
       else errors.push('SHOT không thấy khung clip ' + s.clip);
     }
-    if (!s.clip || box) {
+    const ext = s.jpeg ? '.jpg' : '.png';
+    if (!s.clip && (s.full || s.slices)) {
+      // Cả trang: chụp theo toạ độ tài liệu, vượt khung nhìn. Trình duyệt giới hạn ảnh khoảng 16 000px nên cắt ở 15 000px
+      const m = (await send('Page.getLayoutMetrics')).result || {};
+      const size = m.cssContentSize || m.contentSize || { width: +w, height: +h };
+      const vw = (await send('Runtime.evaluate', { expression: 'document.documentElement.clientWidth', returnByValue: true })).result?.result?.value || +w;
+      // "slices": n chụp tối đa n màn; "all" chụp hết trang (trần 60 màn). Mỗi lát chỉ cao một màn nên lát không chịu trần 15 000px của ảnh cả trang:
+      // đo ba skill sửa, _system ở 390 cao 23 856px, cắt ở 15 000px thì mục Component không có ảnh
+      const cap = s.slices === 'all' ? 60 : s.slices === true ? 12 : +s.slices;
+      const total = s.full ? Math.min(Math.ceil(size.height), 15000) : Math.min(Math.ceil(size.height), cap * +h);
+      // captureBeyondViewport không cuộn trang: phần hiện dần khi cuộn tới (IntersectionObserver + opacity) ra ảnh trống mà phép đo vẫn sạch
+      // (đo 4.5: cả hai lần B4 vấp). Cuộn qua cả phần sẽ chụp từng nửa màn như người xem, đợi chuyển động chạy xong, rồi về chỗ cũ mới chụp.
+      // behavior 'instant' để scroll-behavior:smooth của trang không làm chậm từng lần cuộn
+      const upto = total;
+      const at = (await send('Runtime.evaluate', { expression: 'scrollY', returnByValue: true })).result?.result?.value || 0;
+      for (let y = 0; y < upto; y += Math.ceil(+h / 2)) {
+        await send('Runtime.evaluate', { expression: `window.scrollTo({ top: ${y}, behavior: 'instant' })` });
+        await sleep(120);
+      }
+      await send('Runtime.evaluate', { expression: `window.scrollTo({ top: ${at}, behavior: 'instant' })` });
+      await sleep(700);
+      // Ảnh ổn định giữa các lần chạy: chuyển động hữu hạn cho chạy xong, chuyển động lặp vô hạn (spinner, nhấp nháy) về khung đầu và dừng.
+      // system-check.mjs so ảnh với lần trước để báo màn nào đổi; spinner đang quay làm màn đó lần nào cũng "đổi"
+      await send('Runtime.evaluate', { expression: `document.getAnimations().forEach(a => { try { if (a.effect && a.effect.getComputedTiming().iterations === Infinity) { a.pause(); a.currentTime = 0; } else a.finish(); } catch (e) {} })` });
+      await sleep(50);
+      const shoot = async (y, height, name) => {
+        const sh = await send('Page.captureScreenshot', { ...opt, captureBeyondViewport: true, clip: { x: 0, y, width: vw, height, scale: 1 } });
+        writeFileSync(join(outdir, name + ext), Buffer.from(sh.result.data, 'base64'));
+      };
+      if (s.full) await shoot(0, total, s.shot);
+      else {
+        const n = Math.ceil(total / +h);
+        // Tiêu đề h1–h3 đang hiện, theo toạ độ tài liệu: lát nào chứa phần nào của trang, ghi vào slices.json để danh sách ảnh in kèm tên
+        const heads = JSON.parse((await send('Runtime.evaluate', { expression: `JSON.stringify([...document.querySelectorAll('h1,h2,h3')].filter(e => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden').map(e => [Math.round(e.getBoundingClientRect().top + scrollY), e.textContent.trim().replace(/\\s+/g, ' ')]).filter(x => x[1]))`, returnByValue: true })).result?.result?.value || '[]');
+        const lf = join(outdir, 'slices.json');
+        const map = existsSync(lf) ? JSON.parse(readFileSync(lf, 'utf8')) : {};
+        for (let i = 0; i < n; i++) {
+          const name = s.shot + (i ? '-' + (i + 1) : '');
+          await shoot(i * +h, Math.min(+h, total - i * +h), name);
+          const t = heads.filter(([y]) => y >= i * +h && y < (i + 1) * +h).map(([, x]) => x.length > 32 ? x.slice(0, 31) + '…' : x);
+          if (t.length) map[name + ext] = t.length > 4 ? [...t.slice(0, 3), `+${t.length - 3}`] : t;
+        }
+        writeFileSync(lf, JSON.stringify(map, null, 1));
+      }
+    } else if (!s.clip || box) {
       const sh = await send('Page.captureScreenshot', opt);
-      writeFileSync(join(outdir, s.shot + (s.jpeg ? '.jpg' : '.png')), Buffer.from(sh.result.data, 'base64'));
+      writeFileSync(join(outdir, s.shot + ext), Buffer.from(sh.result.data, 'base64'));
     }
   }
   report.push({ step: s.name, errors, check: val, dims: dims === undefined ? null : JSON.parse(dims) });
+}
+// Trạng thái khác của trang (giờ, ngày, đăng nhập…): <meta name="qa-states" content="?gio=7:00 | ?gio=18:40 | ?thu=2">, tách bằng |.
+// File bước có "states": true (bộ khói của trang web) thì mỗi trạng thái tải lại trang với tham số đó đè lên tham số mẫu, đo như một bước
+// ("trạng thái ?gio=7:00": console, tràn, trong khung, tương phản, ý định) và chụp màn đầu vào <shot>@<trạng thái>, cạnh ảnh của bước chụp đầu.
+// Đo 4.5: bộ khói chỉ chụp trạng thái của qa-query; lỗi ở giờ khác chỉ review đọc mã mới thấy
+const states = steps.states ? pageMeta('qa-states').split('|').map(x => x.trim().replace(/^\?/, '')).filter(Boolean) : [];
+const merge = (a, b) => { const u = new URLSearchParams(a.replace(/^\?/, '')); for (const [k, v] of new URLSearchParams(b)) u.set(k, v); const q = u.toString(); return q ? '?' + q : ''; };
+const firstShot = steps.steps.find(x => x.shot && !x.clip);
+for (const st of states) {
+  errors = [];
+  const l = waitLoad(LOAD_TIMEOUT);
+  await send('Page.navigate', { url: pathToFileURL(resolve(file)).href + merge(qs, st) });
+  await Promise.all([l, sleep(1500)]);
+  navigating = false;
+  const dims = await measureDims();
+  if (firstShot && !process.env.QA_NOSHOT) {
+    const opt = firstShot.jpeg ? { format: 'jpeg', quality: 82 } : { format: 'png' };
+    const sh = await send('Page.captureScreenshot', opt);
+    writeFileSync(join(outdir, `${firstShot.shot}@${st.replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_|_$/g, '')}${firstShot.jpeg ? '.jpg' : '.png'}`), Buffer.from(sh.result.data, 'base64'));
+  }
+  report.push({ step: 'trạng thái ?' + st, errors, check: null, dims: dims === undefined ? null : JSON.parse(dims) });
 }
 // Lượt kiểm sâu (deep.mjs): chỉ khi QA_DEEP=1. Tải lại trang giữa các phép đo để phép này không làm lệch phép kia.
 // Lỗi console trong lượt sâu (bấm một control làm trang ném lỗi) ghi vào bước deep; handover.py so với mốc (qadiff deep_errors).

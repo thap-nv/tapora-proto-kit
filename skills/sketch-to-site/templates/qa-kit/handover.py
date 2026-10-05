@@ -8,7 +8,13 @@
 #       sau khi người dùng chốt: lần chạy đó thành last-green, current làm lại từ đó, ledger chuyển vào thư mục chạy.
 #   python _qa/handover.py thumbs
 #       chụp lại ảnh Hub khai báo ở "thumbs" trong qa.config.json, mỗi theme một ảnh. Chạy TRƯỚC run.
-import argparse, datetime, json, os, shutil, subprocess, sys
+#   python _qa/handover.py ledger
+#       in gọn nhật ký từ lần bàn giao trước (mỗi lần sửa một dòng), trang sửa trực tiếp và trang chỉ đổi qua file dùng chung,
+#       ảnh Hub có trang đã đụng, trang tổng quan app, file đổi sau lần kiểm nhanh cuối mà chưa vào nhật ký. Không chạy trình duyệt.
+#   python _qa/handover.py usage <lớp> [<lớp> …]
+#       số chỗ dùng từng lớp ở mỗi trang (B6: số chỗ gọi component trong DESIGN.md): đếm lớp trong thuộc tính class,
+#       cả khuôn HTML trong <script>; bỏ <style> và chú thích, nên luật CSS cùng tên không bị đếm.
+import argparse, datetime, json, os, re, shutil, subprocess, sys
 import qalib as Q
 
 
@@ -61,7 +67,9 @@ def cmd_run(a):
         bad += [f'console {th}/{name} · {x["step"]}: {Q.short(x["errors"][:2], 200)}' for x in rep if x['errors'] and x['step'] != Q.qadiff.DEEP_STEP]
         bad += [f'FAIL {th}/{name} · {Q.short(f, 200)}' for f in r['fails']]
         bad += [f'im lặng {th}/{name} · {s}' for s in r['silent']]
-        bad += [f'tràn ngang {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}' for s in d['over_new']]
+        # Kèm phần tử gây tràn (run.mjs đo "wide"): khỏi phải tự dò
+        wide = {x['step']: x['dims'].get('wide') or [] for x in rep or [] if x.get('dims')}
+        bad += [f'tràn ngang {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}' + (f': do {", ".join(wide[s])}' if wide.get(s) else '') for s in d['over_new']]
         bad += [f'trong khung {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}: {c}' for s, c in d['cut_new']]
         for key, lab in (('contrast', 'tương phản'), ('intent', 'ý định'), ('states', 'trạng thái'), ('keyboard', 'bàn phím'), ('interactive', 'tương tác'),
                          (Q.qadiff.DEEP_ERRORS, 'console lượt sâu')):
@@ -92,9 +100,11 @@ def cmd_run(a):
 
     print(f'Thư mục chạy: {os.path.relpath(out, Q.ROOT)}')
     print(f'preflight: {pf_line}' + (f'  ({Q.shown(Q.PREFLIGHT)})' if Q.PREFLIGHT else ''))
+    # Nợ cũ của từng theme đếm theo mục đã gộp, như dòng Nợ cũ bên dưới: QA.md cần cột này cho từng theme
     for th, t in per_theme.items():
+        nd = Q.debt_count(Q.group_debt([x for x in debt_rows if x[0] == th]))
         print(f'{th}: {t["suites"]} bộ · {t["steps"]} bước · console {t["errors"]} · FAIL {t["fails"]} · im lặng {t["silent"]} · '
-              f'tràn mới {t["over"]} · cắt mới {t["cut"]} · tương phản mới {t["contrast"]} · ý định mới {t["intent"]} · sâu mới {t["deep"]} · check đổi so với last-green {t["changed"]}')
+              f'tràn mới {t["over"]} · cắt mới {t["cut"]} · tương phản mới {t["contrast"]} · ý định mới {t["intent"]} · sâu mới {t["deep"]} · check đổi so với last-green {t["changed"]} · nợ cũ {nd}')
     # Lượt sâu có chạy thật không: "sâu mới 0" một mình không phân biệt được "đã kiểm, sạch" với "không kiểm"
     deep_ran = [n for n in Q.SUITE_NAMES if any(r.get('deep_ran') for (th, nm), r in res.items() if nm == n)]
     deep_missed = [n for n in Q.SUITE_NAMES if n in Q.DEEP_SUITES and n not in deep_ran]
@@ -121,10 +131,9 @@ def cmd_run(a):
                 print('      ' + line)
             if len(attributed.get(i, [])) > 30:
                 print(f'      … còn {len(attributed[i]) - 30} dòng')
-        if new_suites:
-            print('\nBộ mới (chưa có trong last-green):', ', '.join(new_suites))
-        if lost_suites:
-            print('Bộ có trong last-green mà lần này không chạy:', ', '.join(lost_suites))
+        # Bộ mới, bộ mất, nợ cũ in cả khi trống: thiếu dòng thì người đọc phải mở handover.json để chắc là 0
+        print('\nBộ mới (chưa có trong last-green):', ', '.join(new_suites) if new_suites else 'không')
+        print('Bộ có trong last-green mà lần này không chạy:', ', '.join(lost_suites) if lost_suites else 'không')
         print(f'\nKhác biệt KHÔNG gán được cho lần sửa nào ({len(unattributed)}): cần xem từng dòng')
         for line in unattributed:
             print('  ' + line)
@@ -137,6 +146,8 @@ def cmd_run(a):
               '(đủ danh sách trong handover.json). Hỏi người dùng: sửa trước, hay nhận vào mốc (promote)?')
         for line in Q.debt_lines(groups):
             print(line)
+    else:
+        print('\nNợ cũ (0): không có')
     print(f'\nLỗi ({len(bad)}):')
     for line in bad:
         print('  ' + line)
@@ -196,9 +207,72 @@ def cmd_thumbs(a):
     shutil.rmtree(tmp, ignore_errors=True)
 
 
+def cmd_ledger(a):
+    # B1 của handover-check: các lần sửa từ lần bàn giao trước, mỗi lần một dòng (ledger.jsonl giữ cả giá trị check, có thể rất dài),
+    # trang đã đụng, ảnh Hub có trang đã đụng, file đổi sau lần kiểm nhanh cuối mà chưa vào nhật ký. Không chạy trình duyệt.
+    led = read_ledger()
+    page_of = {s[0]: s[1] for s in Q.run_all.SUITES}
+    print(f'Nhật ký từ lần bàn giao trước (_qa/current/ledger.jsonl): {len(led)} lần sửa')
+    direct, shared = [], []
+    for i, e in enumerate(led, 1):
+        files = e.get('files') or []
+        print(f'  {i}. {e.get("time", "")} · {e.get("note") or "(không ghi chú)"} · file: {", ".join(files) or "không"} · check đổi {len(e.get("changed") or [])}'
+              + (f' · bước mới {len(e["new"])}' if e.get('new') else '') + (f' · bước mất {len(e["lost"])}' if e.get('lost') else ''))
+        for f in files:
+            p = f[len(Q.SITE_REL):-len('.html')] if f.startswith(Q.SITE_REL) and f.endswith('.html') else None
+            if p in Q.PAGES and p not in direct:
+                direct.append(p)
+        for n in e.get('suites') or []:
+            p = page_of.get(n)
+            if p and p not in shared:
+                shared.append(p)
+    shared = [p for p in shared if p not in direct]
+    print('Trang sửa trực tiếp:', ', '.join(direct) if direct else 'không')
+    print('Trang chỉ đổi qua file dùng chung:', ', '.join(shared) if shared else 'không')
+    thumbs = [it[0] for it in (Q.CFG.get('thumbs') or {}).get('items', [])]
+    if thumbs:
+        hit = [p for p in thumbs if p in direct + shared]
+        print('Ảnh Hub có trang đã đụng:', ', '.join(hit) + ' (chụp lại: python _qa/handover.py thumbs)' if hit else 'không')
+    else:
+        # In cả khi không khai báo: không có dòng này thì handover-check mở qa.config.json chỉ để biết B2 không có gì để chụp
+        print('Ảnh Hub: không khai báo ("thumbs" trong qa.config.json), B2 không có ảnh Hub để chụp lại')
+    # Trang tổng quan của prototype có app (sketch-to-site dựng ở site/app/index.html). In cả khi không có:
+    # đo lại sau 54b403a, handover tốn một lượt find cả dự án chỉ để biết điều này
+    ov = Q.SITE_REL + 'app/index.html'
+    if os.path.exists(os.path.join(Q.SITE, 'app', 'index.html')):
+        print(f'Trang tổng quan app: {ov} (tính năng thêm hay bỏ thì cập nhật ở B2)')
+    else:
+        print(f'Trang tổng quan app: không có ({ov}), B2 không có trang tổng quan để cập nhật')
+    cur = Q.load_json(os.path.join(Q.CUR, 'manifest.json'))
+    if cur is None:
+        print('Chưa có mốc _qa/current/: dự án chưa promote lần nào.')
+    else:
+        out = Q.changed_files(cur, Q.manifest())
+        print('File đổi sau lần kiểm nhanh cuối, chưa vào nhật ký:', ', '.join(out) if out else 'không')
+
+
+def cmd_usage(a):
+    # B6 của handover-check: số chỗ gọi component. grep -o tên lớp khớp cả luật CSS trong <style> (đo lại sau 54b403a:
+    # _system.html ra 3 .field-err thay vì 2). Ở đây chỉ đếm lớp trong thuộc tính class, kể cả khuôn HTML viết trong <script>
+    names = [n.lstrip('.') for n in a.cls if n.lstrip('.')]
+    if not names:
+        print('Cách gọi: python _qa/handover.py usage <lớp> [<lớp> …]'); sys.exit(2)
+    print('Chỗ dùng (lớp trong thuộc tính class, cả khuôn trong <script>; bỏ <style> và chú thích):')
+    for p in Q.PAGES:
+        f = os.path.join(Q.SITE, p + '.html')
+        if not os.path.exists(f):
+            print(f'  {p}: không thấy {Q.SITE_REL}{p}.html'); continue
+        html = open(f, encoding='utf-8', errors='ignore').read()
+        html = re.sub(r'<style\b.*?</style>|<!--.*?-->', '', html, flags=re.S | re.I)
+        tokens = [t for m in re.finditer(r'(?<![\w-])class\s*=\s*(?:"([^"]*)"|\'([^\']*)\')', html) for t in (m.group(1) or m.group(2) or '').split()]
+        print(f'  {p}: ' + ' · '.join(f'.{n} {tokens.count(n)}' for n in names))
+
+
 ap = argparse.ArgumentParser()
 sub = ap.add_subparsers(dest='cmd', required=True)
 p = sub.add_parser('run'); p.add_argument('--themes', default=''); p.set_defaults(f=cmd_run)
+p = sub.add_parser('ledger'); p.set_defaults(f=cmd_ledger)
+p = sub.add_parser('usage'); p.add_argument('cls', nargs='*'); p.set_defaults(f=cmd_usage)
 p = sub.add_parser('promote'); p.add_argument('dir'); p.set_defaults(f=cmd_promote)
 p = sub.add_parser('thumbs'); p.set_defaults(f=cmd_thumbs)
 a = ap.parse_args()
