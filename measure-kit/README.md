@@ -41,6 +41,9 @@ Dùng để đo một lần chạy skill `sketch-to-concept` tốn bao nhiêu l�
 | `r4b-bangiao/`, `r5b-sau-tweak/`, `r6b-sau-evolve/` | `r4-bangiao`, `r5-sau-tweak`, `r6-sau-evolve` với bộ kiểm của `54b403a`: `qa_init.py --update` rồi `moc-lf.py`. Chép ra rồi mới chạy |
 | `moc-lf.py` | Chuẩn bị thư mục bắt đầu: file bước `_qa/steps-*.json` về xuống dòng LF, và dấu `_qa/…` trong manifest của `last-green`, `current` lấy lại theo file hiện tại. Chỉ dùng cho thư mục đo |
 | `transcripts/edit-sau-sua/`, `runs-edit-sau-sua/` | Transcript nén của ba lần đo lại sau `54b403a`, và `FEATURE-DECISIONS.md`, `QA.md`, ảnh chính của từng lần. Xem mục *Ba skill sửa: sau 6 chỗ sửa* |
+| `r7-map/` | Đề đo của `sketch-to-map`: `sample/` là thư mục bắt đầu (Cổng 1–2 đã chốt, 7 tài liệu yêu cầu theo khuôn BA), `key.json` là đáp án. **Chép `sample/` ra rồi mới chạy; không chép `key.json`.** Xem mục *sketch-to-map: đề đo r7-map* |
+| `mapscore.js` | Chấm bản đồ chức năng của một lần chạy theo đáp án: `node mapscore.js <key.json> <thư-mục-chạy hay features.js hay file .md> [--json] [--all]`. `--selfcheck <key.json> <thư-mục-tài-liệu>` soát chính đáp án |
+| `prompt-map-moc-cu.md` | Prompt của phiên đo mốc cũ: `sketch-to-site` B1 ở `66e55cb` đọc đề `r7-map` và lập sơ đồ trang |
 | `cloud-setup.sh` | Chuẩn bị máy cho một lần đo, trong một lệnh: kiểm node, python, trình duyệt (Linux chưa có thì cài Chromium), mạng; lấy bản skill cần đo ra worktree ở đúng commit; in dòng biến `SKILLS`, `RUNS`. `bash measure-kit/cloud-setup.sh <moi> [<cu>] [--tests]`. Xem mục *Nhánh `measure` và cách lấy bản skill* |
 
 ## Nhánh `measure` và cách lấy bản skill (từ 05/10/2026)
@@ -1276,3 +1279,82 @@ Ngoài năm chỗ trên:
 | H | `rhs1` | `ae9a6ab777b91a2cd` | `runs-edit-sau-sua/rhs1/QA.md` |
 
 - Bản gốc ở `~/.claude/projects/w--Dummy--Tool--Working-tapora-proto-kit/105ba07d-cb4e-4891-9a8b-ce003cd6670b/subagents/`. Bản nén ở `transcripts/edit-sau-sua/agent-<id>.jsonl.gz`, kèm `.meta.json`.
+
+## sketch-to-map: đề đo r7-map (soạn 05/10/2026)
+
+Đề để đo `sketch-to-map`: skill có gom **đủ** chức năng từ một bộ tài liệu nhiều file không, và quy trình cũ (`sketch-to-site` B1 đọc đủ tài liệu rồi lập sơ đồ trang) sót bao nhiêu. Đề giả lập theo **khuôn tài liệu BA của một dự án thật** của nhóm *(use case, quy tắc nghiệp vụ, ca biên, quyết định gỡ xung đột, ưu tiên phạm vi, schema)*, nhỏ hơn bộ tài liệu thật khoảng 20 lần. Nội dung viết mới, không chép từ dự án đó.
+
+**Dự án:** trung tâm bơi giả *Sóng Xanh*. Hệ thống nhiều bề mặt: web quản trị (Quản lý, Lễ tân, HLV) và app phụ huynh (iOS, Android).
+
+**Thư mục bắt đầu** `r7-map/sample/`:
+- `CONCEPT.md`, `DECISIONS.md`: Cổng 1–2 đã chốt *(concept b "Làn bơi")*. Không kèm bảng concept và màn then chốt.
+- `docs/yeu-cau/`: 7 tài liệu, khoảng 48 KB.
+
+| File | Nội dung |
+|---|---|
+| `YEU-CAU-HE-THONG-SONG-XANH.md` | Tổng quan, `YC-01…14`, `NF-01…05`, Phụ lục A bảng giá |
+| `USE-CASE-SONG-XANH.md` | 12 use case `UC-01…12`, ma trận actor × UC, ma trận quyền theo chức năng (mục 4), đặc tả đủ 12 UC |
+| `BUSINESS-RULES-SONG-XANH.md` | 37 quy tắc `BR-HV/LH/LI/DD/TT/TB/QT-nn` |
+| `EDGE-CASES-SONG-XANH.md` | 10 ca biên `A-01…10`, 3 câu hỏi mở `OQ-01…03` |
+| `XUNG-DOT-SONG-XANH.md` | 4 quyết định `XD-01…04`, đè lên đoạn trái với chúng ở file khác |
+| `UU-TIEN-PHAM-VI-SONG-XANH.md` | MoSCoW: `M-01…09`, `S-01…04`, `CO-01…02`, `W-01`; GĐ1 và GĐ2 |
+| `schema.dbml` | Bảng và enum trạng thái |
+
+**Đáp án** `r7-map/key.json`: 43 chức năng mà bản đồ đúng phải có (3 cái hoãn sang GĐ2, bản đồ vẫn phải giữ với trạng thái hoãn), cộng 4 thứ **không được dựng**. 18 chức năng là **bẫy**, theo 12 kiểu chức năng dễ sót khi đọc một bộ tài liệu BA:
+
+| Kiểu bẫy | Mục |
+|---|---|
+| Ngụ ý trong quy tắc nghiệp vụ | K04 chọn con trên app (`BR-HV-03`) · K09 danh sách chờ (`BR-LH-04`) · K22 sửa điểm danh (`BR-DD-05`) · K29 hoàn tiền (`BR-TT-08`) · K40 ngày nghỉ lễ (`BR-LI-04`) |
+| Chỉ có trong ma trận quyền | K36 xuất báo cáo ra Excel (`USE-CASE` mục 4) |
+| Chỉ có trong ca biên | K18 HLV dạy thay (`A-02`) · K27 hết buổi, gia hạn tại quầy (`A-05`) |
+| Việc tự động có cấu hình | K33 cấu hình nhắc lịch (`BR-TB-02`) |
+| Một việc mang hai tên | K26 *bảo lưu* (`UC-09`) = *tạm dừng gói* (`YC-09`, `BR-TT-05`): phải là **một** chức năng |
+| Nằm trong phụ lục | K30 bảng giá (ghi chú dưới Phụ lục A) |
+| Quản trị hiếm dùng | K38 nhật ký thao tác (`BR-QT-04`) |
+| Thao tác hàng loạt | K17 huỷ mọi buổi khi bể sự cố (`A-03`, `XD-04`) |
+| Biến thể theo vai | K12 lịch dạy, HLV chỉ thấy lớp mình (ma trận quyền, `BR-QT-02`) |
+| Nhắc ở tổng quan, đặc tả ở tài liệu khác | K10 học thử (`YC-05` → `BR-LH-06`) |
+| Quyết định XD đè đoạn cũ | K14 phụ huynh **gửi yêu cầu** đổi lịch, K15 lễ tân xử lý yêu cầu (`XD-02`); và N1 *phụ huynh tự đổi lịch* là thứ không được dựng |
+| Bước chuyển trạng thái chỉ có trong schema | K16 học bù (`diem_danh.da_hoc_bu`, `buoi_bu_id`) |
+
+Không được dựng: N1 phụ huynh tự đổi lịch (bị `XD-02` bỏ) · N2 chống thu tiền trùng (`A-09`) và N3 điểm danh khi mất mạng (`A-10`), là ca vi mô kỹ thuật, chỉ ghi chú · N4 thanh toán online (`W-01`).
+
+**Chấm:** `node mapscore.js r7-map/key.json <thư-mục-chạy>`.
+- Có `map/features.js` thì chấm dữ liệu: khớp tên chức năng. Script báo mục trượt, bẫy theo kiểu, trùng (K26), dựng thừa (N1–N4 trong phạm vi), sai trạng thái (K41–K43 phải hoãn), mục *cần soát tay* (tên không khớp mà mô tả hay mã nguồn khớp), và chức năng ngoài đáp án. Chức năng ngoài đáp án có thể là chức năng tách nhỏ hợp lệ.
+- Không có thì chấm văn bản `MAP.md`, `DESIGN.md` theo từng dòng. Dùng cho mốc cũ, nơi sơ đồ trang nằm ở `DESIGN.md` mục 9.
+- Khớp bằng từ khoá nên có thể lệch: luôn soát tay mục trượt và *cần soát tay* trước khi chốt số.
+- `node mapscore.js --selfcheck r7-map/key.json r7-map/sample/docs`: mã nguồn của đáp án có trong tài liệu, tên mỗi mục khớp lựa chọn của nó, không mục nào khớp nhầm tên mục khác. Phải in `Không có chỗ cần sửa.` sau mỗi lần sửa đề hay đáp án.
+- Đã thử trên ba kết quả giả: bản đồ đúng hết ra 43/43; bản đồ gài lỗi bắt đủ 3 mục trượt, 1 trùng, 1 dựng thừa, 1 sai trạng thái; sơ đồ trang dạng văn bản chấm theo dòng.
+
+**Đề có thể lệch ở đâu:** tài liệu giả gọn hơn tài liệu thật, và một số bẫy cũng được nhắc ở file ưu tiên (`M-02` danh sách chờ, `M-06` yêu cầu đổi lịch, `M-08` nhật ký). Sau khi đạt trên đề này, chạy thử trên một module của dự án thật.
+
+### Mốc cũ (đo 05/10/2026)
+
+Prompt `prompt-map-moc-cu.md`: `sketch-to-site` ở `66e55cb` (bản 1.5.0), B0 và B1 đủ, ở B2 chỉ lập sơ đồ trang và đề xuất phạm vi. Một lần chạy `rm0a`, máy Windows (Node 20.19.5, Python 3.14), subagent `general-purpose` chạy nền, model Opus 5.5. Chuẩn bị bằng `cloud-setup.sh 66e55cb`.
+
+| | `rm0a` |
+|---|---|
+| Lượt · token quy đổi · thời gian | 9 lượt · 0,31–0,33M · 7,7 phút, không lượt nào mất cache |
+| Đọc tài liệu | Cả 7 file đọc **nguyên văn trong một lượt** (lượt 4, khoảng 43k ký tự), cùng `mobile-app.md`, 4 lần tra `ui-ux-pro-max` |
+| Sơ đồ trang | 26 màn: 16 web quản trị, 10 app; điều hướng theo vai; 12 luồng xuyên bề mặt |
+| `mapscore.js` *(đã soát tay)* | **Trúng 42/43 · bẫy 17/18** · trùng 0 · dựng thừa 0 · hoãn K41–K43 để ngoài sơ đồ, ghi GĐ2 |
+| Trượt | K16 xếp buổi học bù: bước chuyển `vang_co_phep → da_hoc_bu` chỉ có trong `schema.dbml`. Màn điểm danh chỉ có ba trạng thái |
+| Cớ đọc thiếu | Không có: không file nào bị bỏ hay đọc một phần. Khối thinking của transcript rỗng, chỉ soát được phần chữ |
+| Phạm vi đề xuất | Khuyến nghị **10/26 màn**; 16 màn còn lại *(A3, A4, A7–A9, A11–A16, P4, P6, P8–P10)* không có chỗ nào theo dõi sau Cổng 3 |
+
+Soát tay `mapscore.js` lần đầu: K17 bị chấm trượt dù A1 có lớp phủ *Huỷ buổi do sự cố* theo khoảng giờ; K16 bị chấm trúng vì chữ *buổi bù* (buổi cộng khi trung tâm huỷ). Đã sửa `match` của K16, K17 trong `key.json`; chấm lại khớp soát tay.
+
+**Đọc kết quả:**
+- Ở cỡ khoảng 48 KB, quy trình cũ **không** sót chức năng khi đọc và lập sơ đồ: đọc nguyên cả bộ trong một lượt, bắt 17/18 bẫy. Đề `r7-map` ở cỡ này chưa phân biệt được bản cũ và bản mới ở phần kiểm kê.
+- Chỗ sót ở dự án thật nhiều khả năng nằm ở chỗ khác. Ba giả thuyết cần đo:
+  1. **Quy mô:** tài liệu của dự án thật khoảng 1 MB, gấp khoảng 20 lần, không đọc nguyên trong một lượt được.
+  2. **Phạm vi không được theo dõi:** sơ đồ có đủ, nhưng chỉ khoảng 40 % số màn được dựng; phần còn lại không có trạng thái nào sau Cổng 3, nên lúc bàn giao trông như thiếu.
+  3. **Bước dựng:** B3 dựng theo dòng sơ đồ có thể bỏ lớp phủ, tab, mục phụ đã ghi.
+- Đối chiếu thêm với một prototype thật dựng bằng `sketch-to-site` 4.x, trước đợt giảm token *(chi tiết ghi ở plan nội bộ, không đưa lên nhánh này)*:
+  - ở mức use case không sót, sơ đồ và trang dựng phủ đủ 52/52;
+  - ở mức nhánh rẽ cần giao diện, phủ 36/39; 3 nhánh thiếu đều là ngoại lệ chồng ngoại lệ, 2 trong số đó tài liệu tự ghi là suy ra, chưa xác nhận;
+  - chỗ yếu là bố cục: một trang gánh 10 use case, việc hằng ngày không có lối vào trên menu, menu có nhóm đặt theo giai đoạn phát hành.
+  Giả thuyết *sót khi đọc* chưa được xác nhận; trọng tâm nên chuyển sang bố cục.
+- Bản đồ dày ở vài màn (A1 có 4 lớp phủ và một chế độ xếp lớp; A2 gom 7 loại việc), nhưng phần *tìm được và gọn* chưa đo được bằng đề này.
+
+**Dữ liệu:** transcript `transcripts/map-moc-cu/agent-afc2df761a334005b.jsonl.gz` (+ `.meta.json`), phiên `ff1a1681-5d0f-48ae-8ce9-f4e28f9ca839`. `DESIGN.md`, `DECISIONS.md` của lần chạy ở `runs-map/rm0a/`.
