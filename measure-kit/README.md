@@ -40,6 +40,7 @@ Dùng để đo một lần chạy skill `sketch-to-concept` tốn bao nhiêu l�
 | `prompt-edit-sau-sua.md` | Prompt của phiên đo lại ba skill sửa ở bản mới nhất (sau `54b403a`), mỗi kịch bản một lần. Xem mục *Ba skill sửa: sau 6 chỗ sửa* |
 | `r4b-bangiao/`, `r5b-sau-tweak/`, `r6b-sau-evolve/` | `r4-bangiao`, `r5-sau-tweak`, `r6-sau-evolve` với bộ kiểm của `54b403a`: `qa_init.py --update` rồi `moc-lf.py`. Chép ra rồi mới chạy |
 | `moc-lf.py` | Chuẩn bị thư mục bắt đầu: file bước `_qa/steps-*.json` về xuống dòng LF, và dấu `_qa/…` trong manifest của `last-green`, `current` lấy lại theo file hiện tại. Chỉ dùng cho thư mục đo |
+| `transcripts/edit-sau-sua/`, `runs-edit-sau-sua/` | Transcript nén của ba lần đo lại sau `54b403a`, và `FEATURE-DECISIONS.md`, `QA.md`, ảnh chính của từng lần. Xem mục *Ba skill sửa: sau 6 chỗ sửa* |
 
 Token quy đổi = input + 1,25 × ghi cache + 0,1 × đọc cache + 5 × output. Transcript chỉ ghi output lúc bắt đầu stream nên output ước từ số ký tự đã viết (2,5–3,5 ký tự một token); khối thinking không tính được.
 
@@ -1030,7 +1031,7 @@ Vấp khác trong báo cáo của agent:
   - H: chỉ có `QA.md`, vì `FEATURE-DECISIONS.md` của H giống `r6-sau-evolve`.
 - `r5-sau-tweak/` và `r6-sau-evolve/` có `sample/_qa/current/`, mà `_qa/.gitignore` của bộ kiểm bỏ qua. Muốn giữ khi commit thì `git add -f`.
 
-## Ba skill sửa: sau 6 chỗ sửa (chuẩn bị 05/10/2026, chưa đo)
+## Ba skill sửa: sau 6 chỗ sửa (đo 05/10/2026)
 
 Commit `54b403a` (merge vào `measure-kit/run-4.5` thành `417fe2a`) làm 6 việc đề xuất ở mục trên, cộng luật B5 của `handover-check`:
 - `breaktest.py`;
@@ -1081,3 +1082,175 @@ Prompt của phiên đo: `prompt-edit-sau-sua.md`. Mỗi kịch bản chạy m�
   - rhm1, rhm2: đọc `qa.config.json` ở lượt 4, `handover.json` ở lượt 9 và 13;
   - rtm1, rtm2: tra khuôn ở lượt 4–6.
 - `phase-edit.js`: `breaktest.py` là dấu hiệu của B4 (evolve).
+
+### Phiên đo
+
+- Phiên `105ba07d-cb4e-4891-9a8b-ce003cd6670b`, cùng máy Windows với mốc (Node 20.19.5, Python 3.14, Edge, Git Bash), model Opus 5.5. HEAD `0bc2398` (sau `417fe2a`, gồm `54b403a`), test 343/343 qua trước khi đo.
+- Một worktree `<SP>/moi/tapora-proto-kit` ở HEAD. `<SP>` là `C:/Users/thapnv/AppData/Local/Temp/claude/w--Dummy--Tool--Working-tapora-proto-kit/105ba07d-cb4e-4891-9a8b-ce003cd6670b/scratchpad`.
+- Ba lần chạy khởi động cùng lúc, mỗi lần là một subagent `general-purpose` chạy nền, prompt chạy giữ nguyên văn như mục trên:
+  - `rts1` từ `r4b-bangiao`, `current/` dựng lại từ `last-green/`;
+  - `res1` từ `r5b-sau-tweak`;
+  - `rhs1` từ `r6b-sau-evolve`.
+- Cả ba đều có lượt 1 không đọc được cache (`đọc cache 0k`). Lượt 1 tốn 46–50k, so với 19–21k khi có cache, tức thêm khoảng 29k mỗi lần. Ở mốc chỉ `rtm1` gặp. Không lần nào mất cache giữa chừng.
+- `res1` tới Cổng 3 mà không hỏi Cổng 1–2, nên so được với mốc.
+
+### Số đo
+
+- Quy đổi thô lấy từ `parts2.js`. "Bỏ lượt 1 lạnh" là trừ khoảng 29k.
+- Số theo bước lấy từ `phase-edit.js` bản đã sửa trong phiên này (xem *Sửa script trong lần đo này*), dạng `lượt · quy đổi`.
+- Mỗi kịch bản chỉ một lần chạy: chênh dưới khoảng 20 % chưa nói được gì.
+
+**T · `tweak-site`** (khai Cấp 1 · cờ C như cả 4 lần mốc; khai lại từ "cờ: không" sau khi xem CSS):
+
+| Lần | Lượt | Quy đổi | Lượt 1 đọc cache | Phút | vào | tìm | đọc | sửa | kiểm | ảnh | nhật ký | báo cáo |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `rts1` | 9 | 0,16M | 0k | 2,9 | 1 · 46k | 1 · 14k | 3 · 43k | 1 · 15k | 1 · 10k | (trong nhật ký) | 1 · 13k | 1 · 16k |
+| mốc `rtm1` | 10 | 0,17M | 0k | 3,1 | 1 · 45k | 2 · 31k | 2 · 25k | 1 · 19k | 1 · 12k | 1 · 11k | 1 · 12k | 1 · 15k |
+| mốc `rtm2` | 11 | 0,15–0,16M | 22k | 3,1 | 1 · 19k | 3 · 38k | 3 · 39k | 1 · 17k | 1 · 11k | (trong nhật ký) | 1 · 13k | 1 · 17k |
+
+- Thấp hơn `rtm1` (cũng lạnh lượt 1) 6 %. Bỏ lượt 1 lạnh thì khoảng 0,13M, so với 0,14M và 0,15–0,16M. Dưới ngưỡng.
+- "Tìm" còn 1 lượt, 14k (mốc 2–3 lượt, 31–38k): không `grep` lại, không tra khuôn. "Đọc" vẫn 3 lượt.
+
+**E · `evolve-site`** (tới Cổng 3, không hỏi Cổng 1–2, khai Cấp 2 · cờ L, T, C như mốc):
+
+| Lần | Lượt | Quy đổi thô | Bỏ mất cache | Lượt 1 đọc cache | Phút | B1 | B2 · cổng | B3 | B4 | Cổng 3 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `res1` | 16 | 0,77–0,82M | 0,77–0,82M | 0k | 24,9 | 3 · 104k | 1 · 41k | 5 · 315k | 5 · 237k | 2 · 92k |
+| mốc `rem1` | 19 | 1,04–1,10M | 0,87–0,93M | 22k | 24,1 | 2 · 44k | 1 · 31k | 9 · 663k (mất cache 170k) | 5 · 229k | 2 · 94k |
+| mốc `rem2` | 19 | 1,21–1,27M | 0,83–0,89M | 22k | 23,7 | 3 · 74k | 1 · 42k | 7 · 528k (mất cache 131k) | 5 · 467k (mất cache 246k) | 3 · 117k |
+
+- Bỏ mất cache và lượt 1 lạnh: khoảng 0,74–0,79M, so với 0,83–0,93M của mốc, tức thấp hơn 7–15 %, dưới ngưỡng.
+- Số thô thấp hơn 26–37 % vì `res1` không mất cache. Một phần là may: lượt 8 nghĩ 196 s, viết 98 s, cách lượt 9 có 295 s, chỉ 5 s dưới TTL 5 phút.
+- B2 là lượt 5 (in `integration-patterns.md` và khuôn khối tính năng), làm sau lượt vào 2.
+- **B3 (dựng, bỏ lượt vào 2):** 244k, so với 371–422k của mốc. Bộ tính năng đỏ ở lượt 7 và xanh ngay lần dựng đầu (lượt 9). Mốc thì có vòng gỡ bước đỏ (rem1, 131k) và heredoc hỏng (rem2). Phần giảm này không do 6 chỗ sửa mà do dao động giữa các lần dựng.
+- **B4:** 237k, ngang mốc (229k, và 221k khi bỏ mất cache). B4 lần này có thêm một việc mà mốc không có: `breaktest.py` phát hiện một bước phủ định yếu, phải sửa bước rồi bẻ lại (xem *Soát từng việc*).
+
+**H · `handover-check`** (dừng ở cổng nghiệm thu, kết luận SẠCH, không promote):
+
+| Lần | Lượt | Quy đổi | Lượt 1 đọc cache | Phút | B0–B1 | B3 | B5 | B6 | Cổng |
+|---|---|---|---|---|---|---|---|---|---|
+| `rhs1` | 15 | 0,26–0,27M | 0k | 5,0 | 4 · 87k | 1 · 9k | 1 · 13k | 8 · 125k | 1 · 26k |
+| mốc `rhm1` | 15 | 0,22–0,23M | 22k | 4,6 | 4 · 61k | 1 · 9k | 3 · 37k | 6 · 94k | 1 · 19k |
+| mốc `rhm2` | 16 | 0,23–0,24M | 22k | 5,3 | 5 · 70k | 1 · 9k | 2 · 27k | 7 · 107k | 1 · 19k |
+
+- Cột B5, B6 của mốc đã tính lại bằng `phase-edit.js` bản sửa. Bảng ở mục trên ghi B5 7 lượt, B6 2 lượt.
+- Bỏ lượt 1 lạnh thì khoảng 0,23–0,24M, ngang mốc.
+- B5 chỉ còn 1 lượt, 13k (mốc 2–3 lượt, 27–37k).
+- B6 tăng lên 8 lượt, 125k (mốc 94–107k), vì lượt 10–11 tra `tweak-site/SKILL.md` để biết việc ghi bù `DESIGN.md` có thuộc B6 không (24k).
+
+**Một vòng T + E + H** (bỏ mất cache và lượt 1 lạnh): khoảng 1,13M, so với khoảng 1,27M và 1,25M của mốc (`rtm1` cũng trừ lượt 1 lạnh), tức thấp hơn khoảng 10 %. Mức này dưới ngưỡng của một lần chạy. Số lượt là 40, mốc 44 và 46.
+
+### Soát từng việc
+
+**tweak** `rts1`:
+
+| Việc | `rts1` | mốc `rtm1` / `rtm2` |
+|---|---|---|
+| Lượt tìm có `qa_init --update`, `quick.py --dry`, tạo `FEATURE-DECISIONS.md` bằng `sed '/^## Tính năng/,$d'`, `grep -rn` chỉ thư mục trang | **một phần**, lượt 2. Đủ ba lệnh, nhưng `grep -rn` chạy trên cả thư mục prototype (bỏ `concept/`, `_qa/`) chứ không chỉ `site/`. Agent cố ý làm vậy để tìm `0909` trong `DECISIONS.md` mà soát cờ Y, và tìm thấy ở `DECISIONS.md:25` | không có lệnh tạo file; `grep` cả `concept/` |
+| Không tra khuôn ở `evolve-site`, không `grep` lại | có | tra khuôn ở lượt 4–6; `grep` lại ở lượt 3 |
+| Đọc một lượt | **không**, lượt 3–5: <br>• lượt 3 đọc `index.html`, `FEATURE-DECISIONS.md` vừa tạo, `AGENTS.md` và `grep` CSS chung; <br>• lượt 4 `grep` `.hero-cta`, `.info-side` và in mục cấm của `DESIGN.md`; cờ C lộ ra ở lượt này; <br>• lượt 5 `Read` đoạn `site.css`, vì Edit cần file đã đọc | không (2–3 lượt) |
+| Sửa một lượt | có, lượt 6 | có |
+| Kiểm bằng `quick.py --note … --shots` | có, lượt 7, kèm `PYTHONIOENCODING=utf-8` | có |
+| Mở một ảnh, đúng lát có nhãn, cùng lượt ghi nhật ký | có, lượt 8: `smoke-index-390/index-4.jpg (Mở 5:30 đến 19:00, nghỉ thứ Hai)` | rtm1 mở thêm ở lượt 9 vì đoán sai lát |
+| Dòng nhật ký thay dòng mẫu `<dd/mm/yyyy>` | có, và tiêu đề có tên dự án | — |
+| Không tự chụp, không đọc mã script | có (0 · 0) | có |
+
+**evolve** `res1`:
+
+| Việc | `res1` |
+|---|---|
+| Lượt vào 1: `Read b1-b2.md`, file dự án, lệnh 1 | có, lượt 2. Kèm `README.md` của prototype; file không có nên lỗi, vô hại, như mốc |
+| Ảnh mốc bằng `run_all.py _qa/truoc` | có, lượt 3 (`smoke-index` và `smoke-_system`), cùng lượt đọc 4 file sẽ sửa |
+| Lượt vào 2: `Read b3-b4.md`, file sẽ sửa, lệnh 2 | có, lượt 4: `b3-b4.md`, `qa.config.json`, `steps-smoke-index.json`, lệnh 2, `cat tokens.css` |
+| Đỏ rồi xanh với `_qa/.tdd` | có: đỏ ở lượt 7 (FAIL 20 ở mỗi khổ), xanh ở lượt 9 ngay lần dựng đầu |
+| B4 bằng `quick.py --shots`, cùng lượt `sed` in `regression-qa.md` | có, lượt 10 |
+| Không đọc mã | có. 0 lệnh; chỉ in phần đầu `run_all.py` theo lệnh 2 |
+| Bẻ thử bằng `breaktest.py` khi có bước phủ định, không `.bak` tự viết | có. Lượt 11 bẻ 3 quy tắc: <br>• "khoá mẻ đã hết" bắt được, FAIL 1; <br>• "không mở Zalo khi chép bị chặn" bắt được, FAIL 2; <br>• "chặn khi thiếu" ra `KHÔNG BẮT ĐƯỢC`: trong headless việc chép bị chặn, nên hộp đứng yên giống như khi chặn đúng. Lượt 12 sửa bước, lượt 13 bẻ lại thì bắt được, FAIL 2. <br>0 lệnh `.bak`; mốc rem2 tự viết bẻ thử, tốn 92k |
+| Sau vòng sửa chỉ mở ảnh trong dòng `đổi so với lần chụp trước` | có: lượt 13 báo 4 ảnh đổi, lượt 14 mở đúng 4 ảnh đó. Mốc mở lại 17 và 7 ảnh |
+| Ảnh `_system` chọn theo nhãn; mục Hộp giữ bánh ở 390 có ảnh và được mở đúng lát | có. Ở 390 mục này nằm ở `_system-23` (nhãn `Hộp giữ bánh · sheet và hộp tho…`) tới `_system-26`; lượt 11 mở lát 23 và 26. Ở 1440 mở `_system-9` (nhãn có Hộp giữ bánh) và lát 10. Mốc rem2 mở 4 lát ở 390 mà không tới mục mới |
+| Không `UnicodeEncodeError` | có, 0: mọi lệnh python đều đặt `PYTHONIOENCODING=utf-8`. Ở mốc, rem1 và rem2 đều gặp |
+
+**handover** `rhs1`:
+
+| Việc | `rhs1` | mốc `rhm1` / `rhm2` |
+|---|---|---|
+| B1 một lượt với `handover.py ledger` | **một phần**: `ledger` ở lượt 3, cùng `qa_init` và `FEATURE-DECISIONS.md`. B0–B1 vẫn 4 lượt: <br>• lượt 2 `ls` để biết đã có bộ kiểm chưa; <br>• lượt 4 `find` và `grep` tìm trang tổng quan, bảng đối chiếu (việc của B2) | 4–5 lượt |
+| Không mở `qa.config.json` (dòng `Ảnh Hub` có sẵn) | có: lượt 3 in `Ảnh Hub: không khai báo ("thumbs" trong qa.config.json) …`. Lượt 4 chỉ `grep -n thumbs` cùng hai file khác, ra 1 dòng (`fixes-edit.js` vẫn đếm 1) | cả hai lần `cat` nguyên file ở lượt 4 |
+| Không đọc `ledger.jsonl` | có | có |
+| B3 bằng `qa-check.py` | có, lượt 5 | có |
+| Không đọc `handover.json` (nợ cũ, bộ mới, bộ mất có trong kết quả) | có (0) | đọc ở lượt 9 và 13 |
+| B5 chấm phần của lần tweak, bỏ đợt evolve Cấp 2, không chấm `_system.html` | có; `QA.md` ghi rõ phạm vi và lý do | chấm phần tweak; cả 4 lần nêu luật mơ hồ |
+| Bảng UX in bằng `sed` | có, lượt 6 | có |
+| Mở đúng lát theo nhãn | có. Lượt 6, cùng lượt `sed`, mở 5 ảnh: lát có nhãn khối giờ mở ở 1440, 768, 390, và lát nối tiếp ở 1440, 390 | 2 lượt, mở lại vì đoán sai lát |
+| Bảng của `QA.md` có cột nợ cũ lấy từ dòng theme | có (`Nợ cũ` 0) | — |
+| Không đọc mã script | có | có |
+
+### Chất lượng (chỉ mở ảnh)
+
+- **T** (`goi-390.jpg`): hai nút viền "Xem đường đi" và "Gọi 0909 123 456", icon `phone`, xếp hai dòng, không tràn. Giống `rtm1`, lần đó cũng ghi cả số.
+- **E** (`giu-banh-mo-390`, `giu-banh-mo-1440`):
+  - Ở 390 là sheet sát đáy; ở 1440 là hộp thoại giữa màn, rộng 576px.
+  - Mẻ 6:00 gạch "Đã hết", mẻ 9:30 chọn sẵn. Có ô −/+ cho 4 loại bánh, ô tên, nút chính ghim ở chân hộp.
+  - Lúc mới mở, khung "Tin nhắn sẽ chép" khuất dưới mép vùng cuộn ở cả 390 và 1440. Mốc cũng vậy; agent tự nêu ở Cổng 3 (điểm 8).
+- **`_system` 390** (`system-390-hop.jpg`, lát 24): mục Hộp giữ bánh có ảnh, là mẫu tĩnh với 2 loại bánh, tên "Lan" và tin nhắn soạn sẵn. Ở khổ này, chữ "Đang nướng", "Chưa vào lò" trong ô mẻ xuống hai dòng, vì khung mẫu hẹp hơn hộp thật.
+- **H** (`QA.md`):
+  - Gán đủ 3 dòng nhật ký (1 tweak, 2 evolve): 0 khác biệt đã gán, 0 khác biệt không gán được, 0 file ngoài nhật ký, 2 bộ mới của lần [2].
+  - Ghi bù vào `DESIGN.md` phần mà lần tweak bỏ sót: icon `phone`, `.info-cta`, nút Gọi ở sơ đồ trang.
+  - Nêu mẫu khối giờ mở trên `_system.html:372` chưa có nút Gọi, và hai nút lệch nhau ở 390, 768.
+  - **Sót một chỗ mà cả 4 lần mốc đều sửa:** `DESIGN.md` ghi `_system.html` có 3 `.field-err`, thật ra chỉ 2. Lượt 9 đếm bằng `grep -o 'field-err'`, khớp cả luật CSS trong `<style>` của `_system.html`, nên ra 3 và kết luận "khớp".
+- **So với mốc:** T và E ngang mốc. `_system` 390 tốt hơn, vì ở mốc rem2 không thấy mục mới. H ngang mốc, trừ chỗ sót `.field-err`.
+
+### Chỗ tốn nhất còn lại (số của `groupcost.js`)
+
+1. **Lượt dựng của evolve** (`res1` lượt 6–9): 277k. Phần này cần thiết. Lượt 8 dài 295 s, sát TTL 5 phút của subagent; dài thêm 5 s là mất khoảng 150k (chỉ khi chạy dạng subagent).
+2. **Lượt 3 của evolve đọc nguyên 4 file:** 128k, gồm phần mang tới cuối. Bốn file là `index.html` (19,7k ký tự), `site.css` (14k), `_system.html` (29,2k) và `DECISIONS.md` (15k).
+   - `DECISIONS.md` phải đọc vì lệnh 1 `grep` tài liệu yêu cầu với `--exclude-dir=prototypes`, nên không thấy nguồn. Cả 3 lần bản mới (rem1, rem2, res1) đều gặp.
+3. **Vòng sửa B4 của evolve** (lượt 12–14): 157k. Vòng này gộp hai việc:
+   - sửa bước "chặn khi thiếu" mà `breaktest.py` báo không bắt được;
+   - sửa UX thấy qua ảnh: focus khi mở rơi vào tiêu đề, nút thiếu chuyển tiếp khi nhấn.
+
+   Đây là việc chất lượng, không phải phí thừa.
+4. **Phần chuẩn bị B6 của handover** (`rhs1` lượt 7–12): 6 lượt, 90k.
+   - Lượt 10–11 (24k) tra `tweak-site/SKILL.md` để biết việc ghi bù `DESIGN.md` sau lần tweak có thuộc B6 không.
+   - Lượt 9 và 12 đếm chỗ dùng bằng `grep`; lượt 12 đếm lại `.btn-ghost`.
+5. **Lượt đọc của tweak** (`rts1` lượt 4–5): 24k. Cờ C chỉ lộ ra khi xem CSS. `site.css` mới được `grep` chứ chưa `Read`, nên phải thêm một lượt `Read` trước khi Edit.
+
+Ngoài năm chỗ trên:
+- Lượt 1 lạnh ở cả ba lần, cộng lại khoảng 87k. Đây là hiện tượng của cách đo (ba subagent khởi động cùng lúc), không do skill.
+- Lượt 5 của evolve (B2) đọc `integration-patterns.md` dù Cổng 2 đã chỉ định. Phí lượt 15k. Phần lớn trong 47k "mang theo" là chính lượt đó (nghĩ 170 s cho bước dựng), không phải tài liệu.
+
+### Đề xuất bước tiếp (ước từ số đo; chưa sửa skill)
+
+| # | Việc | Ước tiết kiệm | Chắc chắn |
+|---|---|---|---|
+| 1 | `handover-check` B6 nói rõ: lần tweak không cập nhật `DESIGN.md` (icon mới, sơ đồ trang, chỗ dùng), B6 ghi bù. Kèm lệnh đếm chỗ dùng chỉ trong markup, bỏ `<style>` | 25–45k mỗi lần handover có tweak; sửa luôn lỗi đếm `.field-err` | khá: rhs1 lượt 10–11 tốn 24k, đếm 2 lượt; rhm1 lượt 11–12 đếm lại, 25k |
+| 2 | `handover.py ledger` in thêm dòng "bộ kiểm: đã có" và "trang tổng quan / bảng đối chiếu: không", để B0 không phải `ls`, B2 không phải `find` | 15–20k mỗi lần handover | cao: B0–B1 tốn 4–5 lượt ở cả 3 lần bản mới |
+| 3 | `evolve-site` lệnh 1: `grep` nguồn yêu cầu cả `DECISIONS.md`, `CONCEPT.md` của prototype (bỏ `site/`, `concept/`, `_qa/` thay vì bỏ cả `prototypes`) | 10–20k mỗi lần evolve | cao: 3 trên 3 lần |
+| 4 | `tweak-site` bước đọc: khi thêm hay sửa thành phần cạnh một thành phần có sẵn, `grep -n` luật CSS của khối chứa rồi `Read` đúng đoạn đó, trong cùng lượt đọc | 10–25k mỗi lần tweak | khá: cả 3 lần bản mới đọc mất 2–3 lượt |
+| 5 | `evolve-site`: khi Cổng 2 đã chỉ định, in phần cần của `integration-patterns.md` ngay trong lượt vào 2 | 10–15k mỗi lần evolve | trung bình: B2 là một lượt riêng ở cả 3 lần, nhưng phần lớn chi phí của lượt đó là nghĩ cho bước dựng, phần này vẫn còn |
+
+- Cộng lại khoảng 70–125k mỗi vòng T + E + H, tức 6–11 % của khoảng 1,13M. Mức này dưới ngưỡng của một lần chạy, phải đo nhiều lần mới thấy. Phần phí do ba skill sửa gây ra gần như đã hết.
+- Hai việc không vì token:
+  - bộ kiểm băm `steps-*.json` theo byte, nên lệch giữa CRLF và LF (mục *Mốc lệch vì xuống dòng*, chưa sửa trong bộ kiểm);
+  - đếm chỗ dùng sai (đề xuất 1).
+
+### Sửa script trong lần đo này
+
+- **`phase-edit.js`:**
+  - **handover:** khi đã vào B5 thì các lệnh sau tính là B6: đọc `DESIGN.md`, lệnh nhắc `DESIGN.md` hay `QA.md`, đếm chỗ dùng (`grep -c`, `grep -o … | wc -l`).
+    - Trước đây B6 chỉ được nhận lúc ghi file, nên phần chuẩn bị B6 bị tính vào B5, ở cả mốc. Sau khi sửa: rhm1 B5 từ 7 lượt còn 3, B6 từ 2 lên 6; rhm2 B5 từ 7 còn 2, B6 từ 2 lên 7.
+    - Lời chính agent ở các lượt đó xác nhận: "Next I'll gather what B6 needs", "B6: checking …".
+  - **evolve:** lượt chỉ có dấu hiệu B2, đến sau lượt vào 2 mà chưa sửa `site/`, được tính là B2; các lượt sau vẫn là B3. Áp vào `res1` lượt 5. Số của rem1, rem2 không đổi.
+- **`fixes-edit.js` dòng 11:**
+  - `UnicodeEncodeError` chỉ đếm lỗi thật của python (`UnicodeEncodeError: …`, `'charmap' codec can't`). Trước đây script đếm cả chữ nhắc lỗi này trong `SKILL.md` vừa đọc, nên bắt nhầm lượt 1 của `rts1`.
+  - `grep -r` ngoài thư mục trang giờ xét từng đoạn lệnh. Lượt tìm của tweak gói `grep` chung một lệnh với `qa_init` của `<skills>`, nên trước đây cả lệnh bị bỏ qua. Trên mốc, giờ ra rtm1 lượt 2, 3 và rtm2 lượt 2, 4, 7.
+
+### Transcript và dữ liệu
+
+| Kịch bản | Lần | Agent | Ảnh và file |
+|---|---|---|---|
+| T | `rts1` | `a7f7c40bd0d14099f` | `runs-edit-sau-sua/rts1/`: `FEATURE-DECISIONS.md`, `goi-390.jpg` |
+| E | `res1` | `a490d949a495e0b8b` | `runs-edit-sau-sua/res1/`: `FEATURE-DECISIONS.md`, `giu-banh-mo-390.jpg`, `giu-banh-mo-1440.jpg`, `system-390-hop.jpg` |
+| H | `rhs1` | `ae9a6ab777b91a2cd` | `runs-edit-sau-sua/rhs1/QA.md` |
+
+- Bản gốc ở `~/.claude/projects/w--Dummy--Tool--Working-tapora-proto-kit/105ba07d-cb4e-4891-9a8b-ce003cd6670b/subagents/`. Bản nén ở `transcripts/edit-sau-sua/agent-<id>.jsonl.gz`, kèm `.meta.json`.

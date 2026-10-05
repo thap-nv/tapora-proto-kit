@@ -12,6 +12,7 @@
 // evolve-site và handover-check: bước chỉ tăng (sửa ở B4 vẫn là B4).
 //   evolve  B1: mặc định từ đầu (SKILL.md, b1-b2.md, DESIGN.md, dữ liệu, qa_init, quick --dry, run_all _qa/truoc, preflight --save)
 //           B2 · cổng: integration-patterns.md · search.py · ghi FEATURE-DECISIONS.md có "Cổng 1" hay "Cổng 2" khi chưa sửa site/
+//               (lượt chỉ có dấu hiệu B2 sau lượt vào 2, chưa sửa site/, vẫn là B2; các lượt sau vẫn là B3)
 //           B3: Read references/b3-b4.md · ghi steps-*.json, qa.config.json, site/, BUILD-LOG.md · run_all.py _qa/.tdd · themes.mjs
 //           B4: quick.py --note (không phải "trước evolve") · breaktest.py · regression-qa.md (sau khi đã sửa site/) · laws-of-ux · Read ảnh ngoài _qa/.tdd/ sau khi đã sửa site/
 //               (ảnh _qa/.tdd/ trước B4 là gỡ lỗi bộ tính năng, vẫn là B3)
@@ -21,7 +22,7 @@
 //           B3: handover.py run · qa-check.py
 //           B4: run_all.py _qa/.recheck · handover.json · git diff · compare.py · Read ảnh
 //           B5: regression-qa.md · laws-of-ux · qa-gate.md
-//           B6: ghi DESIGN.md hay QA.md
+//           B6: ghi DESIGN.md hay QA.md · sau khi đã vào B5: Read DESIGN.md, lệnh nhắc DESIGN.md hay QA.md, đếm chỗ dùng (grep -c, grep -o … | wc -l)
 //           Cổng: ghi DECISIONS.md · lượt cuối
 // Chi phí lượt, lượt mất cache và thời gian: như phase-site.js.
 const fs = require('fs'), path = require('path');
@@ -115,10 +116,12 @@ const MARK = {
     if (!st.edited && writesTo(c, /FEATURE-DECISIONS\.md$/, /FEATURE-DECISIONS\.md/) && /Cổng [12]/.test(body(c))) return 1;
     return -1;
   },
-  'handover-check'(c) {
+  'handover-check'(c, st) {
     const p = P(c), cmd = CMD(c), s = p + ' ' + cmd;
     if (writesTo(c, /\/DECISIONS\.md$/, /(?<![\w-])DECISIONS\.md/)) return 6;
     if (writesTo(c, /(DESIGN|QA)\.md$/, /(?:DESIGN|QA)\.md/)) return 5;
+    // Chuẩn bị B6 sau khi chấm UX: đọc DESIGN.md, tìm QA.md, đếm chỗ dùng
+    if (st.cur >= 4 && (/(?<![\w-])(DESIGN|QA)\.md\b/.test(s) || /\bgrep\s+-\w*c\b|\bgrep\s+-\w*o\b[^;\n]*\|\s*wc\s+-l/.test(cmd))) return 5;
     if (/regression-qa\.md|laws-of-ux|qa-gate\.md/.test(s)) return 4;
     if (py('run_all\\.py').test(cmd) && /\.recheck/.test(cmd) || /handover\.json|git\s+(-C\s+\S+\s+)?diff|compare\.py/.test(cmd) || img(c)) return 3;
     if (py('handover\\.py\\s+run').test(cmd) || py('qa-check\\.py').test(cmd)) return 2;
@@ -145,6 +148,8 @@ for (const f of args.filter(a => !a.startsWith('--'))) {
     // Lượt cuối: chữ, hoặc chỉ lệnh SubagentHandback (subagent nộp báo cáo qua công cụ này)
     if (i === turns.length - 1 && t.calls.every(c => c.name === 'SubagentHandback')) cur = last;
     t.step = cur;
+    // evolve: lượt chỉ có dấu hiệu B2 (integration-patterns, khuôn cổng) sau lượt vào 2 mà chưa sửa site/: lượt đó là B2, bước hiện tại giữ B3
+    if (skill === 'evolve-site' && cur === 2 && m === 1 && !st.edited) t.step = 1;
   });
   const agg = S.map(() => ({ n: 0, cost: 0, miss: 0, ms: 0, at: [] }));
   turns.forEach((t, i) => { const a = agg[t.step]; a.n++; a.cost += t.cost; a.miss += t.miss; a.ms += t.ms; a.at.push(i + 1); });

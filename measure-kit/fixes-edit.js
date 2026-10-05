@@ -132,7 +132,8 @@ for (const f of process.argv.slice(2)) {
   // 11 sáu chỗ sửa sau lần đo bản cũ/mới (54b403a): bẻ thử một lệnh, ảnh đổi, nhãn lát, mục bằng 0, khuôn FEATURE-DECISIONS, grep, mã hoá
   const bt = runs(exec('python3?', 'breaktest\\.py'));
   const selfBreak = calls.filter(c => /\.bak\b/.test(cmdOf(c)) && /site\//.test(cmdOf(c)));
-  const enc = calls.filter(c => /UnicodeEncodeError|'charmap' codec/.test(text(c)));
+  // Lỗi thật của python (dạng "UnicodeEncodeError: 'charmap' codec…"), không tính chữ nhắc lỗi này trong tài liệu skill vừa đọc
+  const enc = calls.filter(c => c.name !== 'Read' && /UnicodeEncodeError: |'charmap' codec can't/.test(text(c)));
   console.log(`  11 breaktest.py ${list(bt)} · bẻ thử tự viết (.bak cạnh site/) ${list(selfBreak)} · UnicodeEncodeError ${list(enc)}`);
   // Đọc file mà kết quả lệnh đã in đủ: Read, hay lệnh nhắc tới file đó mà không phải gọi script của bộ kiểm
   const readOf = re => calls.filter(c => c.name === 'Read' && re.test(fileOf(c)) || !/(qa-check|handover|quick|run_all|qa_init)\.py\b/.test(cmdOf(c)) && re.test(cmdOf(c)));
@@ -140,7 +141,8 @@ for (const f of process.argv.slice(2)) {
   const tpl = calls.filter(c => !mk.includes(c) && (c.name === 'Read' && /templates\/FEATURE-DECISIONS\.md$/.test(fileOf(c))
     || /tapora-proto-kit\/skills/.test(cmdOf(c)) && /FEATURE-DECISIONS/.test(cmdOf(c)) && /\b(grep|sed|cat|head)\b/.test(cmdOf(c))));
   // grep -r ngoài thư mục trang: đoạn lệnh có grep đệ quy mà không nhắc site, không chạy trong thư mục skills
-  const gOut = calls.filter(c => !/tapora-proto-kit\/skills/.test(cmdOf(c)) && cmdOf(c).split(/;|&&|\|/).some(s => /\bgrep\b/.test(s) && /\s-\w*[rR]/.test(s) && !/site/.test(s)));
+  // (xét từng đoạn: lượt tìm của tweak-site gói grep cùng qa_init của <skills> trong một lệnh)
+  const gOut = calls.filter(c => cmdOf(c).split(/;|&&|\|/).some(s => /\bgrep\b/.test(s) && /\s-\w*[rR]/.test(s) && !/site/.test(s) && !/tapora-proto-kit\/skills/.test(s)));
   console.log(`     đọc handover.json ${list(readOf(/handover\.json/))} · qa.config.json ${list(readOf(/qa\.config\.json/))} · tra khuôn FEATURE-DECISIONS ${list(tpl)} · tạo từ khuôn bằng sed ${list(mk)} · grep -r ngoài thư mục trang ${list(gOut)}`);
   // Nhãn lát lấy từ danh sách ảnh trong kết quả (quick --shots, run_all, qa-check): "<thư mục>/<ảnh>" → tiêu đề trong ngoặc
   const shotCalls = calls.filter(c => exec('python3?', 'quick\\.py').test(cmdOf(c)) && /--shots/.test(cmdOf(c)) || exec('python3?', '(run_all|qa-check)\\.py').test(cmdOf(c)));
