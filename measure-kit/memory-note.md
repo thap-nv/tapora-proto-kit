@@ -8,3 +8,8 @@ sketch-to-site 4.5 measured on Claude Code cloud (Linux, Node 22, Chromium 141, 
 - Next fixes ranked by measured saving: slices scroll (0.1–0.15M, high), b3-b4 entry reads (40–70k, high), system.html `:where(.sys p)` colour (30–40k, high), qa-check full image names (~20k, high), qa-query not frozen in step files and no smooth scroll (0–65k each, medium).
 - Cloud setup: network must allow cdn.tailwindcss.com and unpkg.com; Chromium NSS store may need the proxy CA (certutil); on Node 22 run tests as `node --test <dir>/*.test.js` (314 pass, 2 Windows-only skips).
 - Measuring scripts changed (rerun baseline locally to confirm): phase-site entry turn = B0; unquoted shell vars expanded in phase-site/fixes-site; attrib counts .jpg as images.
+
+Re-measured 05/10 after the 4 fixes (merged into 1.5.0, commit 70cc50b on measure/site-4.5):
+- Phase 2: 18 and 17 turns, 0.58–0.61M and 0.55–0.57M (was 21/28 turns, 0.69–0.79M): about −21 %, under the 25 % threshold, but each fix shows in the transcripts: no blank reveal sections although both pages use IntersectionObserver, B3 entry turn reads _system.html + site.css with no extra read turns and 0 script-code reads, no `ls` for image names.
+- Phase 1: 0.52–0.56M and 0.56–0.60M (was 0.47–0.54M), flat within noise. The template fix held (no contrast failure from the template), but both runs hit new stumbles: system-check reports horizontal overflow without naming the element (~20k each), and text overflowing its own box in a narrow frame is not caught (one extra fix/check/image round).
+- Next by measured saving: name the overflowing element (high), measure per-element text overflow (medium), stop freezing qa-query into step files (medium), reopen only changed screens (low).

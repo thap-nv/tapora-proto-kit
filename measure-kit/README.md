@@ -28,6 +28,7 @@ Dùng để đo một lần chạy skill `sketch-to-concept` tốn bao nhiêu l�
 | `r3-gate3/sample/` | sketch-to-site pha 2: kết quả pha 1 lần A, Cổng 3 đang mở. Chép ra rồi mới chạy |
 | `transcripts/site-4.5/` | Transcript của bốn lần đo 4.5 trên cloud (`.jsonl.gz` + `.meta.json`). Xem mục *sketch-to-site: sau 4.5 (cloud)* |
 | `runs-4.5/` | Ảnh cả trang `_system.html` (pha 1), ảnh trang chủ 1440 (pha 2) và `DECISIONS.md` của bốn lần đo 4.5 |
+| `transcripts/site-4.5-sua/`, `runs-4.5-sua/` | Như hai thư mục trên, cho bốn lần đo lại sau 4 chỗ sửa (05/10). Xem mục *sketch-to-site: sau 4 chỗ sửa (cloud)* |
 | `memory-note.md` | Ghi chú tiếng Anh để chép vào memory `token-rollout-plan` |
 
 Token quy đổi = input + 1,25 × ghi cache + 0,1 × đọc cache + 5 × output. Transcript chỉ ghi output lúc bắt đầu stream nên output ước từ số ký tự đã viết (2,5–3,5 ký tự một token); khối thinking không tính được.
@@ -462,3 +463,57 @@ Phiên `86d5c0dc-2566-593f-8504-e5b654a914f7` (cloud). File nằm ở `transcrip
 | 2 · B | `a63eed7d8700f5769` | `/tmp/measure/rc2b` | `runs-4.5/rc2b/20261004-1757/` |
 
 Chạy lại script: `gunzip -k transcripts/site-4.5/*.gz`, rồi `SKILLS=<repo>/skills RUNS=/tmp/measure node phase-site.js transcripts/site-4.5/agent-<id>.jsonl`. Đường dẫn trong transcript là `/home/user/tapora-proto-kit/skills` và `/tmp/measure/r…`; đặt `SKILLS=/home/user/tapora-proto-kit/skills` để `<skills>` hiện đúng.
+
+## sketch-to-site: sau 4 chỗ sửa (cloud, 05/10/2026)
+
+Bốn chỗ sửa sau lần đo trên (gộp vào 1.5.0, commit `70cc50b` trên `measure/site-4.5`): `run.mjs` cuộn qua trang trước khi chụp `full`/`slices`; lượt vào B3 đọc thêm `site/_system.html`, `site/assets/site.css`, lệnh 2 in `concept/<id>.html` và `ls site/`, `b3-b4.md` ghi lệnh preflight từng trang; khuôn `system.html` chỉ áp chữ của trang cho tiêu đề và đoạn mô tả nằm thẳng trong `.sys`/`<section>`; `qa-check.py` in thư mục tuyệt đối và tên từng ảnh. Cùng máy, cùng thư mục bắt đầu và prompt; thư mục chạy `/tmp/measure/rd1a`, `rd1b`, `rd2a`, `rd2b`. Không lần nào mất cache.
+
+| Pha · lần | Lượt | Quy đổi thô | Lần đo trước (4.5) | B0 | B1 / B3 | B2 / B4 | Cổng |
+|---|---|---|---|---|---|---|---|
+| 1 · A | 17 | 0,52–0,56M | 15 lượt · 0,50–0,54M | 2 · 73k | B1 1 · 35k *(chỉ sửa `DECISIONS.md`)* | B2 13 · 395k | 1 · 29k |
+| 1 · B | 17 | 0,56–0,60M | 17 lượt · 0,47–0,50M | 2 · 76k | – | B2 13 · 455k | 2 · 44k *(lượt 8 mở ảnh cả trang để tìm chỗ tràn, thật ra là B2)* |
+| 2 · A | 18 | 0,58–0,61M | 21 lượt · 0,69–0,72M | 2 · 37k | B3 5 · 247k | B4 9 · 248k | 2 · 61k |
+| 2 · B | 17 | 0,55–0,57M | 28 lượt · 0,76–0,79M | 2 · 36k | B3 7 · 282k | B4 6 · 180k | 2 · 61k |
+
+- **Pha 2:** trung bình 0,58M so với 0,74M, giảm khoảng 21 %; số lượt 17–18 so với 21–28. Dưới ngưỡng 25 % của hai lần chạy, nên tổng chỉ để tham khảo; từng chỗ sửa thì soát được trong transcript (dưới).
+- **Pha 1:** 0,54M và 0,58M so với 0,52M và 0,485M: ngang, trong mức dao động. Chỗ sửa ở khuôn ăn, nhưng hai lần vấp chỗ khác (dưới).
+- Review: vẫn không chạy được (subagent không có công cụ Agent); hai lần pha 2 ghi "không có review độc lập".
+
+Soát từng chỗ sửa:
+1. **Cuộn trước khi chụp: đã ăn.** Cả hai trang đều dùng `IntersectionObserver` để hiện dần (`rd2a` 4 chỗ, `rd2b` 3 chỗ, như lần trước). Không lần nào gặp section trống; ảnh `index-3.jpg` 1440 của cả hai có đủ *Nội quy cạnh lò* và *Giờ mở và đường đi* (lần trước ra trống). Không lượt nào đọc `run.mjs`, `deep.mjs` (lần trước 2 · B lượt 15, 19–20).
+2. **Lượt vào B3: đã ăn.** Lượt 2 của cả hai lần có `Read` `b3-b4.md`, bốn file dự án, `site/_system.html`, `site/assets/site.css` và lệnh 2. Sau đó không đọc lại các file này, không `cat concept/c.html`; đọc mã skill 0 lệnh (lần trước 1 lệnh mỗi lần, cộng 3 lượt đọc mã bộ kiểm ở 2 · B). Lượt dựng bắt đầu ngay ở lượt 3 (lần trước: lượt 6 và 8). Còn 2 · B lượt 4 grep tên token trong `tokens.css` (44k).
+   - `fixes-site.js` dòng 1 tính cả kết quả lệnh 2 (luật, `concept/c.html`, `ls`) vào `rules-and-conflicts.md`: 22,3k ký tự, trong đó phần luật vẫn khoảng 10k.
+3. **Khuôn `system.html`: đã ăn.** Không lần nào lỗi tương phản vì chữ của khuôn. Lỗi tương phản của 1 · B lượt 7 (`span.t "9:30"` 2,16:1) do CSS của agent (`.door{color:inherit}` trên cửa than hồng), không do khuôn.
+4. **Tên ảnh của `qa-check.py`: đã ăn.** Không lượt `ls` nào để lấy tên ảnh (lần trước 1 lượt mỗi lần). 2 · A lượt 9 có `ls _qa` nhưng để sửa `query` của file bước, không để lấy tên ảnh.
+
+Vấp còn lại, theo transcript và báo cáo agent:
+- **`system-check.mjs` báo tràn ngang mà không nêu phần tử** (cả hai lần pha 1; cùng lỗi của agent: khung ảnh vòm `aspect-ratio` giãn theo hàng lưới). 1 · A lượt 10 tự chèn script dò rồi `chromium --dump-dom` (19k); 1 · B lượt 8 mở ảnh cả trang để tìm (19k).
+- **Lệnh kiểm không bắt chữ tràn khỏi khối của nó** ở khung hẹp đặt trên trang 1440 (giờ trên cửa cỡ theo `vw` đè sang cửa bên, nút xuống dòng): cả hai lần pha 1 chỉ thấy khi mở ảnh, thêm một vòng sửa, kiểm và mở lại 10–11 ảnh. 1 · B còn lỗi lấn 3px ở 320 mà bộ kiểm báo "trong khung 0".
+- **Mở lại mọi ảnh sau mỗi lần chạy sạch:** 1 · B mở 10–11 ảnh 3 lần, 4 lượt chỉ mở ảnh (160k); 1 · A 2 lượt (85k).
+- **`qa-query` đóng băng trong file bước:** 2 · A lần kiểm đầu có CẢNH BÁO `qa-query`, agent sửa `_qa/steps-smoke-index.json` (lượt 9–10, khoảng 45k) rồi chạy lại.
+- `system-check.mjs` chỉ in mã cảnh báo preflight (P13); 1 · B chạy riêng `preflight.py` (lượt 13).
+- Cổng 3 không lưu các lựa chọn đã trình, nên câu "chấp nhận ngoại lệ ở màn đó" vẫn phải suy (lỗi của prompt đo).
+
+Chỗ tốn nhất còn lại: vòng tự soát `_system.html` (1 · A lượt 9–14, 162k; 1 · B lượt 7–16, 327k); vòng B4 sau lần kiểm đầu (2 · A lượt 9–16, 258k; 2 · B lượt 11–15, 181k); lượt vào B3 mang theo 160–173k (nội dung cần dùng); SKILL.md 39–44k.
+
+Đề xuất tiếp (ước từ số đo):
+
+| # | Việc | Ước tiết kiệm mỗi lần | Chắc chắn |
+|---|---|---|---|
+| 1 | `system-check.mjs` (và bộ kiểm B4) nêu phần tử gây tràn ngang: thẻ, lớp, cạnh phải | pha 1: khoảng 20k, có khi bớt một vòng | cao: cả hai lần pha 1 |
+| 2 | Đo chữ tràn khỏi khối cha trong khung hẹp (`scrollWidth > clientWidth` của phần tử chứa chữ, không chỉ của trang) | pha 1: 0–80k (một vòng sửa, kiểm, mở ảnh) | trung bình: cả hai lần gặp, nhưng chưa rõ đo được hết |
+| 3 | `qa_init.py`/`run.mjs` đọc `qa-query` của trang lúc chạy, không đóng băng vào file bước | pha 2: 0–45k | trung bình: một trong hai lần (lần đo trước cũng một lần) |
+| 4 | Sau lần sửa chỉ đổi CSS của vài component, chỉ mở lại ảnh của màn có component đó | pha 1: 40–80k | thấp: dễ sót lỗi lan sang màn khác |
+
+Transcript (phiên `86d5c0dc-…`), ảnh và `DECISIONS.md`:
+
+| Pha · lần | Agent | Thư mục chạy | Ảnh |
+|---|---|---|---|
+| 1 · A | `aa1d9c2de1329ee76` | `/tmp/measure/rd1a` | `runs-4.5-sua/rd1a/dark-1440-full.png` |
+| 1 · B | `a196c9ce671e2c4bf` | `/tmp/measure/rd1b` | `runs-4.5-sua/rd1b/lo-cui-1440-full.png` |
+| 2 · A | `a7118861a730a4e86` | `/tmp/measure/rd2a` | `runs-4.5-sua/rd2a/20261005-0306/` |
+| 2 · B | `a6b151f730a9c8899` | `/tmp/measure/rd2b` | `runs-4.5-sua/rd2b/20261005-0304/` |
+
+File transcript ở `transcripts/site-4.5-sua/agent-<id>.jsonl.gz`, kèm `.meta.json`.
+
+Chất lượng: pha 1 mang rõ concept C (vòm than hồng, vòm gạch, hàng bốn cửa tro/than/gạch, Fraunces), hai trường hợp khó có trên trang. Pha 2 màn đầu 1440 như lần trước: vòm "9:30", H1 hai dòng, nút "Giữ bánh mẻ 9:30 qua Zalo" trong màn đầu. Cả hai lần pha 2 hiểu "ngoại lệ ở màn đó" là bỏ `.ember`.
