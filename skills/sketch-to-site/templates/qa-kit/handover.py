@@ -8,6 +8,9 @@
 #       sau khi người dùng chốt: lần chạy đó thành last-green, current làm lại từ đó, ledger chuyển vào thư mục chạy.
 #   python _qa/handover.py thumbs
 #       chụp lại ảnh Hub khai báo ở "thumbs" trong qa.config.json, mỗi theme một ảnh. Chạy TRƯỚC run.
+#   python _qa/handover.py ledger
+#       in gọn nhật ký từ lần bàn giao trước (mỗi lần sửa một dòng), trang sửa trực tiếp và trang chỉ đổi qua file dùng chung,
+#       ảnh Hub có trang đã đụng, file đổi sau lần kiểm nhanh cuối mà chưa vào nhật ký. Không chạy trình duyệt.
 import argparse, datetime, json, os, shutil, subprocess, sys
 import qalib as Q
 
@@ -61,7 +64,9 @@ def cmd_run(a):
         bad += [f'console {th}/{name} · {x["step"]}: {Q.short(x["errors"][:2], 200)}' for x in rep if x['errors'] and x['step'] != Q.qadiff.DEEP_STEP]
         bad += [f'FAIL {th}/{name} · {Q.short(f, 200)}' for f in r['fails']]
         bad += [f'im lặng {th}/{name} · {s}' for s in r['silent']]
-        bad += [f'tràn ngang {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}' for s in d['over_new']]
+        # Kèm phần tử gây tràn (run.mjs đo "wide"): khỏi phải tự dò
+        wide = {x['step']: x['dims'].get('wide') or [] for x in rep or [] if x.get('dims')}
+        bad += [f'tràn ngang {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}' + (f': do {", ".join(wide[s])}' if wide.get(s) else '') for s in d['over_new']]
         bad += [f'trong khung {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}: {c}' for s, c in d['cut_new']]
         for key, lab in (('contrast', 'tương phản'), ('intent', 'ý định'), ('states', 'trạng thái'), ('keyboard', 'bàn phím'), ('interactive', 'tương tác'),
                          (Q.qadiff.DEEP_ERRORS, 'console lượt sâu')):
@@ -196,9 +201,44 @@ def cmd_thumbs(a):
     shutil.rmtree(tmp, ignore_errors=True)
 
 
+def cmd_ledger(a):
+    # B1 của handover-check: các lần sửa từ lần bàn giao trước, mỗi lần một dòng (ledger.jsonl giữ cả giá trị check, có thể rất dài),
+    # trang đã đụng, ảnh Hub có trang đã đụng, file đổi sau lần kiểm nhanh cuối mà chưa vào nhật ký. Không chạy trình duyệt.
+    led = read_ledger()
+    page_of = {s[0]: s[1] for s in Q.run_all.SUITES}
+    print(f'Nhật ký từ lần bàn giao trước (_qa/current/ledger.jsonl): {len(led)} lần sửa')
+    direct, shared = [], []
+    for i, e in enumerate(led, 1):
+        files = e.get('files') or []
+        print(f'  {i}. {e.get("time", "")} · {e.get("note") or "(không ghi chú)"} · file: {", ".join(files) or "không"} · check đổi {len(e.get("changed") or [])}'
+              + (f' · bước mới {len(e["new"])}' if e.get('new') else '') + (f' · bước mất {len(e["lost"])}' if e.get('lost') else ''))
+        for f in files:
+            p = f[len(Q.SITE_REL):-len('.html')] if f.startswith(Q.SITE_REL) and f.endswith('.html') else None
+            if p in Q.PAGES and p not in direct:
+                direct.append(p)
+        for n in e.get('suites') or []:
+            p = page_of.get(n)
+            if p and p not in shared:
+                shared.append(p)
+    shared = [p for p in shared if p not in direct]
+    print('Trang sửa trực tiếp:', ', '.join(direct) if direct else 'không')
+    print('Trang chỉ đổi qua file dùng chung:', ', '.join(shared) if shared else 'không')
+    thumbs = [it[0] for it in (Q.CFG.get('thumbs') or {}).get('items', [])]
+    if thumbs:
+        hit = [p for p in thumbs if p in direct + shared]
+        print('Ảnh Hub có trang đã đụng:', ', '.join(hit) + ' (chụp lại: python _qa/handover.py thumbs)' if hit else 'không')
+    cur = Q.load_json(os.path.join(Q.CUR, 'manifest.json'))
+    if cur is None:
+        print('Chưa có mốc _qa/current/: dự án chưa promote lần nào.')
+    else:
+        out = Q.changed_files(cur, Q.manifest())
+        print('File đổi sau lần kiểm nhanh cuối, chưa vào nhật ký:', ', '.join(out) if out else 'không')
+
+
 ap = argparse.ArgumentParser()
 sub = ap.add_subparsers(dest='cmd', required=True)
 p = sub.add_parser('run'); p.add_argument('--themes', default=''); p.set_defaults(f=cmd_run)
+p = sub.add_parser('ledger'); p.set_defaults(f=cmd_ledger)
 p = sub.add_parser('promote'); p.add_argument('dir'); p.set_defaults(f=cmd_promote)
 p = sub.add_parser('thumbs'); p.set_defaults(f=cmd_thumbs)
 a = ap.parse_args()

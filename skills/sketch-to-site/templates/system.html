@@ -30,7 +30,8 @@
   .sys-bar button{font:inherit;padding:6px 12px;border-radius:var(--radius-sm);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer}
   .sys-bar button[aria-pressed="true"]{background:var(--selected);border-color:var(--ring)}
   .sys-bar button:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
-  .sys-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr));gap:12px}
+  /* Ô màu tối thiểu 150px: hai cột ở 390 (đo 4.5: một cột 33–35 ô dài khoảng 4 500px, đẩy component ra ngoài ảnh của bộ khói) */
+  .sys-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:12px}
   .sys-sw{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
   .sys-sw i{display:block;height:56px;border-bottom:1px solid var(--line)}
   .sys-sw span{display:block;padding:8px 10px;font-size:var(--text-sm);color:var(--ink)}
@@ -39,6 +40,7 @@
   .sys-table{width:100%;border-collapse:collapse;font-size:var(--text-sm);background:var(--surface);border:1px solid var(--line)}
   .sys-table th,.sys-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
   .sys-table .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .sys-table code{white-space:nowrap}
   .sys-table [data-verdict="khong"] td:last-child{color:var(--danger-text);font-weight:600}
   .sys-table [data-verdict="sat"] td:last-child{color:var(--warning);font-weight:600}
   .sys-type > div{display:grid;grid-template-columns:minmax(0,160px) minmax(0,1fr);gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line)}

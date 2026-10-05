@@ -148,11 +148,13 @@ python _qa/handover.py promote _qa/handover/<date-time>
 | Command | When | What it does |
 |---|---|---|
 | `python _qa/quick.py --note "<what changed>"` | After every change | Runs preflight and the suites of pages that load the changed files, without screenshots. Compares against `_qa/current/`. If the run is clean, it saves the result and appends a line to `ledger.jsonl`. |
+| `python _qa/quick.py --note "<what changed>" --shots` | After a change you need to see (`tweak-site` level 1, `evolve-site` B4) | The same check, plus screenshots of the suites it runs. It lists the absolute folder and every file name in screen order, just above the result line. |
 | `python _qa/quick.py --dry` | Any time | Shows the changed files and the suites that would run |
 | `python _qa/handover.py run` | Before handover | Runs every suite on every theme, with screenshots on every theme. Compares against `_qa/last-green/` and matches each difference to a ledger line. |
 | `python _qa/handover.py promote _qa/handover/<date-time>` | After sign-off | Makes that run the new baseline and starts a fresh ledger |
 | `python _qa/handover.py thumbs` | Before `run`, when overview screenshots changed | Re-captures the thumbnails listed in `thumbs` |
-| `python _qa/run_all.py <out> [filter]` | Debugging | Runs suites without any baseline |
+| `python _qa/handover.py ledger` | Start of `handover-check` | Prints the changes since the last handover, one line each, the pages edited directly or only through shared files, the overview thumbnails to retake, and files changed after the last quick check. No browser. |
+| `python _qa/run_all.py <out> [filter]` | Feature checks, `evolve-site` baseline screenshots, debugging | Runs suites without any baseline, then lists the screenshots of the suites it ran |
 | `python _qa/compare.py <a> <b>` | Debugging | Compares two runs step by step |
 
 A run is clean when it has 0 console errors, 0 failed steps, 0 silent steps, 0 new horizontal overflows, 0 new clipped items, 0 new contrast issues, 0 new action-intent issues, and preflight passes. A step is silent when it has a `check` but returns no value.
@@ -168,10 +170,10 @@ A run is clean when it has 0 console errors, 0 failed steps, 0 silent steps, 0 n
 
 `site/assets/themes.json` lists every theme's seed colours. `node <skills>/sketch-to-site/scripts/themes.mjs <prototype-dir>` derives the state and status colours, checks every pair in every theme, and writes `themes.css`. `qa_init.py` turns each theme into a QA theme. The design-system page `site/_system.html` shows and measures the tokens of the active theme.
 
-**One-command checks used by `sketch-to-site`**
+**One-command checks**
 
 - `node <skills>/sketch-to-site/scripts/system-check.mjs <prototype-dir>` (B2, gate 3): runs `themes.mjs` (stops on a failing pair), `preflight.py` on `site/`, and measures `site/_system.html` at 1440 and 390 in every theme. It saves each screen and the full page at 1440 to `_shots/system/`, prints only what fails, and exits 0 when clean.
-- `python <skills>/sketch-to-site/scripts/qa-check.py <prototype-dir>` (B4): installs the kit when `_qa/qa.config.json` is missing, or runs `qa_init.py --update`, then `handover.py run`. It prints the summary, at most 15 lines per list, and the screenshots by suite.
+- `python <skills>/sketch-to-site/scripts/qa-check.py <prototype-dir>` (`sketch-to-site` B4, `handover-check` B3): installs the kit when `_qa/qa.config.json` is missing, or runs `qa_init.py --update`, then `handover.py run`. It prints the summary, at most 15 lines per list, and the screenshots by suite.
 
 **Configuration: `_qa/qa.config.json`**
 

@@ -56,7 +56,7 @@ test('ghi nguồn superpowers, README chạy test ở cả hai thư mục, SKILL
   assert.ok(lic.includes('| [obra/superpowers](https://github.com/obra/superpowers) | © 2025 Jesse Vincent |'), 'thiếu dòng ghi nguồn superpowers');
   assert.ok(read('README.md').includes('node --test skills/sketch-to-concept/tests/ skills/sketch-to-site/tests/'), 'README thiếu lệnh test hai thư mục');
   assert.ok(lic.includes('| [plugin87/ux-ui-agent-skills](https://github.com/plugin87/ux-ui-agent-skills) | © 2026 Thientan Soparat |'), 'thiếu dòng ghi nguồn ux-ui-agent-skills');
-  for (const [f, v] of [['sketch-to-site', 'v4.5'], ['sketch-to-concept', 'v1.4'], ['evolve-site', 'v1.8'], ['tweak-site', 'v1.2'], ['handover-check', 'v1.2']]) {
+  for (const [f, v] of [['sketch-to-site', 'v4.5'], ['sketch-to-concept', 'v1.4'], ['evolve-site', 'v1.9'], ['tweak-site', 'v1.3'], ['handover-check', 'v1.3']]) {
     assert.ok(read(`skills/${f}/SKILL.md`).split('\n').some(l => l.startsWith(`> **${v} (`)), `${f} thiếu ghi chú ${v}`);
   }
 });

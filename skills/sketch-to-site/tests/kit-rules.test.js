@@ -11,6 +11,10 @@ const read = rel => fs.readFileSync(path.join(REPO, rel), 'utf8').replace(/\r\n/
 const SITE = 'skills/sketch-to-site/SKILL.md';
 const R1 = 'skills/sketch-to-site/references/b0-b2.md';
 const R2 = 'skills/sketch-to-site/references/b3-b4.md';
+// evolve-site 1.9: các bước tách khỏi SKILL.md sang hai file theo giai đoạn
+const EVO = 'skills/evolve-site/SKILL.md';
+const E1 = 'skills/evolve-site/references/b1-b2.md';
+const E2 = 'skills/evolve-site/references/b3-b4.md';
 // Đoạn từ chỗ có chuỗi `start` tới chỗ có chuỗi `end` kế tiếp (không gồm `end`)
 function section(md, start, end) {
   const i = md.indexOf(start);
@@ -39,9 +43,8 @@ test('sketch-to-site đọc và ghi BUILD-LOG ở B0, B3, mục 3 và mục 7', 
 });
 
 test('evolve-site Cấp 3 ghi BUILD-LOG', () => {
-  const md = read('skills/evolve-site/SKILL.md');
-  assert.match(section(md, '### B3 · Dựng tính năng', '### B4'), /- \*\*Cấp 3:\*\*[^\n]*`BUILD-LOG\.md`/);
-  assert.match(section(md, 'Sắp hết độ dài thì **không nén**', '\n'), /BUILD-LOG\.md/);
+  assert.match(section(read(E2), '### B3 · Dựng tính năng', '### B4'), /- \*\*Cấp 3:\*\*[^\n]*`BUILD-LOG\.md`/);
+  assert.match(section(read(EVO), 'Sắp hết độ dài thì **không nén**', '\n'), /BUILD-LOG\.md/);
 });
 
 test('mọi chỗ nhắc data-clip-ok trong kit đều đòi ghi lý do', () => {
@@ -75,8 +78,8 @@ test('qa-gate mục 6: nguyên nhân gốc, bảng cấm làm im, dừng sau ba 
 
 test('B4 của sketch-to-site, evolve-site và bước kiểm của tweak-site trỏ tới qa-gate mục 6', () => {
   assert.match(section(read(R2), '### B4 · Tự kiểm', '### 🛑 Cổng 4'), /`references\/qa-gate\.md` mục 6/);
-  assert.match(read('skills/evolve-site/SKILL.md'), /^\| 6 \| [^\n]*qa-gate\.md` mục 6/m);
-  assert.match(section(read('skills/tweak-site/SKILL.md'), '4. **Kiểm nhanh**', '5. **'), /qa-gate\.md` mục 6/);
+  assert.match(read(E2), /^\| 6 \| [^\n]*qa-gate\.md` mục 6/m);
+  assert.match(section(read('skills/tweak-site/SKILL.md'), '5. **Kiểm nhanh**', '6. **'), /qa-gate\.md` mục 6/);
 });
 
 test('bảng cớ bỏ cổng giống hệt ở sketch-to-site và sketch-to-concept', () => {
@@ -93,7 +96,7 @@ test('bảng cớ bỏ cổng giống hệt ở sketch-to-site và sketch-to-con
 });
 
 test('evolve-site: kiểm trước, dựng sau ở đầu B3; bẻ thử bước phủ định ở B4', () => {
-  const md = read('skills/evolve-site/SKILL.md');
+  const md = read(E2);
   const b3 = section(md, '### B3 · Dựng tính năng', '### B4');
   assert.match(b3, /\*\*Kiểm trước, dựng sau\*\*/);
   assert.match(b3, /python _qa\/run_all\.py _qa\/\.tdd tinh-nang-<tên>/);
@@ -119,13 +122,13 @@ test('rules-and-conflicts mục F và bốn skill trỏ tới nó', () => {
   assert.match(f, /Trái \*\*sàn\*\*/);
   assert.match(f, /\*\*đã khoá\*\*/);
   assert.match(section(read(R2), '### 🛑 Cổng 4', '\n---'), /`references\/rules-and-conflicts\.md` mục F/);
-  assert.match(section(read('skills/evolve-site/SKILL.md'), '### 🛑 Cổng 3', '\n## '), /rules-and-conflicts\.md` mục F/);
+  assert.match(section(read(E2), '### 🛑 Cổng 3', '\n## '), /rules-and-conflicts\.md` mục F/);
   assert.match(section(read('skills/tweak-site/SKILL.md'), '## 2. Luật không bỏ', '## 3.'), /rules-and-conflicts\.md` mục F/);
   assert.match(read('skills/handover-check/SKILL.md'), /^- \*\*Sửa\*\* → soát danh sách theo `[^`]*rules-and-conflicts\.md` mục F/m);
 });
 
 test('sửa sau review: bộ kiểm của tính năng đặt tên theo khổ, không trùng tên', () => {
-  const b3 = section(read('skills/evolve-site/SKILL.md'), '### B3 · Dựng tính năng', '### B4');
+  const b3 = section(read(E2), '### B3 · Dựng tính năng', '### B4');
   assert.match(b3, /"tinh-nang-<tên>-1440"/);
   assert.match(b3, /"tinh-nang-<tên>-390"/);
   assert.doesNotMatch(b3, /\["tinh-nang-<tên>", /);
@@ -156,16 +159,16 @@ test('chạy thử: đầu run_all.py tả đủ trường của file bước, n
   const head = lines.slice(0, lines.findIndex(l => !l.startsWith('#'))).join(' ');
   for (const f of ['"query"', '"name"', '"js"', '"wait"', '"check"', '"shot"', '"jpeg"', '"clip"']) assert.ok(head.includes(f), `đầu run_all.py thiếu ${f}`);
   assert.match(head, /FAIL:/);
-  assert.match(read('skills/evolve-site/SKILL.md'), /định dạng ghi ở đầu file `_qa\/run_all\.py`/);
+  assert.match(read(E2), /định dạng ghi ở đầu file `_qa\/run_all\.py`/);
 });
 
 test('dự án đã có _qa/ chạy qa_init.py --update trước lần kiểm đầu của phiên, ở cả bốn skill dùng bộ kiểm', () => {
   // Dự án cài bộ kiểm từ kit cũ vẫn chạy run.mjs cũ (lỗi sập, đợi 20 s) cho tới khi có người chạy --update
   const cmd = /qa_init\.py <thư-mục-prototype> --update/;
   assert.match(section(read(R2), '### B4 · Tự kiểm', '3. **`laws-of-ux-checklist`**'), cmd);
-  assert.match(section(read('skills/evolve-site/SKILL.md'), '- **Mốc trước khi sửa**', '* **Lỗi có sẵn'), cmd);
-  assert.match(section(read('skills/tweak-site/SKILL.md'), '4. **Kiểm nhanh**', '5. **Cấp 1'), cmd);
-  assert.match(section(read('skills/handover-check/SKILL.md'), '### B0', '### B1'), cmd);
+  assert.match(section(read(E1), '- **Mốc trước khi sửa**', '* **Lỗi có sẵn'), cmd);
+  assert.match(section(read('skills/tweak-site/SKILL.md'), '2. **Tìm**', '3. **Đọc**'), cmd);
+  assert.match(section(read('skills/handover-check/SKILL.md'), '### B1', '### B2'), cmd);
 });
 
 test('review 2: làm tiếp so dấu nội dung, không so giờ sửa hay nguyên văn dòng Kiểm', () => {
@@ -190,11 +193,12 @@ test('review 2: tự sửa trang đã xong thì ghi lại dòng đó ngay, ở B
   const log = read('skills/sketch-to-site/templates/BUILD-LOG.md');
   assert.match(log, /\*\*Tự sửa một trang đã `xong`\*\*/);
   assert.match(section(read(R2), '### B4 · Tự kiểm', '### 🛑 Cổng 4'), /`BUILD-LOG\.md`[^\n]*dấu nội dung/);
-  assert.match(section(read('skills/evolve-site/SKILL.md'), '- **Cấp 3:** ghi tiến độ', '\n'), /dấu nội dung/);
+  assert.match(section(read(E2), '- **Cấp 3:** ghi tiến độ', '\n'), /dấu nội dung/);
 });
 
-test('sửa sau review: evolve-site B1 nhận đợt Cấp 3 đang dựng dở từ BUILD-LOG', () => {
-  const b1 = section(read('skills/evolve-site/SKILL.md'), '### B1 · Hấp thụ DNA', '### 🛑 Cổng 1');
+test('sửa sau review: evolve-site nhận đợt Cấp 3 đang dựng dở từ BUILD-LOG (lối vào giai đoạn 2, mục Làm tiếp)', () => {
+  assert.match(read(EVO).split('\n').find(l => l.startsWith('| Cổng của cấp đã có đáp án')), /`BUILD-LOG\.md`[^|]*chưa `xong`/);
+  const b1 = section(read(E2), '### Làm tiếp', '### B3');
   assert.match(b1, /`BUILD-LOG\.md`[^\n]*chưa `xong`/);
   assert.match(b1, /không hỏi lại cổng đã có đáp án/);
   assert.match(b1, /bỏ bước mốc trước khi sửa/);
@@ -223,7 +227,7 @@ test('sửa sau review: tweak-site nói rõ hỏi mục chưa rõ là ngoại l�
 });
 
 test('sau review: evolve-site B3 đặt tiền tố cho bước phủ định, trỏ tới đầu file run_all.py, có dòng cho việc bỏ tính năng', () => {
-  const b3 = section(read('skills/evolve-site/SKILL.md'), '### B3 · Dựng tính năng', '### B4');
+  const b3 = section(read(E2), '### B3 · Dựng tính năng', '### B4');
   assert.match(b3, /`phu-dinh-`/);
   assert.match(b3, /đầu file `_qa\/run_all\.py`/);
   assert.match(b3, /\*\*Bỏ tính năng:\*\*[^\n]*lối vào đã mất/);
@@ -322,22 +326,22 @@ test('khuôn AGENTS-qa.md nói lệnh themes.mjs, trang _system.html, tương ph
 });
 
 test('evolve-site 1.8: cờ T thêm màu vào themes.json, component vào _system.html; phần mới đọc được ở mọi theme', () => {
-  const md = read('skills/evolve-site/SKILL.md');
-  assert.match(md, /^> \*\*v1\.8 \(/m);
+  const md = read(EVO);
+  assert.match(md, /^> \*\*v1\.9 \(/m);
   assert.match(md, /\*\*T · Token, component\*\*[^\n]*themes\.json[^\n]*_system\.html/);
   assert.match(md, /đọc được ở \*\*mọi theme\*\*/);
 });
 
 test('tweak-site 1.2: đổi màu qua themes.json và themes.mjs; nợ cũ không tự sửa', () => {
   const md = read('skills/tweak-site/SKILL.md');
-  assert.match(md, /^> \*\*v1\.2 \(/m);
+  assert.match(md, /^> \*\*v1\.3 \(/m);
   assert.match(section(md, '## 2. Luật không bỏ', '## 3.'), /themes\.json[^\n]*themes\.mjs/);
   assert.match(section(md, '## 3. Quy trình', '## 4.'), /`nợ cũ`[^\n]*không tự sửa/);
 });
 
 test('handover-check 1.2: bảng đọc kết quả có phép đo mới và nợ cũ; cổng hỏi nợ cũ', () => {
   const md = read('skills/handover-check/SKILL.md');
-  assert.match(md, /^> \*\*v1\.2 \(/m);
+  assert.match(md, /^> \*\*v1\.3 \(/m);
   const b4 = section(md, '### B4 · Đọc kết quả', '### B5');
   assert.match(b4, /\*\*Tương phản, ý định, sâu\*\*/);
   assert.match(b4, /\*\*Nợ cũ\*\*/);

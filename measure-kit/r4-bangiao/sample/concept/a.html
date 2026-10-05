@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Màn then chốt · concept A · Dấu giờ ra lò</title>
+<!-- Mẫu từ sketch-to-concept/templates/key-screen.html. Mỗi concept một file: a.html, b.html, c.html.
+     Đổi data-concept cho khớp id trong concepts.js. Giữ thứ tự nạp: theme.js, concepts.js, color.js, tokens.js (đều trong <head>, không defer).
+     Ba màn cùng MỘT nội dung (CONCEPTS.content), khác nhau ở khung bố cục và token. Thay <body> bằng màn thật.
+     Gắn data-signature lên khối của tương tác đặc trưng: scripts/shots.mjs cuộn tới và chụp riêng khối đó.
+     Màn app: dựng trên sketch-to-site/templates/mobile/screen.html, giữ khối <head> dưới đây thay cho token của khuôn app. -->
+<script src="theme.js"></script>
+<script src="concepts.js"></script>
+<script src="color.js"></script>
+<script src="tokens.js" data-concept="a"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Tên biến theo rules-and-conflicts.md D.2 của sketch-to-site (--bg, --surface, --ink, --muted, --line, --accent) + vai trò thêm của colors.csv -->
+<script>tailwind.config={theme:{extend:{colors:{bg:'var(--bg)',surface:'var(--surface)',ink:'var(--ink)',muted:'var(--muted)','muted-bg':'var(--muted-bg)',line:'var(--line)',primary:'var(--primary)','on-primary':'var(--on-primary)',accent:'var(--accent)','on-accent':'var(--on-accent)',destructive:'var(--destructive)',ring:'var(--ring)'},fontFamily:{display:'var(--font-display)',body:'var(--font-body)',mono:'var(--font-mono)'},borderRadius:{sm:'var(--radius-sm)',DEFAULT:'var(--radius)',lg:'var(--radius-lg)'},boxShadow:{DEFAULT:'var(--shadow)'}}}}</script>
+<style>
+  body{margin:0;min-height:100dvh;background-color:var(--bg);background-image:var(--texture);background-size:var(--texture-size);color:var(--ink);font-family:var(--font-body)}
+  h1,h2,h3{font-family:var(--font-display)}
+  .btn{transition:transform .15s ease}
+  .btn:active{transform:scale(.98)}
+  :focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<style>
+  .page{overflow-x:clip}
+  .slip{position:relative;background:var(--surface);border:2px solid var(--ink)}
+  .perf{border-top:2px dashed var(--line)}
+  .lead{flex:1;border-bottom:2px dotted var(--line);margin:0 .5rem .35rem;min-width:1rem}
+  .stamp{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;border:4px double var(--accent);color:var(--accent);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;line-height:1}
+  .stamp-big{position:absolute;right:-.5rem;top:-1.5rem;transform:rotate(-8deg);padding:.6rem 1rem;background:color-mix(in srgb,var(--surface) 70%,transparent);opacity:.92}
+  .stamp-big b{font-size:clamp(2.25rem,9vw,4.5rem);font-weight:600;letter-spacing:0}
+  @media (min-width:768px){.stamp-big{right:-8.5rem;top:-2rem}}
+  .batch{position:relative;display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.75rem .25rem;border:2px solid var(--ink);background:var(--surface);cursor:pointer;min-height:5.5rem}
+  .batch .t{font-family:var(--font-mono);font-weight:600;font-size:1.375rem}
+  .batch .s{font-size:.8125rem;color:var(--muted);text-align:center;line-height:1.2}
+  .batch input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0}
+  .batch:has(input:checked){border-color:var(--accent);outline:3px solid var(--accent);outline-offset:-6px}
+  .batch:has(input:checked) .t{color:var(--accent)}
+  .batch:has(input:focus-visible){outline:3px solid var(--ring);outline-offset:2px}
+  .batch.gone{cursor:not-allowed;background:var(--muted-bg)}
+  .batch.gone .t{color:var(--muted)}
+  .batch.gone::after{content:"";position:absolute;left:12%;right:12%;top:1.55rem;border-top:3px solid var(--destructive);transform:rotate(-24deg)}
+  .qty button{width:2.75rem;height:2.75rem;border:2px solid var(--ink);background:var(--surface);font-family:var(--font-mono);font-size:1.25rem;line-height:1}
+  .qty output{display:inline-block;min-width:2rem;text-align:center;font-family:var(--font-mono);font-weight:600}
+  .stamped{position:absolute;right:1rem;bottom:1rem;transform:rotate(-6deg);padding:.5rem .75rem;border-color:var(--primary);color:var(--primary);opacity:0;pointer-events:none}
+  .stamped.on{animation:stampIn .32s cubic-bezier(.2,.9,.3,1.2) forwards}
+  @keyframes stampIn{from{opacity:0;transform:scale(1.7) rotate(-14deg)}to{opacity:.95;transform:scale(1) rotate(-6deg)}}
+  .reveal{animation:fadeUp .25s ease-out}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .toast{position:fixed;left:50%;bottom:1.25rem;transform:translate(-50%,1rem);opacity:0;transition:opacity .2s,transform .2s;pointer-events:none}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+</style>
+
+<div class="page">
+<main class="mx-auto w-full max-w-[34rem] px-4 pb-16 pt-6 md:pt-12">
+
+  <!-- Cuống phiếu: tên tiệm -->
+  <header class="flex items-end justify-between gap-4 pb-3">
+    <div>
+      <p class="font-display text-[1.375rem] leading-none tracking-wide">LÒ BÁNH CỦI CÔ BA</p>
+      <p class="mt-1 font-mono text-[0.8125rem] uppercase tracking-wider text-muted">Đà Lạt · lò củi</p>
+    </div>
+  </header>
+
+  <article class="slip" aria-labelledby="slip-title">
+    <!-- Dấu giờ khổng lồ: mẻ kế -->
+    <p class="stamp stamp-big" aria-label="Mẻ kế ra lò lúc 9:30, còn 50 phút">
+      <span class="text-[0.75rem]">Mẻ kế</span>
+      <b>9:30</b>
+      <span class="text-[0.75rem]">còn 50 phút</span>
+    </p>
+
+    <div class="px-5 pb-6 pt-5 md:px-8">
+      <p class="inline-block border-2 border-ink px-2 py-1 font-mono text-[0.8125rem] uppercase tracking-wider">Lò củi · 4 mẻ mỗi ngày</p>
+      <h1 id="slip-title" class="mt-8 md:mt-5 max-w-[15ch] text-[2.25rem] leading-[1.05] md:text-[2.75rem]">Bốn mẻ bánh lò củi mỗi ngày. Mẻ nào hết là hết.</h1>
+      <p class="mt-4 max-w-[40ch] text-[1.0625rem] leading-relaxed">Lò Bánh Củi Cô Ba nướng bánh bằng lò củi, ra lò lúc 6:00, 9:30, 15:00 và 17:30. Nhắn Zalo để giữ bánh trước khi tới.</p>
+    </div>
+
+    <!-- Phiếu giữ bánh: tương tác đặc trưng -->
+    <form id="hold" class="perf relative px-5 pb-24 pt-6 md:px-8" data-signature novalidate aria-labelledby="hold-title">
+      <h2 id="hold-title" class="text-[1.5rem] leading-tight">Phiếu giữ bánh</h2>
+      <p class="mt-1 text-[0.9375rem] text-muted">Giờ 8:40 và trạng thái mẻ là minh hoạ.</p>
+
+      <fieldset class="mt-5">
+        <legend class="font-mono text-[0.8125rem] uppercase tracking-wider">1 · Đóng vào mẻ</legend>
+        <div class="mt-3 grid grid-cols-4 gap-2">
+          <label class="batch gone" title="Mẻ 6:00 đã hết">
+            <input type="radio" name="batch" value="6:00" disabled aria-describedby="s600">
+            <span class="t">6:00</span><span class="s" id="s600">Đã hết</span>
+          </label>
+          <label class="batch">
+            <input type="radio" name="batch" value="9:30" checked aria-describedby="s930">
+            <span class="t">9:30</span><span class="s" id="s930">Ra lò sau 50 phút</span>
+          </label>
+          <label class="batch">
+            <input type="radio" name="batch" value="15:00" aria-describedby="s1500">
+            <span class="t">15:00</span><span class="s" id="s1500">Chưa vào lò</span>
+          </label>
+          <label class="batch">
+            <input type="radio" name="batch" value="17:30" aria-describedby="s1730">
+            <span class="t">17:30</span><span class="s" id="s1730">Chưa vào lò</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="mt-6">
+        <legend class="font-mono text-[0.8125rem] uppercase tracking-wider">2 · Số bánh</legend>
+        <ul class="mt-2 divide-y-2 divide-dotted divide-line" id="items">
+          <li class="flex flex-wrap items-center gap-x-3 gap-y-1 py-3" data-price="8000" data-name="bánh mì que củi">
+            <span class="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-end"><span>Bánh mì que củi</span><span class="lead hidden sm:block" aria-hidden="true"></span><span class="whitespace-nowrap font-mono text-[0.9375rem]">8.000 ₫</span></span>
+            <span class="qty flex items-center gap-1"><button type="button" class="btn" data-step="-1" aria-label="Bớt một bánh mì que củi">−</button><output aria-live="polite">0</output><button type="button" class="btn" data-step="1" aria-label="Thêm một bánh mì que củi">+</button></span>
+          </li>
+          <li class="flex flex-wrap items-center gap-x-3 gap-y-1 py-3" data-price="6000" data-name="bánh mì đặc ruột">
+            <span class="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-end"><span>Bánh mì đặc ruột</span><span class="lead hidden sm:block" aria-hidden="true"></span><span class="whitespace-nowrap font-mono text-[0.9375rem]">6.000 ₫</span></span>
+            <span class="qty flex items-center gap-1"><button type="button" class="btn" data-step="-1" aria-label="Bớt một bánh mì đặc ruột">−</button><output aria-live="polite">0</output><button type="button" class="btn" data-step="1" aria-label="Thêm một bánh mì đặc ruột">+</button></span>
+          </li>
+          <li class="flex flex-wrap items-center gap-x-3 gap-y-1 py-3" data-price="22000" data-name="bánh sừng bò bơ Đà Lạt">
+            <span class="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-end"><span>Bánh sừng bò bơ Đà Lạt</span><span class="lead hidden sm:block" aria-hidden="true"></span><span class="whitespace-nowrap font-mono text-[0.9375rem]">22.000 ₫</span></span>
+            <span class="qty flex items-center gap-1"><button type="button" class="btn" data-step="-1" aria-label="Bớt một bánh sừng bò bơ Đà Lạt">−</button><output aria-live="polite">0</output><button type="button" class="btn" data-step="1" aria-label="Thêm một bánh sừng bò bơ Đà Lạt">+</button></span>
+          </li>
+          <li class="flex flex-wrap items-center gap-x-3 gap-y-1 py-3" data-price="18000" data-name="bánh nho Bảo Lộc">
+            <span class="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-end"><span>Bánh nho Bảo Lộc</span><span class="lead hidden sm:block" aria-hidden="true"></span><span class="whitespace-nowrap font-mono text-[0.9375rem]">18.000 ₫</span></span>
+            <span class="qty flex items-center gap-1"><button type="button" class="btn" data-step="-1" aria-label="Bớt một bánh nho Bảo Lộc">−</button><output aria-live="polite">0</output><button type="button" class="btn" data-step="1" aria-label="Thêm một bánh nho Bảo Lộc">+</button></span>
+          </li>
+        </ul>
+        <p class="mt-1 text-[0.875rem] text-muted">Mỗi mẻ ra đủ 4 món: giả định, chờ Cô Ba xác nhận.</p>
+      </fieldset>
+
+      <p class="mt-5 flex items-baseline justify-between border-t-2 border-ink pt-3 font-mono"><span class="uppercase tracking-wider">Tạm tính</span><output id="total" class="text-[1.375rem] font-semibold">0 ₫</output></p>
+      <p id="err" class="mt-2 hidden text-[0.9375rem] font-semibold text-destructive" role="alert">Chọn ít nhất một bánh trước khi đóng dấu.</p>
+
+      <button type="submit" class="btn mt-5 w-full bg-primary px-6 py-4 font-display text-[1.25rem] tracking-wide text-on-primary">Đóng dấu giữ bánh</button>
+
+      <div id="done" class="mt-6 hidden" aria-live="polite">
+        <p class="font-mono text-[0.8125rem] uppercase tracking-wider">Tin nhắn soạn sẵn</p>
+        <p id="msg" class="mt-2 border-2 border-dashed border-line bg-bg p-4 text-[1rem] leading-relaxed"></p>
+        <div class="mt-4 flex flex-wrap gap-3">
+          <a href="https://zalo.me/0909123456" target="_blank" rel="noopener" class="btn inline-flex items-center bg-primary px-5 py-3 font-semibold text-on-primary">Giữ bánh qua Zalo</a>
+          <button type="button" id="copy" class="btn border-2 border-ink px-5 py-3 font-semibold">Chép tin nhắn</button>
+        </div>
+        <p class="mt-3 text-[0.875rem] text-muted">Zalo 0909 123 456. Dán tin nhắn vào khung chat với Cô Ba.</p>
+      </div>
+
+      <p id="stamped" class="stamp stamped" aria-hidden="true"><span class="text-[0.6875rem]">Đã giữ · mẻ</span><b class="text-[1.75rem] font-semibold" id="stampedTime">9:30</b></p>
+    </form>
+
+    <!-- Mặt sau tờ phiếu: giờ mở và đường đi -->
+    <section class="perf px-5 py-6 md:px-8" aria-labelledby="back-title">
+      <h2 id="back-title" class="font-mono text-[0.8125rem] uppercase tracking-wider">Mặt sau phiếu · tới tiệm</h2>
+      <dl class="mt-3 grid grid-cols-[6.5rem_1fr] gap-x-3 gap-y-2 text-[1rem]">
+        <dt class="text-muted">Giờ mở</dt><dd>Mở 5:30 đến 19:00, nghỉ thứ Hai</dd>
+        <dt class="text-muted">Ra lò</dt><dd class="font-mono">6:00 · 9:30 · 15:00 · 17:30</dd>
+        <dt class="text-muted">Địa chỉ</dt><dd>14 Hai Bà Trưng, Phường 1, Đà Lạt</dd>
+        <dt class="text-muted">Zalo</dt><dd class="font-mono">0909 123 456</dd>
+      </dl>
+      <a class="btn mt-5 inline-flex border-2 border-ink px-5 py-3 font-semibold" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=14%20Hai%20B%C3%A0%20Tr%C6%B0ng%2C%20Ph%C6%B0%E1%BB%9Dng%201%2C%20%C4%90%C3%A0%20L%E1%BA%A1t">Xem đường đi</a>
+    </section>
+  </article>
+
+  <p class="mt-4 text-[0.875rem] text-muted">Giờ hiện tại 8:40 và trạng thái từng mẻ là minh hoạ, chưa nối dữ liệu thật.</p>
+</main>
+</div>
+
+<p id="toast" class="toast bg-ink px-4 py-2 text-[0.9375rem] text-bg" role="status" aria-live="polite"></p>
+
+<script>
+  const form = document.getElementById('hold');
+  const fmt = n => n.toLocaleString('vi-VN') + ' ₫';
+  const rows = [...document.querySelectorAll('#items li')];
+  const total = document.getElementById('total');
+  const err = document.getElementById('err');
+  const done = document.getElementById('done');
+  const stamped = document.getElementById('stamped');
+  const toast = document.getElementById('toast');
+  function sum(){ return rows.reduce((s, r) => s + Number(r.dataset.price) * Number(r.querySelector('output').value || r.querySelector('output').textContent), 0); }
+  function refresh(){ total.textContent = fmt(sum()); }
+  rows.forEach(r => r.addEventListener('click', e => {
+    const b = e.target.closest('button[data-step]'); if (!b) return;
+    const o = r.querySelector('output');
+    const v = Math.max(0, Math.min(20, Number(o.textContent) + Number(b.dataset.step)));
+    o.textContent = v; refresh(); err.classList.add('hidden');
+    stamped.classList.remove('on'); done.classList.add('hidden');
+  }));
+  form.addEventListener('change', () => { stamped.classList.remove('on'); done.classList.add('hidden'); });
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const picked = rows.map(r => [Number(r.querySelector('output').textContent), r.dataset.name]).filter(([n]) => n > 0);
+    if (!picked.length) { err.classList.remove('hidden'); return; }
+    const batch = form.querySelector('input[name=batch]:checked').value;
+    const list = picked.map(([n, name]) => n + ' ' + name).join(', ');
+    document.getElementById('msg').textContent = 'Cô Ba ơi, cho con giữ bánh mẻ ' + batch + ' hôm nay: ' + list + '. Tạm tính ' + fmt(sum()) + '. Con cảm ơn.';
+    document.getElementById('stampedTime').textContent = batch;
+    stamped.classList.remove('on'); void stamped.offsetWidth; stamped.classList.add('on');
+    done.classList.remove('hidden'); done.classList.add('reveal');
+  });
+  document.getElementById('copy').addEventListener('click', async () => {
+    const text = document.getElementById('msg').textContent;
+    try { await navigator.clipboard.writeText(text); toast.textContent = 'Đã chép tin nhắn. Mở Zalo và dán vào khung chat.'; }
+    catch { toast.textContent = 'Không chép được. Bấm giữ vào tin nhắn để chép tay.'; }
+    toast.classList.add('on'); setTimeout(() => toast.classList.remove('on'), 2600);
+  });
+  refresh();
+</script>
+</body>
+</html>

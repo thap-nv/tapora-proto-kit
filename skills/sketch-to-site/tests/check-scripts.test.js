@@ -28,10 +28,10 @@ const pngSize = f => { const b = fs.readFileSync(f); return [b.readUInt32BE(16),
 const LONG = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Dài</title>
 <style>body{margin:0}h2{margin:0}section{height:700px;border-bottom:1px solid #ccc}</style></head><body>${'<section><h2>Khối</h2></section>'.repeat(4)}</body></html>`;
 
-function runMjs(t, page, steps, { flags = [], w = '1440', h = '900' } = {}) {
+function runMjs(t, page, steps, { flags = [], w = '1440', h = '900', steps: extra = {} } = {}) {
   const dir = tmp(t, 'run-');
   fs.writeFileSync(path.join(dir, 'p.html'), page);
-  fs.writeFileSync(path.join(dir, 'steps.json'), JSON.stringify({ steps }));
+  fs.writeFileSync(path.join(dir, 'steps.json'), JSON.stringify({ ...extra, steps }));
   const r = spawnSync(process.execPath, [...flags, RUN, path.join(dir, 'p.html'), path.join(dir, 'steps.json'), path.join(dir, 'out'), w, h], { encoding: 'utf8', timeout: 90000 });
   return { r, out: path.join(dir, 'out') };
 }
@@ -92,13 +92,81 @@ test('run.mjs: "slices" và "full" cuộn qua trang trước khi chụp: phần 
   assert.equal(JSON.parse(r.stdout).find(s => s.step === 'sau').check, 0);
 });
 
-test('qa_init.py: qa-query viết &amp; trong HTML thì bước khói nhận & (không thành tham số amp;thu)', t => {
+// Đo 4.5: qa_init.py chép qa-query vào file bước lúc cài, nên sửa thẻ meta sau đó không có tác dụng; agent phải sửa _qa/steps-smoke-*.json (2 lượt)
+const QPAGE = q => `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="qa-query" content="${q}"><title>T</title></head><body><script>document.title = location.search; new URLSearchParams(location.search).get('gio')</script></body></html>`;
+
+test('qa_init.py không chép qa-query vào file bước; run.mjs đọc thẻ của trang ở mỗi lần chạy, &amp; thành & (không thành tham số amp;thu)', t => {
   const dir = tmp(t, 'qaq-');
   fs.mkdirSync(path.join(dir, 'site'));
-  fs.writeFileSync(path.join(dir, 'site', 'index.html'), `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="qa-query" content="?gio=11:00&amp;thu=2"><title>T</title></head><body><script>new URLSearchParams(location.search).get('gio')</script></body></html>`);
+  const page = path.join(dir, 'site', 'index.html');
+  fs.writeFileSync(page, QPAGE('?gio=11:00&amp;thu=2'));
   const r = spawnSync(PYTHON, [QA_INIT, dir], { encoding: 'utf8', env });
   assert.equal(r.status, 0, r.stdout + r.stderr);
-  assert.equal(JSON.parse(fs.readFileSync(path.join(dir, '_qa', 'steps-smoke-index.json'), 'utf8')).query, '?gio=11:00&thu=2');
+  const sf = path.join(dir, '_qa', 'steps-smoke-index.json');
+  assert.equal(JSON.parse(fs.readFileSync(sf, 'utf8')).query, undefined);
+  const title = () => {
+    const x = spawnSync(process.execPath, [RUN, page, sf, path.join(dir, 'out'), '1440', '900'], { encoding: 'utf8', timeout: 90000, env: { ...process.env, QA_NOSHOT: '1' } });
+    return x.status === 4 ? null : JSON.parse(x.stdout).find(s => s.step === 'view').check;
+  };
+  const first = title();
+  if (first === null) return t.skip('không có trình duyệt');
+  assert.equal(first, '?gio=11:00&thu=2');
+  // Sửa thẻ meta: lần chạy sau nhận ngay, không cần chạy lại qa_init.py hay sửa file bước
+  fs.writeFileSync(page, QPAGE('?gio=8:40'));
+  assert.equal(title(), '?gio=8:40');
+});
+
+test('qa_init.py --update: bỏ "query" cố định trùng qa-query của trang (bản cài cũ), báo khi khác', t => {
+  const dir = tmp(t, 'qau-');
+  fs.mkdirSync(path.join(dir, 'site'));
+  fs.writeFileSync(path.join(dir, 'site', 'index.html'), QPAGE('?gio=11:00'));
+  fs.writeFileSync(path.join(dir, 'site', 'gio.html'), QPAGE('?gio=8:40'));
+  assert.equal(spawnSync(PYTHON, [QA_INIT, dir], { encoding: 'utf8', env }).status, 0);
+  const sf = k => path.join(dir, '_qa', `steps-smoke-${k}.json`);
+  const put = (k, q) => fs.writeFileSync(sf(k), JSON.stringify({ query: q, ...JSON.parse(fs.readFileSync(sf(k), 'utf8')) }));
+  put('index', '?gio=11:00');
+  put('gio', '?gio=11:00');
+  const r = spawnSync(PYTHON, [QA_INIT, dir, '--update'], { encoding: 'utf8', env });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.equal(JSON.parse(fs.readFileSync(sf('index'), 'utf8')).query, undefined);
+  assert.equal(JSON.parse(fs.readFileSync(sf('gio'), 'utf8')).query, '?gio=11:00');
+  assert.match(r.stdout, /steps-smoke-gio\.json ghi "query": "\?gio=11:00" khác qa-query của trang \("\?gio=8:40"\)/);
+});
+
+// Đo 4.5: hàng cửa vòm (lưới 1fr, cỡ chữ theo vw) đè ra ngoài khung 320px và ảnh aspect-ratio làm trang rộng 1652px; bộ kiểm chỉ báo
+// "trang rộng …px", không nêu phần tử, và không thấy hộp tràn khỏi khối cha vì chữ vẫn nằm trong hộp của nó
+const SPILL = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Tràn</title>
+<style>*{box-sizing:border-box}body{margin:0;font-family:sans-serif}.narrow{width:320px;padding:8px}.doors{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.door{display:flex;flex-direction:column;align-items:center;border:0;background:#6b2d1c;color:#fff;padding:8px 2px}.door .t{font-size:3.4vw;font-weight:700}
+.tray{display:grid;grid-template-columns:1fr 1.2fr;gap:16px;width:900px}.ph{aspect-ratio:4/3;background:#333;height:100%}
+.bleed{margin:0 -16px}.abs{position:relative}.abs span{position:absolute;left:0;width:2000px}</style></head><body>
+<div class="narrow"><div class="doors"><button class="door"><span class="t">6:00</span><span>Đã hết</span></button><button class="door"><span class="t">15:00</span><span>Chưa</span></button><button class="door"><span class="t">17:30</span><span>Chưa</span></button><button class="door"><span class="t">9:30</span><span>Đang</span></button></div>
+<p class="bleed">Tràn lề cố ý bằng lề âm</p></div>
+<div class="tray"><div class="ph"></div><div style="height:1200px">Khay</div></div><div class="abs"><span aria-hidden="true"></span></div>
+</body></html>`;
+
+test('run.mjs: nêu phần tử gây tràn ngang trang và hộp tràn khỏi khối cha; bỏ qua lề âm và phần tử định vị tuyệt đối', t => {
+  const { r } = runMjs(t, SPILL, [{ name: 's', check: '1' }]);
+  if (r.status === 4) return t.skip('không có trình duyệt');
+  assert.equal(r.status, 0, r.stderr);
+  const d = JSON.parse(r.stdout).find(s => s.step === 's').dims;
+  assert.ok(d.sw > d.cw);
+  assert.ok(d.wide.some(x => /^div\.ph tới \d+px$/.test(x)), JSON.stringify(d.wide));
+  assert.ok(d.cut.some(x => /^button\.door "[^"]*": tràn khỏi khối cha div\.doors \d+px$/.test(x)), JSON.stringify(d.cut));
+  assert.ok(d.cut.some(x => /^div\.ph "": tràn khỏi khối cha div\.tray \d+px$/.test(x)), JSON.stringify(d.cut));
+  assert.ok(!d.cut.some(x => /bleed|span/.test(x)), JSON.stringify(d.cut));
+  // Trang không tràn thì không đo phần tử gây tràn
+  const ok = runMjs(t, LONG, [{ name: 's', check: '1' }]);
+  assert.deepEqual(JSON.parse(ok.r.stdout).find(s => s.step === 's').dims.wide, []);
+});
+
+// Spinner đang quay làm ảnh mỗi lần một khác; system-check.mjs so ảnh để báo màn đổi
+test('run.mjs: ảnh "slices" ổn định giữa hai lần chạy khi trang có chuyển động lặp vô hạn', t => {
+  const page = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Quay</title><style>body{margin:0}.s{width:40px;height:40px;margin:40px;border:6px solid #333;border-top-color:#e60;border-radius:50%;animation:q .7s linear infinite}@keyframes q{to{transform:rotate(360deg)}}</style></head><body><div class="s"></div></body></html>`;
+  const a = runMjs(t, page, [{ name: 'v', shot: 'v', slices: 1 }]);
+  if (a.r.status === 4) return t.skip('không có trình duyệt');
+  const b = runMjs(t, page, [{ name: 'v', wait: 1100, shot: 'v', slices: 1 }]);
+  assert.ok(fs.readFileSync(path.join(a.out, 'v.png')).equals(fs.readFileSync(path.join(b.out, 'v.png'))), 'hai ảnh khác nhau');
 });
 
 test('qa_init.py: bộ khói của trang web và _system chụp hết trang theo từng màn; màn app không', t => {
@@ -110,10 +178,46 @@ test('qa_init.py: bộ khói của trang web và _system chụp hết trang theo
   fs.writeFileSync(path.join(dir, 'site', 'man.html'), page(' data-surface="app"'));
   const r = spawnSync(PYTHON, [QA_INIT, dir], { encoding: 'utf8', env });
   assert.equal(r.status, 0, r.stdout + r.stderr);
-  const view = k => JSON.parse(fs.readFileSync(path.join(dir, '_qa', `steps-smoke-${k}.json`), 'utf8')).steps[0];
+  const steps = k => JSON.parse(fs.readFileSync(path.join(dir, '_qa', `steps-smoke-${k}.json`), 'utf8'));
+  const view = k => steps(k).steps[0];
   assert.equal(view('index').slices, 8);
-  assert.equal(view('_system').slices, 8);
+  // Đo 4.5: _system 8 màn cắt mất component ở 390 (cả hai review ghi "không đánh giá được")
+  assert.equal(view('_system').slices, 16);
   assert.equal(view('man').slices, undefined);
+  // Trang web đo và chụp các trạng thái khai ở qa-states; _system và màn app thì không
+  assert.equal(steps('index').states, true);
+  assert.equal(steps('_system').states, undefined);
+  assert.equal(steps('man').states, undefined);
+
+  // --update trên bộ cài cũ: _system 8 màn thành 16, trang web thêm "states"
+  for (const [k, f] of [['_system', st => { delete st.states; st.steps[0].slices = 8; }], ['index', st => { delete st.states; }]]) {
+    const st = steps(k); f(st); fs.writeFileSync(path.join(dir, '_qa', `steps-smoke-${k}.json`), JSON.stringify(st));
+  }
+  const u = spawnSync(PYTHON, [QA_INIT, dir, '--update'], { encoding: 'utf8', env });
+  assert.equal(u.status, 0, u.stdout + u.stderr);
+  assert.equal(view('_system').slices, 16);
+  assert.equal(steps('index').states, true);
+});
+
+// Đo 4.5: bộ khói chỉ chụp trạng thái của qa-query (8:40); lỗi ở giờ khác (nút chính trỏ sai mẻ lúc 7:00) chỉ review đọc mã mới thấy
+test('run.mjs: "states" đo và chụp màn đầu từng trạng thái của qa-states, tham số trạng thái đè lên qa-query', t => {
+  const page = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="qa-query" content="?gio=8:40&amp;thu=7"><meta name="qa-states" content="?gio=7:00 | ?thu=2&amp;gio=6:00"><title>T</title>
+<style>body{margin:0}.w{width:2000px}</style></head><body><h1 id="h"></h1><script>const q = new URLSearchParams(location.search);
+document.getElementById('h').textContent = q.get('gio') + ' ' + q.get('thu'); if (q.get('thu') === '2') document.body.insertAdjacentHTML('beforeend', '<div class="w">rộng</div>');</script></body></html>`;
+  const { r, out } = runMjs(t, page, [{ name: 'view', check: "document.getElementById('h').textContent", shot: 'index', jpeg: true }], { steps: { states: true } });
+  if (r.status === 4) return t.skip('không có trình duyệt');
+  assert.equal(r.status, 0, r.stderr);
+  const rep = JSON.parse(r.stdout);
+  assert.equal(rep.find(s => s.step === 'view').check, '8:40 7');
+  const a = rep.find(s => s.step === 'trạng thái ?gio=7:00'), b = rep.find(s => s.step === 'trạng thái ?thu=2&gio=6:00');
+  assert.ok(a && b, rep.map(s => s.step).join(', '));
+  assert.ok(a.dims.sw <= a.dims.cw);
+  assert.ok(b.dims.sw > b.dims.cw, 'trạng thái thứ Hai tràn ngang: phải đo ra');
+  assert.deepEqual(fs.readdirSync(out).sort(), ['index.jpg', 'index@gio_7_00.jpg', 'index@thu_2_gio_6_00.jpg']);
+  // Không có "states" thì không đo thêm
+  const plain = runMjs(t, page, [{ name: 'view', check: '1' }]);
+  assert.deepEqual(JSON.parse(plain.r.stdout).map(s => s.step), ['load', 'view']);
 });
 
 // ---- scripts/system-check.mjs: B2 và Cổng 3 trong một lệnh ----
@@ -152,10 +256,23 @@ test('system-check.mjs: themes.mjs, preflight, đo _system.html ở 1440 và 390
     assert.ok(fs.existsSync(path.join(shots, `${th}-1440-2.png`)), `thiếu màn thứ hai ${th}`);
   }
   assert.match(r.stdout, /^Ảnh \(mở cùng một lượt\):/m);
-  assert.match(r.stdout, /_shots\/system\/light-1440\.png … light-1440-\d+\.png \(\d+ màn\) · cả trang: light-1440-full\.png/);
+  // Thư mục tuyệt đối và tên từng ảnh (đo 4.5: in dải tên nên agent phải ls)
+  assert.match(r.stdout, new RegExp(`^ {2}thư mục: ${dir.replace(/\\/g, '/').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/_shots/system/$`, 'm'));
+  assert.match(r.stdout, /^ {2}light: light-1440\.png, light-1440-2\.png[^\n]* · cả trang: light-1440-full\.png$/m);
+  assert.match(r.stdout, /^ {2}lần chạy đầu: mở mọi màn$/m);
   assert.match(r.stdout, /^Kết luận: SẠCH/m);
   assert.ok(r.stdout.length < 3000, `kết quả dài ${r.stdout.length} ký tự`);
   assert.ok(!fs.existsSync(path.join(dir, '_qa')), 'không tạo _qa/: thư mục đó là của bộ kiểm ở B4');
+
+  // Lần chạy sau: báo màn nào đổi để chỉ mở lại màn đó (đo 4.5: mở lại cả 10–11 màn sau mỗi đợt sửa nhỏ). Không sửa gì thì không màn nào đổi;
+  // cảnh báo preflight không chặn (P13) in cả dòng, đường dẫn tính từ thư mục prototype
+  const f = path.join(dir, 'site', '_system.html');
+  fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace('<button type="button" class="demo-btn">Giữ bánh</button>', '<button type="button" class="demo-btn">Giữ bánh</button><a href="#" class="demo-btn">Xem</a>'));
+  const again = systemCheck(dir);
+  assert.match(again.stdout, /^ {2}site\/_system\.html:\d+ {2}P13 {2}CẢNH BÁO/m);
+  assert.match(again.stdout, /^ {2}đổi so với lần chạy trước \(chỉ cần mở lại các màn này\): /m);
+  const same = systemCheck(dir);
+  assert.match(same.stdout, /^ {2}không màn nào đổi so với lần chạy trước$/m);
 });
 
 test('system-check.mjs: còn component mẫu thì báo và thoát 1; cặp màu không đạt thì dừng ngay, không ghi themes.css', t => {
@@ -177,6 +294,16 @@ test('system-check.mjs: còn component mẫu thì báo và thoát 1; cặp màu 
   assert.match(r2.stdout, /KHÔNG ĐẠT/);
   assert.doesNotMatch(r2.stdout, /^_system /m);
   assert.ok(!fs.existsSync(path.join(bad, 'site', 'assets', 'themes.css')));
+});
+
+test('system-check.mjs: tràn ngang kèm phần tử gây ra', t => {
+  const dir = b2(t, { demo: false });
+  const f = path.join(dir, 'site', '_system.html');
+  fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace('<div class="demo-row">', '<div class="x-wide" style="width:2000px;height:8px"></div><div class="demo-row">'));
+  const r = systemCheck(dir);
+  if (NO_BROWSER.test(r.stdout + r.stderr)) return t.skip('không có trình duyệt');
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.match(r.stdout, /tràn ngang: trang rộng \d+px trong khung 1440px, do div\.x-wide tới \d+px/);
 });
 
 // ---- scripts/qa-check.py: B4 trong một lệnh ----

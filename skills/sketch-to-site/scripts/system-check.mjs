@@ -2,9 +2,10 @@
 // Kiểm B2 và chuẩn bị ảnh Cổng 3 của sketch-to-site trong một lệnh:
 //   node <skills>/sketch-to-site/scripts/system-check.mjs <thư-mục-prototype> [--site site]
 // 1. scripts/themes.mjs: tính vai dẫn xuất, đo mọi cặp ở mọi theme, ghi themes.css. Có cặp không đạt thì in cặp đó rồi dừng (thoát 1).
-// 2. scripts/preflight.py <site>/: dòng tổng, rồi từng dòng LỖI và cảnh báo P19, P20.
+// 2. scripts/preflight.py <site>/: dòng tổng, rồi từng dòng LỖI và CẢNH BÁO (chỉ LỖI và cảnh báo P19, P20 làm lệnh chưa sạch).
 // 3. <site>/_system.html ở mọi theme của themes.json, đo trên trang render (templates/qa-kit/run.mjs):
-//    1440 và 390: lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung, tương phản trên nền thật, màu theo ý định;
+//    1440 và 390: lỗi console, tràn ngang (kèm phần tử gây ra), chữ tràn hoặc bị cắt trong khung (kể cả hộp tràn khỏi khối cha),
+//    tương phản trên nền thật, màu theo ý định;
 //    1440: còn component mẫu (data-system-demo) không, cặp màu trên trang. Chụp ở 1440 vào <thư-mục-prototype>/_shots/system/:
 //    <theme>-1440.png, <theme>-1440-2.png, … (từng màn, để soát) và <theme>-1440-full.png (cả trang, để trình ở Cổng 3).
 // In ngắn: mỗi phần một dòng số, tối đa 8 dòng chi tiết. Thoát 0 khi sạch, 1 khi còn mục cần sửa, 4 khi không có trình duyệt.
@@ -14,6 +15,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, mkdtempSync, rmSync
 import { tmpdir } from 'node:os';
 import { join, resolve, relative, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const S2S = resolve(HERE, '..');
@@ -54,11 +56,14 @@ if (th.status !== 0) {
 }
 
 // 2. preflight.py
-const pf = spawnSync(PYTHON, [join(HERE, 'preflight.py'), site], { encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
+// cwd là thư mục prototype: preflight in đường dẫn tương đối theo thư mục đang đứng, nên dòng lỗi ra site/<file>:<dòng>
+const pf = spawnSync(PYTHON, [join(HERE, 'preflight.py'), site], { cwd: proto, encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
 const pfLines = (pf.stdout || '').split(/\r?\n/);
 const pfTail = ([...pfLines].reverse().find(l => /\d+ file · \d+ lỗi/.test(l)) || (pf.stderr || '').trim().split(/\r?\n/).pop() || '').replace(/ · kiểu kiểm: \w+$/, '');
-const pfBad = pfLines.filter(l => /\s(LỖI|CẢNH BÁO)\s/.test(l) && (/\sLỖI\s/.test(l) || /\sP(19|20)\s/.test(l))).map(l => shortPaths(l.trim()).replace(/\s{2,}/g, '  '));
-say(`preflight ${siteName}/: ${pfTail}`, pfBad);
+// In mọi dòng LỖI và CẢNH BÁO, kể cả cảnh báo không chặn (P13 href="#"…): đo 4.5, chỉ in con số nên agent phải chạy riêng preflight.py để biết là gì
+const pfShow = pfLines.filter(l => /\s(LỖI|CẢNH BÁO)\s/.test(l)).map(l => shortPaths(l.trim()).replace(/\s{2,}/g, '  '));
+const pfBad = pfShow.filter(l => /\sLỖI\s/.test(l) || /\sP(19|20)\s/.test(l));
+say(`preflight ${siteName}/: ${pfTail}`, pfShow);
 if (pf.status !== 0 || pfBad.length) problems.push('preflight');
 
 // 3. _system.html ở mọi theme: thứ tự và tham số như qa_init.py (theme mặc định sáng đứng đầu, không tham số)
@@ -68,7 +73,11 @@ const first = (tj.default || {}).light || names[0];
 const themes = [first, ...names.filter(n => n !== first)].map(n => [n, n === first ? '' : `?theme=${n}`]);
 const outDir = join(proto, '_shots', 'system');
 mkdirSync(outDir, { recursive: true });
-for (const f of readdirSync(outDir)) if (/^[\w-]+-1440(-\d+|-full)?\.png$/.test(f)) rmSync(join(outDir, f));
+// Dấu của ảnh lần chạy trước: lần chạy sau chỉ báo màn nào đổi, để chỉ mở lại màn đó (đo 4.5: mở lại cả 10–11 màn sau mỗi đợt sửa nhỏ)
+const SHOT = /^[\w-]+-1440(-\d+|-full)?\.png$/;
+const digest = f => createHash('sha1').update(readFileSync(join(outDir, f))).digest('hex');
+const before = new Map(readdirSync(outDir).filter(f => SHOT.test(f)).map(f => [f, digest(f)]));
+for (const f of before.keys()) rmSync(join(outDir, f));
 const work = mkdtempSync(join(tmpdir(), 'system-check-'));
 // Giống SYSTEM_STEPS của qa_init.py: component mẫu còn lại, cặp màu dưới ngưỡng, biến token thiếu
 const STATE = `JSON.stringify({demo:document.querySelectorAll('[data-system-demo]').length,pairs:document.querySelectorAll('[data-pair]').length,`
@@ -107,7 +116,7 @@ for (const [n, w, r] of results) {
   const view = rep.find(s => s.step === 'view') || {};
   const d = view.dims || { sw: 0, cw: 0, cut: [], contrast: [], intent: [] };
   const consoleErrs = rep.flatMap(s => s.errors || []);
-  const over = d.sw > d.cw ? [`tràn ngang: trang rộng ${d.sw}px trong khung ${d.cw}px`] : [];
+  const over = d.sw > d.cw ? [`tràn ngang: trang rộng ${d.sw}px trong khung ${d.cw}px${(d.wide || []).length ? ', do ' + d.wide.join(', ') : ''}`] : [];
   const counts = [['console', consoleErrs.length], ['tràn ngang', over.length], ['trong khung', d.cut.length], ['tương phản', d.contrast.length], ['ý định', d.intent.length]];
   const details = [...consoleErrs.map(e => 'console: ' + e.slice(0, 160)), ...over, ...d.cut.map(x => 'trong khung: ' + x),
     ...d.contrast.map(x => 'tương phản: ' + x), ...d.intent.map(x => 'ý định: ' + x)];
@@ -130,13 +139,17 @@ rmSync(work, { recursive: true, force: true });
 const shots = readdirSync(outDir);
 // Màn thứ mấy: <theme>-1440.png là màn 1, <theme>-1440-<n>.png là màn n
 const nth = f => +((/-1440-(\d+)\.png$/.exec(f) || [, 1])[1]);
-const listing = themes.map(([n]) => {
-  const slices = shots.filter(f => new RegExp(`^${n}-1440(-\\d+)?\\.png$`).test(f)).sort((a, b) => nth(a) - nth(b));
-  const range = slices.length > 1 ? `${slices[0]} … ${slices[slices.length - 1]} (${slices.length} màn)` : slices[0] || '(không có)';
-  return `${rel(join(outDir, range.split(' ')[0])).replace(/[^/]+$/, '')}${range} · cả trang: ${n}-1440-full.png`;
-});
+// Thư mục tuyệt đối và tên từng ảnh, để mở thẳng bằng Read không cần ls; kèm màn nào đổi so với lần chạy trước
 console.log('Ảnh (mở cùng một lượt):');
-for (const l of listing) console.log('  ' + l);
+console.log(`  thư mục: ${resolve(outDir).replace(/\\/g, '/')}/`);
+const changed = [];
+for (const [n] of themes) {
+  const slices = shots.filter(f => new RegExp(`^${n}-1440(-\\d+)?\\.png$`).test(f)).sort((a, b) => nth(a) - nth(b));
+  console.log(`  ${n}: ${slices.join(', ') || '(không có)'} · cả trang: ${n}-1440-full.png`);
+  changed.push(...slices.filter(f => before.get(f) !== digest(f)));
+}
+if (!before.size) console.log('  lần chạy đầu: mở mọi màn');
+else console.log(changed.length ? `  đổi so với lần chạy trước (chỉ cần mở lại các màn này): ${changed.join(', ')}` : '  không màn nào đổi so với lần chạy trước');
 console.log(problems.length
   ? `Kết luận: CÒN ${problems.length} mục: sửa ở gốc (references/qa-gate.md mục 6) rồi chạy lại lệnh này.`
   : 'Kết luận: SẠCH. Trình ở Cổng 3 ảnh cả trang của mỗi theme và dòng themes.mjs ở trên.');

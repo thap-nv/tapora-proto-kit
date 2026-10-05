@@ -5,8 +5,10 @@ const RUNS = (process.env.RUNS || '').replace(/\\/g, '/').replace(/\/+$/, '');
 const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const DIR_RE = RUNS ? new RegExp(`${esc(RUNS)}\\/r\\w+`, 'g') : /C:\/Users\/thapnv\/AppData\/Local\/Temp\/claude\/[^ "']*?scratchpad\/r\w+/g;
 const SKILLS_RE = new RegExp(esc(SKILLS), 'g');
-// Rút gọn đường dẫn trong lệnh: thư mục lần chạy thành <DIR>, thư mục skills thành <skills>
-const short = s => s.replace(DIR_RE, '<DIR>').replace(SKILLS_RE, '<skills>');
+// Đo bản cũ và bản mới song song (prompt-edit-cu-moi.md): hai worktree <scratchpad>/cu/tapora-proto-kit và <scratchpad>/moi/tapora-proto-kit
+const ARM_RE = /[A-Za-z]:\/[^ "']*?\/(cu|moi)\/tapora-proto-kit\/skills/g;
+// Rút gọn đường dẫn trong lệnh: thư mục lần chạy thành <DIR>, thư mục skills thành <skills> (worktree: <skills:cu>, <skills:moi>)
+const short = s => s.replace(DIR_RE, '<DIR>').replace(ARM_RE, '<skills:$1>').replace(SKILLS_RE, '<skills>');
 // File nằm trong skills/ của repo: dưới SKILLS, hoặc …/tapora-proto-kit/skills/ như ở các mốc đo
 const inSkills = p => p.startsWith(SKILLS + '/') || /tapora-proto-kit\/skills\//.test(p);
 module.exports = { SKILLS, short, inSkills };

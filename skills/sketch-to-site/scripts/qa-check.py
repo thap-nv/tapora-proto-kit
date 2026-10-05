@@ -1,4 +1,4 @@
-# Kiểm B4 của sketch-to-site trong một lệnh:
+# Kiểm tổng trong một lệnh: B4 của sketch-to-site, B3 của handover-check.
 #   python <skills>/sketch-to-site/scripts/qa-check.py <thư-mục-prototype> [--site site]
 # 1. Bộ kiểm: chưa có _qa/qa.config.json thì cài mới (templates/qa-kit/qa_init.py), kể cả khi thư mục _qa/ đã có sẵn;
 #    có rồi thì chép đè script bằng bản của kit (qa_init.py --update). In dòng cấu hình và các CẢNH BÁO của qa_init.py.
@@ -76,8 +76,10 @@ flush()
 # 3. Ảnh của lần chạy: <thư mục chạy>/<theme>/<bộ>/<ảnh>. In đường dẫn tuyệt đối của thư mục và tên từng ảnh, theo thứ tự màn
 #    (<shot>, <shot>-2, …), để mở thẳng bằng Read. Đo 4.5: in dải "index-2.jpg … index.jpg" nên cả hai lần B4 phải thêm một lượt ls.
 def shot_order(f):
+    # Số trong tên xếp theo giá trị: index@gio_5_00 trước index@gio_11_00
+    nat = lambda x: [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', x)]
     m = re.match(r'(.*?)(?:-(\d+))?\.(?:jpg|png)$', f)
-    return (m.group(1), int(m.group(2) or 1)) if m else (f, 0)
+    return (nat(m.group(1)), int(m.group(2) or 1)) if m else (nat(f), 0)
 
 
 root = os.path.join(proto, run_dir) if run_dir else ''

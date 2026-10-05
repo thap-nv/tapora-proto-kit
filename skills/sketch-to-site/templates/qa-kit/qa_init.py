@@ -4,11 +4,14 @@
 #   python _qa/handover.py run          lần chạy đầu, lấy mốc
 #   python _qa/handover.py promote _qa/handover/<ngày-giờ>
 #   python _qa/quick.py --note "..."    sau mỗi lần sửa
-# --update: chép đè script của bộ kiểm bằng bản trong skill; không đụng qa.config.json, file bước, mốc, ledger.
+# --update: chép đè script của bộ kiểm bằng bản trong skill; không đụng qa.config.json, mốc, ledger. File bước giữ nguyên, trừ "query" cố định
+#   trùng qa-query của trang (bản cài cũ chép vào) thì bỏ, để run.mjs đọc thẻ của trang.
 # Bộ khói: trang web ở 1440, 768, 390, chụp hết trang theo từng màn; màn app ở 1440 (khung máy) và 390. Trang cần tham số mới có nội dung (chi tiết theo ?id=)
-# khai báo mẫu bằng <meta name="qa-query" content="?id=..."> trong <head>. Site có nền tối thì tự thêm theme light và dark.
+# khai báo mẫu bằng <meta name="qa-query" content="?id=..."> trong <head>: run.mjs đọc thẻ này ở mỗi lần chạy, không chép vào file bước.
+# Site có nền tối thì tự thêm theme light và dark.
 # Có site/assets/themes.json: mỗi theme trong đó là một theme của bộ kiểm (theme mặc định sáng đứng đầu, không tham số).
 # Có site/_system.html: bộ khói của nó kiểm thêm component mẫu đã thay và mọi cặp màu đạt ngưỡng.
+# Trang có trạng thái theo tham số (giờ, ngày…): <meta name="qa-states" content="?gio=7:00 | ?thu=2">, bộ khói đo và chụp màn đầu từng trạng thái.
 # Trang nạp store.js: thêm bộ du-lieu-rong-<trang> (?data=empty) và du-lieu-dai-<trang> (?data=stress).
 # _qa/.kit-source ghi thư mục skill đã cài bộ kiểm, để bộ kiểm gọi đúng preflight.py của bản skill đó.
 import argparse, filecmp, html as html_lib, json, os, re, shutil, sys
@@ -79,6 +82,9 @@ def is_app_screen(html):
     return bool(m and re.search(r'data-surface\s*=\s*["\']app["\']', m.group(0), re.I))
 
 
+SYSTEM_SLICES = 16
+
+
 def qa_query(html):
     # <meta name="qa-query" content="?id=bx">: tham số mẫu cho bộ khói của trang
     for tag in re.findall(r'<meta\b[^>]*>', html, re.I):
@@ -147,6 +153,28 @@ if os.path.exists(cfg_path):
     if miss:
         print('themes.json có theme chưa khai trong qa.config.json: ' + ', '.join(miss) + '. Thêm vào "themes": '
               + ', '.join(f'"{n}": "{tn[n] or "?theme=" + n}"' for n in miss))
+    # Bộ cài trước bản này chép qa-query vào steps-smoke-*.json: trùng thẻ meta thì bỏ để run.mjs đọc thẻ của trang, khác thì báo
+    for p in cfg.get('pages', []):
+        sf, hf = os.path.join(qa, f'steps-smoke-{p.replace("/", "-")}.json'), os.path.join(site, p + '.html')
+        if not (os.path.exists(sf) and os.path.exists(hf)):
+            continue
+        st = json.load(open(sf, encoding='utf-8'))
+        view = (st.get('steps') or [{}])[0]
+        if p == '_system' and view.get('slices') == 8:
+            view['slices'] = SYSTEM_SLICES; json.dump(st, open(sf, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+            print(f'{os.path.basename(sf)}: chụp tới {SYSTEM_SLICES} màn (8 màn cắt mất phần dưới của _system)')
+        elif p != '_system' and view.get('slices') and 'states' not in st:
+            st['states'] = True; json.dump(st, open(sf, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+            print(f'{os.path.basename(sf)}: thêm "states" (đo và chụp màn đầu mỗi trạng thái của <meta name="qa-states">)')
+        if 'query' not in st:
+            continue
+        q = qa_query(open(hf, encoding='utf-8', errors='ignore').read())
+        if st['query'] == q:
+            del st['query']; json.dump(st, open(sf, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+            print(f'bỏ "query" cố định trong {os.path.basename(sf)}: bộ khói đọc qa-query của trang ở mỗi lần chạy')
+        else:
+            print(f'{os.path.basename(sf)} ghi "query": "{st["query"]}" khác qa-query của trang ("{q}"): '
+                  f'xoá khoá "query" để dùng qa-query của trang, hoặc giữ nếu cố ý')
     if os.path.exists(os.path.join(site, '_system.html')) and '_system' not in cfg.get('pages', []):
         print('Có site/_system.html mà qa.config.json chưa có trang _system: thêm "_system" vào "pages", các bộ smoke-_system-<khổ> vào "suites", '
               'và _qa/steps-smoke-_system.json với các bước system-demo, system-pairs (chép từ SYSTEM_STEPS trong qa_init.py).')
@@ -169,29 +197,30 @@ else:
             # Bộ khói: mở trang, chụp ảnh. Bộ chạy tự ghi lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung của mọi bước.
             # Trang web chụp hết trang theo từng màn (<key>.jpg, <key>-2.jpg, …, tối đa 8): chỉ màn đầu thì phần dưới không ai xem.
             # Màn app chụp khung máy nên một ảnh là đủ
+            # Trang web còn đo và chụp màn đầu của từng trạng thái khai ở <meta name="qa-states"> (run.mjs, "states"). _system dài hơn trang
+            # thường (bảng màu, thang chữ, component, hai trường hợp khó) nên chụp tới 16 màn: đo 4.5, 8 màn cắt mất component ở 390
             view = {'name': 'view', 'wait': 600, 'check': 'document.title', 'shot': key, 'jpeg': True}
             if not app:
-                view['slices'] = 8
+                view['slices'] = SYSTEM_SLICES if p == '_system' else 8
             steps = {'steps': [view]}
+            if not app and p != '_system':
+                steps['states'] = True
             if app:
                 steps['steps'].append({'name': 'tap-targets', 'wait': 100, 'check': TAP_CHECK})
             if p == '_system':
                 steps['steps'] += SYSTEM_STEPS
-            q = qa_query(html)
-            if q:
-                steps = {'query': q, **steps}
-            elif url_params(html):
-                need_query.append((p, key, url_params(html)))
+            # Không chép qa-query vào file bước: run.mjs đọc thẻ meta của trang ở mỗi lần chạy
             json.dump(steps, open(sf, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+        if not qa_query(html) and url_params(html):
+            need_query.append((p, key, url_params(html)))
         # Kịch bản dữ liệu (store.js ?data=): danh sách rỗng ở khổ rộng, dữ liệu dài ở khổ điện thoại
         if uses_store(html):
-            q = qa_query(html)
             for scen, data, size in (('rong', 'empty', 'mobile' if app else 'desktop'), ('dai', 'stress', 'mobile')):
                 k2 = f'du-lieu-{scen}-{key}'
                 suites.append([k2, p, k2, size])
                 sf2 = os.path.join(qa, f'steps-{k2}.json')
                 if not os.path.exists(sf2):
-                    json.dump({'query': (q + '&' if q else '?') + 'data=' + data,
+                    json.dump({'query_add': 'data=' + data,
                                'steps': [{'name': 'view', 'wait': 600, 'check': 'document.title', 'shot': k2, 'jpeg': True}]},
                               open(sf2, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     # Nền tối: CSS có prefers-color-scheme: dark, [data-theme="dark"] hoặc lớp dark: của Tailwind (mặc định theo prefers-color-scheme).
@@ -225,8 +254,8 @@ else:
               'Chép templates/theme.js vào assets/ và nạp trong <head> của mọi trang.')
     for p, key, names in need_query:
         print(f'CẢNH BÁO: {p} đọc tham số {", ".join("?" + n + "=" for n in names)} mà chưa có mẫu: bộ khói chỉ chụp được trạng thái rỗng '
-              f'hoặc "không tìm thấy". Thêm <meta name="qa-query" content="?{names[0]}=<mã có trong data.js>"> vào <head> của trang, '
-              f'và "query": "?{names[0]}=<mã>" vào _qa/steps-smoke-{key}.json.')
+              f'hoặc "không tìm thấy". Thêm <meta name="qa-query" content="?{names[0]}=<mã có trong data.js>"> vào <head> của trang: '
+              f'lần chạy sau bộ khói tự đọc thẻ đó, không sửa file bước.')
 
 # Skill đã cài bộ kiểm này: qalib.find_preflight() dùng preflight.py của đúng bản này trước các bản cài ở chỗ khác
 open(os.path.join(qa, '.kit-source'), 'w', encoding='utf-8').write(SKILL)

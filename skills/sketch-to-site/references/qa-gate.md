@@ -48,13 +48,13 @@ Thoát mã `1` khi còn **LỖI**. Cảnh báo thì phải **đọc từng dòng
 ## 2. Kiểm hiển thị — chụp 3 khổ
 
 **Bộ kiểm tự chụp** *(B4: `scripts/qa-check.py`, tức `qa_init.py` rồi `handover.py run`)*:
-- Trang web ở 1440, 768, 390, **hết trang theo từng màn**: `<trang>.jpg`, `<trang>-2.jpg`, … tối đa 8 ảnh *(bước `slices` của `run.mjs`)*; màn app ở 1440 *(khung máy)* và 390, một ảnh.
+- Trang web ở 1440, 768, 390, **hết trang theo từng màn**: `<trang>.jpg`, `<trang>-2.jpg`, … tối đa 8 ảnh *(bước `slices` của `run.mjs`; `_system` tới 16)*, và màn đầu của từng trạng thái khai ở `<meta name="qa-states">`: `<trang>@<trạng thái>.jpg` *(mỗi trạng thái còn được đo như một bước)*; màn app ở 1440 *(khung máy)* và 390, một ảnh.
 - Chụp ở **mọi theme** trong `qa.config.json`, ảnh ở `_qa/handover/<ngày-giờ>/<theme>/<bộ>/`.
 - Nền sáng/tối theo `?theme=` của từng theme, không theo máy đang chạy: bộ chạy ép `prefers-color-scheme` theo tham số đó.
 
 Mỗi bước, bộ chạy tự đo:
-- **tràn ngang** của cả trang;
-- **chữ tràn hoặc bị cắt trong khung**: chữ tràn khỏi hộp của nó *(ô bảng bị ép, nút hẹp)*, hoặc chữ hay nút bị khung `overflow:hidden` cắt mất một phần *(bảng rộng hơn khung bo góc)*.
+- **tràn ngang** của cả trang, kèm tối đa ba phần tử gây ra *(phần tử đầu tiên vượt mép phải mà cha còn trong khung, ví dụ `div.ph tới 1600px`)*;
+- **chữ tràn hoặc bị cắt trong khung**: chữ tràn khỏi hộp của nó *(ô bảng bị ép, nút hẹp)*; hộp tràn khỏi khối cha không cắt *(cột lưới `1fr` giãn theo chữ quá to, flex item không co, ảnh `aspect-ratio` giãn theo hàng: `tràn khỏi khối cha <cha> Npx`; phần tử định vị tuyệt đối, có `transform` hay lề âm thì bỏ qua)*; hoặc chữ hay nút bị khung `overflow:hidden` cắt mất một phần *(bảng rộng hơn khung bo góc)*.
   - Phép đo tràn ngang không thấy lỗi này, vì phần tràn nằm trong khung.
   - Cố ý *(tràn lề, marquee, slide ló)* thì gắn `data-clip-ok="<lý do>"` vào khung, ví dụ `data-clip-ok="marquee chạy ngang"`. Thiếu lý do thì preflight báo P18. **Không** gắn cho chỗ tràn không cố ý *(mục 6)*.
 - **tương phản trên nền thật** *(`probes.js`)*: mọi chữ và placeholder đang hiện. Phép đo trộn các lớp nền trong suốt, lấy mẫu dải chuyển, theo cả lớp anh em nằm dưới chữ *(dải màu đầu app)*. Ngưỡng 4,5:1, chữ lớn 3:1. Điểm nằm trên ảnh thì bỏ, không đoán. Chữ nằm trên lớp `pointer-events:none` mà bị đo nhầm nền: gắn `data-contrast-bg="<selector lớp đó>"` vào chữ hoặc khung *(chữ vẫn được đo)*;
@@ -217,9 +217,9 @@ Bạn review prototype {tên dự án} trước khi nghiệm thu, như một gi�
 
 Mã nguồn đọc bằng grep -n hay đọc đúng đoạn cần dẫn, không in cả file ra.
 
-Xem trước khi nói: ảnh của lần chạy mới nhất trong {thư mục prototype}/_qa/handover/, trang web chụp hết trang theo từng màn (<trang>.jpg, <trang>-2.jpg, …):
+Xem trước khi nói: ảnh của lần chạy mới nhất trong {thư mục prototype}/_qa/handover/, trang web chụp hết trang theo từng màn (<trang>.jpg, <trang>-2.jpg, …), màn đầu của từng trạng thái khác của trang là <trang>@<trạng thái>.jpg:
 {danh sách ảnh}
-Mở trong một lượt mọi ảnh 1440 và 390 ở mọi theme, cả trang _system ở 1440; mở 768 khi trang có bảng hay lưới nhiều cột. Khổ hay theme nào chưa có ảnh thì ghi vào mục Không đánh giá được, không đoán.
+Ngay sau khi đọc các file .md ở trên, mở mọi ảnh cần xem trong MỘT tin nhắn (nhiều lệnh Read cùng lúc), trước khi đọc mã: ảnh 1440 và 390 của từng trang ở mọi theme, kể cả <trang>@<trạng thái>; trang _system chỉ ở 1440. Ảnh 768 của trang chỉ mở khi trang có bảng hay lưới nhiều cột; _system ở 390 và 768 thì không mở. Đừng mở vài ảnh mỗi lượt. Khổ hay theme nào chưa có ảnh thì ghi vào mục Không đánh giá được, không đoán.
 
 Soát theo thứ tự:
 1. Điểm nhìn đầu: mỗi màn có một chỗ mắt dừng trước; không bốn thẻ bằng nhau.

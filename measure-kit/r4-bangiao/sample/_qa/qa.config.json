@@ -1,0 +1,73 @@
+{
+ "site": "site",
+ "pages": [
+  "_system",
+  "index"
+ ],
+ "themes": {
+  "dark": ""
+ },
+ "sizes": {
+  "desktop": [
+   1440,
+   900,
+   0
+  ],
+  "tablet": [
+   768,
+   1024,
+   0
+  ],
+  "mobile": [
+   390,
+   844,
+   1
+  ]
+ },
+ "suites": [
+  [
+   "smoke-_system-1440",
+   "_system",
+   "smoke-_system",
+   "desktop"
+  ],
+  [
+   "smoke-_system-768",
+   "_system",
+   "smoke-_system",
+   "tablet"
+  ],
+  [
+   "smoke-_system-390",
+   "_system",
+   "smoke-_system",
+   "mobile"
+  ],
+  [
+   "smoke-index-1440",
+   "index",
+   "smoke-index",
+   "desktop"
+  ],
+  [
+   "smoke-index-768",
+   "index",
+   "smoke-index",
+   "tablet"
+  ],
+  [
+   "smoke-index-390",
+   "index",
+   "smoke-index",
+   "mobile"
+  ]
+ ],
+ "noisy": [],
+ "theme_switch_prefix": "theme-",
+ "preflight_kind": "site",
+ "thumbs": {
+  "dir": "assets/shots",
+  "items": []
+ },
+ "browser": ""
+}

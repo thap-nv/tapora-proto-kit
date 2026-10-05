@@ -3,6 +3,7 @@
 #   ví dụ: python _qa/run_all.py _qa/.recheck             (mọi bộ)
 #          python _qa/run_all.py _qa/.recheck cash        (chỉ các bộ có chữ "cash" trong tên)
 # In một dòng tóm tắt mỗi bộ: số bước, lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung, tương phản dưới ngưỡng, màu sai ý định, bước FAIL, bước có check mà không trả giá trị.
+# Rồi in thư mục ảnh (đường dẫn tuyệt đối) và tên từng ảnh của các bộ vừa chạy, theo thứ tự màn: ghép thư mục với tên là mở được.
 # Bộ kiểm: [tên, trang, khoá file bước, khổ] trong "suites"; file bước là _qa/steps-<khoá>.json; khổ lấy từ "sizes".
 # Bước trả chuỗi bắt đầu bằng "FAIL" là lỗi. Bộ có tên bắt đầu bằng "scan" thì mọi chuỗi khác rỗng là lỗi (bộ quét chữ).
 # File bước:  {"query": "?id=XT07", "steps": [ {bước}, ... ]}   ("query" không bắt buộc, nối vào URL của trang)
@@ -14,7 +15,7 @@
 #   "shot"   tên ảnh chụp sau bước; "jpeg": true để chụp jpg; "clip": "<css selector>" chỉ chụp khung đó, "scale" phóng ảnh clip
 # Mỗi bộ chạy trong một hồ sơ trình duyệt mới: localStorage trống lúc bắt đầu bộ. File tải xuống (nút xuất) nằm trong hồ sơ đó
 # và bị xoá khi bộ chạy xong, không rơi vào thư mục Downloads của máy; bước kiểm tính năng xuất bằng giao diện (toast, trạng thái).
-import json, os, subprocess, sys
+import json, os, re, subprocess, sys
 from concurrent.futures import ThreadPoolExecutor
 sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -75,6 +76,27 @@ def run(s, out, deep=False):
                   'contrast': contrast, 'intent': intent, 'deep': deepn, 'deep_ran': ds is not None, 'fails': fails, 'silent': silent}
 
 
+def shot_order(f):
+    # Thứ tự màn: <shot>, <shot>-2, …; số trong tên xếp theo giá trị (index@gio_5_00 trước index@gio_11_00)
+    nat = lambda x: [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', x)]
+    m = re.match(r'(.*?)(?:-(\d+))?\.(?:jpg|png)$', f)
+    return (nat(m.group(1)), int(m.group(2) or 1)) if m else (nat(f), 0)
+
+
+def shot_lines(root, dirs):
+    # Ảnh của các bộ vừa chạy (dirs: thư mục con của root, ví dụ "smoke-index-390" hay "default/smoke-index-390").
+    # In đường dẫn tuyệt đối của root và tên từng ảnh, để mở thẳng bằng công cụ đọc file, không cần ls
+    rows = []
+    for d in dirs:
+        p = os.path.join(root, d)
+        files = sorted((f for f in os.listdir(p) if f.endswith(('.jpg', '.png'))), key=shot_order) if os.path.isdir(p) else []
+        if files:
+            rows.append(f'  {d}: {", ".join(files)}')
+    if not rows:
+        return []
+    return ['Ảnh (mở cùng một lượt):', f'  thư mục: {os.path.abspath(root).replace(os.sep, "/")}/'] + rows
+
+
 if __name__ == '__main__':
     out = sys.argv[1]
     flt = sys.argv[2] if len(sys.argv) > 2 else ''
@@ -94,5 +116,7 @@ if __name__ == '__main__':
             print(f'{name}: {r["steps"]} bước · console {r["errors"]} · tràn {r["overflow"]} · cắt {r["cut"]} · tương phản {r["contrast"]} · '
                   f'ý định {r["intent"]}' + (f' · sâu {r["deep"]}' if r.get('deep') else '')
                   + f' · FAIL {len(r["fails"])} {r["fails"] or ""} · im lặng {len(r["silent"])} {r["silent"] or ""}')
+    for line in shot_lines(out, [s[0] for s in todo]):
+        print(line)
     os.makedirs(out, exist_ok=True)
     json.dump(summary, open(os.path.join(out, 'summary.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
