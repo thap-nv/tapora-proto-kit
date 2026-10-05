@@ -575,3 +575,10 @@ Còn lại, theo transcript và báo cáo agent:
 - `qa-check.py` xếp ảnh trạng thái theo chữ (`@gio_11_00` trước `@gio_5_00`).
 
 Transcript: `transcripts/site-4.5-cuoi/` (`a001f0a3c99a5daac`, `ac98c6295a66d37e4` pha 1; `a2c5ad7e64ae0c948`, `a4266e3aa3b61800b` pha 2), review ở `transcripts/review-4.5/` (`ad345f204fd29b1c4` cho `rf2a`, `a2903d9dc45dcacde` cho `rf2b`). Ảnh và `DECISIONS.md` ở `runs-4.5-cuoi/` (pha 2 gồm cả ảnh trạng thái 1440).
+
+Các chỗ còn lại ở trên đã sửa (commit `54fe187`, gộp vào CHANGELOG 1.5.0, test 321 qua, 2 bỏ qua, trên 323), **chưa đo lại bằng lần chạy skill**:
+- `system-check.mjs` in mọi dòng cảnh báo preflight, đường dẫn tính từ thư mục prototype (`site/_system.html:91  P13  CẢNH BÁO …`).
+- `system-check.mjs` in thư mục ảnh tuyệt đối và tên từng ảnh, và so ảnh với lần chạy trước: `đổi so với lần chạy trước (chỉ cần mở lại các màn này): …` hay `không màn nào đổi`. `b0-b2.md`: lần sạch đầu mở mọi màn, các lần sau chỉ mở màn đổi. Để so được, `run.mjs` cho chuyển động hữu hạn chạy xong và dừng chuyển động lặp vô hạn ở khung đầu trước khi chụp `full`/`slices` (spinner "Đang mở Zalo" của `rf1b` làm màn 5 lần nào cũng khác). Thử trên bản chép `rf1b`: chạy lại không sửa thì "không màn nào đổi"; đổi một câu thì báo đúng một màn.
+- Lệnh 2 in tên mọi token (khoảng 1k ký tự trên `r3-gate3`).
+- Prompt review: mở mọi ảnh trong một tin nhắn trước khi đọc mã, `_system` chỉ ở 1440.
+- `qa-check.py` xếp ảnh trạng thái theo số; thử trên bản chép `rf2b`: `@gio_4_30, @gio_11_00, @gio_16_40, …`.
