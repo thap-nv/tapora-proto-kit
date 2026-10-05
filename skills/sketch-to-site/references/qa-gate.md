@@ -48,7 +48,7 @@ Thoát mã `1` khi còn **LỖI**. Cảnh báo thì phải **đọc từng dòng
 ## 2. Kiểm hiển thị — chụp 3 khổ
 
 **Bộ kiểm tự chụp** *(B4: `scripts/qa-check.py`, tức `qa_init.py` rồi `handover.py run`)*:
-- Trang web ở 1440, 768, 390, **hết trang theo từng màn**: `<trang>.jpg`, `<trang>-2.jpg`, … tối đa 8 ảnh *(bước `slices` của `run.mjs`)*; màn app ở 1440 *(khung máy)* và 390, một ảnh.
+- Trang web ở 1440, 768, 390, **hết trang theo từng màn**: `<trang>.jpg`, `<trang>-2.jpg`, … tối đa 8 ảnh *(bước `slices` của `run.mjs`; `_system` tới 16)*, và màn đầu của từng trạng thái khai ở `<meta name="qa-states">`: `<trang>@<trạng thái>.jpg` *(mỗi trạng thái còn được đo như một bước)*; màn app ở 1440 *(khung máy)* và 390, một ảnh.
 - Chụp ở **mọi theme** trong `qa.config.json`, ảnh ở `_qa/handover/<ngày-giờ>/<theme>/<bộ>/`.
 - Nền sáng/tối theo `?theme=` của từng theme, không theo máy đang chạy: bộ chạy ép `prefers-color-scheme` theo tham số đó.
 
@@ -217,7 +217,7 @@ Bạn review prototype {tên dự án} trước khi nghiệm thu, như một gi�
 
 Mã nguồn đọc bằng grep -n hay đọc đúng đoạn cần dẫn, không in cả file ra.
 
-Xem trước khi nói: ảnh của lần chạy mới nhất trong {thư mục prototype}/_qa/handover/, trang web chụp hết trang theo từng màn (<trang>.jpg, <trang>-2.jpg, …):
+Xem trước khi nói: ảnh của lần chạy mới nhất trong {thư mục prototype}/_qa/handover/, trang web chụp hết trang theo từng màn (<trang>.jpg, <trang>-2.jpg, …), màn đầu của từng trạng thái khác của trang là <trang>@<trạng thái>.jpg:
 {danh sách ảnh}
 Mở trong một lượt mọi ảnh 1440 và 390 ở mọi theme, cả trang _system ở 1440; mở 768 khi trang có bảng hay lưới nhiều cột. Khổ hay theme nào chưa có ảnh thì ghi vào mục Không đánh giá được, không đoán.
 

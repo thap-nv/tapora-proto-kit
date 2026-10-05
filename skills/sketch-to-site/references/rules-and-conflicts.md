@@ -136,7 +136,7 @@ Dự án làm trước v4.2 *(khối `:root` và `[data-theme="dark"]` viết ta
 - Trang **không** giữ bản dữ liệu riêng. Danh sách, số đếm, tổng tiền đều tính từ store: tạo đơn ở `form.html` thì `orders.html` và số trên dashboard phải đổi theo.
 - Ghi xong thì vẽ lại phần liên quan, hoặc đăng ký `store.on` để tự vẽ lại.
 - Muốn demo lại từ đầu: thêm `?reset` vào URL. Ghi cách này vào báo cáo Cổng 4.
-- Trang đọc tham số URL *(chi tiết theo `?id=`)*: khai báo mẫu trong `<head>` bằng `<meta name="qa-query" content="?id=<mã có trong data.js>">`. `run.mjs` đọc thẻ này ở mỗi lần chạy để bộ khói mở trang có nội dung *(sửa thẻ là lần chạy sau nhận, không sửa file bước)*; thiếu thì `qa_init.py` in CẢNH BÁO.
+- Trang đọc tham số URL *(chi tiết theo `?id=`)*: khai báo mẫu trong `<head>` bằng `<meta name="qa-query" content="?id=<mã có trong data.js>">`. `run.mjs` đọc thẻ này ở mỗi lần chạy để bộ khói mở trang có nội dung *(sửa thẻ là lần chạy sau nhận, không sửa file bước)*; thiếu thì `qa_init.py` in CẢNH BÁO. Trang có trạng thái khác theo tham số *(giờ, ngày, giỏ rỗng)* thì khai thêm `<meta name="qa-states" content="?gio=7:00 | ?thu=2">`: bộ khói đo và chụp màn đầu từng trạng thái.
 - Kiểm luồng xuyên trang trong **một** bộ kiểm: bước `js` ghi dữ liệu rồi `location.href = 'orders.html'`, `wait` ≥ 1500, rồi `check` trên trang mới. Mỗi bộ chạy với hồ sơ trình duyệt mới nên luôn bắt đầu từ dữ liệu mẫu, mốc không trôi.
 
 **Kịch bản dữ liệu:** `?data=empty` làm rỗng mọi danh sách, `?data=stress` sinh danh sách ≥ 40 mục với chữ dài và số lớn *(muốn dữ liệu dài của riêng dự án thì khai `window.SEED_STRESS` trong `data.js`)*. Hai kịch bản không đụng dữ liệu demo. Bộ kiểm có sẵn một bộ cho mỗi kịch bản.

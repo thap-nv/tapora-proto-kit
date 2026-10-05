@@ -203,11 +203,11 @@ await send('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, device
 const extra = (process.env.QA_QUERY || '').replace(/^\?/, '');
 // Tham số mẫu: "query" của file bước nếu có (bộ viết tay); không thì <meta name="qa-query"> của trang, đọc ở mỗi lần chạy nên sửa thẻ meta là
 // bộ khói nhận ngay (đo 4.5: qa_init.py chép query vào file bước lúc cài, sửa trang sau đó không có tác dụng), cộng "query_add" (?data= của bộ dữ liệu)
-const pageQuery = () => {
-  const tag = (readFileSync(file, 'utf8').match(/<meta\b[^>]*\bname\s*=\s*["']qa-query["'][^>]*>/i) || [''])[0];
-  const c = (tag.match(/\bcontent\s*=\s*["']([^"']*)["']/i) || [])[1] || '';
-  return c.trim() ? '?' + c.trim().replace(/&amp;/g, '&').replace(/^\?/, '') : '';
+const pageMeta = name => {
+  const tag = (readFileSync(file, 'utf8').match(new RegExp(`<meta\\b[^>]*\\bname\\s*=\\s*["']${name}["'][^>]*>`, 'i')) || [''])[0];
+  return ((tag.match(/\bcontent\s*=\s*["']([^"']*)["']/i) || [])[1] || '').trim().replace(/&amp;/g, '&');
 };
+const pageQuery = () => { const c = pageMeta('qa-query'); return c ? '?' + c.replace(/^\?/, '') : ''; };
 const baseQuery = steps.query !== undefined ? steps.query : pageQuery();
 const addQuery = [steps.query_add, extra].filter(Boolean).join('&');
 const qs = baseQuery ? baseQuery + (addQuery ? '&' + addQuery : '') : (addQuery ? '?' + addQuery : '');
@@ -222,6 +222,17 @@ navigating = false; // tài nguyên treo không bao giờ tải xong: chỉ đ�
 // Theme theo tên (?theme=<tên>, themes.css): prefers-color-scheme theo --theme-mode của theme đang bật, để phần theo media của trang khớp theme
 const tm = (await send('Runtime.evaluate', { expression: `getComputedStyle(document.documentElement).getPropertyValue('--theme-mode').replace(/["'\\s]/g, '')`, returnByValue: true })).result?.result?.value;
 if (tm === 'dark' || tm === 'light') await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: tm }] });
+// Đo tương phản và màu theo ý định ở mọi bước (probes.js); lỗi của phép đo thành một dòng, không làm hỏng cả bước.
+// Không đo được (trang chưa có body, đang chuyển trang): báo lỗi ở bước đó, không làm sập cả bộ
+async function measureDims() {
+  const probed = await inject();
+  const safe = f => `(()=>{try{return __qa.${f}()}catch(e){return ['LỖI ĐO '+e.message]}})()`;
+  const measure = probed ? `,contrast:${safe('contrast')},intent:${safe('intent')}` : '';
+  const dimsReply = await send('Runtime.evaluate', { expression: `JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,cut:(${layoutCheck})(),wide:(${wideCheck})()${measure}})`, returnByValue: true });
+  const dims = dimsReply.result?.result?.value;
+  if (dims === undefined) errors.push('EVAL không đo được bố cục: ' + String(dimsReply.result?.exceptionDetails?.exception?.description || dimsReply.error?.message || 'không có giá trị').split('\n')[0]);
+  return dims;
+}
 const report = [{ step: 'load', errors: errors.slice().concat(PROBE_SRC ? [] : ['PROBES thiếu color.js hoặc probes.js cạnh run.mjs: chạy qa_init.py --update']), check: null, dims: null }];
 for (const s of steps.steps) {
   errors = [];
@@ -230,14 +241,7 @@ for (const s of steps.steps) {
   if (navigating) { await waitLoad(LOAD_TIMEOUT); navigating = false; } // bước vừa chuyển trang: đợi trang mới tải xong rồi mới kiểm
   let val = null;
   if (s.check) { const r = await send('Runtime.evaluate', { expression: s.check, returnByValue: true }); val = r.result?.result?.value; }
-  // Đo tương phản và màu theo ý định ở mọi bước (probes.js); lỗi của phép đo thành một dòng, không làm hỏng cả bước
-  const probed = await inject();
-  const safe = f => `(()=>{try{return __qa.${f}()}catch(e){return ['LỖI ĐO '+e.message]}})()`;
-  const measure = probed ? `,contrast:${safe('contrast')},intent:${safe('intent')}` : '';
-  const dimsReply = await send('Runtime.evaluate', { expression: `JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,cut:(${layoutCheck})(),wide:(${wideCheck})()${measure}})`, returnByValue: true });
-  const dims = dimsReply.result?.result?.value;
-  // Không đo được (trang chưa có body, đang chuyển trang): báo lỗi ở bước này, không làm sập cả bộ
-  if (dims === undefined) errors.push('EVAL không đo được bố cục: ' + String(dimsReply.result?.exceptionDetails?.exception?.description || dimsReply.error?.message || 'không có giá trị').split('\n')[0]);
+  const dims = await measureDims();
   // QA_NOSHOT: bỏ chụp ảnh (quick.py); bước vẫn chạy và vẫn kiểm như cũ
   if (s.shot && !process.env.QA_NOSHOT) {
     const opt = { format: s.jpeg ? 'jpeg' : 'png' };
@@ -285,6 +289,27 @@ for (const s of steps.steps) {
     }
   }
   report.push({ step: s.name, errors, check: val, dims: dims === undefined ? null : JSON.parse(dims) });
+}
+// Trạng thái khác của trang (giờ, ngày, đăng nhập…): <meta name="qa-states" content="?gio=7:00 | ?gio=18:40 | ?thu=2">, tách bằng |.
+// File bước có "states": true (bộ khói của trang web) thì mỗi trạng thái tải lại trang với tham số đó đè lên tham số mẫu, đo như một bước
+// ("trạng thái ?gio=7:00": console, tràn, trong khung, tương phản, ý định) và chụp màn đầu vào <shot>@<trạng thái>, cạnh ảnh của bước chụp đầu.
+// Đo 4.5: bộ khói chỉ chụp trạng thái của qa-query; lỗi ở giờ khác chỉ review đọc mã mới thấy
+const states = steps.states ? pageMeta('qa-states').split('|').map(x => x.trim().replace(/^\?/, '')).filter(Boolean) : [];
+const merge = (a, b) => { const u = new URLSearchParams(a.replace(/^\?/, '')); for (const [k, v] of new URLSearchParams(b)) u.set(k, v); const q = u.toString(); return q ? '?' + q : ''; };
+const firstShot = steps.steps.find(x => x.shot && !x.clip);
+for (const st of states) {
+  errors = [];
+  const l = waitLoad(LOAD_TIMEOUT);
+  await send('Page.navigate', { url: pathToFileURL(resolve(file)).href + merge(qs, st) });
+  await Promise.all([l, sleep(1500)]);
+  navigating = false;
+  const dims = await measureDims();
+  if (firstShot && !process.env.QA_NOSHOT) {
+    const opt = firstShot.jpeg ? { format: 'jpeg', quality: 82 } : { format: 'png' };
+    const sh = await send('Page.captureScreenshot', opt);
+    writeFileSync(join(outdir, `${firstShot.shot}@${st.replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_|_$/g, '')}${firstShot.jpeg ? '.jpg' : '.png'}`), Buffer.from(sh.result.data, 'base64'));
+  }
+  report.push({ step: 'trạng thái ?' + st, errors, check: null, dims: dims === undefined ? null : JSON.parse(dims) });
 }
 // Lượt kiểm sâu (deep.mjs): chỉ khi QA_DEEP=1. Tải lại trang giữa các phép đo để phép này không làm lệch phép kia.
 // Lỗi console trong lượt sâu (bấm một control làm trang ném lỗi) ghi vào bước deep; handover.py so với mốc (qadiff deep_errors).
