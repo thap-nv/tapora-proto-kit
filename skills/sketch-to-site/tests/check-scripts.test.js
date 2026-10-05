@@ -28,10 +28,10 @@ const pngSize = f => { const b = fs.readFileSync(f); return [b.readUInt32BE(16),
 const LONG = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Dài</title>
 <style>body{margin:0}h2{margin:0}section{height:700px;border-bottom:1px solid #ccc}</style></head><body>${'<section><h2>Khối</h2></section>'.repeat(4)}</body></html>`;
 
-function runMjs(t, page, steps, { flags = [], w = '1440', h = '900' } = {}) {
+function runMjs(t, page, steps, { flags = [], w = '1440', h = '900', steps: extra = {} } = {}) {
   const dir = tmp(t, 'run-');
   fs.writeFileSync(path.join(dir, 'p.html'), page);
-  fs.writeFileSync(path.join(dir, 'steps.json'), JSON.stringify({ steps }));
+  fs.writeFileSync(path.join(dir, 'steps.json'), JSON.stringify({ ...extra, steps }));
   const r = spawnSync(process.execPath, [...flags, RUN, path.join(dir, 'p.html'), path.join(dir, 'steps.json'), path.join(dir, 'out'), w, h], { encoding: 'utf8', timeout: 90000 });
   return { r, out: path.join(dir, 'out') };
 }
@@ -169,10 +169,46 @@ test('qa_init.py: bộ khói của trang web và _system chụp hết trang theo
   fs.writeFileSync(path.join(dir, 'site', 'man.html'), page(' data-surface="app"'));
   const r = spawnSync(PYTHON, [QA_INIT, dir], { encoding: 'utf8', env });
   assert.equal(r.status, 0, r.stdout + r.stderr);
-  const view = k => JSON.parse(fs.readFileSync(path.join(dir, '_qa', `steps-smoke-${k}.json`), 'utf8')).steps[0];
+  const steps = k => JSON.parse(fs.readFileSync(path.join(dir, '_qa', `steps-smoke-${k}.json`), 'utf8'));
+  const view = k => steps(k).steps[0];
   assert.equal(view('index').slices, 8);
-  assert.equal(view('_system').slices, 8);
+  // Đo 4.5: _system 8 màn cắt mất component ở 390 (cả hai review ghi "không đánh giá được")
+  assert.equal(view('_system').slices, 16);
   assert.equal(view('man').slices, undefined);
+  // Trang web đo và chụp các trạng thái khai ở qa-states; _system và màn app thì không
+  assert.equal(steps('index').states, true);
+  assert.equal(steps('_system').states, undefined);
+  assert.equal(steps('man').states, undefined);
+
+  // --update trên bộ cài cũ: _system 8 màn thành 16, trang web thêm "states"
+  for (const [k, f] of [['_system', st => { delete st.states; st.steps[0].slices = 8; }], ['index', st => { delete st.states; }]]) {
+    const st = steps(k); f(st); fs.writeFileSync(path.join(dir, '_qa', `steps-smoke-${k}.json`), JSON.stringify(st));
+  }
+  const u = spawnSync(PYTHON, [QA_INIT, dir, '--update'], { encoding: 'utf8', env });
+  assert.equal(u.status, 0, u.stdout + u.stderr);
+  assert.equal(view('_system').slices, 16);
+  assert.equal(steps('index').states, true);
+});
+
+// Đo 4.5: bộ khói chỉ chụp trạng thái của qa-query (8:40); lỗi ở giờ khác (nút chính trỏ sai mẻ lúc 7:00) chỉ review đọc mã mới thấy
+test('run.mjs: "states" đo và chụp màn đầu từng trạng thái của qa-states, tham số trạng thái đè lên qa-query', t => {
+  const page = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="qa-query" content="?gio=8:40&amp;thu=7"><meta name="qa-states" content="?gio=7:00 | ?thu=2&amp;gio=6:00"><title>T</title>
+<style>body{margin:0}.w{width:2000px}</style></head><body><h1 id="h"></h1><script>const q = new URLSearchParams(location.search);
+document.getElementById('h').textContent = q.get('gio') + ' ' + q.get('thu'); if (q.get('thu') === '2') document.body.insertAdjacentHTML('beforeend', '<div class="w">rộng</div>');</script></body></html>`;
+  const { r, out } = runMjs(t, page, [{ name: 'view', check: "document.getElementById('h').textContent", shot: 'index', jpeg: true }], { steps: { states: true } });
+  if (r.status === 4) return t.skip('không có trình duyệt');
+  assert.equal(r.status, 0, r.stderr);
+  const rep = JSON.parse(r.stdout);
+  assert.equal(rep.find(s => s.step === 'view').check, '8:40 7');
+  const a = rep.find(s => s.step === 'trạng thái ?gio=7:00'), b = rep.find(s => s.step === 'trạng thái ?thu=2&gio=6:00');
+  assert.ok(a && b, rep.map(s => s.step).join(', '));
+  assert.ok(a.dims.sw <= a.dims.cw);
+  assert.ok(b.dims.sw > b.dims.cw, 'trạng thái thứ Hai tràn ngang: phải đo ra');
+  assert.deepEqual(fs.readdirSync(out).sort(), ['index.jpg', 'index@gio_7_00.jpg', 'index@thu_2_gio_6_00.jpg']);
+  // Không có "states" thì không đo thêm
+  const plain = runMjs(t, page, [{ name: 'view', check: '1' }]);
+  assert.deepEqual(JSON.parse(plain.r.stdout).map(s => s.step), ['load', 'view']);
 });
 
 // ---- scripts/system-check.mjs: B2 và Cổng 3 trong một lệnh ----

@@ -11,6 +11,7 @@
 # Site có nền tối thì tự thêm theme light và dark.
 # Có site/assets/themes.json: mỗi theme trong đó là một theme của bộ kiểm (theme mặc định sáng đứng đầu, không tham số).
 # Có site/_system.html: bộ khói của nó kiểm thêm component mẫu đã thay và mọi cặp màu đạt ngưỡng.
+# Trang có trạng thái theo tham số (giờ, ngày…): <meta name="qa-states" content="?gio=7:00 | ?thu=2">, bộ khói đo và chụp màn đầu từng trạng thái.
 # Trang nạp store.js: thêm bộ du-lieu-rong-<trang> (?data=empty) và du-lieu-dai-<trang> (?data=stress).
 # _qa/.kit-source ghi thư mục skill đã cài bộ kiểm, để bộ kiểm gọi đúng preflight.py của bản skill đó.
 import argparse, filecmp, html as html_lib, json, os, re, shutil, sys
@@ -79,6 +80,9 @@ def find_pages(site):
 def is_app_screen(html):
     m = re.search(r'<html\b[^>]*>', html[:4000], re.I)
     return bool(m and re.search(r'data-surface\s*=\s*["\']app["\']', m.group(0), re.I))
+
+
+SYSTEM_SLICES = 16
 
 
 def qa_query(html):
@@ -155,6 +159,13 @@ if os.path.exists(cfg_path):
         if not (os.path.exists(sf) and os.path.exists(hf)):
             continue
         st = json.load(open(sf, encoding='utf-8'))
+        view = (st.get('steps') or [{}])[0]
+        if p == '_system' and view.get('slices') == 8:
+            view['slices'] = SYSTEM_SLICES; json.dump(st, open(sf, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+            print(f'{os.path.basename(sf)}: chụp tới {SYSTEM_SLICES} màn (8 màn cắt mất phần dưới của _system)')
+        elif p != '_system' and view.get('slices') and 'states' not in st:
+            st['states'] = True; json.dump(st, open(sf, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+            print(f'{os.path.basename(sf)}: thêm "states" (đo và chụp màn đầu mỗi trạng thái của <meta name="qa-states">)')
         if 'query' not in st:
             continue
         q = qa_query(open(hf, encoding='utf-8', errors='ignore').read())
@@ -186,10 +197,14 @@ else:
             # Bộ khói: mở trang, chụp ảnh. Bộ chạy tự ghi lỗi console, tràn ngang, chữ tràn hoặc bị cắt trong khung của mọi bước.
             # Trang web chụp hết trang theo từng màn (<key>.jpg, <key>-2.jpg, …, tối đa 8): chỉ màn đầu thì phần dưới không ai xem.
             # Màn app chụp khung máy nên một ảnh là đủ
+            # Trang web còn đo và chụp màn đầu của từng trạng thái khai ở <meta name="qa-states"> (run.mjs, "states"). _system dài hơn trang
+            # thường (bảng màu, thang chữ, component, hai trường hợp khó) nên chụp tới 16 màn: đo 4.5, 8 màn cắt mất component ở 390
             view = {'name': 'view', 'wait': 600, 'check': 'document.title', 'shot': key, 'jpeg': True}
             if not app:
-                view['slices'] = 8
+                view['slices'] = SYSTEM_SLICES if p == '_system' else 8
             steps = {'steps': [view]}
+            if not app and p != '_system':
+                steps['states'] = True
             if app:
                 steps['steps'].append({'name': 'tap-targets', 'wait': 100, 'check': TAP_CHECK})
             if p == '_system':
