@@ -5,6 +5,8 @@
 // 3 tự chụp (trình duyệt --screenshot, playwright, gọi thẳng run.mjs, tự viết script) · ảnh mở: số ảnh, số lượt có ảnh, nhiều nhất một lượt
 // 4 lượt có từ 2 lệnh · 5 cat file sẽ sửa, Write bị từ chối · 6 /x/… · 7 kết quả bị cắt giữa, kết quả lỗi
 // 8 ledger.jsonl đọc nguyên · 9 lượt mất cache · 10 ba lượt đầu (lượt vào có gom một lượt không) · ghi file
+// 11 sáu chỗ sửa sau lần đo bản cũ/mới (54b403a): breaktest.py hay bẻ thử tự viết, UnicodeEncodeError, đọc handover.json/qa.config.json,
+//    tra khuôn FEATURE-DECISIONS, grep -r ngoài thư mục trang, ảnh mở sau mỗi lần --shots so với dòng ảnh đổi, ảnh mở kèm nhãn lát
 const fs = require('fs'), path = require('path');
 const { SKILLS, inSkills } = require('./paths');
 const norm = s => String(s || '').replace(/\\/g, '/');
@@ -126,6 +128,44 @@ for (const f of process.argv.slice(2)) {
   }
   const missCost = misses.reduce((s, m) => s + m.lost * (1.25 - 0.1), 0);
   console.log(`  9 mất cache ở lượt: ${misses.map(m => `${m.turn} (${Math.round(m.lost / 1000)}k)`).join(', ') || '-'}${missCost ? ` · tốn thêm ≈ ${Math.round(missCost / 1000)}k` : ''} · lượt 1 đọc cache ${Math.round((T[0]?.u.cache_read_input_tokens || 0) / 1000)}k`);
+
+  // 11 sáu chỗ sửa sau lần đo bản cũ/mới (54b403a): bẻ thử một lệnh, ảnh đổi, nhãn lát, mục bằng 0, khuôn FEATURE-DECISIONS, grep, mã hoá
+  const bt = runs(exec('python3?', 'breaktest\\.py'));
+  const selfBreak = calls.filter(c => /\.bak\b/.test(cmdOf(c)) && /site\//.test(cmdOf(c)));
+  const enc = calls.filter(c => /UnicodeEncodeError|'charmap' codec/.test(text(c)));
+  console.log(`  11 breaktest.py ${list(bt)} · bẻ thử tự viết (.bak cạnh site/) ${list(selfBreak)} · UnicodeEncodeError ${list(enc)}`);
+  // Đọc file mà kết quả lệnh đã in đủ: Read, hay lệnh nhắc tới file đó mà không phải gọi script của bộ kiểm
+  const readOf = re => calls.filter(c => c.name === 'Read' && re.test(fileOf(c)) || !/(qa-check|handover|quick|run_all|qa_init)\.py\b/.test(cmdOf(c)) && re.test(cmdOf(c)));
+  const mk = calls.filter(c => /sed '\/\^## Tính năng\/,\$d'/.test(cmdOf(c)));
+  const tpl = calls.filter(c => !mk.includes(c) && (c.name === 'Read' && /templates\/FEATURE-DECISIONS\.md$/.test(fileOf(c))
+    || /tapora-proto-kit\/skills/.test(cmdOf(c)) && /FEATURE-DECISIONS/.test(cmdOf(c)) && /\b(grep|sed|cat|head)\b/.test(cmdOf(c))));
+  // grep -r ngoài thư mục trang: đoạn lệnh có grep đệ quy mà không nhắc site, không chạy trong thư mục skills
+  const gOut = calls.filter(c => !/tapora-proto-kit\/skills/.test(cmdOf(c)) && cmdOf(c).split(/;|&&|\|/).some(s => /\bgrep\b/.test(s) && /\s-\w*[rR]/.test(s) && !/site/.test(s)));
+  console.log(`     đọc handover.json ${list(readOf(/handover\.json/))} · qa.config.json ${list(readOf(/qa\.config\.json/))} · tra khuôn FEATURE-DECISIONS ${list(tpl)} · tạo từ khuôn bằng sed ${list(mk)} · grep -r ngoài thư mục trang ${list(gOut)}`);
+  // Nhãn lát lấy từ danh sách ảnh trong kết quả (quick --shots, run_all, qa-check): "<thư mục>/<ảnh>" → tiêu đề trong ngoặc
+  const shotCalls = calls.filter(c => exec('python3?', 'quick\\.py').test(cmdOf(c)) && /--shots/.test(cmdOf(c)) || exec('python3?', '(run_all|qa-check)\\.py').test(cmdOf(c)));
+  const label = {}, rows = [];
+  const tail = (x, n) => fileOf(x).split('/').slice(-n).join('/');
+  shotCalls.forEach((c, i) => {
+    const out = text(c);
+    for (const m of out.matchAll(/^ {2}([^:\n]+): (.+)$/gm)) {
+      for (const f of m[2].split(/, (?=[\w@.-]+\.(?:jpg|png))/)) {
+        const x = /^([\w@.-]+\.(?:jpg|png))(?: \((.*)\))?$/.exec(f.trim());
+        if (x) label[`${m[1]}/${x[1]}`] = x[2] || '';
+      }
+    }
+    if (!/quick\.py/.test(cmdOf(c))) return;
+    // Ảnh mở sau lần --shots này, tới lần chụp kế: so với dòng "đổi so với lần chụp trước"
+    const ch = /^ {2}đổi so với lần chụp trước \(chỉ cần mở lại các ảnh này\): (.+)$/m.exec(out);
+    const state = ch ? ch[1].split(', ') : /không ảnh nào đổi/.test(out) ? [] : /mọi ảnh đều đổi/.test(out) ? 'mọi' : /chưa có ảnh của lần chụp trước/.test(out) ? 'đầu' : null;
+    const next = shotCalls[i + 1];
+    const opened = calls.filter(x => x.turn > c.turn && (!next || x.turn <= next.turn) && x.name === 'Read' && /\.(png|jpe?g)$/i.test(fileOf(x)));
+    const extra = Array.isArray(state) ? opened.filter(x => !state.includes(tail(x, 3))).length : 0;
+    rows.push(`lượt ${c.turn}: ${state === null ? '(không có dòng so ảnh)' : state === 'đầu' ? 'lần chụp đầu' : state === 'mọi' ? 'mọi ảnh đổi' : `đổi ${state.length}`} → mở ${opened.length}${extra ? ` (ngoài danh sách đổi ${extra})` : ''}`);
+  });
+  const lab = x => tail(x, 3) in label ? label[tail(x, 3)] : tail(x, 2) in label ? label[tail(x, 2)] : null;
+  console.log(`     ảnh sau mỗi lần --shots: ${rows.join(' · ') || '-'}`);
+  console.log(`     ảnh mở kèm nhãn lát: ${pngs.slice(0, 16).map(x => `${x.turn}:${path.basename(fileOf(x))}${lab(x) === null ? '' : ` (${lab(x) || '—'})`}`).join(' · ') || '-'}${pngs.length > 16 ? ' …' : ''}`);
 
   // 10 ba lượt đầu: lượt vào có gom đọc tài liệu, file dự án và lệnh vào một lượt không
   const brief = c => c.name === 'Bash' || c.name === 'PowerShell' ? c.name[0] + ':' + (cmdOf(c).match(/\b(qa_init|quick|handover|run_all|qa-check|preflight|grep|sed|find|ls|cat)\b/g) || ['…']).slice(0, 4).join('+') : `${c.name} ${path.basename(fileOf(c))}`;

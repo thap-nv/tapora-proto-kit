@@ -13,7 +13,7 @@
 //   evolve  B1: mặc định từ đầu (SKILL.md, b1-b2.md, DESIGN.md, dữ liệu, qa_init, quick --dry, run_all _qa/truoc, preflight --save)
 //           B2 · cổng: integration-patterns.md · search.py · ghi FEATURE-DECISIONS.md có "Cổng 1" hay "Cổng 2" khi chưa sửa site/
 //           B3: Read references/b3-b4.md · ghi steps-*.json, qa.config.json, site/, BUILD-LOG.md · run_all.py _qa/.tdd · themes.mjs
-//           B4: quick.py --note (không phải "trước evolve") · regression-qa.md (sau khi đã sửa site/) · laws-of-ux · Read ảnh ngoài _qa/.tdd/ sau khi đã sửa site/
+//           B4: quick.py --note (không phải "trước evolve") · breaktest.py · regression-qa.md (sau khi đã sửa site/) · laws-of-ux · Read ảnh ngoài _qa/.tdd/ sau khi đã sửa site/
 //               (ảnh _qa/.tdd/ trước B4 là gỡ lỗi bộ tính năng, vẫn là B3)
 //           Cổng 3: ghi FEATURE-DECISIONS.md có "Cổng 3" khi đã vào B4 (khối tính năng ghi ở B3 có sẵn tiêu đề Cổng 3 của khuôn) · lượt cuối
 //   handover B0–B1: mặc định (SKILL.md, qa_init, handover.py ledger, ledger.jsonl, FEATURE-DECISIONS.md, quick --dry)
@@ -106,7 +106,7 @@ const MARK = {
   'evolve-site'(c, st) {
     const p = P(c), cmd = CMD(c), s = p + ' ' + cmd;
     if (writesTo(c, /FEATURE-DECISIONS\.md$/, /FEATURE-DECISIONS\.md/) && /Cổng 3/.test(body(c)) && st.edited && st.cur >= 3) return 4;
-    if (quickNote(cmd) && !/trước evolve/.test(cmd)) return 3;
+    if (quickNote(cmd) && !/trước evolve/.test(cmd) || py('breaktest\.py').test(cmd)) return 3;
     if (st.edited && (/regression-qa\.md/.test(s) || /laws-of-ux/.test(s) || img(c) && !/\/_qa\/\.tdd\//.test(p))) return 3;
     if (c.name === 'Read' && /evolve-site\/references\/b3-b4\.md$/.test(p)) return 2;
     if (writes(c) && /\/_qa\/(steps-[^\/]+\.json|qa\.config\.json)$|BUILD-LOG\.md$/.test(p) || siteWrite(c)) return 2;

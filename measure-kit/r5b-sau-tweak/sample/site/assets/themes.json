@@ -1,0 +1,16 @@
+{
+  "_ghi_chu": "Khuôn từ sketch-to-site/templates/themes.json. Màu gốc chép từ CONCEPT.md mục 3 (concept c · Cửa lò mở bốn lần, chốt ở Cổng 2 ngày 04/10/2026). Một theme, nền tối như concept; người dùng không xin nền thứ hai (Cổng 2: \"Một nền như concept\"). Chạy lại: node <skills>/sketch-to-site/scripts/themes.mjs <thư-mục-prototype>. Không sửa themes.css bằng tay.",
+  "default": { "light": "dark" },
+  "themes": {
+    "dark": {
+      "mode": "dark",
+      "seeds": {
+        "bg": "#16100C", "surface": "#241A14", "ink": "#F3E9DC", "muted": "#B8A693", "line": "#5A4638",
+        "primary": "#F08A3C", "on-primary": "#1A0F08", "accent": "#6B2D1C", "on-accent": "#FFF1E4",
+        "destructive": "#F0705F", "on-destructive": "#1A0F08",
+        "ring": "#F08A3C", "muted-bg": "#2E231C"
+      },
+      "overrides": {}
+    }
+  }
+}

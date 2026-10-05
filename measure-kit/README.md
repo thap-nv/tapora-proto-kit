@@ -37,6 +37,9 @@ Dùng để đo một lần chạy skill `sketch-to-concept` tốn bao nhiêu l�
 | `r4-bangiao/` | Ba skill sửa, kịch bản T: site đã bàn giao (pha 2 lần A của lần đo Windows, Cổng 4 "Chốt.", mốc bàn giao đã promote) trong `sample/`, cộng `AGENTS.md` của dự án. Chép ra rồi mới chạy |
 | `r5-sau-tweak/`, `r6-sau-evolve/` | Kịch bản E và H: `r4-bangiao` sau lần tweak `rtm1`, và sau lần evolve `rem1` (đáp án Cổng 3 "Chốt tích hợp." đã ghi). `_qa/current/` bị `.gitignore` của bộ kiểm bỏ qua: commit thì `git add -f` |
 | `transcripts/edit-cu-moi/`, `runs-edit/` | Transcript nén của 12 lần đo ba skill sửa, và `FEATURE-DECISIONS.md`, `QA.md`, ảnh chính của từng lần. Xem mục *Ba skill sửa: bản cũ và bản mới* |
+| `prompt-edit-sau-sua.md` | Prompt của phiên đo lại ba skill sửa ở bản mới nhất (sau `54b403a`), mỗi kịch bản một lần. Xem mục *Ba skill sửa: sau 6 chỗ sửa* |
+| `r4b-bangiao/`, `r5b-sau-tweak/`, `r6b-sau-evolve/` | `r4-bangiao`, `r5-sau-tweak`, `r6-sau-evolve` với bộ kiểm của `54b403a`: `qa_init.py --update` rồi `moc-lf.py`. Chép ra rồi mới chạy |
+| `moc-lf.py` | Chuẩn bị thư mục bắt đầu: file bước `_qa/steps-*.json` về xuống dòng LF, và dấu `_qa/…` trong manifest của `last-green`, `current` lấy lại theo file hiện tại. Chỉ dùng cho thư mục đo |
 
 Token quy đổi = input + 1,25 × ghi cache + 0,1 × đọc cache + 5 × output. Transcript chỉ ghi output lúc bắt đầu stream nên output ước từ số ký tự đã viết (2,5–3,5 ký tự một token); khối thinking không tính được.
 
@@ -1026,3 +1029,55 @@ Vấp khác trong báo cáo của agent:
   - E: `giu-banh-mo-390` và `giu-banh-mo-1440`;
   - H: chỉ có `QA.md`, vì `FEATURE-DECISIONS.md` của H giống `r6-sau-evolve`.
 - `r5-sau-tweak/` và `r6-sau-evolve/` có `sample/_qa/current/`, mà `_qa/.gitignore` của bộ kiểm bỏ qua. Muốn giữ khi commit thì `git add -f`.
+
+## Ba skill sửa: sau 6 chỗ sửa (chuẩn bị 05/10/2026, chưa đo)
+
+Commit `54b403a` (merge vào `measure-kit/run-4.5` thành `417fe2a`) làm 6 việc đề xuất ở mục trên, cộng luật B5 của `handover-check`:
+- `breaktest.py`;
+- `quick.py --shots` báo ảnh đổi so với lần chụp trước;
+- mục bằng 0 vẫn in;
+- nhãn lát (`slices.json`) và `"slices": "all"` cho `_system`;
+- `tweak-site` tạo `FEATURE-DECISIONS.md` từ khuôn, `grep` chỉ thư mục trang;
+- ghi chú `PYTHONIOENCODING`.
+
+Prompt của phiên đo: `prompt-edit-sau-sua.md`. Mỗi kịch bản chạy một lần, so với các lần "mới" của mục trên. Kết quả chính là phần soát từng việc.
+
+### Mốc lệch vì xuống dòng (sửa trong thư mục đo, chưa sửa trong bộ kiểm)
+
+- Bộ kiểm băm nguyên byte của file trong `_qa/` (`qalib.sha`). Python trên Windows ghi `steps-*.json` bằng CRLF (`qa_init.py`, cả `--update`).
+- Git ở máy đo (`core.autocrlf=input`) lưu LF. Sau một lần checkout, file thành LF mà mốc vẫn giữ dấu của bản CRLF.
+- Gặp ngày 05/10 sau khi đổi nhánh: `r5-sau-tweak` và `r6-sau-evolve` báo `--dry`: `_qa/steps-smoke-_system.json, _qa/steps-smoke-index.json` dù không ai sửa. `r4-bangiao` còn sạch chỉ vì bản trên đĩa chưa bị checkout lại.
+- Đã chạy `moc-lf.py` trên cả ba thư mục: file bước về LF, dấu trong `last-green/manifest.json` và `current/manifest.json` lấy lại. Nội dung kiểm không đổi.
+- Dự án thật commit `_qa/last-green/` (theo `.gitignore` của bộ kiểm) sẽ gặp đúng lỗi này giữa hai máy. Hướng sửa trong bộ kiểm: băm sau khi đổi CRLF thành LF, hoặc ghi JSON bằng `newline='
+'`.
+
+### Thư mục bắt đầu `r4b`, `r5b`, `r6b`
+
+- Chép từ `r4-bangiao`, `r5-sau-tweak`, `r6-sau-evolve`, rồi `qa_init.py <sample> --update` của `54b403a`:
+  - chép đè `run.mjs`, `run_all.py`, `quick.py`, `handover.py`, thêm `breaktest.py`;
+  - `steps-smoke-_system.json` từ 16 màn thành `"all"`.
+- Rồi `python moc-lf.py <sample>`: dấu `_qa/run.mjs` và các file bước trong hai manifest lấy theo bản mới.
+  - Không làm vậy thì `--dry` báo hai file đổi ngoài quy trình. Mỗi lần tweak và evolve tốn thêm một lần kiểm "trước tweak", và handover thấy thêm một dòng nhật ký: số đo đội lên vì cập nhật bộ kiểm, không vì skill.
+  - `run.mjs` mới chỉ thêm `slices.json` và số lát, không đổi `report.json`. Kiểm trên bản chép của `r6b`: `quick.py --all` cho `59 bước · … · check đổi 0 · nợ cũ 0 → ĐẠT`.
+- Kiểm cả sáu thư mục trên bản chép (`r4`, `r4b` thì dựng lại `current/` từ `last-green/` như prompt):
+  - `quick.py --dry` in `File đổi từ lần kiểm trước: không`;
+  - `r6`, `r6b`: `handover.py ledger` in `File đổi sau lần kiểm nhanh cuối, chưa vào nhật ký: không`;
+  - từ `last-green` tới `current` chỉ còn `_qa/steps-giu-banh.json`, `site/_system.html`, `site/assets/site.css`, `site/index.html`, như bốn lần đo H đã thấy.
+- `AGENTS.md` giữ như cũ (khuôn của bản cũ), để so được với mốc.
+- `_qa/current/` của `r5b`, `r6b` bị `.gitignore` của bộ kiểm bỏ qua: commit thì `git add -f`. `r4b` không cần, vì prompt dựng lại `current/` từ `last-green/`.
+
+### Script
+
+- `fixes-edit.js` dòng 11 soát sáu chỗ sửa:
+  - `breaktest.py`, hay bẻ thử tự viết (lệnh có `.bak` cạnh `site/`);
+  - `UnicodeEncodeError`;
+  - đọc `handover.json`, `qa.config.json`;
+  - tra khuôn `FEATURE-DECISIONS` hay tạo bằng `sed`;
+  - `grep -r` ngoài thư mục trang;
+  - sau mỗi lần `--shots`: số ảnh đổi theo dòng so ảnh, số ảnh mở tới lần chụp kế, số ảnh mở ngoài danh sách đổi;
+  - ảnh đã mở kèm nhãn lát lấy từ danh sách trong kết quả.
+- Đã chạy thử trên transcript của lần đo trước:
+  - rem2: bẻ thử tự viết ở lượt 15–16, `UnicodeEncodeError` ở lượt 15;
+  - rhm1, rhm2: đọc `qa.config.json` ở lượt 4, `handover.json` ở lượt 9 và 13;
+  - rtm1, rtm2: tra khuôn ở lượt 4–6.
+- `phase-edit.js`: `breaktest.py` là dấu hiệu của B4 (evolve).
