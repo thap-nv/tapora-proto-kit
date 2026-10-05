@@ -1,4 +1,4 @@
-# Kiểm B4 của sketch-to-site trong một lệnh:
+# Kiểm tổng trong một lệnh: B4 của sketch-to-site, B3 của handover-check.
 #   python <skills>/sketch-to-site/scripts/qa-check.py <thư-mục-prototype> [--site site]
 # 1. Bộ kiểm: chưa có _qa/qa.config.json thì cài mới (templates/qa-kit/qa_init.py), kể cả khi thư mục _qa/ đã có sẵn;
 #    có rồi thì chép đè script bằng bản của kit (qa_init.py --update). In dòng cấu hình và các CẢNH BÁO của qa_init.py.

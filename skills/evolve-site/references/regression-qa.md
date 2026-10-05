@@ -2,7 +2,7 @@
 
 > Quy tắc: **"Thêm cái mới nhưng không được làm vỡ cái cũ."**
 > Trước khi mở Cổng 3 để nghiệm thu với người dùng, trợ lý bắt buộc phải hoàn thành danh mục kiểm thử hồi quy này và ghi nhận bằng chứng cụ thể.
-> File này nói **cách** kiểm. Nhóm nào áp cho cấp nào, và kiểm thêm theo cờ nào: bảng B4 trong `SKILL.md`.
+> File này nói **cách** kiểm. Nhóm nào áp cho cấp nào, và kiểm thêm theo cờ nào: bảng B4 trong `references/b3-b4.md`.
 
 ---
 
@@ -115,7 +115,7 @@ Kết quả có thêm `tương phản mới`, `ý định mới` và `nợ cũ`.
 
 ## 3. Cho QA lớn theo tính năng
 
-Dự án có bộ kiểm `_qa/`: bước kiểm của tính năng được viết **trước khi dựng** *(SKILL.md, B3, Kiểm trước, dựng sau)*. Bước đó đã đỏ khi chưa có code, nên đã chứng minh được là nó bắt được thiếu sót. Ở B4 còn hai việc:
+Dự án có bộ kiểm `_qa/`: bước kiểm của tính năng được viết **trước khi dựng** *(`references/b3-b4.md`, B3, Kiểm trước, dựng sau)*. Bước đó đã đỏ khi chưa có code, nên đã chứng minh được là nó bắt được thiếu sót. Ở B4 còn hai việc:
 - Bộ của tính năng chạy xanh: `FAIL 0` và `im lặng 0`.
 - **Bẻ thử các bước phủ định** *(vai không được thấy, không được làm; tên bắt đầu bằng `phu-dinh-`)*: các bước này đúng sẵn khi tính năng chưa có nên chưa từng đỏ. Tạm làm hỏng *(bỏ chặn quyền)*: QA phải kêu. Trả lại như cũ: QA phải im. Kiểm **số chỗ đã bẻ > 0** trước khi đọc kết quả: một phép bẻ không thay được gì trông giống hệt một phép thử đạt.
 
