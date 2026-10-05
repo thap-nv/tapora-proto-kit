@@ -57,6 +57,41 @@ test('run.mjs: "full" chụp cả trang một ảnh, "slices" chụp từng màn
   assert.deepEqual(fs.readdirSync(capped.out).filter(f => f.startsWith('man')).sort(), ['man-2.png', 'man.png']);
 });
 
+// Điểm ảnh của PNG 8 bit RGB/RGBA không xen dòng (ảnh của run.mjs): giải nén IDAT, bỏ bộ lọc từng dòng
+function pngPixel(f, x, y) {
+  const b = fs.readFileSync(f), w = b.readUInt32BE(16), type = b[25], bpp = type === 6 ? 4 : 3, idat = [];
+  for (let o = 8; o < b.length;) { const n = b.readUInt32BE(o), t = b.toString('latin1', o + 4, o + 8); if (t === 'IDAT') idat.push(b.subarray(o + 8, o + 8 + n)); o += 12 + n; }
+  const raw = require('node:zlib').inflateSync(Buffer.concat(idat)), stride = w * bpp;
+  let prev = Buffer.alloc(stride), row;
+  for (let r = 0; r <= y; r++) {
+    const f0 = raw[r * (stride + 1)], src = raw.subarray(r * (stride + 1) + 1, (r + 1) * (stride + 1));
+    row = Buffer.alloc(stride);
+    for (let i = 0; i < stride; i++) {
+      const a = i >= bpp ? row[i - bpp] : 0, up = prev[i], c = i >= bpp ? prev[i - bpp] : 0;
+      const p = a + up - c, pa = Math.abs(p - a), pb = Math.abs(p - up), pc = Math.abs(p - c);
+      row[i] = (src[i] + [0, a, up, (a + up) >> 1, pa <= pb && pa <= pc ? a : pb <= pc ? up : c][f0]) & 255;
+    }
+    prev = row;
+  }
+  return [...row.subarray(x * bpp, x * bpp + 3)];
+}
+// Đo 4.5: ảnh chụp hết trang không cuộn, nên section hiện dần bằng IntersectionObserver ra trống mà bộ kiểm vẫn báo sạch (cả hai lần B4)
+const REVEAL = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Hiện dần</title>
+<style>body{margin:0;background:#fff}section{height:700px}.r{height:100%;background:#d00000;opacity:0;transition:opacity .3s}.r.in{opacity:1}</style></head>
+<body>${'<section><div class="r"></div></section>'.repeat(4)}<script>const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }));
+document.querySelectorAll('.r').forEach(el => io.observe(el));</script></body></html>`;
+
+test('run.mjs: "slices" và "full" cuộn qua trang trước khi chụp: phần hiện dần khi cuộn tới có trong ảnh', t => {
+  const { r, out } = runMjs(t, REVEAL, [{ name: 'man', shot: 'man', slices: 8 }, { name: 'ca', shot: 'ca', full: true }, { name: 'sau', check: 'scrollY' }]);
+  if (r.status === 4) return t.skip('không có trình duyệt');
+  assert.equal(r.status, 0, r.stderr);
+  // Màn 3 bắt đầu ở 1800px: điểm giữa (y 2150) nằm trong section thứ tư, section mà màn đầu không thấy
+  assert.deepEqual(pngPixel(path.join(out, 'man-3.png'), 720, 350), [208, 0, 0]);
+  assert.deepEqual(pngPixel(path.join(out, 'ca.png'), 720, 2500), [208, 0, 0]);
+  // Chụp xong trang về đúng chỗ cũ
+  assert.equal(JSON.parse(r.stdout).find(s => s.step === 'sau').check, 0);
+});
+
 test('qa_init.py: qa-query viết &amp; trong HTML thì bước khói nhận & (không thành tham số amp;thu)', t => {
   const dir = tmp(t, 'qaq-');
   fs.mkdirSync(path.join(dir, 'site'));
@@ -152,7 +187,8 @@ const qaCheck = dir => spawnSync(PYTHON, [path.join(S2S, 'scripts', 'qa-check.py
 test('qa-check.py: cài bộ kiểm khi chưa có, chạy handover, in gọn và liệt kê ảnh theo bộ; lần sau chỉ cập nhật', t => {
   const dir = tmp(t, 'b4-');
   fs.mkdirSync(path.join(dir, 'site'));
-  fs.writeFileSync(path.join(dir, 'site', 'index.html'), PAGE);
+  // Trang cao khoảng 2 màn rưỡi ở 1440×900: bộ khói chụp 3 ảnh
+  fs.writeFileSync(path.join(dir, 'site', 'index.html'), PAGE.replace('</main>', '<div style="height:1900px"></div></main>'));
   // Thư mục _qa/ có sẵn mà chưa có bộ kiểm (ảnh Cổng 3 của bản trước): vẫn cài mới
   fs.mkdirSync(path.join(dir, '_qa', 'cong-3'), { recursive: true });
   const r = qaCheck(dir);
@@ -161,7 +197,10 @@ test('qa-check.py: cài bộ kiểm khi chưa có, chạy handover, in gọn và
   assert.match(r.stdout, /^Thư mục chạy: _qa[\\/]handover[\\/]\d{8}-\d{4}$/m);
   assert.match(r.stdout, /^default: 3 bộ · \d+ bước · console 0 · FAIL 0/m);
   assert.match(r.stdout, /^Ảnh \(mở cùng một lượt\):$/m);
-  assert.match(r.stdout, /^ {2}default\/smoke-index-1440: index\.jpg/m);
+  // Thư mục ảnh tuyệt đối, tên từng ảnh theo thứ tự màn (không in dải "index-2.jpg … index.jpg": đo 4.5 phải thêm một lượt ls)
+  assert.match(r.stdout, new RegExp(`^ {2}thư mục: ${dir.replace(/\\/g, '/').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/_qa/handover/\\d{8}-\\d{4}/$`, 'm'));
+  assert.match(r.stdout, /^ {2}default\/smoke-index-1440: index\.jpg, index-2\.jpg, index-3\.jpg$/m);
+  assert.doesNotMatch(r.stdout, / … /);
   assert.match(r.stdout, /^Kết luận: /m);
   assert.ok(r.stdout.length < 6000, `kết quả dài ${r.stdout.length} ký tự`);
   assert.equal(r.status, 0, r.stdout + r.stderr);
