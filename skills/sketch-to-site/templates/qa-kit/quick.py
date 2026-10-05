@@ -1,9 +1,11 @@
-# Kiểm nhanh sau mỗi lần sửa: preflight + chỉ các bộ bị ảnh hưởng bởi file đã đổi, không chụp ảnh, so với mốc cuốn chiếu.
+# Kiểm nhanh sau mỗi lần sửa: preflight + chỉ các bộ bị ảnh hưởng bởi file đã đổi, không chụp ảnh (trừ khi --shots), so với mốc cuốn chiếu.
 # Chạy từ thư mục prototype (thư mục chứa _qa/):
 #   python _qa/quick.py --note "tweak: đổi nhãn nút Đặt lịch ở trang chủ"
 #   python _qa/quick.py --dry                      (chỉ in file đổi và bộ sẽ chạy)
 #   python _qa/quick.py --note "..." --all         (chạy mọi bộ; dùng sau khi đổi cấu hình một bộ trong qa.config.json)
 #   python _qa/quick.py --note "..." --themes <theme1>,<theme2>
+#   python _qa/quick.py --note "..." --shots       (chụp ảnh các bộ chạy, in thư mục và tên từng ảnh trước dòng kết quả,
+#                                                  kèm dòng ảnh nào đổi so với lần --shots trước: vòng sửa sau chỉ mở lại các ảnh đó)
 # File đổi = khác băm so với _qa/current/manifest.json. Bộ bị ảnh hưởng = bộ của mọi trang nạp file đó
 # (đọc từ thẻ <script>/<link>/<img> của trang), cộng bộ có file bước đổi. Đổi file .css thì chạy thêm mọi theme khác.
 # Sạch (0 lỗi console, 0 FAIL, 0 bước im lặng, 0 tràn ngang mới, 0 chữ tràn hoặc bị cắt mới trong khung, 0 tương phản mới, 0 màu sai ý định mới, preflight 0 lỗi)
@@ -19,6 +21,7 @@ ap.add_argument('--all', action='store_true')
 ap.add_argument('--dry', action='store_true')
 ap.add_argument('--no-save', action='store_true')
 ap.add_argument('--themes', default='')
+ap.add_argument('--shots', action='store_true', help='chụp ảnh các bộ chạy và in tên từng ảnh (tweak-site Cấp 1, evolve-site B4)')
 a = ap.parse_args()
 
 old = Q.load_json(os.path.join(Q.CUR, 'manifest.json'))
@@ -49,8 +52,10 @@ if a.dry:
 
 pf_ok, pf_line = Q.preflight()
 out = os.path.join(Q.HERE, '.quick-run')
+# Dấu ảnh của lần --shots trước, lấy trước khi xoá: danh sách ảnh nêu ảnh nào đổi, vòng sửa sau chỉ mở lại các ảnh đó
+before = Q.run_all.shot_digests(out) if a.shots else None
 shutil.rmtree(out, ignore_errors=True)
-res = Q.run_suites(names, out, themes, shots=False) if names else {}
+res = Q.run_suites(names, out, themes, shots=a.shots) if names else {}
 # Dòng đã có trong mốc current ở bộ khác: bộ mới mang dòng đó thì là nợ cũ (component dùng chung), không chặn
 known = Q.known_lines(Q.CUR)
 
@@ -98,6 +103,10 @@ if debt:
 if tot['contrast']:
     print('Tương phản dưới ngưỡng: sửa màu hoặc nền ở gốc (themes.json nếu là token). Không hạ opacity, không đổi cỡ chữ để né (qa-gate.md mục 6).')
 
+if a.shots:
+    for line in Q.run_all.shot_lines(out, [f'{th}/{n}' for th, n in sorted(res)], before):
+        print(line)
+
 clean = pf_ok and not bad and tot['errors'] == 0 and tot['fails'] == 0 and tot['silent'] == 0 and tot['over'] == 0 and tot['cut'] == 0 and tot['contrast'] == 0 and tot['intent'] == 0
 verdict = 'ĐẠT' if clean else 'CHƯA ĐẠT'
 if clean and not a.no_save:
@@ -112,5 +121,5 @@ elif not clean:
     verdict += ', chưa lưu mốc: sửa rồi chạy lại'
 print(f'quick · {len(changed)} file đổi · {len(res)} bộ ({" + ".join(themes)}) · {tot["steps"]} bước · preflight: {pf_line} · '
       f'console {tot["errors"]} · FAIL {tot["fails"]} · im lặng {tot["silent"]} · tràn mới {tot["over"]} · cắt mới {tot["cut"]} · tương phản mới {tot["contrast"]} · ý định mới {tot["intent"]} · check đổi {tot["changed"]}'
-      + (f' · nợ cũ {ndebt}' if debt else '') + f' → {verdict}')
+      + f' · nợ cũ {ndebt} → {verdict}')
 sys.exit(0 if clean else 1)

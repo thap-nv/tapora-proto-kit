@@ -8,7 +8,7 @@ Cách dùng:
     python preflight.py --font "Be Vietnam Pro" "Outfit"
     python preflight.py --vi-fonts <loại> "<từ khoá>" [--vi-fonts <loại> "<từ khoá>" ...]   # font có dấu tiếng Việt theo loại; không từ khoá thì in đủ cả loại theo vần; từ khoá là chữ tiếng Anh trong tên hoặc thẻ riêng (bỏ thẻ có ở từ 75 % font cùng loại); không khớp vẫn thoát 0
     python preflight.py --selftest
-    python preflight.py --deps          # skill phụ thuộc có đủ chưa (SKILL.md mục 9)
+    python preflight.py --deps          # skill phụ thuộc có đủ chưa (references/phu-thuoc.md)
 
 P19–P21: biến CSS chưa định nghĩa, màu viết cứng, themes.css cũ (qa-gate.md mục 1).
 Thoát mã 1 khi còn LỖI. Mã kiểm và ý nghĩa: references/qa-gate.md mục 1.
@@ -86,7 +86,7 @@ VI_FONT_ISSUES = {
     "xanh mono": (WARN, "số kiểu cổ, 3 và 5 dễ lẫn; thiếu ký tự ₫ nên trình duyệt mượn font khác"),
 }
 
-# Đồng bộ với SKILL.md mục 9. (mức, skill, file bắt buộc phải có bên trong)
+# Đồng bộ với references/phu-thuoc.md. (mức, skill, file bắt buộc phải có bên trong)
 DEPS = [
     ("🔴 bắt buộc", "sketch-to-concept", ["SKILL.md", "templates/concept-board.html"]),
     ("🔴 bắt buộc", "ui-ux-pro-max", ["scripts/search.py", "data/google-fonts.csv"]),

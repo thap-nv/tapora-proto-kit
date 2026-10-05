@@ -47,14 +47,14 @@ Thoát mã `1` khi còn **LỖI**. Cảnh báo thì phải **đọc từng dòng
 
 ## 2. Kiểm hiển thị — chụp 3 khổ
 
-**Bộ kiểm tự chụp** *(B4: `qa_init.py` rồi `handover.py run`)*:
-- Trang web ở 1440, 768, 390; màn app ở 1440 *(khung máy)* và 390.
+**Bộ kiểm tự chụp** *(B4: `scripts/qa-check.py`, tức `qa_init.py` rồi `handover.py run`)*:
+- Trang web ở 1440, 768, 390, **hết trang theo từng màn**: `<trang>.jpg`, `<trang>-2.jpg`, … tối đa 8 ảnh *(bước `slices` của `run.mjs`; `_system` tới 16)*, và màn đầu của từng trạng thái khai ở `<meta name="qa-states">`: `<trang>@<trạng thái>.jpg` *(mỗi trạng thái còn được đo như một bước)*; màn app ở 1440 *(khung máy)* và 390, một ảnh.
 - Chụp ở **mọi theme** trong `qa.config.json`, ảnh ở `_qa/handover/<ngày-giờ>/<theme>/<bộ>/`.
 - Nền sáng/tối theo `?theme=` của từng theme, không theo máy đang chạy: bộ chạy ép `prefers-color-scheme` theo tham số đó.
 
 Mỗi bước, bộ chạy tự đo:
-- **tràn ngang** của cả trang;
-- **chữ tràn hoặc bị cắt trong khung**: chữ tràn khỏi hộp của nó *(ô bảng bị ép, nút hẹp)*, hoặc chữ hay nút bị khung `overflow:hidden` cắt mất một phần *(bảng rộng hơn khung bo góc)*.
+- **tràn ngang** của cả trang, kèm tối đa ba phần tử gây ra *(phần tử đầu tiên vượt mép phải mà cha còn trong khung, ví dụ `div.ph tới 1600px`)*;
+- **chữ tràn hoặc bị cắt trong khung**: chữ tràn khỏi hộp của nó *(ô bảng bị ép, nút hẹp)*; hộp tràn khỏi khối cha không cắt *(cột lưới `1fr` giãn theo chữ quá to, flex item không co, ảnh `aspect-ratio` giãn theo hàng: `tràn khỏi khối cha <cha> Npx`; phần tử định vị tuyệt đối, có `transform` hay lề âm thì bỏ qua)*; hoặc chữ hay nút bị khung `overflow:hidden` cắt mất một phần *(bảng rộng hơn khung bo góc)*.
   - Phép đo tràn ngang không thấy lỗi này, vì phần tràn nằm trong khung.
   - Cố ý *(tràn lề, marquee, slide ló)* thì gắn `data-clip-ok="<lý do>"` vào khung, ví dụ `data-clip-ok="marquee chạy ngang"`. Thiếu lý do thì preflight báo P18. **Không** gắn cho chỗ tràn không cố ý *(mục 6)*.
 - **tương phản trên nền thật** *(`probes.js`)*: mọi chữ và placeholder đang hiện. Phép đo trộn các lớp nền trong suốt, lấy mẫu dải chuyển, theo cả lớp anh em nằm dưới chữ *(dải màu đầu app)*. Ngưỡng 4,5:1, chữ lớn 3:1. Điểm nằm trên ảnh thì bỏ, không đoán. Chữ nằm trên lớp `pointer-events:none` mà bị đo nhầm nền: gắn `data-contrast-bg="<selector lớp đó>"` vào chữ hoặc khung *(chữ vẫn được đo)*;
@@ -68,7 +68,7 @@ Mỗi bước, bộ chạy tự đo:
 
 **Độ chặt:** như chữ bị cắt, chỉ chặn lỗi **mới** so với mốc. Chưa có mốc thì mọi dòng là lỗi: sửa về 0. Mốc do bộ kiểm cũ ghi *(chưa đo mục đó, chưa có lượt sâu)* thì dòng là **nợ cũ**: in ra mà không chặn; `handover-check` hỏi người dùng sửa hay nhận vào mốc. Bộ mới *(trang mới thêm vào dự án đã có mốc)* mang dòng đã có ở bộ khác trong mốc *(component dùng chung)* thì dòng đó cũng là nợ cũ. Lỗi console của lượt sâu được so với mốc như các phép đo khác. Nợ cũ in gộp: mỗi mục một dòng, kèm `×n` khi gặp ở nhiều bước, khổ, theme.
 
-Lệnh dưới đây chỉ dùng khi **không chạy được bộ kiểm**, để chụp tay.
+Ảnh `site/_system.html` cho Cổng 3 do `scripts/system-check.mjs` chụp *(B2)*. Lệnh dưới đây chỉ dùng khi **không chạy được** lệnh đó hay bộ kiểm, để chụp tay.
 
 **Playwright** *(nếu có)*:
 ```bash
@@ -83,7 +83,7 @@ msedge --headless=new --disable-gpu --hide-scrollbars --screenshot="<abs>\_qa\14
 ```
 Chỉ dùng cho khổ từ 500 trở lên. Dưới đó trình duyệt vẫn dàn trang ở khoảng 496px rồi cắt ảnh, nên ảnh "390" trông như tràn ngang dù trang không tràn. Khổ 390 chụp bằng Playwright ở trên, hoặc bằng `templates/qa-kit/run.mjs` *(đặt khổ qua CDP)*.
 
-Chụp `site/_system.html` cho Cổng 3 khi chưa cài bộ kiểm: dùng đúng lệnh này, mỗi theme một ảnh, thêm `?theme=<tên>` vào địa chỉ.
+Chụp tay `site/_system.html` *(khi `system-check.mjs` không chạy được)*: dùng đúng lệnh này, mỗi theme một ảnh, thêm `?theme=<tên>` vào địa chỉ, ghi ảnh vào `_shots/system/`, không vào `_qa/`.
 
 **Mở từng ảnh ra xem** *(công cụ Read đọc được ảnh)*, soát:
 - [ ] Không tràn ngang ở 390
@@ -119,7 +119,7 @@ Chạy trên **từng trang**, đọc code thật, mỗi điểm ✅/❌ kèm `f
 
 **Kết luận:** 12/12 → giao · 10–11 → giao kèm ghi chú · 7–9 → sửa trước · ≤ 6 → chặn.
 
-**Soát sâu `laws-of-ux-review`** *(đủ 30 luật, thang 0–60, xếp hạng A–F)* là một lựa chọn ở Cổng 4, **không** chạy trong B4. Gắn *(Khuyến nghị)* khi sản phẩm là **web app** hoặc có trang chỉ đạt **7–9/12**. Luật đầy đủ ở SKILL.md, Cổng 4. Review cần `laws-of-ux/references/ux-laws-complete.md`, nên ba skill `laws-of-ux*` phải đi cùng nhau.
+**Soát sâu `laws-of-ux-review`** *(đủ 30 luật, thang 0–60, xếp hạng A–F)* là một lựa chọn ở Cổng 4, **không** chạy trong B4. Gắn *(Khuyến nghị)* khi sản phẩm là **web app** hoặc có trang chỉ đạt **7–9/12**. Luật đầy đủ ở `references/b3-b4.md`, Cổng 4. Review cần `laws-of-ux/references/ux-laws-complete.md`, nên ba skill `laws-of-ux*` phải đi cùng nhau.
 
 ---
 
@@ -207,13 +207,19 @@ Chạy trên **từng trang**, đọc code thật, mỗi điểm ✅/❌ kèm `f
 ## 7. Review bằng góc nhìn mới
 
 > Dùng ở B4 bước 5 của `sketch-to-site`, khi có công cụ tạo subagent và phiên cho phép. Người dựng tự soát thường sót đúng chỗ đã sót lúc dựng. Rút từ `superpowers` *(requesting-code-review)*, và cách nhìn của agent `design-critic` trong `plugin87/ux-ui-agent-skills`.
+>
+> Gọi subagent loại chỉ đọc *(`subagent_type: "Explore"`: khởi đầu nhẹ hơn `general-purpose` khoảng 14k token, đọc và chạy lệnh đủ cho việc này)* và **chờ kết quả**, không chạy nền: review về sau khi đã bàn giao là bỏ phí, còn sửa file trong lúc review chạy thì review đọc bản cũ. Thay `{danh sách ảnh}` bằng phần *Ảnh* mà `scripts/qa-check.py` vừa in.
 
 ```text
 Bạn review prototype {tên dự án} trước khi nghiệm thu, như một giám đốc thiết kế nhận bản của người khác. Bạn không dựng nó. Chỉ đọc, không sửa file nào. Mặc định bản này chưa đạt cho tới khi ảnh chứng minh ngược lại; qua bộ kiểm không phải bằng chứng về gu.
 
 Đọc: {thư mục prototype}/CONCEPT.md, {thư mục prototype}/DESIGN.md (sơ đồ trang ở mục 9), {thư mục prototype}/DECISIONS.md (phạm vi ở Cổng 3, giả định ở B1; thứ đã khoá ở một cổng thì chỉ nêu, không đề xuất đổi), mã nguồn trong {thư mục prototype}/site/ (để dẫn file:dòng), và {skills}/sketch-to-site/references/qa-gate.md mục 4.
 
-Xem trước khi nói: mở ảnh mới nhất trong {thư mục prototype}/_qa/handover/ ở khổ 1440 và 390, ở mọi theme, cả trang _system. Khổ hay theme nào chưa có ảnh thì ghi vào mục Không đánh giá được, không đoán.
+Mã nguồn đọc bằng grep -n hay đọc đúng đoạn cần dẫn, không in cả file ra.
+
+Xem trước khi nói: ảnh của lần chạy mới nhất trong {thư mục prototype}/_qa/handover/, trang web chụp hết trang theo từng màn (<trang>.jpg, <trang>-2.jpg, …), màn đầu của từng trạng thái khác của trang là <trang>@<trạng thái>.jpg:
+{danh sách ảnh}
+Ngay sau khi đọc các file .md ở trên, mở mọi ảnh cần xem trong MỘT tin nhắn (nhiều lệnh Read cùng lúc), trước khi đọc mã: ảnh 1440 và 390 của từng trang ở mọi theme, kể cả <trang>@<trạng thái>; trang _system chỉ ở 1440. Ảnh 768 của trang chỉ mở khi trang có bảng hay lưới nhiều cột; _system ở 390 và 768 thì không mở. Đừng mở vài ảnh mỗi lượt. Khổ hay theme nào chưa có ảnh thì ghi vào mục Không đánh giá được, không đoán.
 
 Soát theo thứ tự:
 1. Điểm nhìn đầu: mỗi màn có một chỗ mắt dừng trước; không bốn thẻ bằng nhau.
