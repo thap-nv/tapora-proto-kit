@@ -88,6 +88,20 @@ function layoutCheck() {
       const over = Math.max(hi - (b.right - parseFloat(bs.borderRightWidth)), (b.left + parseFloat(bs.borderLeftWidth)) - lo);
       if (over > 2 && !tiny(b.width, b.height, bs) && bs.textOverflow !== 'ellipsis') add(box, `chữ tràn khung ${Math.round(over)}px`);
     }
+    // Hộp tràn khỏi khối cha (cha không cắt, overflow visible): cột lưới 1fr giãn theo min-content, flex item không co, ảnh aspect-ratio giãn theo hàng.
+    // Chữ vẫn nằm trong hộp của nó nên phép đo chữ ở trên không thấy; ảnh thì thấy hộp đè sang hàng xóm. Đo 4.5: cả hai lần B2 chỉ thấy khi mở ảnh.
+    // Bỏ qua phần tử định vị tuyệt đối, có transform hay lề âm (tràn lề cố ý), và cha inline hoặc display:contents (không có hộp riêng)
+    const par = e.parentElement;
+    if (par && par !== document.body && !/^(absolute|fixed)$/.test(cs.position) && cs.transform === 'none' && cs.display !== 'inline' && !/^table/.test(cs.display)
+      && parseFloat(cs.marginLeft) >= 0 && parseFloat(cs.marginRight) >= 0) {
+      const ps = getComputedStyle(par);
+      if (ps.overflowX === 'visible' && !/^(inline|contents)$/.test(ps.display) && !/^table/.test(ps.display)) {
+        const pr = par.getBoundingClientRect();
+        const inner = [pr.left + parseFloat(ps.borderLeftWidth) + parseFloat(ps.paddingLeft), pr.right - parseFloat(ps.borderRightWidth) - parseFloat(ps.paddingRight)];
+        const over = Math.max(r.right - inner[1], inner[0] - r.left);
+        if (over > 2 && pr.width >= 2) add(e, `tràn khỏi khối cha ${name(par)} ${Math.round(over)}px`);
+      }
+    }
     if (text || e.matches('a[href], button, input:not([type=hidden]), select, textarea, [role=button], [role=tab]')) {
       for (let p = e.parentElement; p && p !== document.documentElement; p = p.parentElement) {
         const ox = getComputedStyle(p).overflowX;
@@ -99,6 +113,25 @@ function layoutCheck() {
         if (cut > 2) { add(e, `bị cắt ${Math.round(cut)}px (khung ${name(p)})`); break; }
       }
     }
+  }
+  return out;
+}
+// Trang rộng hơn khung: tìm phần tử gây ra, là phần tử đầu tiên vượt mép phải trên đường từ body xuống (cha còn trong khung), không bị khối nào cắt.
+// Đo 4.5: chỉ báo "trang rộng 2540px" nên cả hai lần B2 phải tự dò phần tử (trang thử, mở ảnh cả trang)
+function wideCheck() {
+  const W = document.documentElement.clientWidth;
+  if (document.documentElement.scrollWidth <= W) return [];
+  const name = e => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
+  const right = e => e.getBoundingClientRect().right + scrollX;
+  const clipped = e => { for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) if (getComputedStyle(p).overflowX !== 'visible') return true; return false; };
+  const out = [];
+  for (const e of document.body.querySelectorAll('*')) {
+    if (out.length >= 3) break;
+    const cs = getComputedStyle(e);
+    if (cs.display === 'none' || cs.position === 'fixed' || right(e) <= W + 1) continue;
+    if (e.parentElement !== document.body && right(e.parentElement) > W + 1) continue;
+    if (clipped(e)) continue;
+    out.push(`${name(e)} tới ${Math.round(right(e))}px`);
   }
   return out;
 }
@@ -168,7 +201,16 @@ mainFrame = (await send('Page.getFrameTree')).result?.frameTree?.frame?.id ?? nu
 await send('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, deviceScaleFactor: 1, mobile: mobile === '1' });
 // QA_QUERY: tham số thêm cho mọi bộ, ví dụ ?theme=dark để chạy lại các bộ trên một theme khác
 const extra = (process.env.QA_QUERY || '').replace(/^\?/, '');
-const qs = steps.query ? steps.query + (extra ? '&' + extra : '') : (extra ? '?' + extra : '');
+// Tham số mẫu: "query" của file bước nếu có (bộ viết tay); không thì <meta name="qa-query"> của trang, đọc ở mỗi lần chạy nên sửa thẻ meta là
+// bộ khói nhận ngay (đo 4.5: qa_init.py chép query vào file bước lúc cài, sửa trang sau đó không có tác dụng), cộng "query_add" (?data= của bộ dữ liệu)
+const pageQuery = () => {
+  const tag = (readFileSync(file, 'utf8').match(/<meta\b[^>]*\bname\s*=\s*["']qa-query["'][^>]*>/i) || [''])[0];
+  const c = (tag.match(/\bcontent\s*=\s*["']([^"']*)["']/i) || [])[1] || '';
+  return c.trim() ? '?' + c.trim().replace(/&amp;/g, '&').replace(/^\?/, '') : '';
+};
+const baseQuery = steps.query !== undefined ? steps.query : pageQuery();
+const addQuery = [steps.query_add, extra].filter(Boolean).join('&');
+const qs = baseQuery ? baseQuery + (addQuery ? '&' + addQuery : '') : (addQuery ? '?' + addQuery : '');
 // Nền sáng/tối không theo máy đang chạy: ép prefers-color-scheme theo tham số của lần chạy (có theme=dark thì tối, còn lại sáng)
 await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: /[?&]theme=dark(&|$)/.test(qs) ? 'dark' : 'light' }] });
 // Đợi trang tải xong rồi mới chạy bước: script trong <head> tải chậm (CDN) chặn dựng trang, đo sớm thì document.body còn null.
@@ -192,7 +234,7 @@ for (const s of steps.steps) {
   const probed = await inject();
   const safe = f => `(()=>{try{return __qa.${f}()}catch(e){return ['LỖI ĐO '+e.message]}})()`;
   const measure = probed ? `,contrast:${safe('contrast')},intent:${safe('intent')}` : '';
-  const dimsReply = await send('Runtime.evaluate', { expression: `JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,cut:(${layoutCheck})()${measure}})`, returnByValue: true });
+  const dimsReply = await send('Runtime.evaluate', { expression: `JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,cut:(${layoutCheck})(),wide:(${wideCheck})()${measure}})`, returnByValue: true });
   const dims = dimsReply.result?.result?.value;
   // Không đo được (trang chưa có body, đang chuyển trang): báo lỗi ở bước này, không làm sập cả bộ
   if (dims === undefined) errors.push('EVAL không đo được bố cục: ' + String(dimsReply.result?.exceptionDetails?.exception?.description || dimsReply.error?.message || 'không có giá trị').split('\n')[0]);

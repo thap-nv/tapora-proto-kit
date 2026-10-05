@@ -42,7 +42,7 @@ Kiểm tra trên 2 độ phân giải chuẩn:
   * Modal/Drawer trên mobile nên tự động chuyển thành Bottom Sheet (trượt từ đáy lên) hoặc chiếm toàn màn hình để dễ thao tác bằng ngón cái.
   * Chiều cao vùng bấm nút ≥ 44px (Fitts's Law).
 - [ ] **Nền tối** *(nếu site có `data-theme="dark"` hoặc `prefers-color-scheme`)*: phần mới đọc được ở cả hai nền, không có màu viết cứng. Xem ảnh trong thư mục theme `dark` của lần chạy.
-- [ ] **Trang mới:** thêm bộ khói ở 1440, 768, 390 *(màn app: 1440 và 390)*. Trang đọc `?id=` thì có `<meta name="qa-query">` và `"query"` trong file bước *(`rules-and-conflicts.md` D.5)*.
+- [ ] **Trang mới:** thêm bộ khói ở 1440, 768, 390 *(màn app: 1440 và 390)*. Trang đọc `?id=` thì có `<meta name="qa-query">` trong `<head>` *(`rules-and-conflicts.md` D.5; `run.mjs` đọc thẻ đó ở mỗi lần chạy, file bước chỉ ghi `"query"` khi cần tham số khác)*.
 - [ ] **Màn app mobile** *(`<html data-surface="app">`)*:
   * Bước `tap-targets` **PASS** ở 390 trên mọi nền tảng đang làm *(theme `android` nếu có)*. Màn mới thêm thì thêm bước đó vào bộ khói của nó *(chép từ bộ khói của màn cũ)*.
   * Phần mới theo quy ước của từng nền tảng *(`mobile-app.md` mục 2)*; ảnh 1440 là khung máy: không lọt dưới thanh trạng thái hay thanh home.

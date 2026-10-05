@@ -17,7 +17,7 @@ Chạy từ `<thư-mục-prototype>`, thư mục chứa `_qa/`. Cần Python 3, 
 - **Trang design system:** `site/_system.html`. Component mới thêm vào đó, đủ trạng thái; bộ khói của trang này đo mọi cặp màu ở mọi theme.
 - **Màn app mobile** (`<html data-surface="app">`): bộ khói có bước `tap-targets` đo vùng chạm ở khổ 390; theme `android` (`?platform=android`) kiểm giao diện Android.
 - **Thêm bộ kiểm:** viết `_qa/steps-<khoá>.json`, rồi khai báo `[tên, trang, khoá, khổ]` ở `suites`.
-  - Trang mới: một bộ khói ở mỗi khổ `desktop`, `tablet`, `mobile` *(màn app bỏ `tablet`)*. Trang đọc `?id=` thì file bước có `"query": "?id=<mã>"`.
+  - Trang mới: một bộ khói ở mỗi khổ `desktop`, `tablet`, `mobile` *(màn app bỏ `tablet`)*. Trang đọc `?id=` thì trang có `<meta name="qa-query" content="?id=<mã>">`: `run.mjs` đọc thẻ đó ở mỗi lần chạy, file bước chỉ ghi `"query"` khi cần tham số khác.
   - Mỗi bước có dạng `{name, js, wait, check, shot, jpeg}`; `check` là biểu thức JS.
   - Trả chuỗi bắt đầu bằng `FAIL` là lỗi. Có `check` mà không trả giá trị cũng tính là lỗi.
 - **`run.mjs` thoát mã 2:** trình duyệt đã chạy nhưng không trả lời; dòng cuối của thông báo là lỗi của chính trình duyệt. Trên Linux hay container, thêm cờ qua `QA_BROWSER_ARGS`, ví dụ `QA_BROWSER_ARGS="--no-sandbox"`.

@@ -61,7 +61,9 @@ def cmd_run(a):
         bad += [f'console {th}/{name} · {x["step"]}: {Q.short(x["errors"][:2], 200)}' for x in rep if x['errors'] and x['step'] != Q.qadiff.DEEP_STEP]
         bad += [f'FAIL {th}/{name} · {Q.short(f, 200)}' for f in r['fails']]
         bad += [f'im lặng {th}/{name} · {s}' for s in r['silent']]
-        bad += [f'tràn ngang {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}' for s in d['over_new']]
+        # Kèm phần tử gây tràn (run.mjs đo "wide"): khỏi phải tự dò
+        wide = {x['step']: x['dims'].get('wide') or [] for x in rep or [] if x.get('dims')}
+        bad += [f'tràn ngang {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}' + (f': do {", ".join(wide[s])}' if wide.get(s) else '') for s in d['over_new']]
         bad += [f'trong khung {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}: {c}' for s, c in d['cut_new']]
         for key, lab in (('contrast', 'tương phản'), ('intent', 'ý định'), ('states', 'trạng thái'), ('keyboard', 'bàn phím'), ('interactive', 'tương tác'),
                          (Q.qadiff.DEEP_ERRORS, 'console lượt sâu')):
