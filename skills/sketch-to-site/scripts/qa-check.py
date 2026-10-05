@@ -73,17 +73,20 @@ for l in out:
     print(l)
 flush()
 
-# 3. Ảnh của lần chạy: <thư mục chạy>/<theme>/<bộ>/<ảnh>, xếp theo số màn
-num = lambda f: [int(x) if x.isdigit() else x for x in re.split(r'(\d+)', f)]
+# 3. Ảnh của lần chạy: <thư mục chạy>/<theme>/<bộ>/<ảnh>. In đường dẫn tuyệt đối của thư mục và tên từng ảnh, theo thứ tự màn
+#    (<shot>, <shot>-2, …), để mở thẳng bằng Read. Đo 4.5: in dải "index-2.jpg … index.jpg" nên cả hai lần B4 phải thêm một lượt ls.
+def shot_order(f):
+    m = re.match(r'(.*?)(?:-(\d+))?\.(?:jpg|png)$', f)
+    return (m.group(1), int(m.group(2) or 1)) if m else (f, 0)
+
+
 root = os.path.join(proto, run_dir) if run_dir else ''
 if root and os.path.isdir(root):
     print(f'Ảnh (mở cùng một lượt):')
-    print(f'  thư mục: {run_dir}/')
+    print(f'  thư mục: {fwd(os.path.abspath(root))}/')
     for th in sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d))):
         for suite in sorted(os.listdir(os.path.join(root, th))):
-            files = sorted((f for f in os.listdir(os.path.join(root, th, suite)) if f.endswith(('.jpg', '.png'))), key=num)
-            if not files:
-                continue
-            names = ', '.join(files) if len(files) <= 3 else f'{files[0]} … {files[-1]} ({len(files)} ảnh)'
-            print(f'  {th}/{suite}: {names}')
+            files = sorted((f for f in os.listdir(os.path.join(root, th, suite)) if f.endswith(('.jpg', '.png'))), key=shot_order)
+            if files:
+                print(f'  {th}/{suite}: {", ".join(files)}')
 sys.exit(run.returncode)

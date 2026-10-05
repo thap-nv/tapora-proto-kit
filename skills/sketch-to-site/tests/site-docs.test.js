@@ -118,6 +118,16 @@ test('b3-b4.md: lối vào lại một lượt; B4 kiểm bằng qa-check.py; re
   const md = R2();
   for (const h of ['### B0 · Làm tiếp', '### B3 · Dựng đầy đủ', '### B4 · Tự kiểm', '### 🛑 Cổng 4 · Nghiệm thu']) assert.ok(md.includes(h), h);
   assert.match(section(md, '### B0 · Làm tiếp', '### B3'), /Đừng đọc lại các file đó, đừng `cat` chúng/);
+  // Đo 4.5: lượt vào thiếu file để dựng, cả hai lần B3 tốn thêm 1–3 lượt đọc _system.html, CSS dùng chung, concept/<id>.html và đầu script
+  const row = SKILL().split('\n').find(l => l.startsWith('| Cổng 3 đã có đáp án'));
+  for (const f of ['`references/b3-b4.md`', '`site/_system.html`', '`site/assets/site.css`']) assert.ok(row.includes(f), `lượt vào B3 thiếu ${f}`);
+  const l2 = section(SKILL(), 'Lệnh 2', '**Ít lượt.**');
+  assert.match(l2, /cat "\$P\/concept\/\$id\.html"/);
+  assert.match(l2, /ls "\$P\/site" "\$P\/site\/assets"/);
+  // id lấy từ dòng "**Concept:** <id>" của CONCEPT.md: khuôn của sketch-to-concept phải giữ đúng dạng đó
+  assert.match(fs.readFileSync(path.join(S2S, '..', 'sketch-to-concept', 'templates', 'CONCEPT.md'), 'utf8'), /\*\*Concept:\*\* <id/);
+  assert.match(section(md, '### B0 · Làm tiếp', '### B3'), /đừng đọc mã của `preflight\.py` hay `qa-check\.py`/);
+  assert.ok(section(md, '### B3 ·', '### B4').includes('python <skills>/sketch-to-site/scripts/preflight.py <thư-mục-prototype>/site/<trang>.html'));
   const b4 = section(md, '### B4 · Tự kiểm', '### 🛑 Cổng 4');
   assert.ok(b4.includes('python <skills>/sketch-to-site/scripts/qa-check.py <thư-mục-prototype>'));
   assert.match(b4, /Đừng tự viết bộ cuộn hay bộ chụp thêm/);

@@ -5,6 +5,7 @@
 // Trình duyệt: biến QA_BROWSER, rồi "browser" trong qa.config.json, rồi tự dò Edge/Chrome/Chromium theo hệ điều hành.
 // Bước có "shot": chụp khung nhìn vào <shot>.png (.jpg khi "jpeg"); "clip": "<selector>" chỉ chụp một khối;
 // "full": true chụp cả trang thành một ảnh; "slices": n chụp cả trang theo từng màn cao bằng khung nhìn: <shot>, <shot>-2, … tối đa n ảnh.
+// Trước khi chụp "full"/"slices", trang được cuộn qua phần sẽ chụp rồi về chỗ cũ, để phần hiện dần khi cuộn tới có trong ảnh.
 import { spawn, spawnSync } from 'node:child_process';
 import { writeFileSync, readFileSync, mkdtempSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -216,6 +217,17 @@ for (const s of steps.steps) {
       const size = m.cssContentSize || m.contentSize || { width: +w, height: +h };
       const vw = (await send('Runtime.evaluate', { expression: 'document.documentElement.clientWidth', returnByValue: true })).result?.result?.value || +w;
       const total = Math.min(Math.ceil(size.height), 15000);
+      // captureBeyondViewport không cuộn trang: phần hiện dần khi cuộn tới (IntersectionObserver + opacity) ra ảnh trống mà phép đo vẫn sạch
+      // (đo 4.5: cả hai lần B4 vấp). Cuộn qua cả phần sẽ chụp từng nửa màn như người xem, đợi chuyển động chạy xong, rồi về chỗ cũ mới chụp.
+      // behavior 'instant' để scroll-behavior:smooth của trang không làm chậm từng lần cuộn
+      const upto = s.full ? total : Math.min(total, (s.slices === true ? 12 : +s.slices) * +h);
+      const at = (await send('Runtime.evaluate', { expression: 'scrollY', returnByValue: true })).result?.result?.value || 0;
+      for (let y = 0; y < upto; y += Math.ceil(+h / 2)) {
+        await send('Runtime.evaluate', { expression: `window.scrollTo({ top: ${y}, behavior: 'instant' })` });
+        await sleep(120);
+      }
+      await send('Runtime.evaluate', { expression: `window.scrollTo({ top: ${at}, behavior: 'instant' })` });
+      await sleep(700);
       const shoot = async (y, height, name) => {
         const sh = await send('Page.captureScreenshot', { ...opt, captureBeyondViewport: true, clip: { x: 0, y, width: vw, height, scale: 1 } });
         writeFileSync(join(outdir, name + ext), Buffer.from(sh.result.data, 'base64'));

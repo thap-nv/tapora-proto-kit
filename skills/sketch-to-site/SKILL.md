@@ -114,7 +114,7 @@ Các bước nằm ở hai file theo giai đoạn: `references/b0-b2.md` *(B0, B
 | Chưa có `CONCEPT.md` | Phần A trước, trong cùng phiên: đọc `<skills>/sketch-to-concept/SKILL.md`. Xong Cổng 2 thì quay lại đây | |
 | Dự án làm dở theo quy trình trước v4.0 *(`DECISIONS.md` ghi một hướng được chọn trong 3 hướng dựng thử)* | Coi hướng đó là concept đã chốt: viết `CONCEPT.md` từ hướng đó theo `<skills>/sketch-to-concept/templates/CONCEPT.md`, không bắt người dùng làm lại Phần A. Rồi theo dòng dưới | |
 | Có `CONCEPT.md`, chưa có đáp án Cổng 3 | B0 → B1 → B2 → 🛑 Cổng 3 | `Read` `references/b0-b2.md`, `CONCEPT.md`, `DECISIONS.md` · lệnh 1 |
-| Cổng 3 đã có đáp án *(trong `DECISIONS.md`, hay người dùng vừa trả lời)*, hoặc có `BUILD-LOG.md` | B3 → B4 → 🛑 Cổng 4 | `Read` `references/b3-b4.md`, `CONCEPT.md`, `DECISIONS.md`, `DESIGN.md`, và `BUILD-LOG.md` *(chưa có thì khuôn `<skills>/sketch-to-site/templates/BUILD-LOG.md`)* · lệnh 2 |
+| Cổng 3 đã có đáp án *(trong `DECISIONS.md`, hay người dùng vừa trả lời)*, hoặc có `BUILD-LOG.md` | B3 → B4 → 🛑 Cổng 4 | `Read` `references/b3-b4.md`, `CONCEPT.md`, `DECISIONS.md`, `DESIGN.md`, `BUILD-LOG.md` *(chưa có thì khuôn `<skills>/sketch-to-site/templates/BUILD-LOG.md`)*, `site/_system.html` và `site/assets/site.css` *(CSS component dùng chung; tên khác thì đọc file mà `_system.html` nạp)* · lệnh 2 |
 
 Lệnh 1 chép khuôn của B2 *(dùng nguyên hoặc sẽ điền)*, in luật mà B2 dùng *(`rules-and-conflicts.md` mục A, B, D.2)* và danh sách họ phong cách:
 
@@ -122,17 +122,17 @@ Lệnh 1 chép khuôn của B2 *(dùng nguyên hoặc sẽ điền)*, in luật 
 S="<skills>/sketch-to-site"; P="<thư-mục-prototype>"; mkdir -p "$P/site/assets" && cp "$S/templates/themes.json" "$S/templates/tokens.css" "$S/templates/color.js" "$S/templates/theme.js" "$P/site/assets/" && cp "$S/templates/system.html" "$P/site/_system.html"; sed -n '/^### A\.1/,/^## C\./p;/^### D\.2/,/^### D\.3/p' "$S/references/rules-and-conflicts.md"; grep '^### ' "$S/references/style-catalogue.md"
 ```
 
-Lệnh 2 in luật mà B3 dùng *(mục A, B, D.1–D.4, E)*:
+Lệnh 2 in luật mà B3 dùng *(mục A, B, D.1–D.4, E)*, màn then chốt của concept *(`concept/<id>.html`, id ở `CONCEPT.md` mục 1)* và danh sách file đã có trong `site/`:
 
 ```bash
-sed -n '/^### A\.1/,/^## C\./p;/^### D\.1/,/^### D\.5/p;/^## E\./,/^## F\./p' "<skills>/sketch-to-site/references/rules-and-conflicts.md"
+S="<skills>/sketch-to-site"; P="<thư-mục-prototype>"; sed -n '/^### A\.1/,/^## C\./p;/^### D\.1/,/^### D\.5/p;/^## E\./,/^## F\./p' "$S/references/rules-and-conflicts.md"; id=$(sed -n 's/.*\*\*Concept:\*\* *\([a-z0-9-]*\).*/\1/p' "$P/CONCEPT.md" | head -1); [ -f "$P/concept/$id.html" ] && { echo "== concept/$id.html"; cat "$P/concept/$id.html"; }; ls "$P/site" "$P/site/assets"
 ```
 
 **Ít lượt.** Mỗi lượt đọc lại cả ngữ cảnh, nên cuối một giai đoạn mỗi lượt tốn 25–35k token. Đo ở bản 4.4: 59–69 lượt mỗi giai đoạn, 75–85 % lượt chỉ có một lệnh gọi.
 - Lệnh và lần đọc **không phụ thuộc nhau** thì gọi chung một lượt *(nhiều lệnh gọi trong cùng một tin nhắn)*: đọc nhiều file một lượt; mọi chỗ sửa sau một lần kiểm làm trong một lượt, rồi chạy lại.
 - Mở **mọi ảnh** mà lệnh kiểm liệt kê trong **một** lượt, không mỗi lượt một hai ảnh.
 - File đã chép từ khuôn thì `Read` bản chép rồi mới sửa *(Write và Edit từ chối file chưa đọc)*. Khuôn chỉ để làm theo *(`templates/DESIGN.md`, `templates/BUILD-LOG.md`)* thì đọc ở thư mục skill rồi viết file mới, không chép.
-- Đọc `references/` bằng lệnh in đúng mục mà file giai đoạn ghi, không đọc cả file. Không đọc mã của script để biết cách dùng: cách gọi, kết quả và mã thoát ghi ở đầu mỗi script và trong file giai đoạn.
+- Đọc `references/` bằng lệnh in đúng mục mà file giai đoạn ghi, không đọc cả file. Không đọc mã của script để biết cách dùng, kể cả phần đầu: cách gọi, kết quả và mã thoát đã ghi đủ trong file giai đoạn.
 - Kiểm bằng hai lệnh một lần: `scripts/system-check.mjs` *(B2, ảnh Cổng 3)* và `scripts/qa-check.py` *(B4)*. Không tự viết bộ chụp hay bộ cuộn, không gọi riêng `run.mjs`, Edge `--screenshot` hay Playwright.
 
 ---

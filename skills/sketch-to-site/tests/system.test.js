@@ -115,6 +115,20 @@ test('khuôn _system.html: luật lớp của component thắng luật chữ c�
   assert.deepEqual(JSON.parse(r.find(s => s.step === 's').check), { h2: true, h2Margin: '0px', p: true, pMargin: '0px' });
 });
 
+// Đo 4.5: :where(.sys p) vẫn đặt màu phụ cho mọi <p>, nên chữ không lớp trong component (vòm than hồng) mất màu của component, rớt tương phản ở cả hai lần dựng
+test('khuôn _system.html: chữ không lớp trong component thừa hưởng màu và lề của component; mô tả của trang vẫn màu phụ', t => {
+  const dir = site(t, { dark: false });
+  withComponents(dir, '.x-arch{background:var(--primary);color:var(--on-primary);padding:24px}',
+    '<p class="x-desc">Vòm màn đầu.</p><div class="x-arch"><h2>9:30</h2><p>Ra lò sau 50 phút</p></div>');
+  const check = `(() => { const c = (v) => { const e = document.createElement('span'); e.style.color = 'var(--' + v + ')'; document.body.append(e); return getComputedStyle(e).color; };
+    const p = document.querySelector('.x-arch p'), h = document.querySelector('.x-arch h2'), d = document.querySelector('.x-desc');
+    return JSON.stringify({ p: getComputedStyle(p).color === c('on-primary'), h2: getComputedStyle(h).color === c('on-primary'), h2Margin: getComputedStyle(h).marginTop !== '48px', desc: getComputedStyle(d).color === c('muted') }); })()`;
+  const r = run390(dir, [{ name: 's', check }]);
+  if (!r) return t.skip('không có trình duyệt');
+  assert.deepEqual(JSON.parse(r.find(s => s.step === 's').check), { p: true, h2: true, h2Margin: true, desc: true });
+  assert.deepEqual(r.flatMap(s => s.errors), []);
+});
+
 test('khuôn _system.html: thang chữ có chữ hiển thị 96px không tràn, không bị cắt ở 390', t => {
   const dir = site(t, { dark: false });
   withComponents(dir, ':root{--text-4xl:6rem}', '<p>Component thật</p>');
