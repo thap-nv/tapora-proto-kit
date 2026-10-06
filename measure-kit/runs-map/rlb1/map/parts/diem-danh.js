@@ -1,0 +1,9 @@
+window.PART = {
+  module: 'diem-danh',
+  features: [
+    { name: 'Điểm danh buổi học', src: ['UC-05', 'YC-06', 'BR-DD-01', 'BR-DD-03', 'A-05', 'A-10', 'M-04', 'D6:111', 'D6:228-254', 'D5:1537-1611'], roles: ['hlv', 'quan-ly'], freq: 'ngay', evidence: 'ro', status: 'pham-vi', states: ['trang_thai_diem_danh', 'trang_thai_diem_danh.co_mat', 'trang_thai_diem_danh.vang_co_phep', 'trang_thai_diem_danh.vang_khong_phep', 'trang_thai_buoi.da_dien_ra'], spec: 'Trên máy tính bảng ở thành bể, chọn buổi đang diễn ra: ai đã báo nghỉ hiện sẵn; bấm Có mặt tất cả rồi đổi từng bé vắng; lưu thì trừ buổi (có mặt, vắng không phép trừ một buổi). Bé hết buổi, hết hạn bị đánh dấu, không chấm có mặt được. Lễ tân không có quyền.', notes: 'A-05: lễ tân bán gói mới tại quầy (goi-hoc), buổi hôm nay tính vào gói mới rồi bé vào lớp; A-10: mất mạng khi lưu thì lưu tạm trên máy, tự gửi khi có mạng' },
+    { name: 'Sửa điểm danh', src: ['BR-DD-05', 'UC-05', 'M-04', 'D6:254', 'D5:1613-1687', 'D10:114-115'], roles: ['hlv', 'quan-ly'], freq: 'tuan', evidence: 'ro', status: 'pham-vi', states: ['trang_thai_diem_danh'], spec: 'HLV sửa điểm danh buổi mình dạy trong 24 giờ sau buổi. Quá 24 giờ chỉ quản lý sửa được, bắt buộc ghi lý do sửa. Lưu người sửa; số buổi trừ tính lại theo trạng thái mới (BR-DD-03).' },
+    { name: 'Chốt điểm danh cuối ngày', src: ['BR-DD-02', 'UC-05', 'M-04', 'D6:29', 'D6:253'], roles: [], freq: 'ngay', evidence: 'ro', status: 'pham-vi', states: ['trang_thai_diem_danh.vang_khong_phep', 'trang_thai_buoi.da_dien_ra'], spec: '23:00 mỗi ngày, học viên chưa có trạng thái trong buổi đã qua được ghi vắng không phép và bị trừ một buổi (BR-DD-03).', notes: 'ngoại lệ chồng: máy tính bảng mất mạng (A-10) chưa gửi điểm danh trước 23:00 thì chốt tự động ghi vắng không phép trước; tài liệu không nói bản nào thắng khi máy gửi lại' },
+  ],
+  skip: [],
+};

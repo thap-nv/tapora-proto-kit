@@ -1656,3 +1656,92 @@ Sau `c646c87`, r8 không còn vào đường chia worker (phụ lục dữ liệ
 - Điểm lạ ở `sources.py`: dòng "chia worker" in tổng 761,5 KB chứ không phải 424 KB của phần thật; đã ghi vào prompt đo để soát, chưa sửa.
 
 Prompt đo: `prompt-map-r9.md`.
+
+## sketch-to-map: đường chia worker trên r9-map-lon2 (đo 06/10/2026)
+
+Prompt `prompt-map-r9.md`. Bản đo: nhánh `feat/sketch-to-map` trên origin, commit **`f61cfe4`**, sau `c646c87` (`grep -c "không bằng heredoc" SKILL.md` = 1, `grep -c data_codes sources.py` = 10). Máy Windows: Node 20.19.5, Python 3.14, Opus 5.5, phiên `8e8e35bd-4996-407d-b738-8641ba62f4a9`. Một subagent `general-purpose` chạy nền, prompt như `rmm3` với `<DIR>` = `<RUNS>/rlb1`. Đề đúng md5 hai tài liệu mới, `--selfcheck` sạch. Chạy thử `sources.py` trên bản sao: in "chia worker theo module (761,5 KB > 300,0 KB)" và không in số module (agent tự chia module từ mục lục); `sources.json` có `read_total` 433.769 byte, D4 mang `data: true`.
+
+| | `rml1` | `rml2` | `rlb1` |
+|---|---|---|---|
+| Đề · bản skill | r8 (thật 48 KB) · `230a7d1` | r8 · `230a7d1` | **r9 (thật 424 KB)** · `f61cfe4` |
+| Agent chính: lượt · quy đổi · thời gian | 19 · 0,51M · 21,1 phút | 21 · 0,52M · 21,8 phút | **12** · 0,66M, trừ mất cache **0,42M** · 17,8 phút |
+| Mất cache agent chính | 0 | 0 | 2 lần (lượt 6, 10) · ≈ 238k |
+| Worker (`general-purpose`) | 7 · 28 lượt (4 mỗi worker) · 754k | 7 · 57 lượt (6–11) · 916k | **4 · 12 lượt (3 mỗi worker)** · 913k *(1 lần mất cache, ≈ 101k)* |
+| Người thử nhãn (`Explore`) | 2 lượt · 44k | 2 lượt · 44k | 2 lượt · 44k |
+| **Tổng** | **49 lượt · 1,31M** | **80 lượt · 1,47M** | **30 lượt · 1,61M** · trừ mất cache ≈ 1,27M |
+| Worker một lượt · chạy nền · đợt | 4 rồi 3 · không · 286 + 309 giây | 4 rồi 3 · không · 299 + 287 giây | **4 · không · một đợt 366 giây** |
+| Kiểm kê | 84 (80 · 4 hoãn · 15 suy) · 7 module | 87 (82 · 5 hoãn · 20 suy) · 7 module | **71 (66 · 5 hoãn · 9 suy) · 8 module** |
+| `merge` → sau gộp trùng | 87 → 84 (3 cặp) | 93 → 87 (6 cặp) | 71 → 71 (in 2 cặp nghi trùng, không cặp nào trùng thật) |
+| `mapscore.js` *(script → đã soát tay)* | 41/43 → 43/43 · bẫy 18/18 | 40/43 → 43/43 · bẫy 18/18 | **43/43 · bẫy 18/18 ngay từ script** |
+| K16 học bù · dựng thừa N1–N4 · hoãn K41–K43 | bắt · 0 · đúng | bắt · 0 · đúng | bắt (F-39) · 0 · đúng |
+| `check`: `merge && check` đầu → lần đầu có `layout.js` | 20 chặn → 0 chặn, 2 cảnh báo | 21 chặn → 5 chặn → 0 | **8 chặn → 0 chặn, 0 cảnh báo** |
+| Chỉ số bố cục | 3 bước (≈ 11,1 giây) · Lịch tuần 6 chức năng, 2 tab · nhóm menu 5 · còn lại 0 | 3 bước · Hồ sơ 6, 4 tab · nhóm menu 5 · còn lại 0 | T1 và việc hằng ngày xa nhất 3 bước (F-04 điểm danh của quản lý, ≈ 11,1 giây) · Hồ sơ học viên 6 chức năng, 3 tab · nhóm menu **7** (Cài đặt của quản lý, đúng trần) · còn lại 0 |
+| Soát nhãn | 10/10, 0 lần quay lại | 10/10, 0 lần quay lại | 10/10, 0 lần quay lại, không sửa nhãn |
+| `ids.json` | `"data_codes": {"SX": 750}`, không có `SX` trong `systems` | như `rml1` | như `rml1` (16 KB) |
+
+Soát tay `mapscore.js`: script báo trùng K26 (F-11 *Bảo lưu gói học*, F-12 *Tự mở lại gói khi hết bảo lưu*), như mọi lần trước, không tính là trùng. 7 chức năng ngoài đáp án đều có nguồn ở 7 tài liệu gốc, là tách nhỏ hay suy hợp lý: F-08 *Xác nhận tiền chuyển khoản đã về* (UC-02), F-13 *Xem danh sách gói học theo trạng thái* (UC-09), F-28 *Chuyển học viên sang ngừng học* (BR-HV-05), F-42 *Sinh buổi học tự động* (BR-LI-01), F-56 *Gán lớp phụ trách cho HLV* (UC-12, BR-QT-02), F-62 *Đổi mật khẩu* (suy, BR-QT-05), F-68 *Bật, tắt nhận thông báo* (suy, BR-TB-04). Không chức năng nào chỉ dựa trên hai tài liệu dài.
+
+**Theo bước** (`phase-map.js`, agent chính):
+
+| Bước | `rml1` | `rml2` | `rlb1` |
+|---|---|---|---|
+| vào | 2 · 61k | 2 · 34k | 2 · 61k |
+| M0 *(gồm `cat sources.json`)* | 2 · 27k | 3 · 43k | 2 · 29k |
+| M1 *(gọi worker, `merge && check`, sửa sau `merge`)* | 6 · 119k · 10,6 phút | 6 · 109k · 10,5 phút | **3** · 177k *(mất cache 83k)* · 9,1 phút |
+| M2 *(gộp trùng, `layout.js`)* | 4 · 158k | 4 · 133k | **2** · 98k |
+| kiểm bố cục | 3 · 86k | 4 · 138k | **1** · 224k *(mất cache 155k)* |
+| cổng | 2 · 59k | 2 · 58k | 2 · 66k |
+
+Lượt của agent chính: 1 Read SKILL.md · 2 `ls` · 3 Read m1, CONCEPT, DECISIONS + `sources.py` · 4 `cat sources.json` · 5 Write `_chung.js` + 4 Agent · 6 `merge && check` · 7 Read `features.js` · 8 hai Edit + `check && check --brief` + Read m2 · 9 Write `layout.js` + `check --shots` + `visible --treetest` · 10 Agent người thử + mở 1 ảnh · 11 Edit DECISIONS · 12 báo.
+
+**Worker** (cả bốn: lượt 1 Read mọi dải và hai dải của `m1-kiem-ke.md`, lượt 2 Write phần, lượt 3 trả dòng):
+
+| Worker | Phần dài đọc | Quy đổi | Thời gian | Chức năng (`merge`) |
+|---|---|---|---|---|
+| hoc-vien + lop `ac0d6daf8c0a953fb` | D5:5-772 (89 KB), D3:1537-1613 (9 KB) | 206k | 334 giây | 6 + 11 |
+| lich + diem-danh `a776f72fe90cd502c` | D5:773-1687 (107 KB), D3:1461-1536 (9 KB) | 328k *(lượt 3 mất cache, ≈ 101k)* | 366 giây | 14 + 3 |
+| goi-hoc `a9f7014a10698a320` | D3:5-694 (83 KB) | 190k | 308 giây | 17 |
+| thong-bao + bao-cao + quan-tri `a41f50e19a4af4c46` | D3:695-1460 (89 KB) | 189k | 278 giây | 7 + 3 + 10 |
+
+Mỗi worker còn đọc lại phần chung: D1 quy ước và mục của module, D2 danh sách ca biên, D6:21-121 (actor, mục lục UC, hai ma trận), D7 bảng ưu tiên, D9 mục nhu cầu, D10 bảng của module. Cách tính từ `usage`: lượt 1 ≈ 50k (38k ngữ cảnh nền ghi cache), lượt 2 ≈ 75–95k cộng đầu ra (57–74k phần đọc ghi cache, rồi `Write`), lượt 3 ≈ 48–55k (ghi cache 31–36k lượt nghĩ và `Write` của lượt 2), 164k khi mất cache.
+
+**Soát từng chỗ sửa của đường worker** (`e183b41`):
+1. **Prompt worker đọc một lượt bằng offset/limit: có hiệu lực.** Cả bốn prompt có *"Lượt 1, mọi lệnh Read trong một lượt, không Grep, không Bash"*, kèm dải `m1-kiem-ke.md` (offset 28 limit 39 cho mục 3–5, offset 86 limit 35 cho mục 7), *"Lượt 3: trả về … đếm trên danh sách vừa viết; không chạy script"*. Bốn worker đều 3 lượt (mốc: 4 khi có câu này, 6–11 khi không), 0 Bash, 0 Grep, 0 script đếm.
+2. **`parts/_chung.js` cùng lượt gọi worker: có hiệu lực, còn sót.** Lượt 5: Write `_chung.js` (21 mục skip) cùng 4 Agent. `merge && check` đầu còn **8 chặn** (mốc 20–21): mục lục use case D6:31-79 và 7 mục con. Các mục này nằm trong dải chung D6:21-121 mà worker nào cũng đọc nhưng không ai sở hữu; `_chung.js` chỉ ghi D6:21-30 và D6:80-98. Sửa bằng một Edit ở lượt 8, cùng lượt với `check --brief` và Read `m2-bo-cuc.md`, nên không tốn lượt riêng (mốc: 3–4 lượt, 45–59k).
+3. **Read `features.js` trước Edit sau `merge`: có hiệu lực.** Bản in của `merge` nhắc *"Read map/features.js trước khi Edit … sửa bằng Edit, không bằng script"*. Lượt 7 Read (12k), lượt 8 hai Edit (8 mục skip; tên dự án vì `merge` ghi `project: ''`). 0 lần bị từ chối, 0 script tự viết. Read ở lượt riêng, không cùng lượt `merge`.
+4. **Giao chủ chức năng, `merge` in cặp nghi trùng: có hiệu lực.** Prompt có dòng *"Giao chủ"* chia từng UC dùng chung (UC-06: lịch học → lich; số buổi còn lại, các lần đóng tiền → goi-hoc; đăng nhập OTP → quan-tri…). `merge` in 2 cặp nghi trùng (F-14, F-15 với F-32, chung UC-06); agent giữ cả ba vì là ba việc khác nhau. Không cặp trùng thật nào (mốc 3–6 cặp gộp tay, 2–3 lượt, 50–110k).
+5. **Khối *Trình ở cổng* in đủ mâu thuẫn: có hiệu lực.** `check --shots` in *"Ghi chú (29: 10 mâu thuẫn, 19 câu hỏi mở)"*: đủ 10 mâu thuẫn trước, kèm trích hai bên, chỉ cắt 9 câu hỏi mở. Không `grep "mâu thuẫn"` (mốc 2 lượt, 47–48k). Cổng 2 lượt, 8 câu chia hai lượt hỏi, mâu thuẫn trước.
+6. **Tối đa 4 worker: có hiệu lực.** 8 module gom cho 4 worker, một đợt, gọi tiền cảnh trong một lượt nên chạy song song. Không còn đợt hai (mốc 4 rồi 3, khoảng 10 phút).
+- `fixes-map.js` mục 9 trên agent chính: không đọc `MAP.md`, `check.json`, `ids.json`/`states.json`, `*.example.js`; không tra khuôn DECISIONS; `merge && check` một lệnh; Write `layout.js` và `check` cùng lượt; một ảnh mở trước cổng; không Read `map/parts/`.
+
+**Soát đường worker:**
+- **Agent chính không đọc nguyên hai tài liệu dài, không đọc phụ lục:** đúng. Soát tay cả 24 lệnh gọi: Bash chỉ có `ls`, `sources.py`, `cat sources.json`, `merge && check`, `check`, `visible --treetest`; không `sed`, `awk`, `cat` trên `_src/`.
+- **Mỗi worker chỉ đọc dải của mình:** đúng, 4/4, so dải Read với dải trong prompt bằng một script nhỏ ở scratchpad: thiếu 0, thừa 0. Mỗi đoạn của D3, D5 được đúng một worker đọc (83–116 KB mỗi worker, cộng 386 KB). Không worker nào đọc D4.
+- **Phụ lục dữ liệu bỏ sẵn:** đúng. `check` không chặn ba mục của D4 dù không có `skip`; `ids.json` có `"data_codes": {"SX": 750}`, không có `SX` trong `systems`.
+- **Dòng "chia worker" in 761,5 KB:** nguyên văn *"Cách đọc: chia worker theo module (761,5 KB > 300,0 KB): tối đa 4 worker một đợt, mỗi worker đọc đúng dải dòng của module (mục lục ở map/sources.json), tự ghi map/parts/<module>.js (m1-kiem-ke.md mục 6)"*. Agent không hiểu sai: báo *"phần tài liệu cần đọc là 434 KB, vượt ngưỡng 300 KB … phụ lục dữ liệu không tính vào ngưỡng"* (lấy `read_total` từ `sources.json`). Nhưng dòng này không nói D4 bị bỏ, khác dòng "đọc nguyên".
+- **Hai tài liệu dài thành nguồn chức năng mới:** ít. 9 suy (mốc đường worker 15–20, đọc nguyên 2–8); chỉ 2 suy trỏ về D3: F-57 *Xem danh sách nhân viên*, F-58 *Sửa thông tin nhân viên* (từ kịch bản khuôn *"Giữ lịch sử … đổi số điện thoại"*, D3:1245).
+- **Mâu thuẫn giả của đề:** 6/10 mâu thuẫn (F-44, F-45, F-53, F-63, F-64, F-69) là vai trong D3/D5 lệch ma trận quyền: `mk-r9.py` chọn vai ngẫu nhiên (`R.choice(VAI[m])` trong khuôn *"Chỉ {v} … mới thấy nút"*). Agent bắt đúng vì tài liệu lệch thật, và gom thành một câu hỏi cổng (4a, khuyến nghị theo ma trận quyền).
+- **K16 trên r9 không còn là bẫy "chỉ có trong schema":** D5:1155-1230 có hẳn mục *Xếp buổi học bù*; F-39 trỏ D5 và D10:104. Mục bẫy này của r9 không so được với r7, r8.
+
+### Đọc kết quả
+
+- **Sáu chỗ sửa của đường worker đều có hiệu lực.** Agent chính từ 19–21 lượt xuống **12**, worker từ 4–11 lượt xuống **3**, 7 worker hai đợt thành 4 worker một đợt. Lượt sửa sau `merge` (skip mục chung, gộp trùng, tìm mâu thuẫn) gần như hết: còn một Read và một lượt Edit gộp với lệnh khác.
+- **Kiểm kê gọn như đường đọc nguyên:** 71 chức năng, 9 suy, 0 cặp trùng thật (đường worker cũ 84–87, 15–20, 3–6; đọc nguyên 62–70, 2–8). Script chấm 43/43 ngay, không mục nào phải soát tay để nâng. Đọc 424 KB không làm sót và không làm phình kiểm kê.
+- **Chi phí:** tổng 1,61M thô, 1,27M trừ mất cache, so 1,31–1,47M của đường worker cũ trên phần thật 48 KB: thô cao hơn 10–23 % (dưới hay sát ngưỡng dao động 15–25 % của một lần chạy), trong khi phần đọc gấp khoảng 9 lần. Thời gian 17,8 phút (mốc 21–22).
+- **Mất cache 3 lần, ≈ 0,34M (21 % tổng).** Hai lần ở agent chính chỉ vì lần đo chạy skill trong subagent (TTL 5 phút): chờ đợt worker 532 giây (lượt 5 → 6), nghĩ và viết `layout.js` 325 giây (lượt 9 → 10). Dùng thật, skill chạy ở phiên chính (TTL 1 giờ) thì không mất. Lần ở worker lich là thật: lượt 2 nghĩ 302 giây và viết 36 giây, nên lượt trả dòng mất cache (≈ 101k).
+- **Giá của 424 KB yêu cầu thật:** so đọc nguyên r8 (0,40–0,56M, 5–8 phút), thêm 1,05–1,2M thô, 0,7–0,9M trừ mất cache, và 10–13 phút. Phần lớn ở worker (0,91M): ≈ 0,2M ngữ cảnh nền (4 × 38k ghi cache ở lượt 1), ≈ 0,32M ghi cache phần đọc, ≈ 0,2M lượt trả dòng (+0,1M mất cache), còn lại đầu ra.
+
+### Đề xuất bước tiếp (ước từ số đo; chưa sửa skill)
+
+1. **Bỏ lượt trả dòng của worker** *(trung bình; thử cơ chế trước)*: lượt 3 chỉ trả một dòng mà `merge` đã in đủ số đếm, nhưng tốn 48–55k mỗi worker (164k khi mất cache). Nếu worker kết thúc (gọi trả kết quả) cùng tin nhắn với `Write`, lượt 3 mất hẳn. Cần một lần thử nhỏ xem Claude Code có chạy `Write` rồi kết thúc trong cùng một tin nhắn không. Ước: bớt **≈ 0,2M** mỗi lần (0,32M ở lần này), và bỏ rủi ro mất cache của worker.
+2. **Worker dùng agent nhẹ** *(trung bình; đo ngữ cảnh nền trước)*: `general-purpose` mang 38k ngữ cảnh nền (mọi công cụ, kể cả MCP và danh sách skill của máy), người thử nhãn `Explore` 23k. Một agent riêng của plugin chỉ có `Read`, `Write` có thể còn khoảng 10–15k. Ước: (38 − 15)k × (1,25 + 2 × 0,1) ≈ 33k mỗi worker, **≈ 0,13M** mỗi lần; số thật tuỳ máy (số MCP, skill đã cài).
+3. **Dải chung phủ hết trong `_chung.js`, `merge` ghi tên dự án** *(cao, nhỏ)*: `m1-kiem-ke.md` mục 6 nói mọi mục trong dải chung mà mọi worker đọc (actor, mục lục UC, ma trận) phải có trong `_chung.js` hay được giao chủ; hay `check` coi mục con của một mục đã `skip` là đã `skip`. `merge` lấy tên dự án (từ `_chung.js` hay CONCEPT.md) thay vì ghi `project: ''`. Thì `merge && check` đầu sạch, bỏ Read và hai Edit sau `merge`; lượt 6 gộp được `check --brief` và Read `m2-bo-cuc.md`. Ước: **1–2 lượt, 30–50k**.
+4. **Dòng "chia worker" in phần thật** *(cao, chỉ chữ)*: in "chia worker theo module (433,8 KB > 300,0 KB, không tính phụ lục dữ liệu D4 327,7 KB: không Read, không cần skip)", như dòng đọc nguyên. Lần này agent không hiểu sai nên tiết kiệm đo được 0; chỉ để lời script khớp số thật.
+5. **Cách đo** *(không phải skill)*: 238k mất cache của agent chính là do skill chạy trong subagent. Lấy "trừ mất cache" làm số chính cho agent chính, hay chạy skill ở phiên chính của một phiên Claude Code riêng (như cách đo trên cloud) để số gần dùng thật.
+
+Cộng 1–3 trên lần này: ≈ 1,1M thô (bớt ≈ 0,5M), ≈ 0,9M nếu bỏ thêm mất cache của agent chính. Đây là một lần chạy; dao động 15–25 % giữa các lần là bình thường, nên các ước trên chỉ chắc ở mức lượt và cấu trúc, chưa chắc ở mức token.
+
+### Dữ liệu
+
+- Transcript `transcripts/map-do-lai-4/` (6 file `.jsonl.gz` kèm `.meta.json`, đã thay tên dự án thật, kiểm `grep` ra 0): `rlb1` `agent-a3920b07157c4d7a8`, người thử `ad87e4d169b534edf`, worker `ac0d6daf8c0a953fb` (hoc-vien, lop), `a776f72fe90cd502c` (lich, diem-danh), `a9f7014a10698a320` (goi-hoc), `a41f50e19a4af4c46` (thong-bao, bao-cao, quan-tri).
+- Kết quả `runs-map/rlb1/`: `map/features.js`, `layout.js`, `MAP.md`, `treetest.md`, `ids.json`, `map/parts/` (9 file, gồm `_chung.js`), `DECISIONS.md`.
