@@ -148,6 +148,22 @@ test('sources.py: trạng thái và bước chuyển trong schema.dbml (cả -> 
   assert.match(out, /2 bước chuyển/);
 });
 
+// Đề đo r8-map-lon: phụ lục dữ liệu xuất từ Excel có 750 mã học viên ở cột đầu bảng; quy tắc nhắc định dạng "dạng SX-0001".
+// Trước khi sửa, SX thành hệ mã 750 định nghĩa: ids.json 89 KB và P24 báo mã học viên hiển thị trên trang là mã tham chiếu lộ ra
+test('sources.py: phụ lục dữ liệu (từ 50 mã chỉ nằm trong bảng) là mã của dữ liệu, không phải hệ mã; hệ mã yêu cầu dù chỉ trong bảng vẫn giữ', t => {
+  const rows = Array.from({ length: 60 }, (_, i) => `| HS-${String(i + 1).padStart(4, '0')} | Học sinh ${i + 1} | 09${String(10000000 + i)} |`).join('\n');
+  const data = `# Phụ lục dữ liệu\n\n## Danh sách học sinh\n| Mã | Họ tên | SĐT |\n|---|---|---|\n${rows}\n\n## Thu tiền\n| Ngày | Học sinh |\n|---|---|\n| 01/09 | HS-0001 |\n| 02/09 | HS-0002 |\n`;
+  const { out, j } = run(t, { 'PHU-LUC-DU-LIEU.md': data, 'GHI-CHU.md': '# Ghi chú\n\nMã học sinh dạng HS-0001, không đổi.\n' });
+  const ids = j('ids.json');
+  assert.ok(!ids.systems.HS, `HS không phải hệ mã: ${JSON.stringify(Object.keys(ids.systems))}`);
+  assert.deepEqual(ids.data_codes, { HS: 60 });
+  assert.ok(!Object.keys(ids.ids).some(id => id.startsWith('HS-')));
+  for (const p of ['UC', 'BR', 'TT']) assert.ok(ids.systems[p], p);
+  assert.match(out, /^Mã của dữ liệu, không phải hệ mã yêu cầu [^\n]*: HS \(60 mã\)$/m);
+  // TT chỉ có 3 mã trong bảng: dưới 50 thì vẫn là hệ mã
+  assert.ok(ids.systems.TT.defs >= 3);
+});
+
 test('sources.py: cỡ nhỏ thì đề xuất đọc nguyên một lượt; vượt ngưỡng thì chia worker theo module', t => {
   assert.match(run(t).out, /^Cách đọc: đọc nguyên trong một lượt/m);
   const big = '# Phụ lục\n' + Array.from({ length: 4000 }, (_, i) => `## Mục ${i}\n${'Nội dung dài của mục để vượt ngưỡng đọc nguyên. '.repeat(2)}\n`).join('');

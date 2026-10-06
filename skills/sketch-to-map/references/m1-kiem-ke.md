@@ -14,11 +14,11 @@ python <skills>/sketch-to-map/scripts/sources.py <thư-mục-tài-liệu> <thư-
 
 Ghi vào `<thư-mục-prototype>/map/`: `_src/D1.txt…` *(mỗi tài liệu thành chữ, số dòng cố định; `.docx`, `.xlsx`, `.html`, `.pdf` cũng vậy)*, `sources.json` *(mục lục từng tài liệu: tiêu đề, cấp, dòng đầu–cuối)*, `ids.json` *(hệ mã tự dò, chỗ định nghĩa, mức Must…, mục bị loại)*, `states.json` *(Enum và bước chuyển của `schema.dbml`)*.
 
-In: mỗi tài liệu một dòng · bộ BA nhận ra được · hệ mã · mục **Quy ước** *(đọc trước)* · trạng thái và bước chuyển · mục dài nhất · **Cách đọc** · file cần chuyển tay. Thoát `1` khi có file đọc không được *(dòng `CẦN CHUYỂN TAY`: nhờ người dùng lưu thành `.md` hay `.txt` cạnh file gốc, rồi chạy lại)*.
+In: mỗi tài liệu một dòng · bộ BA nhận ra được · hệ mã · mã của dữ liệu *(mã học viên trong phụ lục: không phải hệ mã)* · mục **Quy ước** *(đọc trước)* · trạng thái và bước chuyển · mục dài nhất · **Cách đọc** · file cần chuyển tay. Thoát `1` khi có file đọc không được *(dòng `CẦN CHUYỂN TAY`: nhờ người dùng lưu thành `.md` hay `.txt` cạnh file gốc, rồi chạy lại)*.
 
 Trỏ nguồn trong `features.js` bằng **mã** *(`UC-04`, `BR-LH-02`)* hay **dải dòng** của bản chữ *(`D2:120-140`)*, không chép đoạn tài liệu.
 
-Bản in của lệnh là đủ: không đọc `sources.json`, `ids.json`, `states.json`. Mục tài liệu nào chưa có chức năng trỏ tới thì lần `check` đầu liệt kê, kèm dải dòng để ghi `skip`.
+Đọc nguyên: bản in của lệnh là đủ, không đọc `sources.json`, `ids.json`, `states.json`. Chia worker: chỉ đọc mục lục trong `sources.json` *(mục 6)*. Mục tài liệu nào chưa có chức năng trỏ tới thì lần `check` đầu liệt kê, kèm dải dòng để ghi `skip`.
 
 ## 2. Cách đọc theo cỡ
 
@@ -77,7 +77,7 @@ Ghi <thư-mục-prototype>/map/parts/<mã-module>.js đúng định dạng mục
 Trả về đúng một dòng: "<mã-module>: n chức năng, k suy, h hoãn, m câu hỏi".
 ```
 
-3. Gộp: `node <skills>/sketch-to-map/scripts/map.mjs merge <thư-mục-prototype>` *(đánh mã `F-01…` theo thứ tự file, ghi `map/features.js` mỗi chức năng một dòng; đã có `layout.js` thì không gộp, thoát 2)*.
+3. Gộp và kiểm trong **một** lệnh: `node <skills>/sketch-to-map/scripts/map.mjs merge <thư-mục-prototype> && node <skills>/sketch-to-map/scripts/map.mjs check <thư-mục-prototype>` *(`merge` đánh mã `F-01…` theo thứ tự file, ghi `map/features.js` mỗi chức năng một dòng; đã có `layout.js` thì không gộp, thoát 2)*. Mục chặn sửa thẳng trong `features.js`, không gọi lại worker. Mục tài liệu không sinh việc *(phụ lục dữ liệu, giới thiệu)* ghi `skip`.
 
 ## 7. Định dạng
 
@@ -120,7 +120,7 @@ Phần của worker `map/parts/<module>.js`: `window.PART = { module: '<mã>', f
 node <skills>/sketch-to-map/scripts/map.mjs check <thư-mục-prototype>
 ```
 
-In: dòng **Kiểm kê** *(số chức năng, phạm vi, hoãn, suy, module, vai)* · dòng **Nguồn** *(UC, Must, bước chuyển, nhóm trạng thái, mục tài liệu: mỗi loại kèm số thiếu)* · `CHẶN` · `CẢNH BÁO` *(mỗi danh sách tối đa 15 dòng; đủ ở `map/check.json`)*. Chưa có `layout.js` thì chỉ kiểm kê. Thoát `0` sạch · `1` còn mục chặn · `2` không đọc được `features.js`.
+In: dòng **Kiểm kê** *(số chức năng, phạm vi, hoãn, suy, module, vai)* · dòng **Nguồn** *(UC, Must, bước chuyển, nhóm trạng thái, mục tài liệu: mỗi loại kèm số thiếu)* · `CHẶN` *(tối đa 40 dòng)* · `CẢNH BÁO` *(tối đa 15 dòng; đủ ở `map/check.json`)*. Chưa có `layout.js` thì chỉ kiểm kê. Thoát `0` sạch · `1` còn mục chặn · `2` không đọc được `features.js`.
 
 | Nhãn | Mức | Nghĩa và cách sửa |
 |---|---|---|

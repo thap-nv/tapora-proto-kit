@@ -9,7 +9,8 @@ Ghi vào <thư-mục-prototype>/map/:
     sources.json          mỗi tài liệu: đường dẫn, loại, cỡ, file của bộ BA, mục lục (tiêu đề, cấp, dòng đầu–cuối, số byte),
                           mục Quy ước, số câu user story và Given/When/Then; tổng cỡ và cách đọc đề xuất
     ids.json              hệ mã tự dò: tiền tố [A-Z]{1,4} (kèm miền như BR-LH-01) xuất hiện từ 3 lần và được định nghĩa ở tiêu đề,
-                          cột đầu của bảng hay đầu dòng; mỗi mã một chỗ định nghĩa và các chỗ nhắc tới
+                          cột đầu của bảng hay đầu dòng; mỗi mã một chỗ định nghĩa và các chỗ nhắc tới. data_codes: tiền tố từ
+                          50 mã mà chỉ nằm trong dòng bảng (mã học viên của phụ lục dữ liệu): không phải hệ mã, preflight P24 không tính
     states.json           schema.dbml: Enum (trạng thái) và bước chuyển ghi trong note ("a -> b", "a → b")
 Đọc được: .md .markdown .txt .dbml .json .csv .yaml .yml .html .htm, .docx và .xlsx (zipfile + XML), .pdf khi có pdftotext hay pypdf.
 In: mỗi tài liệu một dòng, bộ BA, hệ mã, Quy ước, trạng thái, mục dài nhất, cách đọc, file cần chuyển tay.
@@ -267,13 +268,22 @@ def code_scan(docs):
     prio_docs = [d for d in docs if d.get("ba") == "UU-TIEN-PHAM-VI"]
     by_level = {p: level(w) for d in prio_docs for line in d["lines"] for w, p in PREFIX_LEVEL.findall(line)}
     by_level.update({p: level(w) for d in prio_docs for line in d["lines"] for p, w in PREFIX_LEVEL2.findall(line) if p not in by_level})
-    systems, ids = {}, {}
+    systems, ids, data_codes = {}, {}, {}
+    lines_of = {d["id"]: d["lines"] for d in docs}
+    in_table = lambda x: lines_of[x[0]][x[1] - 1].lstrip().startswith("|")
     for prefix, items in by_prefix.items():
         n = sum(len(xs) for _, xs in items)
         defined = [cid for cid, xs in items if max(x[2] for x in xs) > 0]
         # Hệ mã: từ 3 lần nhắc và có chỗ định nghĩa; hoặc từ 5 mã khác nhau dù định nghĩa nằm ngoài thư mục (dự án thật: XD- ở file khác);
         # hoặc tiền tố có trong quy ước mức
         if not ((n >= 3 and defined) or len(items) >= 5 or prefix in by_level):
+            continue
+        # Mã của dữ liệu (mã học viên trong phụ lục xuất từ Excel): từ 50 mã mà gần như chỉ nằm trong dòng bảng; tài liệu có thể nhắc
+        # định dạng ("dạng SX-0001") nên cho phép tới 2 mã hay 5 % số mã xuất hiện ngoài bảng. Mã yêu cầu thì phần lớn được nhắc trong
+        # câu chữ (tiêu đề, gạch đầu dòng, "theo BR-TT-08"). UC và tiền tố có mức Must… luôn là hệ mã
+        prose = sum(1 for _, xs in items if not all(in_table(x) for x in xs))
+        if prefix != "UC" and prefix not in by_level and len(items) >= 50 and prose <= max(2, len(items) // 20):
+            data_codes[prefix] = len(items)
             continue
         systems[prefix] = {"count": n, "ids": len(items), "defs": len(defined), "domains": sorted({x[4] for _, xs in items for x in xs if x[4]})}
         for cid, xs in items:
@@ -284,7 +294,6 @@ def code_scan(docs):
                 ids[cid]["priority"] = by_level[prefix]
     # Không có quy ước tiền tố: dòng của file ưu tiên có chữ Must/Should/Could/Won't thì mã ĐẦU dòng (mục của dòng; mã sau là chỗ nhắc)
     # mang mức đó, gặp trước giữ trước. Bị loại: dòng định nghĩa có ⛔, "(loại)", "bị loại", "loại bỏ", hay mức Won't
-    lines_of = {d["id"]: d["lines"] for d in docs}
     for d in prio_docs:
         if any(PREFIX_LEVEL.search(line) or PREFIX_LEVEL2.search(line) for line in d["lines"]):
             continue
@@ -298,7 +307,7 @@ def code_scan(docs):
         if (did and DROPPED.search(lines_of[did][int(ln) - 1])) or x.get("priority") == "Won't":
             x["dropped"] = True
     order = sorted(systems, key=lambda p: (p != "UC", -systems[p]["ids"], p))
-    return {p: systems[p] for p in order}, dict(sorted(ids.items()))
+    return {p: systems[p] for p in order}, dict(sorted(ids.items())), data_codes
 
 
 def kb(n):
@@ -347,7 +356,7 @@ def main():
         docs.append({"id": doc_id, "path": rel, "kind": os.path.splitext(rel)[1].lower().lstrip("."), "bytes": len(text.encode("utf-8")), "lines": lines,
                      "ba": ba, "toc": t, "conventions": [x for x in t if CONVENTION.search(x["title"])],
                      "stories": sum(1 for x in lines if STORY.search(x)), "gwt": sum(1 for x in lines if GWT.match(x))})
-    systems, ids = code_scan(docs)
+    systems, ids, data_codes = code_scan(docs)
     enums, transitions = {}, []
     for d in docs:
         if d["path"].lower().endswith(".dbml"):
@@ -362,7 +371,7 @@ def main():
         json.dump({"dir": src_dir.replace("\\", "/"), "total": total, "recommend": recommend, "threshold": READ_WHOLE, "docs": meta, "manual": manual},
                   fh, ensure_ascii=False, indent=1)
     with open(os.path.join(out_dir, "ids.json"), "w", encoding="utf-8") as fh:
-        json.dump({"systems": systems, "ids": ids}, fh, ensure_ascii=False, indent=1)
+        json.dump({"systems": systems, "ids": ids, "data_codes": data_codes}, fh, ensure_ascii=False, indent=1)
     with open(os.path.join(out_dir, "states.json"), "w", encoding="utf-8") as fh:
         json.dump({"enums": enums, "transitions": transitions}, fh, ensure_ascii=False, indent=1)
 
@@ -383,6 +392,8 @@ def main():
         print("Hệ mã: " + " · ".join(shown) + (f" · và {len(systems) - 12} hệ ít gặp (ids.json)" if len(systems) > 12 else ""))
     else:
         print("Hệ mã: không dò được (không tiền tố nào xuất hiện từ 3 lần và có chỗ định nghĩa)")
+    if data_codes:
+        print("Mã của dữ liệu, không phải hệ mã yêu cầu (chỉ nằm trong bảng, không tính khi soát mã lộ): " + " · ".join(f"{p} ({n} mã)" for p, n in data_codes.items()))
     conv = [f"{d['id']}:{c['start']}-{c['end']} ({c['title']})" for d in meta for c in d["conventions"]]
     if conv:
         print("Quy ước (đọc trước): " + " · ".join(conv))
