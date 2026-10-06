@@ -48,7 +48,7 @@ test('evolve-site SKILL.md chỉ giữ luật chung và lối vào: ≤ 18 000 k
   const md = EVO();
   assert.ok(md.length <= 18000, `SKILL.md dài ${md.length} ký tự`);
   assert.deepEqual(md.split('\n').filter(l => /^## \d\. /.test(l)).map(l => l.slice(0, 5)), ['## 0.', '## 1.', '## 2.', '## 3.', '## 4.', '## 5.']);
-  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v1.9 ('], 'lịch sử phiên bản ở CHANGELOG');
+  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.split(' (')[0]), ['> **v1.10'], 'lịch sử phiên bản ở CHANGELOG');
   assert.doesNotMatch(md, /^### (B[1-4] · |🛑 Cổng)/m, 'các bước ở references/b1-b2.md và b3-b4.md');
   for (const h of ['### 1.1 ', '### 1.2 ', '### 1.3 ', '### 1.4 ']) assert.ok(md.includes(h), `thiếu ${h}: tweak-site và các bước trỏ về mục 1`);
   assert.match(md, /`W:\/…`[^\n]*`\/w\/…`/);
@@ -119,7 +119,7 @@ test('mọi lệnh sed trong tài liệu ba skill in ra nội dung có thật, k
 
 test('tweak-site 1.3: một ghi chú phiên bản; tìm, đọc, sửa, kiểm mỗi việc một lượt; Cấp 1 kiểm và chụp bằng quick.py --shots', () => {
   const md = TWEAK();
-  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v1.3 (']);
+  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v1.4 (']);
   assert.match(md, /`W:\/…`[^\n]*`\/w\/…`/);
   const s3 = section(md, '## 3. Quy trình', '## 4.');
   assert.match(s3, /\*\*không phụ thuộc nhau\*\* thì gọi chung một lượt/);
@@ -135,7 +135,7 @@ test('tweak-site 1.3: một ghi chú phiên bản; tìm, đọc, sửa, kiểm m
 
 test('handover-check 1.3: B1 đọc nhật ký bằng handover.py ledger; B3 chạy tổng bằng qa-check.py; UX in đúng nhóm F', () => {
   const md = HAND();
-  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v1.3 (']);
+  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v1.4 (']);
   assert.match(md, /`W:\/…`[^\n]*`\/w\/…`/);
   assert.match(section(md, '## 1.', '## 2.'), /\*\*Ít lượt\.\*\*/);
   const b1 = section(md, '### B1 ·', '### B2');
@@ -423,9 +423,9 @@ test('bốn SKILL.md dựng và sửa site, cùng AGENTS-qa.md, ghi PYTHONIOENCO
   assert.ok(EVO().length <= 18000);
 });
 
-test('CHANGELOG 1.5.0 ghi phiên bản mới của ba skill và các lệnh mới; plugin vẫn 1.5.0', () => {
-  const latest = fs.readFileSync(path.join(SKILLS, '..', 'CHANGELOG.md'), 'utf8').split(/^## /m)[1];
-  assert.ok(latest.startsWith('1.5.0 ('));
+test('CHANGELOG 1.5.0 ghi phiên bản mới của ba skill và các lệnh mới', () => {
+  const latest = fs.readFileSync(path.join(SKILLS, '..', 'CHANGELOG.md'), 'utf8').split(/^## /m).find(s => s.startsWith('1.5.0 ('));
+  assert.ok(latest, 'CHANGELOG thiếu mục 1.5.0');
   for (const s of ['`evolve-site` 1.9', '`tweak-site` 1.3', '`handover-check` 1.3', 'references/b1-b2.md', 'quick.py --shots', 'handover.py ledger', 'evolve-site` 1.1–1.3',
     'breaktest.py', '"slices": "all"', 'slices.json', 'PYTHONIOENCODING=utf-8', 'handover.py usage', 'Trang tổng quan app']) {
     assert.ok(latest.includes(s), `CHANGELOG 1.5.0 thiếu ${s}`);

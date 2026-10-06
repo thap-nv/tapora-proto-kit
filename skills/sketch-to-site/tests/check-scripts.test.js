@@ -384,3 +384,27 @@ test('qa-check.py: lỗi in tối đa 15 dòng, phần còn lại ở handover.j
   assert.match(r.stdout, /… còn \d+ dòng: đủ ở _qa[\\/]handover[\\/]\d{8}-\d{4}[\\/]handover\.json/);
   assert.match(r.stdout, /^Kết luận: CHƯA SẠCH/m);
 });
+
+// Có bản đồ (sketch-to-map): qa-check.py chạy thêm map.mjs coverage; gỡ một data-feature thì chưa sạch, thoát 1
+test('qa-check.py: có map/features.js thì kiểm độ phủ; gỡ một data-feature thì thoát 1', t => {
+  const dir = tmp(t, 'b4m-');
+  fs.mkdirSync(path.join(dir, 'site'));
+  fs.mkdirSync(path.join(dir, 'map'));
+  fs.writeFileSync(path.join(dir, 'map', 'features.js'), `window.FEATURES = ${JSON.stringify({ features: [
+    { id: 'F-01', name: 'Giữ bánh', module: 'ban', src: ['UC-01'], roles: ['khach'], freq: 'ngay', evidence: 'ro', status: 'pham-vi', spec: 'Giữ một mẻ bánh.' }] })};`);
+  fs.writeFileSync(path.join(dir, 'map', 'layout.js'), `window.LAYOUT = ${JSON.stringify({
+    surfaces: [{ id: 'web', name: 'Web', kind: 'web', dir: '' }], roles: [{ id: 'khach', name: 'Khách', surface: 'web', home: 'index' }],
+    modules: [{ id: 'ban', name: 'Bán', depends: [] }],
+    screens: [{ id: 'index', name: 'Trang chủ', surface: 'web', module: 'ban', roles: ['khach'], file: 'index.html', bands: [{ name: 'Hôm nay', items: ['F-01'] }] }],
+    nav: [{ roles: ['khach'], groups: [{ name: '', items: ['index'] }] }], place: { 'F-01': { screen: 'index', tier: 1, mo: 'tai-cho' } } })};`);
+  fs.writeFileSync(path.join(dir, 'site', 'index.html'), PAGE.replace('<button type="button">', '<button type="button" data-feature="F-01">'));
+  const r = qaCheck(dir);
+  if (NO_BROWSER.test(r.stdout + r.stderr)) return t.skip('không có trình duyệt');
+  assert.match(r.stdout, /^Độ phủ: 1\/1 chức năng có trên trang đã dựng/m);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  fs.writeFileSync(path.join(dir, 'site', 'index.html'), PAGE);
+  const bad = qaCheck(dir);
+  assert.equal(bad.status, 1, bad.stdout);
+  assert.match(bad.stdout, /^ {2}F-01 "Giữ bánh" · màn index · site\/index\.html$/m);
+  assert.match(bad.stdout, /^Kết luận: CHƯA SẠCH: độ phủ/m);
+});

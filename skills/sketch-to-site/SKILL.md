@@ -6,7 +6,7 @@ description: >-
 
 # Sketch to Site · Thiết kế website và app từ đầu
 
-> **v4.5 (04/10/2026)** · Quy trình tách theo giai đoạn: `references/b0-b2.md` *(B0–B2, Cổng 3)* và `references/b3-b4.md` *(B3–B4, Cổng 4)*, mỗi giai đoạn vào bằng một lượt *(mục 4)*. Kiểm một lệnh: `scripts/system-check.mjs` *(B2, ảnh Cổng 3)* và `scripts/qa-check.py` *(B4)*. B1 thử concept trên `_system.html`, không dựng trang thử riêng. Review ở B4 dùng agent chỉ đọc và chờ kết quả. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
+> **v4.6 (06/10/2026)** · Dự án lớn qua `sketch-to-map` trước B2 *(mục 4)*: B3 dựng từng màn theo `map.mjs slice`, B4 kiểm thêm độ phủ chức năng và bố cục. Các bước ở `references/b0-b2.md`, `references/b3-b4.md`, mỗi giai đoạn vào bằng một lượt; kiểm một lệnh: `scripts/system-check.mjs` *(B2)*, `scripts/qa-check.py` *(B4)*. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
 > **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này (`.claude/skills/`, `~/.codex/skills/`, hoặc thư mục cài plugin). Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`: hai chương trình này không đọc được. Lệnh `python` tự viết mà in tiếng Việt thì đặt `PYTHONIOENCODING=utf-8` trước lệnh: console Windows (cp1252) dừng giữa chừng với `UnicodeEncodeError`.
 > **Skill tham chiếu:** `design-taste-frontend`, `high-end-visual-design`, `minimalist-ui`, `industrial-brutalist-ui`, `gpt-taste`, `stitch-design-taste`, `full-output-enforcement` đã tắt tự kích hoạt. Đọc chúng như tài liệu: mở `<skills>/<tên>/SKILL.md` bằng công cụ đọc file, không gọi qua công cụ Skill. Cần một mục *(ví dụ `design-taste-frontend` §4.7)* thì tìm dòng tiêu đề của mục đó *(`grep -n "^#.* 4\.7 "`)* rồi chỉ đọc đoạn ấy: `design-taste-frontend` dài khoảng 87 KB.
 > Việc của skill: **đưa người dùng tới một thiết kế là của họ**, không phải của mô hình. Mô hình lo phần tay nghề: token, bố cục, tương tác, tự kiểm. Concept, phong cách và nghiệm thu là quyền của con người, và skill **dừng lại để hỏi** đúng ở những chỗ đó.
@@ -20,6 +20,7 @@ description: >-
 | Website / web app **chưa có giao diện**, hoặc có nhưng được phép **làm lại từ đầu** | ✅ Skill này. Chưa có `CONCEPT.md` thì `sketch-to-concept` chạy trước *(B0)* |
 | **App mobile** iOS/Android, hoặc **hệ thống nhiều bề mặt** *(admin web + app cho khách)* làm từ đầu | ✅ Skill này, đọc thêm `references/mobile-app.md` |
 | Chỉ muốn **lên concept**, chọn phong cách trước, trình khách khi chưa có yêu cầu chi tiết | `sketch-to-concept` |
+| Nhiều tài liệu, chức năng, vai hay bề mặt *(ngưỡng ở `sketch-to-map` mục 0)* | `sketch-to-map` sau Phần A *(bản đồ chức năng, menu theo vai, đợt dựng)*, rồi skill này |
 | Thêm tính năng, màn hay bề mặt mới vào prototype **đã có** | `evolve-site` |
 | Có **concept, design system, ảnh chụp, URL tham khảo** và muốn một site mới dựa trên đó | ✅ Skill này. Tham chiếu được nạp ở `sketch-to-concept` A2 |
 | Nâng cấp site **đang chạy**, giữ nguyên cấu trúc và code | `redesign-existing-projects` |
@@ -30,7 +31,7 @@ description: >-
 
 ## 1. LUẬT DỪNG — đọc trước mọi thứ khác
 
-> Chép rút gọn ở `sketch-to-concept` mục 1: sửa thì sửa cả hai.
+> Chép rút gọn ở `sketch-to-concept` và `sketch-to-map` mục 1: sửa thì sửa cả ba.
 
 **Cổng (🛑)** là chỗ chỉ con người được quyết. Tới cổng thì:
 
@@ -51,7 +52,7 @@ description: >-
 - Coi im lặng là đồng ý. Người dùng không trả lời thì nhắc lại câu hỏi.
 
 <!-- luat-dung:co:bat-dau -->
-**Cớ hay gặp để bỏ cổng, và sự thật** *(rút từ `superpowers` writing-skills và brainstorming; khối này giống hệt ở `sketch-to-site` và `sketch-to-concept`, test giữ hai bản khớp nhau)*:
+**Cớ hay gặp để bỏ cổng, và sự thật** *(rút từ `superpowers` writing-skills và brainstorming; khối này giống hệt ở `sketch-to-site`, `sketch-to-concept` và `sketch-to-map`, test giữ ba bản khớp nhau)*:
 
 | Cớ | Sự thật |
 |---|---|
@@ -101,6 +102,7 @@ Phần A *(Cổng 1 · Brief concept, Cổng 2 · Chọn concept)* ở `sketch-t
 
 ```
 [Phần A · sketch-to-concept: 🛑1 Brief concept ─► 🛑2 Chọn concept ─► CONCEPT.md]
+[Dự án lớn · sketch-to-map: kiểm kê ─► bố cục ─► 🛑 Cổng Bản đồ ─► map/]
 B0 Nhận concept ─► B1 Đọc đủ yêu cầu + thử concept ─► B2 Design system + sơ đồ trang
    ─► 🛑3 Duyệt ─► B3 Dựng đầy đủ ─► B4 Tự kiểm ─► 🛑4 Nghiệm thu
 ```
@@ -113,7 +115,8 @@ Các bước nằm ở hai file theo giai đoạn: `references/b0-b2.md` *(B0, B
 |---|---|---|
 | Chưa có `CONCEPT.md` | Phần A trước, trong cùng phiên: đọc `<skills>/sketch-to-concept/SKILL.md`. Xong Cổng 2 thì quay lại đây | |
 | Dự án làm dở theo quy trình trước v4.0 *(`DECISIONS.md` ghi một hướng được chọn trong 3 hướng dựng thử)* | Coi hướng đó là concept đã chốt: viết `CONCEPT.md` từ hướng đó theo `<skills>/sketch-to-concept/templates/CONCEPT.md`, không bắt người dùng làm lại Phần A. Rồi theo dòng dưới | |
-| Có `CONCEPT.md`, chưa có đáp án Cổng 3 | B0 → B1 → B2 → 🛑 Cổng 3 | `Read` `references/b0-b2.md`, `CONCEPT.md`, `DECISIONS.md` · lệnh 1 |
+| Có `CONCEPT.md`, chưa có `map/features.js`, dòng **Quy mô** ở Cổng 1 đủ ngưỡng `sketch-to-map` | `sketch-to-map` trước, phiên mới *(`<skills>/sketch-to-map/SKILL.md`)*. Người dùng không muốn thì ghi nguyên văn vào `DECISIONS.md`, theo dòng dưới | |
+| Có `CONCEPT.md`, chưa có đáp án Cổng 3 | B0 → B1 → B2 → 🛑 Cổng 3 | `Read` `references/b0-b2.md`, `CONCEPT.md`, `DECISIONS.md` *(có bản đồ thì thêm `map/MAP.md`)* · lệnh 1 |
 | Cổng 3 đã có đáp án *(trong `DECISIONS.md`, hay người dùng vừa trả lời)*, hoặc có `BUILD-LOG.md` | B3 → B4 → 🛑 Cổng 4 | `Read` `references/b3-b4.md`, `CONCEPT.md`, `DECISIONS.md`, `DESIGN.md`, `BUILD-LOG.md` *(chưa có thì khuôn `<skills>/sketch-to-site/templates/BUILD-LOG.md`)*, `site/_system.html` và `site/assets/site.css` *(CSS component dùng chung; tên khác thì đọc file mà `_system.html` nạp)* · lệnh 2 |
 
 Lệnh 1 chép khuôn của B2 *(dùng nguyên hoặc sẽ điền)*, in luật mà B2 dùng *(`rules-and-conflicts.md` mục A, B, D.2)* và danh sách họ phong cách:
@@ -170,10 +173,11 @@ Mặc định `docs/prototypes/<slug>/`. Dự án có quy ước khác thì theo
 
 ```
 <slug>/
-├── DECISIONS.md          # nhật ký 4 cổng qua hai skill: đáp án nguyên văn
+├── DECISIONS.md          # nhật ký các cổng qua ba skill: đáp án nguyên văn
 ├── REFERENCE-READ.md     # (nếu có tham chiếu) token + quyết định trích được
 ├── CONCEPT.md            # concept chốt ở Cổng 2 (sketch-to-concept): nguồn token tới Cổng 3
 ├── concept/              # bảng concept: index.html, concepts.js (mọi vòng), tokens.js, màn then chốt của mọi vòng, ảnh chụp
+├── map/                  # (dự án lớn) bản đồ của sketch-to-map: features.js, layout.js, MAP.md, khung bấm thử index.html
 ├── DESIGN.md             # design system đã khoá ở Cổng 3
 ├── BUILD-LOG.md          # sổ tiến độ dựng ở B3 (và các đợt evolve-site Cấp 3)
 ├── _shots/system/        # ảnh _system.html của lệnh kiểm B2 (scripts/system-check.mjs): từng màn và cả trang, trình ở Cổng 3

@@ -59,13 +59,15 @@ res = Q.run_suites(names, out, themes, shots=a.shots) if names else {}
 # Dòng đã có trong mốc current ở bộ khác: bộ mới mang dòng đó thì là nợ cũ (component dùng chung), không chặn
 known = Q.known_lines(Q.CUR)
 
-tot = {'steps': 0, 'errors': 0, 'fails': 0, 'silent': 0, 'over': 0, 'cut': 0, 'contrast': 0, 'intent': 0, 'changed': 0}
+tot = {'steps': 0, 'errors': 0, 'fails': 0, 'silent': 0, 'over': 0, 'cut': 0, 'contrast': 0, 'intent': 0, 'codes': 0, 'changed': 0}
+lay_reports = []
 ledger_changed, ledger_lost, ledger_new, bad, debt = [], [], [], [], []
 for (th, name), r in sorted(res.items()):
     if 'crash' in r:
         bad.append(f'  LỖI CHẠY {th}/{name}: {r["crash"][:200]}')
         continue
     rep = Q.load_json(os.path.join(out, th, name, 'report.json'))
+    lay_reports.append((f'{th}/{name}', rep))
     d = Q.diff_report(Q.load_json(os.path.join(Q.CUR, th, name, 'report.json')), rep, name, known)
     tot['steps'] += r['steps']; tot['errors'] += r['errors']; tot['fails'] += len(r['fails'])
     tot['silent'] += len(r['silent']); tot['over'] += len(d['over_new']); tot['cut'] += len(d['cut_new']); tot['changed'] += len(d['changed'])
@@ -75,7 +77,7 @@ for (th, name), r in sorted(res.items()):
     bad += [f'  im lặng {th}/{name} · {s} (có check mà không trả giá trị)' for s in r['silent']]
     bad += [f'  tràn ngang mới {th}/{name} · {s}' for s in d['over_new']]
     bad += [f'  trong khung mới {th}/{name} · {s}: {c}' for s, c in d['cut_new']]
-    for key, lab in (('contrast', 'tương phản'), ('intent', 'ý định')):
+    for key, lab in (('contrast', 'tương phản'), ('intent', 'ý định'), ('codes', 'mã lộ')):
         tot[key] += len(d[key + '_new'])
         bad += [f'  {lab} mới {th}/{name} · {s}: {c}' for s, c in d[key + '_new']]
     debt += [(th, name, s, k, c) for s, k, c in d['debt']]
@@ -100,6 +102,15 @@ if debt:
           'Không chặn lần kiểm nhanh; handover-check sẽ hỏi sửa hay nhận vào mốc.')
     for line in Q.debt_lines(groups):
         print(line)
+if tot['codes']:
+    print('Mã tham chiếu lộ ra chữ trên trang: bỏ mã, giữ tên việc (nguồn ghi ở chú thích hay map/features.js).')
+lay = Q.layout_warnings(lay_reports)
+if lay:
+    print(f'Bố cục ({len(lay)}, cảnh báo, không chặn): một nút chính mỗi màn, nhóm menu tối đa 7 mục, tối đa 5 tab, viền mảnh')
+    for line, where in lay[:8]:
+        print(f'  {line} · {where}')
+    if len(lay) > 8:
+        print(f'  … còn {len(lay) - 8} dòng')
 if tot['contrast']:
     print('Tương phản dưới ngưỡng: sửa màu hoặc nền ở gốc (themes.json nếu là token). Không hạ opacity, không đổi cỡ chữ để né (qa-gate.md mục 6).')
 
@@ -107,7 +118,7 @@ if a.shots:
     for line in Q.run_all.shot_lines(out, [f'{th}/{n}' for th, n in sorted(res)], before):
         print(line)
 
-clean = pf_ok and not bad and tot['errors'] == 0 and tot['fails'] == 0 and tot['silent'] == 0 and tot['over'] == 0 and tot['cut'] == 0 and tot['contrast'] == 0 and tot['intent'] == 0
+clean = pf_ok and not bad and tot['errors'] == 0 and tot['fails'] == 0 and tot['silent'] == 0 and tot['over'] == 0 and tot['cut'] == 0 and tot['contrast'] == 0 and tot['intent'] == 0 and tot['codes'] == 0
 verdict = 'ĐẠT' if clean else 'CHƯA ĐẠT'
 if clean and not a.no_save:
     Q.copy_reports(out, Q.CUR, res.keys())
@@ -120,6 +131,6 @@ if clean and not a.no_save:
 elif not clean:
     verdict += ', chưa lưu mốc: sửa rồi chạy lại'
 print(f'quick · {len(changed)} file đổi · {len(res)} bộ ({" + ".join(themes)}) · {tot["steps"]} bước · preflight: {pf_line} · '
-      f'console {tot["errors"]} · FAIL {tot["fails"]} · im lặng {tot["silent"]} · tràn mới {tot["over"]} · cắt mới {tot["cut"]} · tương phản mới {tot["contrast"]} · ý định mới {tot["intent"]} · check đổi {tot["changed"]}'
+      f'console {tot["errors"]} · FAIL {tot["fails"]} · im lặng {tot["silent"]} · tràn mới {tot["over"]} · cắt mới {tot["cut"]} · tương phản mới {tot["contrast"]} · ý định mới {tot["intent"]} · mã lộ mới {tot["codes"]} · bố cục {len(lay)} · check đổi {tot["changed"]}'
       + f' · nợ cũ {ndebt} → {verdict}')
 sys.exit(0 if clean else 1)

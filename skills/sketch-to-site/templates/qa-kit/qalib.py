@@ -180,6 +180,17 @@ def diff_report(base, rep, suite, known=frozenset()):
 group_debt, debt_count, debt_lines = qadiff.group_debt, qadiff.debt_count, qadiff.debt_lines
 
 
+def layout_warnings(reports):
+    # Cảnh báo bố cục trên trang đã render (probes.js layout: chỉ số 3, 4, 8 của sketch-to-map). Không chặn, không so mốc.
+    # reports: [(theme/bộ, báo cáo)]. Trả [(dòng, chỗ đầu tiên)], mỗi dòng (đã bỏ số px) một lần
+    seen = {}
+    for where, rep in reports:
+        for x in rep or []:
+            for c in (x.get('dims') or {}).get('layout') or []:
+                seen.setdefault(qadiff.norm(c), (c, f'{where} · {x["step"]}'))
+    return list(seen.values())
+
+
 def preflight():
     # Không tìm thấy preflight.py thì báo mà không tính là lỗi: bộ kiểm trình duyệt vẫn chạy
     if not PREFLIGHT:

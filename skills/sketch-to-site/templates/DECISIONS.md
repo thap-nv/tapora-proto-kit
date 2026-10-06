@@ -1,6 +1,6 @@
 # Nhật ký quyết định — <Tên dự án>
 
-> Mỗi cổng một khối, Cổng 1–2 do `sketch-to-concept` ghi, Cổng 3–4 do `sketch-to-site` ghi. **Đáp án ghi nguyên văn** lời người dùng. Cổng bị bỏ qua thì vẫn ghi: ai cho phép bỏ qua, và nguyên văn câu cho phép.
+> Mỗi cổng một khối, Cổng 1–2 do `sketch-to-concept` ghi, Cổng Bản đồ do `sketch-to-map` ghi *(dự án lớn)*, Cổng 3–4 do `sketch-to-site` ghi. **Đáp án ghi nguyên văn** lời người dùng. Cổng bị bỏ qua thì vẫn ghi: ai cho phép bỏ qua, và nguyên văn câu cho phép.
 
 ## 🛑 Cổng 1 · Brief concept — <dd/mm/yyyy> *(sketch-to-concept)*
 | Câu hỏi | Đáp án (nguyên văn) | Ghi chú |
@@ -10,6 +10,7 @@
 | Người dùng chính + thiết bị | | |
 | Tham chiếu + mức bám | | |
 | Khác biệt · Định hướng *(nếu brief còn trống)* | | |
+| Quy mô *(số tài liệu yêu cầu, tổng cỡ, số tên chức năng, số vai, số bề mặt; thư mục tài liệu)* | | Đủ ngưỡng `sketch-to-map` mục 0: có · không |
 
 ## 🛑 Cổng 2 · Concept — <dd/mm/yyyy> *(sketch-to-concept)*
 | Vòng | Concept | Nguồn | Ý *(một câu)* | Họ phong cách | Màn then chốt · khung |
@@ -22,6 +23,15 @@
 **Đáp án concept (nguyên văn):**
 **Mã trộn (nếu có):**
 **Nền:** · **Nhịp:**
+
+## 🛑 Cổng Bản đồ — <dd/mm/yyyy> *(sketch-to-map, dự án lớn)*
+**Lúc trình:** <dòng Kiểm kê> · <dòng Chỉ số bố cục> · <dòng Soát nhãn>
+**Câu hỏi và lựa chọn** *(ghi ngay lượt hỏi)*: 1. Bản đồ: … · 2. Chức năng suy ra: … · 3. Đợt đầu: … · 4. Mâu thuẫn: …
+**Đáp án bản đồ (nguyên văn):**
+**Chức năng suy ra (nguyên văn):**
+**Đợt đầu (nguyên văn):** · module đợt 1: <…>
+**Mâu thuẫn (nguyên văn, mỗi câu một dòng):**
+**Bấm thử** *(kết quả người dùng dán; việc Khó và chỗ đã sửa)*:
 
 ## Giả định (B1)
 > Thực tế nội dung mà tài liệu yêu cầu chưa nói. Không hỏi; Cổng 3 chỉ nêu dòng nào đổi thiết kế.

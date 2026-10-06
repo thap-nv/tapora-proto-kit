@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bản đồ chức năng</title>
+<!--
+  Khung bấm thử của sketch-to-map. map.mjs check chép khuôn này thành map/index.html mỗi lần chạy: không sửa tay.
+  Đọc features.js và layout.js cùng thư mục (nạp bằng <script>: trang mở từ file:// không fetch được file cạnh nó) rồi tự vẽ.
+  Khung thô màu xám, không dùng token của concept: người dùng chấm bố cục và đường đi, không chấm màu.
+  Đường dẫn sâu: index.html#vai=<mã vai>&man=<mã màn>. Kết quả bấm thử giữ trong trình duyệt (localStorage) và chép ra bằng nút.
+-->
+<style>
+:root {
+  --bg: #eef0f2; --surface: #ffffff; --surface-2: #f6f7f8; --ink: #1f2328; --muted: #565d66; --line: #c9cdd2; --line-strong: #8b929b;
+  --primary: #2b3038; --on-primary: #ffffff; --focus: #0b57d0; --chrome: #ffffff;
+  --tag-hoan-bg: #fff1c7; --tag-hoan-ink: #5e4500; --tag-suy-bg: #e3ecfd; --tag-suy-ink: #173f8f;
+  --hit: #fff6a8; --ok: #1d6b3a; --warn: #8a4b00; --bad: #a3251c;
+  --radius: 6px; --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--font); overflow-wrap: anywhere; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+h1, h2, h3 { margin: 0; line-height: 1.25; }
+h1 { font-size: 1.35rem; } h2 { font-size: 1rem; } h3 { font-size: .95rem; }
+
+/* Thanh của khung bấm thử (không phải của prototype) */
+.shell { position: sticky; top: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px;
+  background: var(--chrome); border-bottom: 1px solid var(--line); }
+.shell .proj { font-weight: 650; margin-right: auto; min-width: 0; }
+.shell .proj small { display: block; font-weight: 400; color: var(--muted); font-size: .8rem; }
+.shell .pick { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.shell select { min-width: 0; min-height: 36px; max-width: 260px; padding: 4px 8px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--surface); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--line-strong);
+  border-radius: var(--radius); background: var(--surface); text-align: left; }
+.btn:hover { background: var(--surface-2); }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.btn-primary:hover { background: #3c424c; }
+.btn-ghost { border-color: transparent; background: transparent; }
+.btn-ghost:hover { background: var(--surface-2); }
+.btn[aria-pressed="true"], .btn[aria-expanded="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.tag { display: inline-block; padding: 0 6px; border-radius: 4px; font-size: .78rem; font-weight: 600; white-space: nowrap; vertical-align: 1px; }
+.tag-hoan { background: var(--tag-hoan-bg); color: var(--tag-hoan-ink); }
+.tag-suy { background: var(--tag-suy-bg); color: var(--tag-suy-ink); }
+.muted { color: var(--muted); }
+
+.banner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 16px; background: #fffbe6; border-bottom: 1px solid #e6d58a; }
+.banner[hidden] { display: none; }
+.banner .say { flex: 1 1 320px; min-width: 0; }
+.banner .count { font-variant-numeric: tabular-nums; }
+
+.layout { display: flex; align-items: flex-start; gap: 16px; padding: 16px; }
+.stage { flex: 1 1 auto; min-width: 0; }
+
+/* Khung prototype: web */
+.pf { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); min-height: 70vh; display: grid; grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-rows: auto 1fr; }
+.pf.nav-top { grid-template-columns: minmax(0, 1fr); }
+.pf-top { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 14px; border-bottom: 1px solid var(--line); }
+.pf-top .surf { font-weight: 650; }
+.pf-top .who { margin-left: auto; color: var(--muted); font-size: .9rem; }
+.pf-search { min-height: 34px; min-width: 200px; padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); color: var(--muted); }
+.pf-menu-toggle { display: none; }
+.pf-nav { border-right: 1px solid var(--line); padding: 10px 8px; }
+.pf.nav-top .pf-nav { border-right: 0; padding: 0; }
+.pf-nav ul { list-style: none; margin: 0; padding: 0; }
+.pf-nav .grp { margin: 12px 8px 4px; font-size: .78rem; font-weight: 650; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.pf-nav .grp:first-child { margin-top: 2px; }
+.pf-nav button { width: 100%; min-height: 36px; padding: 6px 10px; border: 0; border-radius: var(--radius); background: transparent; text-align: left; }
+.pf-nav button:hover { background: var(--surface-2); }
+.pf-nav button[aria-current="page"] { background: #e2e5e9; font-weight: 650; }
+.pf.nav-top .pf-nav ul { display: flex; flex-wrap: wrap; gap: 4px; }
+.pf.nav-top .pf-nav li.grp { display: none; }
+.pf.nav-top .pf-nav button { width: auto; }
+.pf-screen { min-width: 0; padding: 16px 18px 24px; }
+.crumb { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; font-size: .88rem; color: var(--muted); }
+.crumb button { border: 0; background: none; padding: 2px 0; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.backbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: -4px 0 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); }
+.backbar .ve { flex: 1 1 260px; min-width: 0; color: var(--muted); font-size: .9rem; }
+.head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 16px; margin-bottom: 12px; }
+.head h1 { flex: 1 1 240px; min-width: 0; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.more { position: relative; }
+.more-list { position: absolute; right: 0; top: calc(100% + 4px); z-index: 5; min-width: 220px; max-width: min(320px, 80vw); padding: 4px; background: var(--surface);
+  border: 1px solid var(--line-strong); border-radius: var(--radius); box-shadow: 0 6px 18px rgba(0,0,0,.12); }
+.more-list[hidden] { display: none; }
+.more-list button { display: block; width: 100%; min-height: 36px; padding: 6px 10px; border: 0; background: none; text-align: left; border-radius: 4px; }
+.more-list button:hover { background: var(--surface-2); }
+.tabs { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.tabs button { min-height: 36px; padding: 6px 12px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+.bands { display: grid; gap: 12px; margin-bottom: 14px; }
+.band { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); }
+.band h2 { margin-bottom: 8px; }
+.band .items { display: flex; flex-wrap: wrap; gap: 8px; }
+.zones { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.zone { min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); }
+.zone h2 { margin-bottom: 8px; font-size: .92rem; color: var(--muted); }
+.zone .items { display: flex; flex-wrap: wrap; gap: 8px; }
+.inline { flex: 1 1 100%; min-width: 0; padding: 10px 12px; border: 1px dashed var(--line-strong); border-radius: var(--radius); background: var(--surface); }
+.inline > button { border: 0; background: none; padding: 0; font-weight: 600; text-align: left; }
+.inline .detail { margin-top: 6px; font-size: .9rem; color: var(--muted); }
+.inline .detail[hidden] { display: none; }
+.content-main { padding: 12px 14px; margin-bottom: 12px; border: 1px dashed var(--line-strong); border-radius: var(--radius); }
+.rows { flex: 1 1 100%; min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 10px; border-top: 1px solid var(--line); }
+.row:first-child { border-top: 0; }
+.row .row-main { flex: 1 1 200px; min-width: 0; text-align: left; border: 0; background: none; padding: 4px 0; }
+.row .row-main.link { text-decoration: underline; text-underline-offset: 2px; }
+.waiting { padding: 16px; border: 1px dashed var(--line-strong); border-radius: var(--radius); background: var(--tag-hoan-bg); color: var(--tag-hoan-ink); }
+.hl { animation: hl 2.4s ease-out 1; outline: 2px solid var(--focus); outline-offset: 2px; }
+@keyframes hl { from { background-color: var(--hit); } to { background-color: transparent; } }
+
+/* Khung prototype: app */
+.pf-app { width: 390px; max-width: 100%; margin: 0 auto; min-height: 720px; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 22px; overflow: hidden; }
+.pf-app .app-top { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.pf-app .app-top h1 { font-size: 1.1rem; flex: 1; min-width: 0; }
+.pf-app .pf-screen { flex: 1; padding: 14px; }
+.pf-app .zones { grid-template-columns: minmax(0, 1fr); }
+.pf-app .app-tabs { display: flex; border-top: 1px solid var(--line); }
+.pf-app .app-tabs button { flex: 1 1 0; min-width: 0; min-height: 52px; padding: 6px 4px; border: 0; background: none; font-size: .82rem; color: var(--muted); }
+.pf-app .app-tabs button[aria-current="page"] { color: var(--ink); font-weight: 650; box-shadow: inset 0 2px 0 var(--ink); }
+
+/* Lớp phủ: hộp thoại, ngăn trượt, sheet (đều là <dialog>) */
+dialog { border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 0; color: var(--ink); background: var(--surface); max-width: calc(100vw - 32px); }
+dialog::backdrop { background: rgba(20, 22, 26, .38); }
+dialog .ov { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; max-height: calc(100vh - 48px); overflow: auto; }
+dialog .ov-head { display: flex; align-items: flex-start; gap: 10px; }
+dialog .ov-head h2 { flex: 1; min-width: 0; font-size: 1.1rem; }
+dialog .ov-kind { font-size: .8rem; color: var(--muted); }
+dialog dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; margin: 0; font-size: .9rem; }
+dialog dt { color: var(--muted); }
+dialog dd { margin: 0; }
+dialog .ov-foot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 6px; }
+dialog.k-hop-thoai { width: 520px; }
+dialog.k-ngan-truot { margin: 0 0 0 auto; height: 100vh; max-height: 100vh; width: 480px; border-radius: 0; border-width: 0 0 0 1px; }
+dialog.k-ngan-truot .ov { max-height: 100vh; }
+dialog.k-sheet { margin: auto auto 0; width: 420px; border-radius: 16px 16px 0 0; border-bottom: 0; }
+dialog.k-sheet .ov::before { content: ""; align-self: center; width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong); }
+dialog.k-panel { margin: 0 0 0 auto; height: 100vh; max-height: 100vh; width: 520px; border-radius: 0; border-width: 0 0 0 1px; }
+dialog.k-panel .ov { max-height: 100vh; }
+dialog.k-palette { margin-top: 12vh; width: 560px; }
+
+/* Bấm thử, mục lục */
+.task { padding: 10px 0; border-top: 1px solid var(--line); }
+.task:first-of-type { border-top: 0; }
+.task .say { margin: 2px 0 6px; }
+.task .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.rate { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.rate button { min-height: 32px; padding: 2px 10px; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--surface); }
+.rate button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.filter { display: flex; flex-wrap: wrap; gap: 6px; }
+.filter input { flex: 1 1 220px; min-height: 36px; padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: var(--radius); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { min-height: 32px; padding: 2px 10px; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--surface); font-size: .88rem; }
+.chips button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.ix-mod { margin-top: 12px; }
+.ix-mod h3 { margin-bottom: 4px; }
+.ix-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 6px 0; border-top: 1px solid var(--line); }
+.ix-row .nm { flex: 1 1 220px; min-width: 0; }
+.ix-row .rl { color: var(--muted); font-size: .85rem; }
+.pal-list { list-style: none; margin: 0; padding: 0; max-height: 50vh; overflow: auto; }
+.pal-list li button { display: block; width: 100%; padding: 8px 10px; border: 0; border-radius: 4px; background: none; text-align: left; }
+.pal-list li button[aria-selected="true"] { background: #e2e5e9; }
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 60; max-width: calc(100vw - 32px); padding: 10px 14px; border-radius: var(--radius);
+  background: var(--primary); color: var(--on-primary); box-shadow: 0 6px 18px rgba(0,0,0,.2); }
+.toast[hidden] { display: none; }
+.empty { padding: 24px; text-align: center; color: var(--muted); }
+
+@media (max-width: 760px) {
+  .layout { padding: 10px; }
+  .shell .proj { flex: 1 1 100%; }
+  .shell .pick { flex: 1 1 100%; }
+  .shell select { flex: 1 1 0; width: 100%; max-width: none; }
+  .pf { grid-template-columns: minmax(0, 1fr); }
+  .pf-menu-toggle { display: inline-flex; }
+  .pf-nav { border-right: 0; border-bottom: 1px solid var(--line); }
+  .pf-nav[data-open="false"] { display: none; }
+  .pf.nav-top .pf-nav ul { display: block; }
+  .pf.nav-top .pf-nav button { width: 100%; }
+  .pf-search { min-width: 0; flex: 1 1 100%; order: 3; }
+  .pf-screen { padding: 12px; }
+  .pf-app { border-radius: 0; min-height: 640px; }
+  dialog.k-ngan-truot, dialog.k-panel { width: 100vw; max-width: 100vw; }
+  dialog.k-sheet { width: 100vw; max-width: 100vw; }
+}
+@media (prefers-reduced-motion: reduce) { .hl { animation: none; } * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<noscript><p class="empty">Khung bấm thử cần JavaScript. Bản đọc được không cần JavaScript: <a href="MAP.md">MAP.md</a> cùng thư mục.</p></noscript>
+<header class="shell" id="shell">
+  <div class="proj" id="proj">Bản đồ chức năng</div>
+  <div class="pick"><label for="role">Vai</label><select id="role"></select></div>
+  <button class="btn" type="button" id="btn-tasks" aria-haspopup="dialog">Bấm thử</button>
+  <button class="btn" type="button" id="btn-index" aria-haspopup="dialog">Mục lục chức năng</button>
+</header>
+<div class="banner" id="banner" hidden role="region" aria-label="Việc đang bấm thử"></div>
+<div class="layout"><main class="stage" id="stage"></main></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script src="features.js"></script>
+<script src="layout.js"></script>
+<script>
+(() => {
+  'use strict';
+  const F = window.FEATURES || { features: [] };
+  const L = window.LAYOUT;
+  const arr = x => (x == null ? [] : Array.isArray(x) ? x : [x]);
+  const $ = (s, r = document) => r.querySelector(s);
+  // el('button', { class: 'btn', onclick: fn, 'data-feature': id }, 'chữ', nút con…)
+  function el(tag, attrs, ...kids) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v == null || v === false) continue;
+      if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+      else if (k === 'class') e.className = v;
+      else if (k === 'hidden') e.hidden = true;
+      else e.setAttribute(k, v === true ? '' : v);
+    }
+    for (const c of kids.flat()) if (c != null && c !== false) e.append(c.nodeType ? c : document.createTextNode(String(c)));
+    return e;
+  }
+  const stage = $('#stage');
+  if (!L) {
+    stage.append(el('p', { class: 'empty' }, 'Chưa có layout.js: viết map/layout.js ở M2 rồi chạy map.mjs check.'));
+    return;
+  }
+  const features = arr(F.features);
+  const fById = new Map(features.map(f => [f.id, f]));
+  const S = arr(L.screens);
+  const sById = new Map(S.map(s => [s.id, s]));
+  const roles = arr(L.roles);
+  const rById = new Map(roles.map(r => [r.id, r]));
+  const surfById = new Map(arr(L.surfaces).map(s => [s.id, s]));
+  const places = new Map(Object.entries(L.place || {}).map(([k, v]) => [k, arr(v)]));
+  const menuOf = id => arr(L.nav).find(m => arr(m.roles).includes(id)) || { groups: [] };
+  const parentsOf = s => arr(s && s.parent);
+  const MO = { 'tai-cho': 'tại chỗ', 'ngan-truot': 'ngăn trượt', 'hop-thoai': 'hộp thoại', sheet: 'sheet', trang: 'trang' };
+  const FREQ = { ngay: 'hằng ngày', tuan: 'hằng tuần', hiem: 'hiếm' };
+  const KEY = 'map-bam-thu:' + (F.project || location.pathname);
+  const store = {
+    get() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } },
+    set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch {} },
+  };
+
+  const st = { role: null, screen: null, tabs: {}, back: null, task: null, clicks: 0, reached: null, navOpen: false };
+  const role = () => rById.get(st.role);
+  const surf = () => surfById.get((role() || {}).surface) || {};
+  const can = (s, r = role()) => s && r && s.surface === r.surface && arr(s.roles).includes(r.id);
+  const doer = (f, r = role()) => f && r && arr(f.roles).includes(r.id);
+  const deferred = f => f && f.status === 'hoan';
+  const tags = f => [deferred(f) ? el('span', { class: 'tag tag-hoan' }, 'Giai đoạn sau') : null, f && f.evidence === 'suy' ? el('span', { class: 'tag tag-suy' }, 'Suy ra') : null];
+
+  // ---------- Thanh của khung ----------
+  $('#proj').replaceChildren(document.createTextNode(F.project ? `Bản đồ · ${F.project}` : 'Bản đồ chức năng'), el('small', null, 'Khung thô để bấm thử bố cục, không phải giao diện thật'));
+  document.title = F.project ? `Bản đồ · ${F.project}` : 'Bản đồ chức năng';
+  const sel = $('#role');
+  for (const sf of arr(L.surfaces)) {
+    const g = el('optgroup', { label: sf.name || sf.id });
+    for (const r of roles.filter(x => x.surface === sf.id)) g.append(el('option', { value: r.id }, r.name || r.id));
+    sel.append(g);
+  }
+  sel.addEventListener('change', () => { setRole(sel.value); go(role().home); });
+  $('#btn-tasks').addEventListener('click', openTasks);
+  $('#btn-index').addEventListener('click', () => openIndex());
+
+  // ---------- Điều hướng ----------
+  function setRole(id) {
+    if (!rById.has(id)) id = roles[0] && roles[0].id;
+    st.role = id; sel.value = id; st.back = null; st.navOpen = false;
+  }
+  function go(sid, opts = {}) {
+    const s = sById.get(sid);
+    if (!s || !can(s)) { toast(s ? `Vai ${role().name} không vào được màn ${s.name}` : 'Vai này chưa có trang chủ'); render(); return; }
+    st.screen = sid;
+    st.back = opts.back || null;
+    st.navOpen = false;
+    history.replaceState(null, '', `#vai=${encodeURIComponent(st.role)}&man=${encodeURIComponent(sid)}`);
+    render();
+    if (opts.feature) reach(opts.feature);
+    const h = $('h1', stage);
+    if (h && !opts.keepFocus) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+    if (opts.highlight) highlight(opts.highlight);
+  }
+  function highlight(fid) {
+    const t = stage.querySelector(`[data-feature="${CSS.escape(fid)}"]`);
+    if (!t) return;
+    t.scrollIntoView({ block: 'center' });
+    t.classList.remove('hl'); void t.offsetWidth; t.classList.add('hl');
+  }
+
+  // ---------- Vẽ khung prototype ----------
+  // Chức năng chiếm cả màn (mo: trang): tới màn là tới chức năng, nên báo cho phần bấm thử sau khi vẽ
+  let pendingReach = null;
+  function render() {
+    const r = role();
+    const s = sById.get(st.screen);
+    stage.replaceChildren();
+    pendingReach = null;
+    if (!r || !s) { stage.append(el('p', { class: 'empty' }, 'Chọn một vai.')); return; }
+    stage.append(surf().kind === 'app' ? appFrame(r, s) : webFrame(r, s));
+    if (pendingReach) reach(pendingReach);
+  }
+  function navItems(r) { return arr(menuOf(r.id).groups).flatMap(g => arr(g.items)).filter(id => can(sById.get(id), r)); }
+  function webFrame(r, s) {
+    const n = navItems(r).length;
+    const top = n <= 5;
+    const box = el('div', { class: 'pf' + (top ? ' nav-top' : ''), 'data-surface': 'web' });
+    const head = el('div', { class: 'pf-top' }, el('span', { class: 'surf' }, surf().name || ''));
+    const toggle = el('button', { class: 'btn pf-menu-toggle', type: 'button', 'aria-expanded': String(st.navOpen), 'aria-controls': 'pf-nav',
+      onclick: () => { st.navOpen = !st.navOpen; render(); } }, 'Menu');
+    head.append(toggle);
+    if (surf().ctrlK) head.append(el('button', { class: 'pf-search', type: 'button', onclick: openPalette, 'aria-label': 'Tìm chức năng hay màn (Ctrl+K)' }, 'Tìm chức năng, màn… Ctrl+K'));
+    head.append(el('span', { class: 'who' }, r.name));
+    const nav = el('nav', { class: 'pf-nav', id: 'pf-nav', 'aria-label': 'Menu chính', 'data-open': String(st.navOpen) });
+    const ul = el('ul');
+    for (const g of arr(menuOf(r.id).groups)) {
+      const its = arr(g.items).filter(id => can(sById.get(id), r));
+      if (!its.length) continue;
+      if (g.name) ul.append(el('li', { class: 'grp', role: 'presentation' }, g.name));
+      for (const id of its) ul.append(el('li', null, navButton(id)));
+    }
+    nav.append(ul);
+    if (top) head.insertBefore(nav, head.children[1]);
+    box.append(head);
+    if (!top) box.append(nav);
+    box.append(screenBody(r, s));
+    return box;
+  }
+  function navButton(id) {
+    const s = sById.get(id);
+    const cur = id === st.screen || parentsOf(sById.get(st.screen)).includes(id);
+    return el('button', { type: 'button', 'aria-current': cur ? 'page' : null, onclick: () => go(id) }, s.name);
+  }
+  function appFrame(r, s) {
+    const box = el('div', { class: 'pf-app', 'data-surface': 'app' });
+    const top = el('div', { class: 'app-top' });
+    const parent = parentsOf(s)[0];
+    if (st.back) top.append(el('button', { class: 'btn btn-ghost', type: 'button', onclick: backToFrom }, 'Huỷ'));
+    else if (parent && can(sById.get(parent))) top.append(el('button', { class: 'btn btn-ghost', type: 'button', 'aria-label': `Quay lại ${sById.get(parent).name}`, onclick: () => go(parent) }, '‹ ' + sById.get(parent).name));
+    top.append(el('h1', null, s.name));
+    box.append(top, screenBody(r, s, true));
+    const its = navItems(r);
+    if (its.length && !s.entry && !st.back) {
+      const tabs = el('nav', { class: 'app-tabs', 'aria-label': 'Thanh tab' });
+      for (const id of its) tabs.append(navButton(id));
+      box.append(tabs);
+    }
+    return box;
+  }
+
+  // Mọi thứ đặt trên màn s mà vai r làm được: [{ fid, p }]
+  function onScreen(s, r) {
+    const out = [];
+    for (const [fid, ps] of places) for (const p of ps) if (p.screen === s.id && doer(fById.get(fid), r)) out.push({ fid, p });
+    return out;
+  }
+  function screenBody(r, s, isApp) {
+    const body = el('section', { class: 'pf-screen', 'aria-label': s.name, 'data-screen': s.id });
+    if (st.back) {
+      const from = sById.get(st.back.from);
+      body.append(el('div', { class: 'backbar', role: 'region', 'aria-label': 'Đường về' },
+        el('button', { class: 'btn', type: 'button', onclick: backToFrom }, `← Quay lại ${from ? from.name : ''}`),
+        el('span', { class: 've' }, st.back.ve || ''),
+        el('button', { class: 'btn btn-primary', type: 'button', onclick: () => doneAndBack(st.back.fid) }, 'Xong')));
+    }
+    const chain = [];
+    for (let p = parentsOf(s)[0]; p && sById.has(p) && chain.length < 6; p = parentsOf(sById.get(p))[0]) chain.unshift(p);
+    if (!isApp && chain.length) {
+      const c = el('nav', { class: 'crumb', 'aria-label': 'Đường dẫn' });
+      for (const id of chain) c.append(el('button', { type: 'button', onclick: () => go(id) }, sById.get(id).name), el('span', { 'aria-hidden': 'true' }, '›'));
+      c.append(el('span', { 'aria-current': 'page' }, s.name));
+      body.append(c);
+    }
+    const items = onScreen(s, r);
+    const shortcuts = arr(L.shortcuts).filter(x => x.from === s.id && doer(fById.get(x.to), r));
+    const bandIds = new Set(arr(s.bands).flatMap(b => arr(b.items)));
+    const head = el('div', { class: 'head' });
+    if (!isApp) head.append(el('h1', null, s.name));
+    const acts = el('div', { class: 'actions' });
+    const more = [];
+    for (const { fid, p } of items) {
+      if (p.zone || p.tab || bandIds.has(fid) || p.tier === 4 || p.mo === 'trang' || p.mo === 'tai-cho') continue;
+      if (p.tier === 3) more.push({ fid, mo: p.mo });
+      else acts.append(featButton(fid, p.mo, p.tier === 1));
+    }
+    for (const x of shortcuts) {
+      if (bandIds.has(x.to) || x.zone) continue;
+      acts.append(featButton(x.to, x.mo, false, x));
+    }
+    for (const { fid, p } of items) if (p.tier === 3 && (p.zone || p.tab) && !bandIds.has(fid)) more.push({ fid, mo: p.mo, inPlace: true });
+    if (more.length) acts.append(moreMenu(more.filter(m => !m.inPlace)));
+    if (acts.childNodes.length) head.append(acts);
+    if (head.childNodes.length) body.append(head);
+    // Màn mà mọi chức năng đều hoãn: trang chờ
+    const fs = items.map(x => fById.get(x.fid));
+    if (fs.length && fs.every(deferred)) body.append(el('div', { class: 'waiting' }, el('strong', null, 'Màn này dựng ở giai đoạn sau. '), 'Chỗ đặt đã có trong bản đồ: ', fs.map(f => f.name).join(' · ')));
+    // Chức năng chiếm cả màn (mo: trang, không vùng)
+    for (const { fid, p } of items) if (p.mo === 'trang' && !p.zone && !p.tab) {
+      const f = fById.get(fid);
+      body.append(el('div', { class: 'content-main', 'data-feature': fid }, el('strong', null, f.name), ' ', tags(f), el('div', { class: 'muted' }, f.spec || '')));
+      reachLater(fid);
+    }
+    // Dải của trang chủ
+    if (arr(s.bands).length) {
+      const bands = el('div', { class: 'bands' });
+      for (const b of arr(s.bands)) {
+        const its = arr(b.items).filter(id => doer(fById.get(id), r));
+        if (!its.length) continue;
+        const box = el('section', { class: 'band' }, el('h2', null, b.name));
+        const row = el('div', { class: 'items' });
+        for (const id of its) {
+          const p = (places.get(id) || []).find(x => x.screen === s.id);
+          const sc = shortcuts.find(x => x.to === id);
+          row.append(p ? placed(id, p) : sc ? featButton(id, sc.mo, false, sc) : featButton(id, 'trang', false));
+        }
+        box.append(row);
+        bands.append(box);
+      }
+      body.append(bands);
+    }
+    // Tab
+    const tabs = arr(s.tabs);
+    const active = st.tabs[s.id] || tabs[0];
+    if (tabs.length) {
+      const tl = el('div', { class: 'tabs', role: 'tablist', 'aria-label': `Tab của ${s.name}` });
+      tabs.forEach(t => tl.append(el('button', { type: 'button', role: 'tab', 'aria-selected': String(t === active), tabindex: t === active ? '0' : '-1',
+        onclick: () => { st.tabs[s.id] = t; render(); const b = stage.querySelector('[role="tab"][aria-selected="true"]'); if (b) b.focus(); },
+        onkeydown: e => { const i = tabs.indexOf(t); const n = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : null; if (n == null) return; e.preventDefault(); st.tabs[s.id] = tabs[(n + tabs.length) % tabs.length]; render(); const b = stage.querySelector('[role="tab"][aria-selected="true"]'); if (b) b.focus(); } }, t)));
+      body.append(tl);
+    }
+    // Vùng: vùng khai trước, rồi tab đang mở, rồi phần còn lại (T4 và màn con)
+    const zones = el('div', { class: 'zones', role: tabs.length ? 'tabpanel' : null, 'aria-label': tabs.length ? active : null });
+    const zoneBox = (title, list, extraRows) => {
+      const z = el('section', { class: 'zone' }, title ? el('h2', null, title) : null);
+      const row = el('div', { class: 'items' });
+      const ctx = [];
+      for (const { fid, p } of list) { if (p.tier === 4) ctx.push(fid); else row.append(placed(fid, p)); }
+      for (const x of shortcuts.filter(x => x.zone === title)) row.append(featButton(x.to, x.mo, false, x));
+      if (ctx.length || extraRows) row.append(sampleRows(ctx, extraRows || []));
+      z.append(row);
+      return z;
+    };
+    const used = new Set();
+    for (const z of arr(s.zones)) {
+      const list = items.filter(x => x.p.zone === z && !x.p.tab && !bandIds.has(x.fid) && !(x.p.mo === 'trang' && !x.p.zone));
+      list.forEach(x => used.add(x));
+      if (!list.length && !shortcuts.some(x => x.zone === z)) { zones.append(el('section', { class: 'zone' }, el('h2', null, z), el('p', { class: 'muted' }, 'Nội dung của vùng'))); continue; }
+      zones.append(zoneBox(z, list));
+    }
+    if (active) {
+      const list = items.filter(x => x.p.tab === active && !bandIds.has(x.fid));
+      list.forEach(x => used.add(x));
+      zones.append(list.length ? zoneBox(active, list) : el('section', { class: 'zone' }, el('h2', null, active), el('p', { class: 'muted' }, 'Nội dung của tab')));
+    }
+    const restT4 = items.filter(x => !used.has(x) && !x.p.zone && !x.p.tab && x.p.tier === 4 && !bandIds.has(x.fid));
+    const kids = S.filter(c => parentsOf(c).includes(s.id) && can(c, r));
+    if (restT4.length || kids.length) zones.append(zoneBox(kids.length ? 'Danh sách' : 'Trên dòng', restT4, kids));
+    if (zones.childNodes.length) body.append(zones);
+    return body;
+  }
+  // Bảng mẫu: mỗi màn con một dòng bấm sang; thao tác T4 nằm trong menu của dòng
+  function sampleRows(ctx, kids) {
+    const box = el('div', { class: 'rows' });
+    const rowMenu = () => (ctx.length ? moreMenu(ctx.map(fid => ({ fid, mo: placeOf(fid).mo })), 'Thao tác trên dòng') : null);
+    if (kids.length) for (const c of kids) box.append(el('div', { class: 'row' }, el('button', { class: 'row-main link', type: 'button', onclick: () => go(c.id) }, `Một dòng mẫu → ${c.name}`), rowMenu()));
+    else box.append(el('div', { class: 'row' }, el('span', { class: 'row-main' }, 'Một dòng mẫu'), rowMenu()));
+    return box;
+  }
+  function placeOf(fid) { return (places.get(fid) || []).find(p => p.screen === st.screen) || (places.get(fid) || [])[0] || { mo: 'hop-thoai' }; }
+  function moreMenu(list, label = 'Thêm') {
+    const wrap = el('div', { class: 'more' });
+    const panel = el('div', { class: 'more-list', role: 'menu', hidden: true });
+    const btn = el('button', { class: 'btn', type: 'button', 'aria-haspopup': 'menu', 'aria-expanded': 'false', 'aria-label': `${label}: ${list.length} việc` }, label === 'Thêm' ? '…' : `${label} …`);
+    const close = () => { panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+    btn.addEventListener('click', () => { const open = panel.hidden; panel.hidden = !open; btn.setAttribute('aria-expanded', String(open)); if (open) { const b = panel.querySelector('button'); if (b) b.focus(); } });
+    panel.addEventListener('keydown', e => { if (e.key === 'Escape') { close(); btn.focus(); } });
+    for (const { fid, mo } of list) {
+      const f = fById.get(fid);
+      panel.append(el('button', { type: 'button', role: 'menuitem', 'data-feature': fid, onclick: () => { close(); openFeature(fid, mo); } }, f.name, ' ', tags(f)));
+    }
+    wrap.append(btn, panel);
+    return wrap;
+  }
+  // Chức năng đặt trên màn này
+  function placed(fid, p) {
+    const f = fById.get(fid);
+    if (p.mo === 'tai-cho') {
+      const det = el('div', { class: 'detail', hidden: true }, f.spec || '', ' ', el('span', null, `Nguồn: ${arr(f.src).join(', ')}`));
+      const b = el('button', { type: 'button', 'aria-expanded': 'false' }, (p.tier === 1 ? '▸ ' : '') + f.name, ' ', tags(f));
+      b.addEventListener('click', () => { const open = det.hidden; det.hidden = !open; b.setAttribute('aria-expanded', String(open)); if (open) reach(fid); });
+      return el('div', { class: 'inline', 'data-feature': fid, 'data-mo': 'tai-cho' }, b, det);
+    }
+    // mo: trang trong một vùng: chức năng là nội dung của chính màn này (xem lịch, bảng), không phải nút sang màn khác
+    if (p.mo === 'trang') { reachLater(fid); return el('div', { class: 'inline', 'data-feature': fid, 'data-mo': 'trang' }, el('strong', null, f.name), ' ', tags(f), el('div', { class: 'detail' }, f.spec || '')); }
+    if (p.tier === 3) return moreMenu([{ fid, mo: p.mo }]);
+    return featButton(fid, p.mo, p.tier === 1);
+  }
+  function featButton(fid, mo, primary, sc) {
+    const f = fById.get(fid);
+    const label = (sc && sc.label) || f.name;
+    return el('button', { class: 'btn' + (primary ? ' btn-primary' : ''), type: 'button', 'data-feature': fid, 'data-mo': mo, onclick: e => openFeature(fid, mo, sc, e.currentTarget) },
+      label, ' ', tags(f), mo === 'trang' ? el('span', { 'aria-hidden': 'true' }, ' →') : null);
+  }
+
+  // ---------- Mở chức năng ----------
+  // mo: hop-thoai · ngan-truot · sheet mở trên màn đang đứng; trang thì sang màn của chức năng, kèm đường về khi là lối tắt
+  function openFeature(fid, mo, sc, opener) {
+    const f = fById.get(fid);
+    if (mo === 'trang') {
+      const target = (places.get(fid) || []).find(p => can(sById.get(p.screen)));
+      if (!target) { toast(`Vai ${role().name} không có chỗ làm "${f.name}"`); return; }
+      const back = sc ? { from: st.screen, fid, ve: sc.ve || '' } : null;
+      go(target.screen, { back, feature: fid, highlight: fid });
+      return;
+    }
+    if (mo === 'tai-cho') { highlight(fid); reach(fid); return; }
+    const kind = surf().kind === 'app' && mo !== 'hop-thoai' ? 'sheet' : mo;
+    const d = el('dialog', { class: 'k-' + kind, 'data-kind': kind, 'data-feature': fid, 'aria-labelledby': 'ov-title' });
+    const meta = el('dl', null,
+      el('dt', null, 'Nguồn'), el('dd', null, arr(f.src).join(', ') || '—'),
+      el('dt', null, 'Vai'), el('dd', null, arr(f.roles).map(id => (rById.get(id) || {}).name || id).join(', ')),
+      el('dt', null, 'Tần suất'), el('dd', null, FREQ[f.freq] || f.freq || '—'));
+    const body = deferred(f)
+      ? el('div', { class: 'waiting' }, el('strong', null, 'Giai đoạn sau. '), 'Chỗ này mở chức năng khi được dựng. ', f.spec || '')
+      : el('p', null, f.spec || '');
+    const close = () => { d.close(); };
+    d.append(el('div', { class: 'ov' },
+      el('div', { class: 'ov-head' }, el('h2', { id: 'ov-title' }, (sc && sc.label) || f.name, ' ', tags(f)), el('button', { class: 'btn btn-ghost', type: 'button', 'aria-label': 'Đóng', onclick: close }, '✕')),
+      el('div', { class: 'ov-kind' }, `Mở dạng ${MO[kind] || kind} trên màn ${sById.get(st.screen).name}`),
+      body, meta,
+      el('div', { class: 'ov-foot' },
+        el('button', { class: 'btn', type: 'button', onclick: close }, 'Huỷ'),
+        deferred(f) ? null : el('button', { class: 'btn btn-primary', type: 'button', onclick: () => { d.close(); toast(`Xong: ${f.name} · vẫn ở ${sById.get(st.screen).name}`); } }, 'Xong'))));
+    d.addEventListener('close', () => { d.remove(); if (opener && opener.isConnected) opener.focus(); });
+    d.addEventListener('click', e => { if (e.target === d) close(); });
+    document.body.append(d);
+    d.showModal();
+    reach(fid);
+  }
+  function backToFrom() { const b = st.back; if (b) go(b.from); }
+  function doneAndBack(fid) { const b = st.back; if (!b) return; go(b.from); toast(`Xong: ${fById.get(fid).name} · đã về ${sById.get(b.from).name}`); }
+
+  // ---------- Bấm thử ----------
+  const tasks = arr(L.tasks);
+  function counted(e) {
+    if (!st.task) return;
+    const t = e.target.closest('button, a, select, [role="tab"]');
+    if (!t || t.closest('#shell, #banner, .k-panel, .k-palette')) return;
+    st.clicks++;
+    renderBanner();
+  }
+  document.addEventListener('click', counted, true);
+  function reachLater(fid) { pendingReach = fid; }
+  function reach(fid) {
+    if (st.task && !st.reached && fid === st.task.feature) { st.reached = st.clicks; renderBanner(); }
+  }
+  function startTask(i) {
+    const t = tasks[i];
+    st.task = { ...t, i }; st.clicks = 0; st.reached = null;
+    setRole(t.role);
+    go(role().home);
+    renderBanner();
+  }
+  function rate(i, v) {
+    const all = store.get();
+    all[i] = { ...(all[i] || {}), rate: v, clicks: i === (st.task && st.task.i) ? (st.reached ?? st.clicks) : (all[i] || {}).clicks };
+    store.set(all);
+  }
+  function renderBanner() {
+    const b = $('#banner');
+    if (!st.task) { b.hidden = true; b.replaceChildren(); return; }
+    b.hidden = false;
+    const t = st.task;
+    const r = rById.get(t.role);
+    const saved = (store.get()[t.i] || {}).rate;
+    const rateBox = el('span', { class: 'rate', role: 'group', 'aria-label': 'Việc này' },
+      ['Dễ', 'Được', 'Khó'].map(v => el('button', { type: 'button', 'aria-pressed': String(saved === v), onclick: () => { rate(t.i, v); renderBanner(); } }, v)));
+    b.replaceChildren(
+      el('span', { class: 'say' }, el('strong', null, `Việc ${t.i + 1}/${tasks.length} · ${r ? r.name : t.role}: `), t.say),
+      el('span', { class: 'count' }, st.reached != null ? `Đã tới nơi sau ${st.reached} lần bấm` : `Đã bấm ${st.clicks} lần`),
+      rateBox,
+      el('button', { class: 'btn', type: 'button', onclick: () => startTask(t.i) }, 'Làm lại'),
+      t.i + 1 < tasks.length ? el('button', { class: 'btn', type: 'button', onclick: () => startTask(t.i + 1) }, 'Việc kế') : null,
+      el('button', { class: 'btn btn-ghost', type: 'button', onclick: () => { st.task = null; renderBanner(); } }, 'Dừng'));
+  }
+  function panel(title, build) {
+    const d = el('dialog', { class: 'k-panel', 'aria-labelledby': 'pn-title' });
+    const box = el('div', { class: 'ov' });
+    d.append(box);
+    const draw = () => box.replaceChildren(el('div', { class: 'ov-head' }, el('h2', { id: 'pn-title' }, title), el('button', { class: 'btn btn-ghost', type: 'button', 'aria-label': 'Đóng', onclick: () => d.close() }, '✕')), ...build(d, draw));
+    draw();
+    d.addEventListener('close', () => d.remove());
+    d.addEventListener('click', e => { if (e.target === d) d.close(); });
+    document.body.append(d);
+    d.showModal();
+    return d;
+  }
+  function openTasks() {
+    panel('Bấm thử việc hằng ngày', (d, draw) => {
+      const all = store.get();
+      const out = [el('p', { class: 'muted' }, 'Mỗi việc bắt đầu từ trang chủ của vai. Bấm như khi làm thật, tới chỗ làm được việc thì chấm Dễ · Được · Khó. Kết quả giữ trong trình duyệt này.')];
+      tasks.forEach((t, i) => {
+        const r = rById.get(t.role);
+        const v = all[i] || {};
+        out.push(el('div', { class: 'task' },
+          el('div', { class: 'muted' }, `${i + 1}. ${r ? r.name : t.role}`),
+          el('p', { class: 'say' }, t.say),
+          el('div', { class: 'meta' },
+            el('button', { class: 'btn', type: 'button', onclick: () => { d.close(); startTask(i); } }, 'Bắt đầu'),
+            el('span', { class: 'rate', role: 'group', 'aria-label': `Việc ${i + 1}` }, ['Dễ', 'Được', 'Khó'].map(x => el('button', { type: 'button', 'aria-pressed': String(v.rate === x), onclick: () => { rate(i, x); draw(); } }, x))),
+            v.clicks != null ? el('span', { class: 'muted' }, `${v.clicks} lần bấm`) : null)));
+      });
+      out.push(el('div', { class: 'ov-foot' },
+        el('button', { class: 'btn', type: 'button', onclick: () => { store.set({}); draw(); } }, 'Xoá kết quả'),
+        el('button', { class: 'btn btn-primary', type: 'button', onclick: copyResults }, 'Chép kết quả')));
+      return out;
+    });
+  }
+  function copyResults() {
+    const all = store.get();
+    const text = ['Bấm thử bản đồ' + (F.project ? ` · ${F.project}` : ''), ...tasks.map((t, i) => {
+      const v = all[i] || {};
+      return `${i + 1}. ${(rById.get(t.role) || {}).name || t.role} · ${t.say} · ${v.rate || 'chưa chấm'}${v.clicks != null ? ` · ${v.clicks} lần bấm` : ''}`;
+    })].join('\n');
+    const done = () => toast('Đã chép kết quả: dán vào cuộc trò chuyện');
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, () => fallback(text, done));
+    else fallback(text, done);
+  }
+  function fallback(text, done) {
+    const ta = el('textarea', { 'aria-label': 'Kết quả bấm thử' });
+    ta.value = text; document.body.append(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch { toast('Không chép được: chọn chữ trong ô rồi chép tay'); return; }
+    ta.remove();
+  }
+
+  // ---------- Mục lục chức năng (tìm được: lọc nhanh, chọn module, Ctrl+F đọc được) ----------
+  function openIndex(filter = { q: '', mod: null }) {
+    const mods = [...new Set(features.map(f => f.module))];
+    const modName = id => ((arr(L.modules).find(m => m.id === id)) || {}).name || id;
+    panel(`Mục lục · ${features.length} chức năng`, (d, draw) => {
+      const q = el('input', { type: 'search', placeholder: 'Lọc theo tên, vai, nguồn…', 'aria-label': 'Lọc chức năng', value: filter.q });
+      const list = el('div');
+      const paint = () => {
+        const needle = q.value.trim().toLowerCase();
+        list.replaceChildren();
+        for (const m of mods) {
+          if (filter.mod && filter.mod !== m) continue;
+          const fs = features.filter(f => f.module === m && (!needle || [f.name, f.id, arr(f.src).join(' '), arr(f.roles).map(r => (rById.get(r) || {}).name || r).join(' ')].join(' ').toLowerCase().includes(needle)));
+          if (!fs.length) continue;
+          const sec = el('section', { class: 'ix-mod' }, el('h3', null, `${modName(m)} · ${fs.length}`));
+          for (const f of fs) {
+            const where = (places.get(f.id) || []).map(p => (sById.get(p.screen) || {}).name).filter(Boolean);
+            const flows = arr(L.flows).filter(x => arr(x.steps).includes(f.id)).map(x => x.name);
+            sec.append(el('div', { class: 'ix-row' },
+              el('span', { class: 'nm' }, f.name, ' ', tags(f), el('div', { class: 'rl' }, [where.length ? `Ở: ${where.join(', ')}` : 'Chưa có chỗ', flows.length ? `Hành trình: ${flows.join(', ')}` : ''].filter(Boolean).join(' · '))),
+              el('span', { class: 'rl' }, arr(f.roles).map(r => (rById.get(r) || {}).name || r).join(', ')),
+              where.length ? el('button', { class: 'btn', type: 'button', onclick: () => { d.close(); show(f.id); } }, 'Xem chỗ') : null));
+          }
+          list.append(sec);
+        }
+        if (!list.childNodes.length) list.append(el('p', { class: 'muted' }, 'Không có chức năng khớp.'));
+      };
+      q.addEventListener('input', () => { filter.q = q.value; paint(); });
+      const chips = el('div', { class: 'chips', role: 'group', 'aria-label': 'Chọn module' },
+        el('button', { type: 'button', 'aria-pressed': String(!filter.mod), onclick: () => { filter.mod = null; draw(); } }, 'Tất cả'),
+        mods.map(m => el('button', { type: 'button', 'aria-pressed': String(filter.mod === m), onclick: () => { filter.mod = m; draw(); } }, modName(m))));
+      paint();
+      setTimeout(() => q.focus(), 0);
+      return [el('div', { class: 'filter' }, q), chips, list];
+    });
+  }
+  // Tới chỗ của một chức năng: đổi sang vai đầu tiên làm được nó, sang màn, làm nổi phần tử
+  function show(fid) {
+    const f = fById.get(fid);
+    for (const rid of [st.role, ...arr(f.roles)]) {
+      const r = rById.get(rid);
+      if (!r || !arr(f.roles).includes(rid)) continue;
+      const p = (places.get(fid) || []).find(x => can(sById.get(x.screen), r));
+      if (!p) continue;
+      setRole(rid);
+      if (p.tab) st.tabs[p.screen] = p.tab;
+      go(p.screen, { highlight: fid, keepFocus: true });
+      return;
+    }
+    toast(`"${f.name}" chưa có chỗ mà vai nào vào được`);
+  }
+
+  // ---------- Ctrl+K ----------
+  function openPalette() {
+    if (!surf().ctrlK || $('dialog.k-palette')) return;
+    const r = role();
+    const pool = [
+      ...features.filter(f => doer(f, r) && (places.get(f.id) || []).some(p => can(sById.get(p.screen), r))).map(f => ({ kind: 'f', id: f.id, text: f.name, f })),
+      ...S.filter(s => can(s, r)).map(s => ({ kind: 's', id: s.id, text: s.name })),
+    ];
+    const d = el('dialog', { class: 'k-palette', 'aria-label': 'Tìm chức năng hay màn' });
+    const q = el('input', { type: 'search', placeholder: 'Gõ tên việc hay màn…', 'aria-label': 'Tìm', role: 'combobox', 'aria-controls': 'pal-list', 'aria-expanded': 'true' });
+    const ul = el('ul', { class: 'pal-list', id: 'pal-list', role: 'listbox' });
+    let hits = [], cur = 0;
+    const pick = h => {
+      d.close();
+      if (h.kind === 's') { go(h.id); return; }
+      const p = (places.get(h.id) || []).find(x => can(sById.get(x.screen), r));
+      if (p.tab) st.tabs[p.screen] = p.tab;
+      go(p.screen, { highlight: h.id, keepFocus: true });
+      if (p.mo !== 'trang' && p.mo !== 'tai-cho') openFeature(h.id, p.mo);
+      else reach(h.id);
+    };
+    const paint = () => {
+      const n = q.value.trim().toLowerCase();
+      hits = pool.filter(h => !n || h.text.toLowerCase().includes(n)).slice(0, 12);
+      cur = Math.min(cur, Math.max(hits.length - 1, 0));
+      ul.replaceChildren(...hits.map((h, i) => el('li', { role: 'presentation' }, el('button', { type: 'button', role: 'option', 'aria-selected': String(i === cur), tabindex: '-1', onclick: () => pick(h) },
+        h.text, ' ', el('span', { class: 'muted' }, h.kind === 's' ? '· màn' : `· ${((sById.get(((places.get(h.id) || [])[0] || {}).screen)) || {}).name || ''}`), ' ', h.f ? tags(h.f) : null))));
+      if (!hits.length) ul.append(el('li', { class: 'muted' }, 'Không có kết quả'));
+    };
+    q.addEventListener('input', () => { cur = 0; paint(); });
+    q.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown') { cur = Math.min(cur + 1, hits.length - 1); paint(); e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { cur = Math.max(cur - 1, 0); paint(); e.preventDefault(); }
+      else if (e.key === 'Enter' && hits[cur]) { e.preventDefault(); pick(hits[cur]); }
+    });
+    d.append(el('div', { class: 'ov' }, q, ul));
+    d.addEventListener('close', () => d.remove());
+    d.addEventListener('click', e => { if (e.target === d) d.close(); });
+    document.body.append(d);
+    paint();
+    d.showModal();
+    q.focus();
+  }
+  document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { if (surf().ctrlK) { e.preventDefault(); openPalette(); } } });
+
+  // ---------- Thông báo ----------
+  let toastTimer = 0;
+  function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
+  }
+
+  // ---------- Khởi động: #vai=…&man=… ----------
+  const h = new URLSearchParams(location.hash.slice(1));
+  setRole(h.get('vai') || (roles[0] && roles[0].id));
+  const want = h.get('man');
+  const startAt = want && can(sById.get(want)) ? want : (role() || {}).home;
+  if (startAt) go(startAt, { keepFocus: true }); else render();
+  window.MAP_SHELL = { go, setRole, openFeature, startTask, show, openPalette, state: st };
+})();
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@ description: >-
 
 # Evolve Site · Mở rộng & Cập nhật Prototype có sẵn
 
-> **v1.9 (05/10/2026)** · Quy trình tách theo giai đoạn: `references/b1-b2.md` *(B1, Cổng 1, B2, Cổng 2)* và `references/b3-b4.md` *(B3, B4, Cổng 3)*, mỗi giai đoạn vào bằng một lượt *(mục 3)*. B4 kiểm và chụp bằng một lệnh `quick.py --shots`; ảnh mốc Cấp 2–3 bằng `run_all.py`. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
+> **v1.10 (06/10/2026)** · Nối với bản đồ `map/` của `sketch-to-map` *(B1, B2, B4)*. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
 > **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này. Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`: hai chương trình này không đọc được. Lệnh `python` tự viết mà in tiếng Việt thì đặt `PYTHONIOENCODING=utf-8` trước lệnh: console Windows (cp1252) dừng giữa chừng với `UnicodeEncodeError`.
 > Việc của skill: thêm, sửa, bỏ tính năng trong prototype có sẵn sao cho phần mới **trông như đã thiết kế cùng ngày với bản đầu**: không tự chế token, không làm gãy dữ liệu đang chạy, không làm vỡ trải nghiệm cũ.
 
@@ -81,7 +81,7 @@ Cấp <n> · cờ: <Q, L… | không> · vì <một dòng lý do>
 
 ### 1.4 Quy tắc khi dừng ở cổng
 
-1. **Trình bày trực quan:** phương án hình dung được *(vị trí trên màn hình, cấu trúc điều hướng, so sánh ưu nhược UX, ASCII mockup, ảnh hay HTML preview)*. Không hỏi chung chung kiểu *"Bạn muốn đặt nút này ở đâu?"*.
+1. **Trình bày trực quan:** phương án hình dung được *(vị trí trên màn, điều hướng, ưu nhược UX, ASCII mockup, ảnh hay HTML preview)*. Không hỏi chung chung kiểu *"Bạn muốn đặt nút này ở đâu?"*.
 2. **Hỏi bằng `AskUserQuestion`:** tối đa 3 câu một lượt, mỗi câu 2–4 lựa chọn. Lựa chọn hợp lý nhất đặt **đầu tiên**, gắn *"(Khuyến nghị)"*. Không có công cụ này *(ví dụ Codex)*: viết câu hỏi và các lựa chọn đánh số ra tin nhắn.
 3. **Dừng:** hỏi xong thì **kết thúc lượt**. Không tự chọn thay, không đoán rồi code luôn trong chế độ auto. Người dùng không trả lời thì nhắc lại câu hỏi, **không coi im lặng là đồng ý**.
 4. **Ghi vào `FEATURE-DECISIONS.md`** *(mẫu ở `templates/`)*:
@@ -102,7 +102,7 @@ Cấp <n> · cờ: <Q, L… | không> · vì <một dòng lý do>
    * Icon: dùng **đúng bộ icon** prototype đang dùng (Phosphor / Lucide / Tabler). Đang dùng Phosphor thì không kéo Lucide vào.
 2. **Bảo toàn dữ liệu:**
    * Đọc kỹ file dữ liệu *(ví dụ `assets/data.js`, `app.js` hoặc store toàn cục)*.
-   * Dùng đúng hàm helper sẵn có *(ví dụ `store.get()`, một hàm `today()` đã gộp và lọc dữ liệu theo ngữ cảnh, `formatMoney()`)*. Không đọc tắt hay bỏ qua logic nghiệp vụ đã đóng gói.
+   * Dùng đúng hàm helper sẵn có *(ví dụ `store.get()`, `today()`, `formatMoney()`)*. Không đọc tắt hay bỏ qua logic nghiệp vụ đã đóng gói.
    * Mở rộng dữ liệu theo nguyên tắc **bổ sung trường**, không xoá hay đổi tên trường cũ làm gãy trang khác. Cần đổi hoặc bỏ trường đang dùng: đó là cờ D, hỏi trước.
    * Prototype dùng `assets/data.js` + `assets/store.js` *(khuôn `sketch-to-site/templates/store.js`)*: thêm bộ dữ liệu mới vào `SEED` là đủ, store tự bổ sung. Đổi cấu trúc bản ghi đã có *(cờ D được duyệt)* thì **tăng phiên bản trong `KEY`**, không thì trình duyệt đã mở prototype trước đó vẫn giữ dữ liệu cũ. Prototype chưa có store mà cần dữ liệu xuyên trang: đề xuất thêm theo `sketch-to-site/references/rules-and-conflicts.md` D.5, tính là cờ C.
 3. **Thoát hai chiều:**
@@ -145,10 +145,10 @@ Các bước nằm ở hai file theo giai đoạn: `references/b1-b2.md` *(B1, �
 | Yêu cầu mới | B1 → cổng theo cấp | `Read` `references/b1-b2.md`, `DESIGN.md`, `FEATURE-DECISIONS.md` *(chưa có thì bỏ)*, ghi chú của prototype và dự án *(README của prototype, `AGENTS.md` hoặc `CLAUDE.md`)* · lệnh 1 |
 | Cổng của cấp đã có đáp án *(trong `FEATURE-DECISIONS.md`, hay người dùng vừa trả lời)*, cấp không phải hỏi trước khi dựng, hoặc `BUILD-LOG.md` có khối của đợt này còn dòng chưa `xong` | B3 → B4 → 🛑 Cổng 3 | `Read` `references/b3-b4.md`, `FEATURE-DECISIONS.md`, `BUILD-LOG.md` *(Cấp 3)*, và mọi file sẽ sửa mà phiên này chưa đọc *(trang, CSS và JS dùng chung, file dữ liệu, `_qa/qa.config.json`, `site/_system.html` khi cờ T được duyệt)* · lệnh 2 |
 
-Lệnh 1 cập nhật bộ kiểm và in file đổi từ lần kiểm sạch cuối *(khi dự án có `_qa/`)*, danh sách file của site, tên mọi token, bộ icon đang nạp, và chỗ tính năng xuất hiện trong tài liệu yêu cầu. `D` là thư mục chứa trang *(`site/` với prototype của `sketch-to-site`)*. Tài liệu yêu cầu gồm cả `$P/DECISIONS.md`, `$P/CONCEPT.md`: đừng `--exclude-dir` cả thư mục prototype. Không có tài liệu nào thì bỏ lệnh `grep` cuối:
+Lệnh 1 cập nhật bộ kiểm và in file đổi từ lần kiểm sạch cuối *(khi dự án có `_qa/`)*, danh sách file của site, tên mọi token, bộ icon đang nạp, và chỗ tính năng xuất hiện trong tài liệu yêu cầu. `D` là thư mục chứa trang *(`site/` với prototype của `sketch-to-site`)*. Tài liệu yêu cầu gồm cả `$P/DECISIONS.md`, `$P/CONCEPT.md`: đừng `--exclude-dir` cả thư mục prototype. Không có tài liệu nào thì bỏ lệnh `grep` tài liệu; có `map/` thì lệnh tra cả bản đồ:
 
 ```bash
-S="<skills>"; P="<thư-mục-prototype>"; D="$P/site"; [ -f "$P/_qa/qa.config.json" ] && { python "$S/sketch-to-site/templates/qa-kit/qa_init.py" "$P" --update; (cd "$P" && python _qa/quick.py --dry); }; echo "== file"; find "$D" -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.json' \) | sed "s|^$D/||" | sort | tr '\n' ' '; echo; echo "== token"; grep -rhoE --include=*.css --include=*.html -- '--[a-z][a-z0-9-]*:' "$D" | sort -u | tr '\n' ' '; echo; echo "== icon"; grep -rhoiE --include=*.html 'phosphor|lucide|tabler|font-?awesome' "$D" | sort | uniq -c; { grep -rniE "<từ khoá>|<tên màn>" "<thư-mục-tài-liệu-yêu-cầu>" || echo "không thấy trong tài liệu yêu cầu"; } | head -40
+S="<skills>"; P="<thư-mục-prototype>"; D="$P/site"; [ -f "$P/_qa/qa.config.json" ] && { python "$S/sketch-to-site/templates/qa-kit/qa_init.py" "$P" --update; (cd "$P" && python _qa/quick.py --dry); }; echo "== file"; find "$D" -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.json' \) | sed "s|^$D/||" | sort | tr '\n' ' '; echo; echo "== token"; grep -rhoE --include=*.css --include=*.html -- '--[a-z][a-z0-9-]*:' "$D" | sort -u | tr '\n' ' '; echo; echo "== icon"; grep -rhoiE --include=*.html 'phosphor|lucide|tabler|font-?awesome' "$D" | sort | uniq -c; { grep -rniE "<từ khoá>|<tên màn>" "<thư-mục-tài-liệu-yêu-cầu>" || echo "không thấy trong tài liệu yêu cầu"; } | head -40; [ -f "$P/map/features.js" ] && { echo "== bản đồ"; grep -niE "<từ khoá>|<tên màn>" "$P/map/features.js" "$P/map/layout.js" | head -20; }
 ```
 
 Lệnh 2 in định dạng file bước của bộ kiểm *(phần chú thích đầu `_qa/run_all.py`)* và tên mọi token *(giá trị ở `DESIGN.md`)*:
@@ -174,6 +174,7 @@ P="<thư-mục-prototype>"; [ -f "$P/_qa/run_all.py" ] && sed -n '/^#/!q;p' "$P/
 | `ui-ux-pro-max` | B2, B3 | Tra mẫu tương tác chuẩn qua `search.py` |
 | `design-taste-frontend` | B3 | Phân cấp thị giác: mỗi trang đúng 1 hành động chính |
 | `tweak-site` · `handover-check` | 1.3 · B4 | Đường nhẹ cho Cấp 0 và Cấp 1 không cờ · kiểm tổng trước bàn giao, nhận các bước Cấp 1 dồn sang |
+| `sketch-to-map` *(có `map/`)* | B1, B2, B4 | `map.mjs` check, slice, coverage; luật lối tắt tại chỗ |
 
 `full-output-enforcement` và `laws-of-ux-checklist` **không cần chép kèm**: phần dùng được đã chép vào mục 2 luật 4 và `references/regression-qa.md` nhóm F.
 

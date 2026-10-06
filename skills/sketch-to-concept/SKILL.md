@@ -6,7 +6,7 @@ description: >-
 
 # Sketch to Concept · Settle the concept before building the prototype
 
-> **v1.4 (04/10/2026)** · Change history: `CHANGELOG.md` at the repo root.
+> **v1.5 (06/10/2026)** · The brief counts the project's scale; a large project goes on to `sketch-to-map`. Change history: `CHANGELOG.md` at the repo root.
 > **Language:** talk to the user in the language they write in: gate questions and options, progress notes, reports. Files the user reads (`DECISIONS.md`, `CONCEPT.md`, the board, names, ideas, axes and `why` in `concepts.js`) are in that language too; the templates are in Vietnamese. Screen content follows the language of the brief.
 > **Paths:** `<skills>` is the parent of the folder holding this SKILL.md. Read referenced skills by path, never through the Skill tool (convention at the top of `sketch-to-site`). On Windows, give `node` and `python` paths with the drive letter and forward slashes (`W:/…`), never Git Bash's `/w/…`: they cannot read it.
 > The job: bring the user to a concept that is **theirs**. Non-designers struggle to describe a concept but react well to options they can see, so the skill builds 3 real concepts, then **stops** for the user to choose.
@@ -25,7 +25,7 @@ Method for each layer: `references/concept-method.md`.
 
 ---
 
-## 1. Stop rule *(same rule as `sketch-to-site` §1: change both)*
+## 1. Stop rule *(same rule as `sketch-to-site` §1 and `sketch-to-map` §1: change all three)*
 
 A **gate (🛑)** is a decision only a human makes. At a gate:
 1. **Show** something visible: the board, screenshots. Do not ask open questions like *"which style do you like?"*.
@@ -36,7 +36,7 @@ A **gate (🛑)** is a decision only a human makes. At a gate:
 **Pass a gate without asking only when:** the user says clearly **in this session** to skip that gate (record verbatim) · the answer **is already in the input** (record the source).
 
 <!-- luat-dung:co:bat-dau -->
-**Cớ hay gặp để bỏ cổng, và sự thật** *(rút từ `superpowers` writing-skills và brainstorming; khối này giống hệt ở `sketch-to-site` và `sketch-to-concept`, test giữ hai bản khớp nhau)*:
+**Cớ hay gặp để bỏ cổng, và sự thật** *(rút từ `superpowers` writing-skills và brainstorming; khối này giống hệt ở `sketch-to-site`, `sketch-to-concept` và `sketch-to-map`, test giữ ba bản khớp nhau)*:
 
 | Cớ | Sự thật |
 |---|---|
@@ -102,6 +102,7 @@ Present the link to `concept/index.html` and the screenshots, then ask **in one 
 ### Handover
 - Markdown links to `concept/index.html` and `CONCEPT.md`.
 - Called from `sketch-to-site`: continue with its **B0**. Called alone: ask whether to build the prototype now (→ `sketch-to-site`).
+- The *Quy mô* row of Gate 1 meets the `sketch-to-map` threshold: the next step is `sketch-to-map` (feature map, menus and home screens per role, build batches), in a **new session**, before `sketch-to-site`. Say so in the handover.
 - Moving on to `sketch-to-site`: suggest a **new session**. `CONCEPT.md` and `DECISIONS.md` are enough to resume, while this session carries the docs, screens and images of every concept: staying means every turn rereads that context. If the user wants to stay, go on.
 - For a client presentation: suggest publishing `concept/` as an Artifact (`sketch-to-site` §8).
 

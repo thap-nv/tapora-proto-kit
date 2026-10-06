@@ -210,6 +210,37 @@ test('lượt kiểm sâu: hover và focus hạ tương phản, mũi tên chết
   assert.ok(!all.includes('"mẫu"'), 'data-demo-state không được bấm thử');
 });
 
+test('lượt kiểm sâu: lối tắt mở tại chỗ phải ở lại trang, mở lớp phủ, Esc đóng, focus về nút mở', t => {
+  const r = page(t, `<style>body{font:16px system-ui} button{padding:8px;border:1px solid #767676;background:#fff;color:#18181B}
+    [role=dialog]{display:none;position:fixed;inset:40px;background:#fff;border:1px solid #767676;padding:16px} [role=dialog].open{display:block}
+    .drawer{position:fixed;top:0;right:0;width:300px;height:100%;background:#fff;transform:translateX(100%)} .drawer.open{transform:none}</style></head><body>
+  <button id="good" data-modal-open="dlg">Đổi buổi</button>
+  <button id="away" data-mo="ngan-truot" onclick="location.href='about:blank'">Bán khoá</button>
+  <button id="dud" data-mo="hop-thoai">Xếp lịch</button>
+  <button id="sticky" data-modal-open="dlg2">Thu tiền</button>
+  <button id="lost" data-modal-open="dlg3">Ghi chú</button>
+  <button id="slide" data-mo="ngan-truot" data-modal-open="drw">Chi tiết</button>
+  <div role="dialog" aria-modal="true" id="dlg"><button>Đóng</button></div>
+  <div role="dialog" aria-modal="true" id="dlg2"><p>Không đóng bằng Esc</p></div>
+  <div role="dialog" aria-modal="true" id="dlg3"><button>Đóng</button></div>
+  <aside class="drawer" id="drw" aria-label="Chi tiết"><button>Đóng</button></aside>
+  <script>
+    let opener = null;
+    document.addEventListener('click', e => { const o = e.target.closest('[data-modal-open]'); if (!o) return; opener = o;
+      const d = document.getElementById(o.dataset.modalOpen); d.classList.add('open'); (d.querySelector('button') || d).focus(); });
+    document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; const d = document.querySelector('.open'); if (!d || d.id === 'dlg2') return;
+      d.classList.remove('open'); if (d.id !== 'dlg3') opener.focus(); });
+  </script></body></html>`, null, { env: { QA_DEEP: '1' } });
+  if (!r) return t.skip('không có trình duyệt');
+  const s = r.find(x => x.step === 'deep').deep.shortcuts, all = s.join(' | ');
+  assert.ok(s.some(x => x.startsWith('lối tắt sang trang khác button#away')), all);
+  assert.ok(s.some(x => x.startsWith('bấm lối tắt mà không mở gì trên trang button#dud')), all);
+  assert.ok(s.some(x => x.startsWith('Esc không đóng button#sticky')), all);
+  assert.ok(s.some(x => x.startsWith('đóng xong focus không về nút mở button#lost')), all);
+  assert.ok(!/button#(good|slide)/.test(all), 'hộp thoại và ngăn trượt đúng luật không bị báo: ' + all);
+  assert.equal(s.length, 4, all);
+});
+
 test('lượt kiểm sâu: liên kết trong <details> đang đóng không bị báo "không Tab tới được"', t => {
   const r = page(t, `<style>body{font:16px system-ui}</style></head><body>
   <details><summary>Câu hỏi thường gặp</summary><p>Xem <a href="#chinh-sach">liên kết</a></p></details>
@@ -254,4 +285,43 @@ test('lượt kiểm sâu: trang hơn 150 control Tab được thì không báo 
   if (!r) return t.skip('không có trình duyệt');
   const d = r.find(s => s.step === 'deep').deep;
   assert.ok(!d.keyboard.some(x => x.startsWith('không Tab tới được')), JSON.stringify(d.keyboard.slice(0, 3)));
+});
+
+// Bố cục trên trang đã render (chỉ số của sketch-to-map). codes chặn như tương phản (qadiff); layout chỉ cảnh báo.
+// Đo trên một prototype thật (05/10/2026): trang ẩn mã lúc chạy bằng JS nên đọc mã nguồn thì báo giả; đo trên trang đã render mới đúng.
+test('codes: mã tham chiếu trong chữ đang hiện bị bắt; mã đã ẩn, mã của dữ liệu (mã học viên) và chữ trong script thì im', t => {
+  const r = page(t, `</head><body><p>Lớp đủ sĩ số không nhận thêm (UC-12).</p><p>Ghi chú BR-HV-03 cho phụ huynh</p>
+  <span hidden>XD-04</span><p>Mã học viên SX-0412</p><button title="Theo OQ-01">Lưu</button>
+  <script>const nguon = 'UC-99';</script></body></html>`);
+  if (!r) return t.skip('không có trình duyệt');
+  const c = dims(r).codes;
+  assert.equal(c.length, 3, JSON.stringify(c));
+  assert.ok(c.some(x => x.includes('UC-12')) && c.some(x => x.includes('BR-HV-03')) && c.some(x => x.includes('OQ-01')), JSON.stringify(c));
+});
+
+test('codes: mã do JS bỏ đi lúc tải thì không bị bắt', t => {
+  const r = page(t, `</head><body><p id="p">Ngưỡng tạm (OQ-01)</p>
+  <script>const p = document.getElementById('p'); p.textContent = p.textContent.replace(/\\s*\\(OQ-\\d+\\)/, '');</script></body></html>`);
+  if (!r) return t.skip('không có trình duyệt');
+  assert.deepEqual(dims(r).codes, []);
+});
+
+test('layout: hơn một nút chính nhìn thấy, nhóm menu hơn 7 mục, hơn 5 tab, khung viền dày lồng nhau thì cảnh báo; hộp thoại mở chỉ đếm trong hộp', t => {
+  const items = n => Array.from({ length: n }, (_, i) => `<li><a href="#m${i}">Mục ${i + 1}</a></li>`).join('');
+  const tabs = n => Array.from({ length: n }, (_, i) => `<button role="tab" aria-selected="${i === 0}">Tab ${i + 1}</button>`).join('');
+  const css = `<style>:root{--primary:#1d4ed8;--on-primary:#fff}body{font:16px system-ui;margin:0}.p{background:var(--primary);color:var(--on-primary);border:0;padding:8px 12px}
+    .s{background:#fff;color:#111;border:1px solid #767676;padding:8px 12px}.box{border:2px solid #333;padding:8px;margin:4px}</style></head>`;
+  const r = page(t, `${css}<body><nav><ul>${items(9)}</ul></nav><div role="tablist">${tabs(6)}</div>
+    <button class="p">Lưu</button><button class="p">Gửi</button><button class="p">Duyệt</button><button class="s">Huỷ</button>
+    <div class="box"><div class="box"><div class="box"><p>Khung lồng</p></div></div></div></body></html>`);
+  if (!r) return t.skip('không có trình duyệt');
+  const l = dims(r).layout.join('\n');
+  assert.match(l, /3 nút chính/);
+  assert.match(l, /9 mục/);
+  assert.match(l, /6 tab/);
+  assert.match(l, /viền dày/);
+  assert.match(l, /lồng 3 lớp/);
+  const ok = page(t, `${css}<body><button class="p">Lưu</button><button class="p">Gửi</button>
+    <dialog id="d"><button class="p">Xác nhận</button><button class="s">Huỷ</button></dialog><script>document.getElementById('d').showModal()</script></body></html>`);
+  assert.ok(!ok.find(s => s.step === 'view').dims.layout.some(x => /nút chính/.test(x)), JSON.stringify(ok.find(s => s.step === 'view').dims.layout));
 });

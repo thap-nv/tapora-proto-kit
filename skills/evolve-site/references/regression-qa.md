@@ -89,7 +89,7 @@ Chạy trên **phần mới thêm và trang chứa nó**, đọc code thật, m�
 
 ## 2. So với mốc bằng script
 
-Kết quả có thêm `tương phản mới`, `ý định mới` và `nợ cũ`. Dòng mới là lỗi của lần sửa này; nợ cũ không chặn.
+Kết quả có thêm `tương phản mới`, `ý định mới`, `mã lộ mới`, `nợ cũ` và dòng `bố cục` (cảnh báo, không chặn). Dòng mới là lỗi của lần sửa này; nợ cũ không chặn.
 
 **Vì sao cần mốc:** prototype có sẵn thường đã mang lỗi từ trước *(một prototype thật từng mang sẵn 33 lỗi `preflight.py` trước lần sửa đầu tiên)*. Không có mốc thì sau khi sửa không phân biệt được lỗi mới với lỗi cũ, và dễ tiện tay sửa luôn lỗi cũ, tức là đụng vào code ngoài phạm vi.
 

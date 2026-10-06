@@ -4,13 +4,15 @@
 //                mà phím mũi tên không chạy · control tự dựng mang trạng thái mà Enter và Space không đổi gì
 //   interactive  control hứa trạng thái (aria-pressed/expanded/checked/selected/sort, role switch/tab/option…) mà bấm không đổi gì ·
 //                trạng thái đổi mà nhìn không khác (thuộc tính lật, kiểu dáng y nguyên, icon con không đổi)
+//   shortcuts    lối tắt hứa mở tại chỗ (data-mo hop-thoai · ngan-truot · sheet, data-modal-open, data-sheet-open) mà bấm thì sang trang
+//                khác · không mở lớp phủ nào · Esc không đóng · đóng xong rời trang hay focus không về nút mở (luật của sketch-to-map)
 // Phần tử gắn data-demo-state là bản vẽ một trạng thái (trang _system.html), không phải control thật: không đo.
-// Trần để lượt kiểm không quá lâu: 40 control (states), 8 widget và 10 control (keyboard), 15 control (interactive).
+// Trần để lượt kiểm không quá lâu: 40 control (states), 8 widget và 10 control (keyboard), 15 control (interactive), 10 lối tắt (shortcuts).
 // Ý tưởng rút từ plugin87/ux-ui-agent-skills (verify_states, verify_keyboard, verify_interactive; MIT), viết lại cho CDP.
-const KEYS = { Tab: [9, 'Tab'], Enter: [13, 'Enter'], ' ': [32, 'Space'], ArrowRight: [39, 'ArrowRight'], ArrowDown: [40, 'ArrowDown'] };
+const KEYS = { Tab: [9, 'Tab'], Enter: [13, 'Enter'], ' ': [32, 'Space'], ArrowRight: [39, 'ArrowRight'], ArrowDown: [40, 'ArrowDown'], Escape: [27, 'Escape'] };
 
 export async function deep({ send, sleep, reload, evaluate }) {
-  const out = { states: [], keyboard: [], interactive: [] };
+  const out = { states: [], keyboard: [], interactive: [], shortcuts: [] };
   const q = x => JSON.stringify(x);
   const key = async k => {
     const [code, id] = KEYS[k];
@@ -95,6 +97,27 @@ export async function deep({ send, sleep, reload, evaluate }) {
     const same = after.own === before.own && after.look === before.look;
     if (!after.mut && after.focus === before.focus && same) out.interactive.push(`bấm mà không đổi gì ${c.name} (${c.state})`);
     else if (after.own !== before.own && after.look === before.look) out.interactive.push(`đổi trạng thái mà nhìn không khác ${c.name} (${before.own} → ${after.own})`);
+  }
+
+  // 4. Lối tắt mở tại chỗ: bấm thật rồi Esc, mỗi nút trên một lần tải mới. Phải ở lại trang, mở lớp phủ, Esc đóng, focus về nút mở
+  const where = async () => { for (let i = 0; i < 3; i++) { const p = await evaluate('location.pathname'); if (p) return p; await sleep(300); } return ''; };
+  for (const c of (await evaluate('__qa.shortcuts(10)')) || []) {
+    await reload();
+    await still();
+    const p = await center(c.sel);
+    if (!p) continue;
+    const path0 = await where(), open0 = await evaluate(`__qa.overlays(${q(c.target)})`);
+    await mouse('mousePressed', p[0], p[1]);
+    await mouse('mouseReleased', p[0], p[1]);
+    await sleep(350);
+    const path1 = await where();
+    if (path1 !== path0) { out.shortcuts.push(`lối tắt sang trang khác ${c.name}: ${path1.split('/').pop()}`); continue; }
+    if (!((await evaluate(`__qa.overlays(${q(c.target)})`)) > open0)) { out.shortcuts.push(`bấm lối tắt mà không mở gì trên trang ${c.name}`); continue; }
+    await key('Escape');
+    await sleep(250);
+    if ((await where()) !== path0) { out.shortcuts.push(`đóng xong rời trang ${c.name}`); continue; }
+    if ((await evaluate(`__qa.overlays(${q(c.target)})`)) > open0) { out.shortcuts.push(`Esc không đóng ${c.name}`); continue; }
+    if (!(await evaluate(`(() => { const e = document.querySelector(${q(c.sel)}); return !!e && e.contains(document.activeElement); })()`))) out.shortcuts.push(`đóng xong focus không về nút mở ${c.name}`);
   }
   return out;
 }

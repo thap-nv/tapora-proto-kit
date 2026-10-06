@@ -45,7 +45,7 @@ test('SKILL.md chỉ giữ luật chung và lối vào: ≤ 18 000 ký tự, đ�
   const md = SKILL();
   assert.ok(md.length <= 18000, `SKILL.md dài ${md.length} ký tự`);
   assert.deepEqual(md.split('\n').filter(l => /^## \d\. /.test(l)).map(l => l.slice(0, 5)), ['## 0.', '## 1.', '## 2.', '## 3.', '## 4.', '## 5.', '## 6.', '## 7.', '## 8.', '## 9.']);
-  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v4.5 ('], 'lịch sử phiên bản ở CHANGELOG');
+  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v4.6 ('], 'lịch sử phiên bản ở CHANGELOG');
   assert.doesNotMatch(md, /^### B[0-4] · /m, 'các bước ở references/b0-b2.md và b3-b4.md');
   assert.match(section(md, '## 9.', '\n## '), /`references\/phu-thuoc\.md`/);
   assert.ok(fs.existsSync(path.join(S2S, 'references', 'phu-thuoc.md')));

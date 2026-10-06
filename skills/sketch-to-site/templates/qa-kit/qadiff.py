@@ -1,5 +1,5 @@
 # So báo cáo của run.mjs với mốc, từng bước. Hàm thuần, không đọc cấu hình: qalib.py dùng cho quick.py và handover.py; test gọi thẳng.
-# Mỗi phép đo là một danh sách dòng: ở dims của từng bước (cut, contrast, intent), hoặc ở bước giả "deep" (states, keyboard, interactive;
+# Mỗi phép đo là một danh sách dòng: ở dims của từng bước (cut, contrast, intent), hoặc ở bước giả "deep" (states, keyboard, interactive, shortcuts;
 # chỉ handover.py chạy lượt sâu). Lỗi console của bước deep là phép đo deep_errors. Dòng khớp mốc sau khi bỏ số px, tỉ lệ tương phản,
 # mã màu: lệch nhỏ giữa hai lần chạy không tính là khác.
 # Mốc do bộ kiểm cũ ghi, chưa đo một phép (báo cáo không có khoá đó, không có bước deep): dòng của phép đó là NỢ CŨ, không phải lỗi mới, không chặn.
@@ -7,12 +7,14 @@
 # Cuối file: gộp nợ cũ để in (group_debt, debt_lines), cũng là hàm thuần.
 import re
 
-STEP_KEYS = ('cut', 'contrast', 'intent')
-DEEP_KEYS = ('states', 'keyboard', 'interactive')
+# codes (mã tham chiếu lộ ra chữ trên trang đã render, chỉ số 7 của sketch-to-map) chặn như tương phản. layout (chỉ số 3, 4, 8) chỉ
+# cảnh báo nên không có ở đây: quick.py và handover.py in riêng (qalib.layout_warnings)
+STEP_KEYS = ('cut', 'contrast', 'intent', 'codes')
+DEEP_KEYS = ('states', 'keyboard', 'interactive', 'shortcuts')
 DEEP_ERRORS = 'deep_errors'
 ALL_KEYS = STEP_KEYS + DEEP_KEYS + (DEEP_ERRORS,)
 # cut có từ v3.1: mốc thiếu khoá cut vẫn so như trước (mọi dòng là mới), không tính nợ cũ
-DEBT_KEYS = ('contrast', 'intent') + DEEP_KEYS + (DEEP_ERRORS,)
+DEBT_KEYS = ('contrast', 'intent', 'codes') + DEEP_KEYS + (DEEP_ERRORS,)
 DEEP_STEP = 'deep'
 _NORM = [(re.compile(r'\d+px'), 'px'), (re.compile(r'\d+(?:\.\d+)?<\d+(?:\.\d+)?'), '<'), (re.compile(r'#[0-9A-Fa-f]{6}\b'), '#')]
 
@@ -89,8 +91,8 @@ def diff_report(base, rep, suite, noisy=frozenset(), known=frozenset()):
 
 # Nợ cũ in gộp cho quick.py và handover.py: mỗi mục (phép đo, dòng đã bỏ số) một dòng dù gặp ở nhiều bước, khổ, theme.
 # Thứ tự in theo phép đo
-DEBT_LABELS = (('contrast', 'tương phản'), ('intent', 'ý định'), ('states', 'trạng thái'), ('keyboard', 'bàn phím'),
-               ('interactive', 'tương tác'), (DEEP_ERRORS, 'console lượt sâu'), ('cut', 'trong khung'))
+DEBT_LABELS = (('contrast', 'tương phản'), ('intent', 'ý định'), ('codes', 'mã lộ'), ('states', 'trạng thái'), ('keyboard', 'bàn phím'),
+               ('interactive', 'tương tác'), ('shortcuts', 'lối tắt'), (DEEP_ERRORS, 'console lượt sâu'), ('cut', 'trong khung'))
 
 
 def group_debt(rows):
