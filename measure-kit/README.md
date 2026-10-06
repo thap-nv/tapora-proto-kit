@@ -1590,3 +1590,24 @@ Cộng 1–5: agent chính khoảng 13–14 lượt và 0,32–0,37M (bớt ph�
 
 - Transcript `transcripts/map-do-lai/` (22 file `.jsonl.gz` kèm `.meta.json`, đã thay tên dự án thật, kiểm `grep` ra 0): `rmm3` `agent-a6b292c25c0ba6684`, người thử `a296af428d96405ff` · `rmm4` `agent-a091675c644e39960`, người thử `a7e7758bee0bb0e94` · `rml1` `agent-aed931de4e5446702`, người thử `a98e514308774a53c`, worker `ae2a77539858b352f` (hoc-vien), `a0c082a7d50254422` (lop), `a373defa3d4eef832` (lich), `a0097ce09378d53c5` (diem-danh), `a057f2115ce950777` (goi-hoc), `af55d6fb0ebe5b31a` (thong-bao), `affae6a70655e665f` (quan-tri) · `rml2` `agent-ac91e6e198a133bdd`, người thử `a5c19c406a7282f7a`, worker `adb789dbcd809dbe2` (hoc-vien), `ae69e1309112aa11b` (lop-hoc), `a8808b2e342893cde` (lich-hoc), `a2fc3889c9f60a1b6` (diem-danh), `a43263c895230e17c` (goi-hoc), `abaf82a3fd66c7d45` (thong-bao), `ab7ff6ea8c8f14f61` (quan-tri).
 - Kết quả `runs-map/rmm3/`, `rmm4/`, `rml1/`, `rml2/`: `map/features.js`, `layout.js`, `MAP.md`, `treetest.md`, `DECISIONS.md`; lần `rml` thêm `map/parts/` (7 file) và `map/ids.json`.
+
+### Đo lại lần hai trên r8: `rml3`, `rml4` (bản `e183b41`, 06/10/2026)
+
+Cả hai lần **không đi đường chia worker**. `sources.py` vẫn in "chia worker" (375,7 KB), nhưng agent thấy 327,7 KB là phụ lục dữ liệu D3, nên đọc nguyên 7 tài liệu yêu cầu thật (khoảng 48 KB) bằng `cat -n` trong một lượt, ghi ba mục D3 vào `skip`. Vậy các chỗ sửa của đường worker (`_chung.js`, prompt đọc một lượt, `merge` in cặp trùng…) **chưa được đo**.
+
+| | `rml1` | `rml2` | `rml3` | `rml4` |
+|---|---|---|---|---|
+| Đường | worker | worker | đọc nguyên, bỏ D3 | đọc nguyên, bỏ D3 |
+| Agent chính: lượt · quy đổi · thời gian | 19 · 0,51M · 21 | 21 · 0,52M · 22 | 14 · 0,49M · 8,3 | 16 · 0,48M · 7,4 |
+| Tổng kể cả worker, người thử | 1,31M | 1,47M | **0,53M** | **0,52M** |
+| Kiểm kê (suy) | 84 (15) | 87 (20) | 65 (2) | 67 (2) |
+| Độ phủ sau soát tay | 43/43 · 18/18 | 43/43 · 18/18 | 43/43 · 18/18 | 43/43 · 18/18 |
+| `check` cuối | 0 chặn | 0 chặn | 0 chặn, 3 cảnh báo | 0 chặn |
+
+Soát tay: `rml3` báo trượt K07, K13, K17, K19, K27 và trùng K26; cả năm có (F-"Xem lớp và chỗ còn trống", đổi buổi + chuyển lớp, "Huỷ các buổi khi bể có sự cố", F-48, nhóm mời gia hạn). `rml4` chỉ K27. Cả hai bắt K16.
+
+**Đọc kết quả:** bỏ phụ lục rồi đọc nguyên cho cùng độ phủ với **một phần ba chi phí** (0,52–0,53M so với 1,31–1,47M), kiểm kê gọn hơn (2 chức năng suy thay vì 15–20, không cặp trùng phải gộp tay), 7–8 phút thay vì 21–22. Hợp lý hơn đường worker khi phần thật dưới 300 KB.
+
+**Đề xuất (chưa sửa):** `sources.py` tính ngưỡng 300 KB trên phần **không phải phụ lục dữ liệu** (tài liệu hay mục tự ghi là dữ liệu, bảng gần như toàn mã `data_codes`), và in "đọc nguyên (không tính phụ lục D3, 327,7 KB)". Ước: bỏ 0,8–0,95M mỗi lần cho kiểu tài liệu này. Đường worker vẫn cần đo trên đề có phần yêu cầu thật trên 300 KB (ví dụ nhân đôi `r7-map` bằng tài liệu khác), nếu muốn kiểm các chỗ sửa vừa làm.
+
+Dữ liệu: `transcripts/map-do-lai-2/` (8 file), `runs-map/rml3/`, `runs-map/rml4/`. `rml3` agent `a3dda6951d60283fd`, `rml4` agent `a8e1a0a1e7c523f4d`.
