@@ -1644,3 +1644,15 @@ Soát tay: `rml5` script chấm 43/43 ngay, K26 trùng (hai chức năng bảo l
 4. `fixes-map.js` mục 9 nhận cả `cat` bằng Bash cho `m1-kiem-ke.md` (script gap, không phải skill).
 
 Dữ liệu: `transcripts/map-do-lai-3/` (4 file, hai lần chạy và hai người thử nhãn Explore), `runs-map/rml5/`, `runs-map/rml6/`. `rml5` agent `abd1f58f831cfd03c`, `rml6` agent `ac0c0d19f4bfa41db`.
+
+## sketch-to-map: đề r9-map-lon2, phần yêu cầu thật trên 300 KB (soạn 06/10/2026)
+
+Sau `c646c87`, r8 không còn vào đường chia worker (phụ lục dữ liệu không tính vào ngưỡng). Đề này đưa **phần yêu cầu thật** lên 424 KB để đường worker chạy thật, vẫn chấm bằng `r7-map/key.json`.
+
+- `mk-r9.py` chép `r8-map-lon/sample/` (chạy `mk-r8.py` trước nếu chưa có) sang `r9-map-lon2/sample/`, rồi thêm hai tài liệu yêu cầu: `TIEU-CHI-NGHIEM-THU-SONG-XANH.md` (197 KB, 22 chức năng đầu) và `KICH-BAN-KIEM-THU-SONG-XANH.md` (189 KB, 21 chức năng sau). Mỗi chức năng một mục, 36 kịch bản (tình huống, kết quả phải thấy) từ 24 khuôn × vai, trường, ngày, số. Tổng 10 tài liệu 761 KB; không tính phụ lục dữ liệu D4: 424 KB. Seed cố định, md5 `TIEU-CHI` `2e9ef63cf0fbaf284c0a515ceb22a325`, `KICH-BAN` `a0ca096137c7838c1a346af04d287532`.
+- Hai tài liệu mới **không thêm chức năng và không nhắc N1–N4** (kiểm bằng grep: 0 lần mất mạng, offline, đồng bộ, thanh toán online, bấm hai lần, tự đổi lịch). Mã `UC-`, `BR-`, `YC-`, `XD-` chỉ trỏ về tài liệu gốc, không có tiền tố mới nên `sources.py` không coi chúng là phụ lục dữ liệu. `mapscore.js --selfcheck` in `Không có chỗ cần sửa.`
+- `sources.py` in "chia worker theo module (761,5 KB > 300,0 KB)", D4 là phụ lục dữ liệu bị bỏ.
+- **Giới hạn:** văn bản sinh từ khuôn nên lặp cấu trúc. Đề kiểm cơ chế chia worker và chi phí đọc 424 KB yêu cầu; nó không kiểm khả năng tìm bẫy mới trong văn bản dày (mọi bẫy vẫn nằm ở 7 tài liệu gốc, tổng 48 KB). Worker có thể báo nhiều chức năng "suy" hơn vì kịch bản nói chi tiết hơn chức năng: soát kỹ phần *Ngoài đáp án*.
+- Điểm lạ ở `sources.py`: dòng "chia worker" in tổng 761,5 KB chứ không phải 424 KB của phần thật; đã ghi vào prompt đo để soát, chưa sửa.
+
+Prompt đo: `prompt-map-r9.md`.

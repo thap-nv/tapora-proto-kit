@@ -1,0 +1,255 @@
+// SÓNG XANH — mô hình dữ liệu v1 (2026-09-23)
+// Đầu vào: USE-CASE-SONG-XANH.md, BUSINESS-RULES-SONG-XANH.md, XUNG-DOT-SONG-XANH.md
+
+Project song_xanh {
+  database_type: 'PostgreSQL'
+  Note: 'Trung tâm bơi Sóng Xanh: web quản trị và app phụ huynh'
+}
+
+// ===== Học viên, phụ huynh =====
+
+Table phu_huynh {
+  id uuid [pk]
+  ho_ten varchar [not null]
+  so_dien_thoai varchar [not null, unique, note: 'BR-HV-02; đăng nhập app bằng OTP']
+  quan_he varchar
+  created_at timestamptz
+}
+
+Enum trang_thai_hoc_vien {
+  hoc_thu
+  dang_hoc
+  ngung_hoc [note: 'BR-HV-05: không xoá hồ sơ']
+}
+
+Table hoc_vien {
+  id uuid [pk]
+  ma varchar [not null, unique, note: 'BR-HV-01: SX-0001']
+  phu_huynh_id uuid [ref: > phu_huynh.id, note: 'BR-HV-03: một phụ huynh nhiều con']
+  ho_ten varchar [not null]
+  ngay_sinh date [not null]
+  ghi_chu_suc_khoe text [note: 'BR-HV-04: bắt buộc khi dưới 6 tuổi']
+  trang_thai trang_thai_hoc_vien [not null]
+  cap_do_goi_y varchar [note: 'BR-LH-06: HLV ghi sau buổi học thử']
+}
+
+// ===== Khoá học, lớp =====
+
+Enum cap_do {
+  lam_quen_nuoc
+  co_ban
+  nang_cao
+}
+
+Table khoa_hoc {
+  id uuid [pk]
+  ten varchar [not null]
+  cap_do cap_do [not null]
+  si_so_toi_da int [not null, note: 'BR-LH-05, XD-03']
+}
+
+Table lop {
+  id uuid [pk]
+  khoa_hoc_id uuid [ref: > khoa_hoc.id]
+  hlv_id uuid [ref: > nhan_vien.id, note: 'HLV chính, BR-LH-02']
+  thu_trong_tuan varchar [note: 'ví dụ 2,4,6']
+  gio_bat_dau time
+  be varchar
+  lan int
+}
+
+Enum trang_thai_xep_lop {
+  dang_hoc
+  cho_cho [note: 'BR-LH-04: danh sách chờ, theo thứ tự đăng ký']
+  da_roi
+}
+
+Table xep_lop {
+  id uuid [pk]
+  hoc_vien_id uuid [ref: > hoc_vien.id]
+  lop_id uuid [ref: > lop.id]
+  trang_thai trang_thai_xep_lop [not null]
+  thu_tu_cho int
+  dang_ky_luc timestamptz
+}
+
+// ===== Lịch, buổi học, điểm danh =====
+
+Table ngay_nghi_le {
+  ngay date [pk, note: 'BR-LI-04']
+  ten varchar
+}
+
+Enum trang_thai_buoi {
+  du_kien
+  da_dien_ra
+  huy_do_trung_tam [note: 'BR-TT-07; A-03']
+}
+
+Table buoi_hoc {
+  id uuid [pk]
+  lop_id uuid [ref: > lop.id]
+  ngay date [not null]
+  gio_bat_dau time
+  hlv_day_id uuid [ref: > nhan_vien.id, note: 'Khác hlv_id của lớp khi có người dạy thay, A-02']
+  trang_thai trang_thai_buoi [not null]
+  ly_do_huy varchar
+}
+
+Enum trang_thai_diem_danh {
+  chua_diem_danh
+  co_mat
+  vang_co_phep
+  vang_khong_phep
+  da_hoc_bu [note: 'vang_co_phep -> da_hoc_bu khi học viên được xếp và học một buổi bù ở lớp cùng cấp độ']
+}
+
+Table diem_danh {
+  id uuid [pk]
+  buoi_hoc_id uuid [ref: > buoi_hoc.id]
+  hoc_vien_id uuid [ref: > hoc_vien.id]
+  trang_thai trang_thai_diem_danh [not null]
+  buoi_bu_id uuid [ref: > buoi_hoc.id, note: 'Buổi học bù của buổi vắng có phép']
+  la_hoc_thu bool [default: false, note: 'BR-LH-06']
+  sua_boi uuid [ref: > nhan_vien.id]
+  ly_do_sua text [note: 'BR-DD-05: bắt buộc khi quản lý sửa sau 24 giờ']
+}
+
+Enum trang_thai_yeu_cau_doi {
+  cho_xu_ly
+  da_doi
+  tu_choi
+}
+
+Table yeu_cau_doi_lich {
+  id uuid [pk, note: 'XD-02']
+  diem_danh_id uuid [ref: > diem_danh.id, note: 'Buổi muốn đổi']
+  phu_huynh_id uuid [ref: > phu_huynh.id]
+  mong_muon text
+  trang_thai trang_thai_yeu_cau_doi [not null]
+  ly_do_tu_choi text
+  xu_ly_boi uuid [ref: > nhan_vien.id]
+}
+
+// ===== Gói học, thanh toán =====
+
+Table bang_gia {
+  id uuid [pk, note: 'Phụ lục A; BR-TT-03']
+  cap_do cap_do
+  so_buoi int
+  han_thang int
+  gia int
+  ap_dung_tu date
+}
+
+Enum trang_thai_goi {
+  cho_xac_nhan_tien
+  dang_dung
+  bao_luu
+  het_buoi
+  het_han
+}
+
+Table goi_hoc {
+  id uuid [pk]
+  hoc_vien_id uuid [ref: > hoc_vien.id]
+  bang_gia_id uuid [ref: > bang_gia.id]
+  so_buoi int
+  so_buoi_cong_them int [note: 'BR-TT-07']
+  so_lan_vang_co_phep int [note: 'BR-DD-04']
+  bat_dau date
+  het_han date
+  trang_thai trang_thai_goi [not null]
+}
+
+Table bao_luu {
+  id uuid [pk]
+  goi_hoc_id uuid [ref: > goi_hoc.id]
+  tu_ngay date
+  so_ngay int [note: 'BR-TT-05: tối đa 30, một lần mỗi gói']
+}
+
+Table thanh_toan {
+  id uuid [pk]
+  goi_hoc_id uuid [ref: > goi_hoc.id]
+  so_tien int
+  hinh_thuc varchar [note: 'tien_mat | chuyen_khoan']
+  ma_bien_lai varchar [unique]
+  thu_boi uuid [ref: > nhan_vien.id]
+  thu_luc timestamptz
+}
+
+Table goi_gia_han {
+  id uuid [pk, note: 'BR-TT-06: lễ tân gọi mời gia hạn']
+  hoc_vien_id uuid [ref: > hoc_vien.id]
+  goi_luc timestamptz
+  ket_qua varchar
+}
+
+Enum trang_thai_hoan_tien {
+  cho_duyet
+  da_duyet
+  tu_choi
+  da_chi
+}
+
+Table hoan_tien {
+  id uuid [pk, note: 'BR-TT-08']
+  goi_hoc_id uuid [ref: > goi_hoc.id]
+  so_buoi int
+  so_tien int
+  trang_thai trang_thai_hoan_tien [not null]
+  lap_boi uuid [ref: > nhan_vien.id]
+  duyet_boi uuid [ref: > nhan_vien.id]
+  ngay_chi date
+}
+
+// ===== Thông báo =====
+
+Table thong_bao {
+  id uuid [pk]
+  tieu_de varchar
+  noi_dung text
+  khan bool [note: 'BR-TB-03']
+  hen_gio timestamptz
+  gui_boi uuid [ref: > nhan_vien.id]
+}
+
+Table thong_bao_nguoi_nhan {
+  thong_bao_id uuid [ref: > thong_bao.id]
+  phu_huynh_id uuid [ref: > phu_huynh.id]
+  da_doc bool
+}
+
+Table cau_hinh_nhac_lich {
+  id int [pk, note: 'BR-TB-02']
+  bat bool
+  truoc_phut int [default: 120]
+  mau_noi_dung text
+}
+
+// ===== Quản trị =====
+
+Enum vai_tro {
+  quan_ly
+  le_tan
+  hlv
+}
+
+Table nhan_vien {
+  id uuid [pk]
+  ho_ten varchar
+  so_dien_thoai varchar [unique]
+  vai_tro vai_tro [not null]
+  bi_khoa bool [note: 'BR-QT-05']
+}
+
+Table nhat_ky {
+  id bigint [pk, note: 'BR-QT-04']
+  nhan_vien_id uuid [ref: > nhan_vien.id]
+  hanh_dong varchar
+  doi_tuong varchar
+  truoc jsonb
+  sau jsonb
+  luc timestamptz
+}
