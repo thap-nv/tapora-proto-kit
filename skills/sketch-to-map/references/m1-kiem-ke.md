@@ -22,7 +22,7 @@ Trỏ nguồn trong `features.js` bằng **mã** *(`UC-04`, `BR-LH-02`)* hay **d
 
 ## 2. Cách đọc theo cỡ
 
-- **`Cách đọc: đọc nguyên trong một lượt`** *(≤ 300 KB)*: `Read` mọi file `map/_src/D*.txt` mà dòng đó liệt kê, **trong một lượt**. Đo mốc cũ *(48 KB, đọc nguyên)*: sót 1/43 chức năng; đọc lướt hay đọc từng mục không bớt sót mà thêm lượt.
+- **`Cách đọc: đọc nguyên trong một lượt`** *(≤ 300 KB, không tính phụ lục dữ liệu)*: `Read` mọi file `map/_src/D*.txt` mà dòng đó liệt kê, **trong một lượt**. Phụ lục dữ liệu *(đa số dòng là bảng mã dữ liệu, `sources.json` ghi `data: true`)* không Read và không cần `skip`: `check` bỏ qua mục của nó. Đo mốc cũ *(48 KB, đọc nguyên)*: sót 1/43 chức năng; đọc lướt hay đọc từng mục không bớt sót mà thêm lượt. Đo `r8-map-lon` *(376 KB, phụ lục 328 KB)*: đọc nguyên 48 KB còn lại 0,52M và 43/43, chia worker 1,31–1,47M.
 - **`Cách đọc: chia worker`** *(> 300 KB)*: mục 6.
 
 ## 3. Thế nào là một chức năng

@@ -32,6 +32,7 @@ from html.parser import HTMLParser
 if hasattr(sys.stdout, "buffer"):
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
+DATA_DOC_LINES = 200          # từ 200 dòng mang mã dữ liệu và chiếm nửa số dòng thì tài liệu là phụ lục dữ liệu
 READ_WHOLE = 300_000          # byte UTF-8: dưới ngưỡng thì ngữ cảnh chính đọc nguyên một lượt (mốc cũ r7-map: 48 KB, sót 1/43)
 TEXT_EXT = {".md", ".markdown", ".txt", ".dbml", ".json", ".csv", ".yaml", ".yml"}
 BA_FILES = ["USE-CASE", "BUSINESS-RULES", "EDGE-CASES", "TO-BE", "MA-TRAN-TRUY-VET", "UU-TIEN-PHAM-VI", "TIEU-CHI-NGHIEM-THU"]
@@ -363,12 +364,22 @@ def main():
             e, tr = dbml_states(d["lines"], d["id"])
             enums.update(e)
             transitions += tr
+    # Phụ lục dữ liệu: đa số dòng mang mã dữ liệu (mã học viên của bảng xuất từ Excel). Không sinh chức năng, không cần đọc, nên không tính
+    # vào ngưỡng đọc nguyên (đo rml3, rml4: r8-map-lon 376 KB, 328 KB là phụ lục; đọc nguyên 48 KB còn lại 0,52M, chia worker 1,31–1,47M)
+    if data_codes:
+        pat = re.compile(r"\b(?:" + "|".join(re.escape(p) for p in data_codes) + r")-\d+")
+        for d in docs:
+            body = [x for x in d["lines"] if x.strip()]
+            hit = sum(1 for x in body if pat.search(x))
+            if not d["path"].lower().endswith(".dbml") and hit >= DATA_DOC_LINES and hit * 2 >= len(body):
+                d["data"] = True
     total = sum(d["bytes"] for d in docs)
-    whole = total <= READ_WHOLE
+    read_total = sum(d["bytes"] for d in docs if not d.get("data"))
+    whole = read_total <= READ_WHOLE
     recommend = "doc-nguyen" if whole else "chia-worker"
     meta = [{k: v for k, v in d.items() if k != "lines"} | {"lines": len(d["lines"])} for d in docs]
     with open(os.path.join(out_dir, "sources.json"), "w", encoding="utf-8") as fh:
-        json.dump({"dir": src_dir.replace("\\", "/"), "total": total, "recommend": recommend, "threshold": READ_WHOLE, "docs": meta, "manual": manual},
+        json.dump({"dir": src_dir.replace("\\", "/"), "total": total, "read_total": read_total, "recommend": recommend, "threshold": READ_WHOLE, "docs": meta, "manual": manual},
                   fh, ensure_ascii=False, indent=1)
     with open(os.path.join(out_dir, "ids.json"), "w", encoding="utf-8") as fh:
         json.dump({"systems": systems, "ids": ids, "data_codes": data_codes}, fh, ensure_ascii=False, indent=1)
@@ -404,7 +415,9 @@ def main():
         d, x = longest
         print(f"Mục dài nhất: {d['id']}:{x['start']}-{x['end']} {x['title'][:60]} ({kb(x['bytes'])})")
     if whole:
-        print(f"Cách đọc: đọc nguyên trong một lượt ({kb(total)} ≤ {kb(READ_WHOLE)}): Read " + ", ".join(f"map/_src/{d['id']}.txt" for d in meta))
+        skipped = [d for d in meta if d.get("data")]
+        extra = "".join(f", không tính phụ lục dữ liệu {d['id']} {kb(d['bytes'])}: không Read, không cần skip" for d in skipped)
+        print(f"Cách đọc: đọc nguyên trong một lượt ({kb(read_total)} ≤ {kb(READ_WHOLE)}{extra}): Read " + ", ".join(f"map/_src/{d['id']}.txt" for d in meta if not d.get("data")))
     else:
         print(f"Cách đọc: chia worker theo module ({kb(total)} > {kb(READ_WHOLE)}): tối đa 4 worker một đợt, mỗi worker đọc đúng dải dòng của module (mục lục ở map/sources.json), tự ghi map/parts/<module>.js (m1-kiem-ke.md mục 6)")
     print("Đã ghi: map/_src/ · map/sources.json · map/ids.json · map/states.json")

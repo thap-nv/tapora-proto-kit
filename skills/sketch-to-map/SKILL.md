@@ -145,5 +145,5 @@ Rút từ lỗi đo được trên prototype thật đã qua nghiệm thu, và t
 | "Việc đó có trong tab của hồ sơ khách rồi" | Việc hằng ngày cần lối vào từ trang chủ trong ≤ 3 bước. Tìm khách, mở hồ sơ, mở tab là 4 bước cộng một lần tìm |
 | "Xong việc thì chuyển sang trang kết quả cho tiện" | Ở lại, báo kết quả kèm liên kết mở tiếp. Tự chuyển trang làm mất chỗ đang làm |
 | "Ghi mã UC lên nút cho dễ đối chiếu tài liệu" | Mã nằm ở `src` và `data-feature`, không trên chữ giao diện: `check` và B4 chặn |
-| "Tài liệu dài, đọc lướt các mục chính cho nhanh" | Dưới 300 KB thì đọc nguyên trong một lượt *(mốc đo: sót 1/43)*. Vượt thì chia worker theo module, không đọc lướt |
+| "Tài liệu dài, đọc lướt các mục chính cho nhanh" | Dưới 300 KB, không tính phụ lục dữ liệu, thì đọc nguyên trong một lượt *(mốc đo: sót 1/43)*. Vượt thì chia worker theo module, không đọc lướt |
 | "Soát nhãn 100 %, review UX 57,8/60, bố cục ổn rồi" | Cả hai chạm trần trên prototype có 17 lối tắt đá đi. Thước đo là chỉ số luồng của `check` và người dùng bấm thử |

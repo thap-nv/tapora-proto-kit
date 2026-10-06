@@ -161,7 +161,7 @@ function inventory() {
   const inSec = (refs, doc, s) => refs.some(r => r.doc === doc && r.a <= s.end && r.b >= s.start);
   const droppedAt = new Set(Object.values(ids).filter(x => x.dropped && x.def).map(x => x.def));
   for (const d of arr(SRC.docs)) {
-    if (/^(dbml|json)$/.test(d.kind)) continue;
+    if (/^(dbml|json)$/.test(d.kind) || d.data) continue;   // phụ lục dữ liệu (sources.py): không sinh chức năng
     const conv = new Set(arr(d.conventions).map(c => c.start));
     for (const s of arr(d.toc)) {
       // Bỏ qua: cấp 1 (tên tài liệu), Quy ước, mục định nghĩa một mục bị loại

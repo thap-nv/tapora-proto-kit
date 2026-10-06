@@ -170,6 +170,30 @@ test('sources.py: cỡ nhỏ thì đề xuất đọc nguyên một lượt; vư
   assert.match(run(t, { 'PHU-LUC.md': big }).out, /^Cách đọc: chia worker/m);
 });
 
+// Đo rml3, rml4 (06/10): r8-map-lon 376 KB, trong đó 328 KB phụ lục dữ liệu; cả hai agent tự đọc nguyên 48 KB còn lại (0,52M) thay vì
+// chia worker (1,31–1,47M). Ngưỡng 300 KB phải tính trên phần không phải phụ lục dữ liệu
+test('sources.py: phụ lục dữ liệu (đa số dòng mang mã dữ liệu) không tính vào ngưỡng đọc nguyên; đề xuất đọc nguyên không kèm phụ lục', t => {
+  const rows = Array.from({ length: 4000 }, (_, i) => `| HS-${String(i + 1).padStart(4, '0')} | Học sinh số ${i + 1} ở lớp bơi buổi tối | 09${String(10000000 + i)} | Ghi chú dài của dòng dữ liệu mẫu |`).join('\n');
+  const data = `# Phụ lục dữ liệu\n\n## Danh sách học sinh\n| Mã | Họ tên | SĐT | Ghi chú |\n|---|---|---|---|\n${rows}\n`;
+  const { out, j } = run(t, { 'PHU-LUC-DU-LIEU.md': data, 'GHI-CHU.md': '# Ghi chú\n\nMã học sinh dạng HS-0001, không đổi.\n' });
+  const src = j('sources.json');
+  assert.ok(src.total > 300000, `tổng ${src.total}`);
+  assert.equal(src.recommend, 'doc-nguyen');
+  assert.ok(src.read_total <= 300000, `phần đọc ${src.read_total}`);
+  assert.deepEqual(src.docs.filter(d => d.data).map(d => d.path), ['PHU-LUC-DU-LIEU.md']);
+  const line = out.match(/^Cách đọc:.*$/m)[0];
+  assert.match(line, /^Cách đọc: đọc nguyên trong một lượt \([^)]*không tính phụ lục dữ liệu D\d[^)]*\): Read map\/_src\/D\d\.txt/);
+  assert.ok(!line.includes(`${src.docs.find(d => d.data).id}.txt`.replace(/^/, 'map/_src/')), 'danh sách Read không có phụ lục');
+});
+
+test('sources.py: tài liệu lớn không có mã dữ liệu vẫn chia worker; phụ lục nhỏ không bị coi là dữ liệu', t => {
+  const rows = Array.from({ length: 60 }, (_, i) => `| HS-${String(i + 1).padStart(4, '0')} | Học sinh ${i + 1} |`).join('\n');
+  const small = run(t, { 'PHU-LUC-DU-LIEU.md': `# Phụ lục\n\n${rows}\n`, 'GHI-CHU.md': '# Ghi chú\n\nHS-0001.\n' });
+  assert.deepEqual(small.j('sources.json').docs.filter(d => d.data), [], 'dưới 200 dòng mang mã thì không phải phụ lục dữ liệu');
+  const big = '# Phụ lục\n' + Array.from({ length: 4000 }, (_, i) => `## Mục ${i}\n${'Nội dung dài của mục để vượt ngưỡng đọc nguyên. '.repeat(2)}\n`).join('');
+  assert.equal(run(t, { 'PHU-LUC.md': big }).j('sources.json').recommend, 'chia-worker');
+});
+
 test('sources.py: file không đọc được (pdf khi không có công cụ, định dạng lạ) được nêu tên, thoát 1', t => {
   const { r, out } = run(t, { 'so-do.vsdx': 'x' });
   assert.equal(r.status, 1, out);

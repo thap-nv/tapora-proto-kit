@@ -120,6 +120,20 @@ test('kiểm kê: tên này là phần đầu của tên kia (bỏ từ nối), 
   assert.doesNotMatch(w, /F-20/, '"Đặt lịch hẹn" của lễ tân và "Đặt lịch hẹn trên app" của bệnh nhân là biến thể theo vai, không chung vai');
 });
 
+test('kiểm kê: mục của tài liệu đánh dấu data (phụ lục dữ liệu) không cần chức năng hay skip', t => {
+  const dir = sourced(t);
+  const f = path.join(dir, 'map', 'sources.json');
+  const src = JSON.parse(fs.readFileSync(f, 'utf8'));
+  src.docs.push({ id: 'D4', path: 'PHU-LUC.md', kind: 'md', ba: null, data: true, conventions: [], toc: [{ title: 'Phụ lục', level: 1, start: 1, end: 90 }, { title: 'Danh sách học sinh', level: 2, start: 2, end: 40 }, { title: 'Thu tiền', level: 2, start: 41, end: 90 }] });
+  fs.writeFileSync(f, JSON.stringify(src));
+  const r = run('check', dir);
+  assert.equal(r.status, 0, r.stdout);
+  assert.match(r.stdout, /· \d+ mục \(0 chưa có chức năng\)/);
+  src.docs[3].data = false;
+  fs.writeFileSync(f, JSON.stringify(src));
+  assert.match(run('check', dir).stdout, /mục D4:2-40 Danh sách học sinh: chưa có chức năng/, 'đối chứng: không đánh dấu data thì vẫn chặn');
+});
+
 test('kiểm kê: chưa chạy sources.py thì chỉ kiểm dữ liệu, nói rõ', t => {
   const dir = tmp(t, 'map-nosrc-');
   fs.mkdirSync(path.join(dir, 'map'));
