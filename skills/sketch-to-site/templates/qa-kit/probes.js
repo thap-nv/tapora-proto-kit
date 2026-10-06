@@ -276,6 +276,79 @@
     return out;
   }
 
+  // ---- Bố cục trên trang đã render (chỉ số của sketch-to-map, references/m2-bo-cuc.md) ----
+  // __qa.codes()   mã tham chiếu của tài liệu (UC-, BR-, XD-, OQ-…, thêm hệ mã ở "codes" của qa.config.json) trong chữ đang hiện
+  //                và trong title, aria-label, placeholder, alt: chặn như tương phản (qadiff "codes"). Đọc trang đã render nên
+  //                trang ẩn mã lúc chạy (như một prototype thật đã đo) không bị báo giả như khi đọc mã nguồn (preflight P24 chỉ cảnh báo).
+  // __qa.layout()  chỉ cảnh báo: hơn một nút chính nhìn thấy cùng lúc (chỉ số 3; có hộp thoại đang mở thì chỉ đếm trong hộp);
+  //                nhóm menu hơn 7 mục, hơn 5 tab (chỉ số 4); khung viền từ 2px và khung lồng 3 lớp ở màn đầu (chỉ số 8).
+  //                Nút chính: nền đặc gần màu --primary; trang chưa có token thì lớp có chữ primary.
+  const CODE_PREFIX = ['UC', 'BR', 'US', 'FR', 'NFR', 'NF', 'XD', 'OQ', 'AC', 'REQ', 'YC', 'EC', 'CR', 'F'];
+  function codes() {
+    const pre = [...new Set([...CODE_PREFIX, ...(window.__qaCodes || [])])].filter(p => /^[A-Za-z]{1,5}$/.test(p)).sort((a, b) => b.length - a.length);
+    const re = new RegExp(`(?<![\\w-])(?:${pre.join('|')})-(?:[A-Z]{1,4}-)?\\d+(?!\\w)`);
+    const out = [];
+    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = walk.nextNode(); n && out.length < MAX; n = walk.nextNode()) {
+      const m = re.exec(n.nodeValue);
+      const e = n.parentElement;
+      if (!m || !e || e.closest('script, style, template, noscript, [aria-hidden="true"]') || hidden(e)) continue;
+      out.push(`${name(e)}: «${m[0]}» trong "${n.nodeValue.replace(/\s+/g, ' ').trim().slice(0, 50)}"`);
+    }
+    for (const e of document.querySelectorAll('[title], [aria-label], [placeholder], img[alt]')) {
+      if (out.length >= MAX) break;
+      if (hidden(e)) continue;
+      for (const a of ['title', 'aria-label', 'placeholder', 'alt']) {
+        const m = re.exec(e.getAttribute(a) || '');
+        if (m) out.push(`${name(e)} ${a}: «${m[0]}»`);
+      }
+    }
+    return out;
+  }
+  function framed(s) {
+    const sides = ['Top', 'Right', 'Bottom', 'Left'].filter(k => s['border' + k + 'Style'] !== 'none' && parseFloat(s['border' + k + 'Width']) >= 1);
+    return sides.length >= 3 ? Math.min(...sides.map(k => parseFloat(s['border' + k + 'Width']))) : 0;
+  }
+  function layout() {
+    const out = [];
+    const prim = C.parse(cs(document.documentElement).getPropertyValue('--primary').trim());
+    const open = [...document.querySelectorAll('dialog[open], [role="dialog"][aria-modal="true"]')].filter(d => !hidden(d)).pop();
+    const scope = open || document.body;
+    const prims = [...scope.querySelectorAll('button, [role="button"], a[href], input[type="submit"]')].filter(e => {
+      if (hidden(e) || e.closest('[aria-hidden="true"], [inert]') || (!open && e.closest('dialog:not([open])'))) return false;
+      if (!prim) return /primary/.test(typeof e.className === 'string' ? e.className : '');
+      const a = accent(e);
+      return a && a.fill && C.deltaE(a.c, prim) < 0.08;
+    });
+    if (prims.length > 1) out.push(`${prims.length} nút chính nhìn thấy cùng lúc (${prims.slice(0, 3).map(e => `"${label(e).slice(0, 20)}"`).join(', ')}): một hành động chính mỗi màn (chỉ số 3)`);
+    for (const l of document.querySelectorAll('nav ul, nav ol, aside ul, aside ol, [role="menubar"], [role="menu"]')) {
+      if (hidden(l)) continue;
+      const n = [...l.children].filter(c => !hidden(c) && (c.matches('a, button, [role^="menuitem"]') || c.querySelector('a, button, [role^="menuitem"]'))).length;
+      if (n > 7) out.push(`${name(l)}: ${n} mục trong một nhóm menu (ngưỡng 7, chỉ số 4)`);
+    }
+    for (const l of document.querySelectorAll('[role="tablist"]')) {
+      const n = hidden(l) ? 0 : l.querySelectorAll('[role="tab"]').length;
+      if (n > 5) out.push(`${name(l)}: ${n} tab (ngưỡng 5, chỉ số 4)`);
+    }
+    // Màn đầu: khung viền dày và khung lồng (hộp có viền ít nhất 3 cạnh nằm trong hộp có viền). Hộp nhỏ hơn 48×32 (icon, avatar,
+    // vòng chọn) và ô nhập không tính: đo trên prototype thật, icon <i> viền 2px bị đếm là khung
+    const thick = [];
+    let deepest = [];
+    for (const e of document.body.querySelectorAll('*')) {
+      const r = e.getBoundingClientRect();
+      if (r.top >= innerHeight || r.bottom <= 0 || r.width < 48 || r.height < 32 || e.matches('input, select, textarea, :focus')) continue;
+      const w = framed(cs(e));
+      if (!w || hidden(e)) continue;
+      if (w >= 2) thick.push(e);
+      const chain = [e];
+      for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) if (framed(cs(p))) chain.unshift(p);
+      if (chain.length > deepest.length) deepest = chain;
+    }
+    if (thick.length) out.push(`${thick.length} khung viền dày từ 2px ở màn đầu (${thick.slice(0, 3).map(name).join(', ')}): viền mảnh, để nội dung nổi (chỉ số 8, gợi ý)`);
+    if (deepest.length >= 3) out.push(`khung lồng ${deepest.length} lớp ở màn đầu: ${deepest.slice(0, 4).map(name).join(' > ')} (chỉ số 8, gợi ý)`);
+    return out;
+  }
+
   // ---- Lượt kiểm sâu (deep.mjs) ----
   const OFF = '[aria-hidden="true"], [inert], :disabled, [aria-disabled="true"], [data-demo-state]';
   const INTERACTIVE = 'a[href], button, input:not([type=hidden]), select, textarea, summary, [role="button"], [role="tab"], [role="switch"], '
@@ -416,6 +489,23 @@
     return { own: stateOf(e), look, mut, focus: a && a !== document.body && !e.contains(a) ? sel(a) : '' };
   }
 
-  window.__qa = { SKIP, name, sel, label, hidden, contrast, contrastOf, intent,
-    targets, tabbables, markActive, unreached, composites, compositeState, enterComposite, customStateful, focusState, stateful, snap };
+  // Lối tắt mở tại chỗ (luật của sketch-to-map): nút hứa mở hộp thoại, ngăn trượt hay sheet ngay trên trang. data-mo do trang dựng
+  // theo bản đồ gắn; data-modal-open (web) và data-sheet-open (app) là quy ước của kit. Lớp phủ đang mở: hiện và nằm trong khung nhìn
+  // (ngăn trượt đóng bằng cách đẩy ra ngoài khung thì không tính)
+  const OVERLAY = 'dialog, [role="dialog"], [role="alertdialog"], [aria-modal="true"], .app-sheet';
+  const inView = e => { const r = e.getBoundingClientRect(); return r.right > 0 && r.bottom > 0 && r.left < innerWidth && r.top < innerHeight; };
+  const shown = e => !!e && !hidden(e) && inView(e) && !(e.tagName === 'DIALOG' && !e.open);
+  function shortcuts(n) {
+    const out = [];
+    for (const e of document.querySelectorAll('[data-mo="hop-thoai"], [data-mo="ngan-truot"], [data-mo="sheet"], [data-modal-open], [data-sheet-open]')) {
+      if (out.length >= n) break;
+      if (hidden(e) || e.closest(OFF) || e.closest(OVERLAY)) continue;
+      out.push({ sel: sel(e), name: `${name(e)} "${label(e).slice(0, 24)}"`, target: e.getAttribute('data-modal-open') || e.getAttribute('data-sheet-open') || '' });
+    }
+    return out;
+  }
+  const overlays = target => [...document.querySelectorAll(OVERLAY)].filter(shown).length + (target && shown(document.getElementById(target)) ? 1000 : 0);
+
+  window.__qa = { SKIP, name, sel, label, hidden, contrast, contrastOf, intent, codes, layout,
+    targets, tabbables, markActive, unreached, composites, compositeState, enterComposite, customStateful, focusState, stateful, snap, shortcuts, overlays };
 })();

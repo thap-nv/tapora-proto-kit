@@ -10,7 +10,7 @@
     {
       "name": "tapora-proto-kit",
       "source": "./",
-      "description": "Design website, web-app and mobile-app prototypes from scratch, evolve and tweak them without design drift, and check them before handover."
+      "description": "Design website, web-app and mobile-app prototypes from scratch, map the features of large projects first, evolve and tweak them without design drift, and check them before handover."
     }
   ]
 }

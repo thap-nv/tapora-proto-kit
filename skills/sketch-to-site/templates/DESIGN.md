@@ -77,6 +77,8 @@ Mọi component có mặt trên `site/_system.html`, đủ các trạng thái á
 - <ví dụ: không dùng từ "Chi nhánh" (glossary) · không đỏ cho giá · …>
 
 ## 9. Sơ đồ trang
+> Dự án có bản đồ *(`sketch-to-map`)*: màn, vùng, tab, chỗ đặt, lối tắt và menu theo vai ở `map/MAP.md`, không chép lại. Bảng dưới chỉ ghi section và dữ liệu của các màn đã dựng.
+
 | Bề mặt | Trang / màn | Section theo thứ tự | Hành động chính | Dữ liệu cần |
 |---|---|---|---|---|
 

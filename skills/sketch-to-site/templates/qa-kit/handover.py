@@ -49,7 +49,8 @@ def cmd_run(a):
             file_owner.setdefault(f, set()).add(i)
 
     bad, unattributed, attributed = [], [], {}
-    per_theme = {th: {'suites': 0, 'steps': 0, 'errors': 0, 'fails': 0, 'silent': 0, 'over': 0, 'cut': 0, 'contrast': 0, 'intent': 0, 'deep': 0, 'changed': 0} for th in themes}
+    per_theme = {th: {'suites': 0, 'steps': 0, 'errors': 0, 'fails': 0, 'silent': 0, 'over': 0, 'cut': 0, 'contrast': 0, 'intent': 0, 'codes': 0, 'deep': 0, 'changed': 0} for th in themes}
+    lay_reports = []
     new_suites, lost_suites, debt, debt_rows = [], [], [], []
     for (th, name), r in sorted(res.items()):
         t = per_theme[th]
@@ -58,6 +59,7 @@ def cmd_run(a):
             continue
         rep = Q.load_json(os.path.join(out, th, name, 'report.json'))
         base = Q.load_json(os.path.join(Q.GREEN, th, name, 'report.json'))
+        lay_reports.append((f'{th}/{name}', rep))
         if green is not None and base is None:
             new_suites.append(f'{th}/{name}')
         d = Q.diff_report(base, rep, name, known)
@@ -71,10 +73,10 @@ def cmd_run(a):
         wide = {x['step']: x['dims'].get('wide') or [] for x in rep or [] if x.get('dims')}
         bad += [f'tràn ngang {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}' + (f': do {", ".join(wide[s])}' if wide.get(s) else '') for s in d['over_new']]
         bad += [f'trong khung {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}: {c}' for s, c in d['cut_new']]
-        for key, lab in (('contrast', 'tương phản'), ('intent', 'ý định'), ('states', 'trạng thái'), ('keyboard', 'bàn phím'), ('interactive', 'tương tác'),
+        for key, lab in (('contrast', 'tương phản'), ('intent', 'ý định'), ('codes', 'mã lộ'), ('states', 'trạng thái'), ('keyboard', 'bàn phím'), ('interactive', 'tương tác'), ('shortcuts', 'lối tắt'),
                          (Q.qadiff.DEEP_ERRORS, 'console lượt sâu')):
             new = d[key + '_new']
-            t[key if key in ('contrast', 'intent') else 'deep'] += len(new)
+            t[key if key in ('contrast', 'intent', 'codes') else 'deep'] += len(new)
             bad += [f'{lab} {"mới " if base else "(chưa có mốc) "}{th}/{name} · {s}: {c}' for s, c in new]
         debt += [f'{th}/{name} · {k} · {s}: {c}' for s, k, c in d['debt']]
         debt_rows += [(th, name, s, k, c) for s, k, c in d['debt']]
@@ -104,7 +106,7 @@ def cmd_run(a):
     for th, t in per_theme.items():
         nd = Q.debt_count(Q.group_debt([x for x in debt_rows if x[0] == th]))
         print(f'{th}: {t["suites"]} bộ · {t["steps"]} bước · console {t["errors"]} · FAIL {t["fails"]} · im lặng {t["silent"]} · '
-              f'tràn mới {t["over"]} · cắt mới {t["cut"]} · tương phản mới {t["contrast"]} · ý định mới {t["intent"]} · sâu mới {t["deep"]} · check đổi so với last-green {t["changed"]} · nợ cũ {nd}')
+              f'tràn mới {t["over"]} · cắt mới {t["cut"]} · tương phản mới {t["contrast"]} · ý định mới {t["intent"]} · mã lộ mới {t["codes"]} · sâu mới {t["deep"]} · check đổi so với last-green {t["changed"]} · nợ cũ {nd}')
     # Lượt sâu có chạy thật không: "sâu mới 0" một mình không phân biệt được "đã kiểm, sạch" với "không kiểm"
     deep_ran = [n for n in Q.SUITE_NAMES if any(r.get('deep_ran') for (th, nm), r in res.items() if nm == n)]
     deep_missed = [n for n in Q.SUITE_NAMES if n in Q.DEEP_SUITES and n not in deep_ran]
@@ -153,9 +155,16 @@ def cmd_run(a):
         print('  ' + line)
     if any(t['cut'] for t in per_theme.values()):
         print('Chữ tràn hoặc bị cắt trong khung: xem ảnh của bước đó. Cố ý (tràn lề, marquee, slide ló) thì gắn data-clip-ok="<lý do>" vào khung. Không cố ý thì sửa ở gốc, đừng làm im.')
+    # Bố cục trên trang đã render (chỉ số 3, 4, 8 của sketch-to-map): cảnh báo, không chặn promote; in cả khi trống như nợ cũ
+    lay = Q.layout_warnings(lay_reports)
+    print(f'\nBố cục ({len(lay)}, cảnh báo, không chặn)' + (': một nút chính mỗi màn, nhóm menu tối đa 7 mục, tối đa 5 tab, viền mảnh' if lay else ': không có'))
+    for line, where in lay[:15]:
+        print(f'  {line} · {where}')
+    if len(lay) > 15:
+        print(f'  … còn {len(lay) - 15} dòng: đủ ở handover.json')
     Q.save_json(os.path.join(out, 'handover.json'), {'preflight': [pf_ok, pf_line], 'themes': per_theme, 'bad': bad,
                                                       'unattributed': unattributed, 'debt': debt, 'new_suites': new_suites, 'lost_suites': lost_suites,
-                                                      'deep_suites': deep_ran})
+                                                      'deep_suites': deep_ran, 'layout': [{'line': l, 'where': w} for l, w in lay]})
     ok = pf_ok and not bad and not unattributed and not lost_suites
     tail = f', còn {ndebt} mục nợ cũ: hỏi người dùng sửa hay nhận vào mốc' if debt else ''
     print('\nKết luận:', f'SẠCH{tail}, chờ người dùng chốt rồi promote' if ok else 'CHƯA SẠCH, xem các mục trên')

@@ -15,13 +15,13 @@
 > Dấu chỉ đổi khi nội dung file đổi: `git clone`, checkout, chép thư mục không làm lệch dấu.
 > **Tự sửa một trang đã `xong`** *(B4, sửa theo review hay góp ý, `evolve-site` thêm lối vào menu)*: chạy lại `preflight.py`, rồi ghi lại cột Kiểm và dấu của dòng đó ngay trong lượt sửa.
 
-**Phạm vi** *(Cổng 3, nguyên văn)*: <…> · **Sơ đồ trang:** `DESIGN.md` mục 9 · **Bắt đầu:** <dd/mm/yyyy>
+**Phạm vi** *(Cổng 3, hay đợt đầu ở Cổng Bản đồ; nguyên văn)*: <…> · **Sơ đồ trang:** `DESIGN.md` mục 9 *(có bản đồ: `map/MAP.md`)* · **Bắt đầu:** <dd/mm/yyyy>
 
 **Chỉ gồm trang trong phạm vi Cổng 3.** Trang ngoài phạm vi không ghi vào sổ.
 
-| # | Trang / màn | File | Trạng thái | Kiểm *(dòng kết quả thật)* | Ghi chú |
-|---|---|---|---|---|---|
-| 1 | <Trang chủ> | `site/index.html` | chưa | | |
+| # | Trang / màn | File | Chức năng *(mã trong bản đồ, nếu có)* | Trạng thái | Kiểm *(dòng kết quả thật)* | Ghi chú |
+|---|---|---|---|---|---|---|
+| 1 | <Trang chủ> | `site/index.html` | | chưa | | |
 
 **Trạng thái:** `chưa` · `đang` *(đang dựng hay đang sửa, preflight chưa 0 lỗi)* · `xong` *(preflight 0 lỗi)* · `chặn` *(ghi lý do, cần người dùng)*
 

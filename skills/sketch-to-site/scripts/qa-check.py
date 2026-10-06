@@ -5,7 +5,8 @@
 # 2. python _qa/handover.py run: preflight, mọi bộ ở mọi theme (trang web chụp hết trang theo từng màn), lượt kiểm sâu, so với mốc.
 #    In các dòng số và kết luận; mỗi danh sách tối đa 15 dòng, đủ danh sách ở handover.json của lần chạy.
 # 3. Liệt kê ảnh của lần chạy theo theme và bộ, để mở cùng một lượt.
-# Thoát 0 khi sạch, 1 khi còn lỗi (theo handover.py), 2 khi thiếu thư mục trang, 4 khi không có trình duyệt.
+# 4. Có bản đồ (map/features.js của sketch-to-map): độ phủ trên trang đã dựng, map.mjs coverage. Thiếu data-feature hay mã lạ thì chưa sạch.
+# Thoát 0 khi sạch, 1 khi còn lỗi (theo handover.py hay độ phủ), 2 khi thiếu thư mục trang, 4 khi không có trình duyệt.
 import argparse, os, re, subprocess, sys
 sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -84,4 +85,17 @@ if root and os.path.isdir(root):
             for suite in sorted(os.listdir(os.path.join(root, th))) if os.path.isdir(os.path.join(root, th, suite))]
     for l in run_all.shot_lines(root, dirs):
         print(l)
-sys.exit(run.returncode)
+
+# 4. Độ phủ theo bản đồ (sketch-to-map): chỉ khi dự án có map/features.js
+code = run.returncode
+if os.path.exists(os.path.join(proto, 'map', 'features.js')):
+    MAP = os.path.join(os.path.dirname(os.path.dirname(HERE)), 'sketch-to-map', 'scripts', 'map.mjs')
+    if not os.path.exists(MAP):
+        print('Độ phủ: bỏ qua, không thấy sketch-to-map/scripts/map.mjs cạnh sketch-to-site')
+    else:
+        cov = subprocess.run(['node', MAP, 'coverage', proto, '--site', a.site], capture_output=True, text=True, encoding='utf-8')
+        print((cov.stdout + cov.stderr).rstrip())
+        if cov.returncode:
+            print('Kết luận: CHƯA SẠCH: độ phủ, gắn data-feature đúng mã cho chức năng và lối tắt của màn (map.mjs slice <màn>)')
+            code = code or 1
+sys.exit(code)

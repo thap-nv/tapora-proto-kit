@@ -25,7 +25,7 @@ function section(md, start, end) {
 
 test('khuôn BUILD-LOG có cột và luật làm tiếp', () => {
   const md = read('skills/sketch-to-site/templates/BUILD-LOG.md');
-  assert.match(md, /^\| # \| Trang \/ màn \| File \| Trạng thái \| Kiểm \*\(dòng kết quả thật\)\* \| Ghi chú \|$/m);
+  assert.match(md, /^\| # \| Trang \/ màn \| File \| Chức năng \*\(mã trong bản đồ, nếu có\)\* \| Trạng thái \| Kiểm \*\(dòng kết quả thật\)\* \| Ghi chú \|$/m);
   assert.match(md, /Không dựng lại trang đã `xong`/);
   assert.match(md, /mở file thật/);
   assert.match(md, /^## Lần tiếp tục$/m);
@@ -82,7 +82,7 @@ test('B4 của sketch-to-site, evolve-site và bước kiểm của tweak-site t
   assert.match(section(read('skills/tweak-site/SKILL.md'), '5. **Kiểm nhanh**', '6. **'), /qa-gate\.md` mục 6/);
 });
 
-test('bảng cớ bỏ cổng giống hệt ở sketch-to-site và sketch-to-concept', () => {
+test('bảng cớ bỏ cổng giống hệt ở sketch-to-site, sketch-to-concept và sketch-to-map', () => {
   const block = f => {
     const md = read(f);
     const m = /<!-- luat-dung:co:bat-dau -->\n([\s\S]*?)\n<!-- luat-dung:co:ket-thuc -->/.exec(md);
@@ -91,6 +91,7 @@ test('bảng cớ bỏ cổng giống hệt ở sketch-to-site và sketch-to-con
   };
   const site = block('skills/sketch-to-site/SKILL.md');
   assert.equal(block('skills/sketch-to-concept/SKILL.md'), site);
+  assert.equal(block('skills/sketch-to-map/SKILL.md'), site);
   assert.ok((site.match(/^\| "/gm) || []).length >= 6, 'cần ít nhất 6 cớ');
   assert.match(site, /\*\*Dấu hiệu phải dừng lại:\*\*/);
 });
@@ -327,23 +328,25 @@ test('khuôn AGENTS-qa.md nói lệnh themes.mjs, trang _system.html, tương ph
 
 test('evolve-site 1.8: cờ T thêm màu vào themes.json, component vào _system.html; phần mới đọc được ở mọi theme', () => {
   const md = read(EVO);
-  assert.match(md, /^> \*\*v1\.9 \(/m);
+  assert.match(md, /^> \*\*v1\.10 \(/m);
   assert.match(md, /\*\*T · Token, component\*\*[^\n]*themes\.json[^\n]*_system\.html/);
   assert.match(md, /đọc được ở \*\*mọi theme\*\*/);
 });
 
 test('tweak-site 1.2: đổi màu qua themes.json và themes.mjs; nợ cũ không tự sửa', () => {
   const md = read('skills/tweak-site/SKILL.md');
-  assert.match(md, /^> \*\*v1\.3 \(/m);
+  assert.match(md, /^> \*\*v1\.4 \(/m);
   assert.match(section(md, '## 2. Luật không bỏ', '## 3.'), /themes\.json[^\n]*themes\.mjs/);
   assert.match(section(md, '## 3. Quy trình', '## 4.'), /`nợ cũ`[^\n]*không tự sửa/);
 });
 
 test('handover-check 1.2: bảng đọc kết quả có phép đo mới và nợ cũ; cổng hỏi nợ cũ', () => {
   const md = read('skills/handover-check/SKILL.md');
-  assert.match(md, /^> \*\*v1\.3 \(/m);
+  assert.match(md, /^> \*\*v1\.4 \(/m);
   const b4 = section(md, '### B4 · Đọc kết quả', '### B5');
-  assert.match(b4, /\*\*Tương phản, ý định, sâu\*\*/);
+  assert.match(b4, /\*\*Tương phản, ý định, mã lộ, sâu\*\*[^\n]*lối tắt/);
+  assert.match(b4, /^\| \*\*Bố cục\*\* \|/m);
+  assert.match(b4, /^\| \*\*Độ phủ\*\*/m);
   assert.match(b4, /\*\*Nợ cũ\*\*/);
   assert.match(section(md, '### 🛑 Cổng', '### B7'), /\*\*Nhận nợ cũ vào mốc\*\*/);
 });

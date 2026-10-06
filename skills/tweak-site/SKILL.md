@@ -6,7 +6,7 @@ description: >-
 
 # Tweak Site · Sửa nhỏ prototype có sẵn
 
-> **v1.3 (05/10/2026)** · Ít lượt: tìm, đọc, sửa, kiểm, mỗi việc gói trong một lượt *(mục 3)*. Cấp 1 kiểm và chụp bằng một lệnh `quick.py --shots`, không tự dựng bộ chụp. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
+> **v1.4 (06/10/2026)** · Lệnh kiểm báo thêm `mã lộ mới` *(mã tham chiếu lộ ra chữ trên trang)*. Ít lượt: tìm, đọc, sửa, kiểm, mỗi việc gói trong một lượt *(mục 3)*. Cấp 1 kiểm và chụp bằng một lệnh `quick.py --shots`, không tự dựng bộ chụp. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
 > **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này. Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`: hai chương trình này không đọc được. Lệnh `python` tự viết mà in tiếng Việt thì đặt `PYTHONIOENCODING=utf-8` trước lệnh: console Windows (cp1252) dừng giữa chừng với `UnicodeEncodeError`.
 
 ## 1. Có nhận việc này không
@@ -54,7 +54,7 @@ Mỗi lượt đọc lại cả ngữ cảnh, nên một lần sửa nhỏ gói 
    `python _qa/quick.py --note "tweak: <một dòng: sửa gì, ở đâu>"`, Cấp 1 thêm `--shots`.
    - Lệnh chạy preflight và các bộ của trang nạp file đã đổi *(đổi `.css` thì thêm mọi theme)*, so với mốc cuốn chiếu `_qa/current/`. `--shots` chụp ảnh các bộ đó và in thư mục cùng tên từng ảnh. Dòng cuối: `quick · … → ĐẠT` hoặc `CHƯA ĐẠT`. Thoát 0 khi sạch *(lệnh tự nâng mốc và ghi nhật ký)*, 1 khi còn lỗi, 2 khi dự án chưa có mốc.
    - `ĐẠT` → xong. `CHƯA ĐẠT` → tìm nguyên nhân gốc, sửa ở gốc rồi chạy lại *(`<skills>/sketch-to-site/references/qa-gate.md` mục 6, in: `sed -n '/^## 6\./,/^## 7\./p'`; không làm im bộ kiểm)*. Lỗi nằm ngoài chỗ vừa sửa và có từ trước → không sửa, báo.
-   - Dòng `tương phản mới` hay `ý định mới`: lỗi của lần sửa này, sửa ở gốc. Dòng `nợ cũ`: có từ trước, không chặn, không tự sửa; nêu trong báo cáo.
+   - Dòng `tương phản mới`, `ý định mới` hay `mã lộ mới`: lỗi của lần sửa này, sửa ở gốc. Dòng `nợ cũ`: có từ trước, không chặn, không tự sửa; nêu trong báo cáo.
    - Mỗi dòng `đổi check` phải giải thích được bằng chính thay đổi vừa làm. Không giải thích được là lỗi lan: sửa.
    - Dự án chưa có `_qa/quick.py`: chạy `python <skills>/sketch-to-site/scripts/preflight.py <thư-mục-site>/<trang>.html` *(dòng cuối: `1 file · n lỗi · n cảnh báo`; thoát 1 khi còn lỗi)* cho lần sửa này, rồi đề xuất cài bộ kiểm *(`handover-check`, B0)*. Không tự cài giữa một lần sửa nhỏ. Khi đó Cấp 1 không có ảnh: ghi *chưa xem ảnh* vào báo cáo.
 6. **Cấp 1: xem một ảnh** trong danh sách `--shots` in ra, cùng lượt với dòng nhật ký ở bước 8. Lấy khổ chính của trang *(màn app mobile hay trang cho điện thoại: 390; trang quản trị: 1440)*, ảnh có chỗ sửa: lát có tiêu đề của khối vừa sửa trong ngoặc *(danh sách ghi tiêu đề h1–h3 bắt đầu trong từng lát; lát không có ngoặc là phần tiếp của lát trước)*. Không mở đủ khổ. Màn app làm cả iOS và Android: sửa phần chung thì xem ảnh của nền tảng mặc định; sửa phần chỉ của một nền tảng thì chạy bước 5 kèm `--themes <theme-mặc-định>,android` và xem đúng nền tảng đó.

@@ -11,12 +11,13 @@ import json, sys
 sys.path.insert(0, sys.argv[1])
 import qadiff as D
 
-def rep(contrast=None, intent=None, deep=None, steps=('view',), deep_errors=()):
+def rep(contrast=None, intent=None, deep=None, steps=('view',), deep_errors=(), codes=None):
     out = [{'step': 'load', 'errors': [], 'check': None, 'dims': None}]
     for s in steps:
         dims = {'sw': 100, 'cw': 100, 'cut': []}
         if contrast is not None: dims['contrast'] = contrast
         if intent is not None: dims['intent'] = intent
+        if codes is not None: dims['codes'] = codes
         out.append({'step': s, 'errors': [], 'check': 'T', 'dims': dims})
     if deep is not None:
         out.append({'step': 'deep', 'errors': list(deep_errors), 'check': None, 'dims': None, 'deep': deep})
@@ -47,6 +48,9 @@ print(json.dumps({
     'known_deep_err': D.diff_report(None, rep(contrast=[], deep=EMPTY, deep_errors=['EXC lỗi cũ', 'EXC lỗi mới']), 's', known=KNOWN),
     'deep_err_new': D.diff_report(rep(contrast=[], deep=EMPTY, deep_errors=['EXC a']), rep(contrast=[], deep=EMPTY, deep_errors=['EXC a', 'EXC b']), 's'),
     'deep_err_old_kit': D.diff_report(rep(contrast=[]), rep(contrast=[], deep=EMPTY, deep_errors=['EXC a']), 's'),
+    'codes_new': D.diff_report(rep(contrast=[], codes=[]), rep(contrast=[], codes=['p: «UC-12»']), 's'),
+    'codes_old_kit': D.diff_report(rep(contrast=[]), rep(contrast=[], codes=['p: «UC-12»']), 's'),
+    'codes_label': D.debt_lines(D.group_debt([('light', 'a-1440', 'view', 'codes', 'p: «UC-12»')])),
 }, ensure_ascii=False))
 `;
 
@@ -107,4 +111,13 @@ test('nợ cũ in gộp: một mục mỗi dòng kèm ×n và chỗ đầu tiên
   assert.deepEqual(L.slice(0, 3), ['  tương phản (1):', '    a.chip "Gọi thợ" 3.84<4.5 (#FFFFFF trên #E06A2B) ×3 · light/a-1440 · view', '  bàn phím (25):']);
   assert.equal(L.length, 24);
   assert.equal(L[L.length - 1], '    … còn 5 mục');
+});
+
+// Mã tham chiếu trên trang đã render (probes.js codes, chỉ số 7 của sketch-to-map): mới thì chặn như tương phản;
+// mốc do bộ kiểm cũ ghi (chưa đo codes) thì là nợ cũ, không làm dự án đang chạy bỗng đỏ
+test('codes: dòng mới so với mốc là mới; mốc chưa đo codes thì là nợ cũ; nợ cũ in nhãn "mã lộ"', () => {
+  assert.deepEqual(R.codes_new.codes_new, [['view', 'p: «UC-12»']]);
+  assert.deepEqual(R.codes_old_kit.codes_new, []);
+  assert.deepEqual(R.codes_old_kit.debt, [['view', 'codes', 'p: «UC-12»']]);
+  assert.match(R.codes_label[0], /^ {2}mã lộ \(1\):/);
 });

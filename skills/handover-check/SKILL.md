@@ -6,7 +6,7 @@ description: >-
 
 # Handover Check · Kiểm tổng trước bàn giao
 
-> **v1.3 (05/10/2026)** · Ít lượt: B1 đọc nhật ký bằng một lệnh `handover.py ledger`; B3 chạy tổng bằng một lệnh `qa-check.py` *(cài hoặc cập nhật bộ kiểm, chạy tổng, in kết quả gọn và tên từng ảnh)*; bảng UX và luật sửa in đúng mục. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
+> **v1.4 (06/10/2026)** · Đọc thêm dòng `Bố cục`, `Độ phủ` *(có bản đồ của `sketch-to-map`)*, `mã lộ` và lượt sâu `lối tắt`. Ít lượt: B1 đọc nhật ký bằng một lệnh `handover.py ledger`; B3 chạy tổng bằng một lệnh `qa-check.py` *(cài hoặc cập nhật bộ kiểm, chạy tổng, in kết quả gọn và tên từng ảnh)*; bảng UX và luật sửa in đúng mục. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
 > **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này. Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`: hai chương trình này không đọc được. Lệnh `python` tự viết mà in tiếng Việt thì đặt `PYTHONIOENCODING=utf-8` trước lệnh: console Windows (cp1252) dừng giữa chừng với `UnicodeEncodeError`.
 > Lệnh dưới đây là của bộ kiểm trong `<skills>/sketch-to-site/templates/qa-kit/`. Lệnh `python _qa/…` chạy từ thư mục prototype, tức thư mục chứa `_qa/`. Dự án ghi lệnh riêng trong `AGENTS.md` hoặc `CLAUDE.md` thì theo đó.
 
@@ -69,8 +69,10 @@ Thoát 0 khi sạch, 1 khi còn lỗi hay khác biệt không gán được, 2 k
 | Mục trong kết quả | Làm gì |
 |---|---|
 | **Lỗi**: console, FAIL, im lặng, tràn ngang mới, chữ tràn hoặc bị cắt mới trong khung, preflight | Lỗi thật. Ghi lại, tìm lần sửa gây ra, **không tự sửa** |
-| **Tương phản, ý định, sâu** mới *(trạng thái, bàn phím, tương tác)* | Lỗi thật, như dòng Lỗi. Tìm lần sửa gây ra, **không tự sửa** |
+| **Tương phản, ý định, mã lộ, sâu** mới *(trạng thái, bàn phím, tương tác, lối tắt)* | Lỗi thật, như dòng Lỗi. Tìm lần sửa gây ra, **không tự sửa** |
 | **Nợ cũ** | Có từ trước khi kit đo mục này, hoặc bộ mới mang lỗi đã có ở bộ khác trong mốc. Không chặn `promote`. Kết quả đã gộp: mỗi mục một dòng, `×n` khi gặp ở nhiều bước, khổ, theme *(đủ danh sách trong `handover.json`)*. Liệt kê theo nhóm ở cổng và hỏi |
+| **Bố cục** | Dòng `Bố cục (n, cảnh báo, không chặn)`: hơn một nút chính một màn, nhóm menu hơn 7 mục, hơn 5 tab, khung viền dày lồng nhau. Không chặn `promote`. Dòng mới so với lần bàn giao trước thì nêu ở cổng kèm lần sửa gây ra. Lối tắt đá sang trang khác và tự chuyển trang là lỗi preflight *(P22, P23)*, nằm ở dòng Lỗi |
+| **Độ phủ** *(dự án có `map/features.js` của `sketch-to-map`)* | Dòng `Độ phủ: x/y chức năng …`. `THIẾU data-feature` hay `MÃ LẠ` là lỗi thật: màn đã dựng mất chức năng hay lối tắt của bản đồ. Chức năng ở màn chưa dựng là việc của đợt sau, chỉ báo số |
 | **Lượt sâu** | Dòng `Lượt sâu: n bộ (…)` nói bộ nào đã kiểm sâu. Có dòng `Lượt sâu không chạy` thì nêu lý do ở cổng: khi đó `sâu mới 0` không có nghĩa là sạch |
 | **Khác biệt đã gán** cho một lần sửa | Đọc lướt: giá trị mới có khớp ghi chú của lần sửa đó không. Không khớp → coi như chưa gán |
 | **Khác biệt không gán được** | Chạy lại riêng bộ đó một lần để loại nhiễu: `python _qa/run_all.py _qa/.recheck <tên bộ>`. Còn lệch → lỗi lan. Tìm lần sửa gây ra: file đổi của trang đó giao với nhật ký. Nếu các lần sửa đã commit riêng thì chạy bộ đó trên commit cũ bằng `git worktree` |
@@ -95,16 +97,17 @@ Màn app mobile *(`<html data-surface="app">`)*: soát thêm mục *App mobile* 
   - `tweak-site` không sửa `DESIGN.md`. Với từng dòng `tweak:` của nhật ký, ghi bù: icon mới vào danh sách icon, thành phần thêm hay bỏ vào sơ đồ trang, số chỗ gọi đã đổi.
 - `_qa/QA.md`: **một** mục "Bàn giao <ngày>" gồm:
   - thư mục chạy;
-  - bảng số cho từng theme: bộ, bước, console, FAIL, tràn, cắt, tương phản, ý định, sâu, `check` đổi, nợ cũ;
+  - bảng số cho từng theme: bộ, bước, console, FAIL, tràn, cắt, tương phản, ý định, mã lộ, sâu, `check` đổi, nợ cũ;
+  - dòng `Bố cục` và dòng `Độ phủ` *(khi có bản đồ)*;
   - danh sách lần sửa lấy từ nhật ký, mỗi lần kèm các `check` đổi;
   - kết quả UX;
   - lỗi còn lại.
 
 ### 🛑 Cổng · Nghiệm thu bàn giao
-Báo cáo bằng số thật: dòng tổng của từng theme, số lần sửa, số khác biệt đã gán và chưa gán, lỗi kèm lần sửa gây ra, UX, link mở `index.html`. Hỏi bằng `AskUserQuestion`:
+Báo cáo bằng số thật: dòng tổng của từng theme, số lần sửa, số khác biệt đã gán và chưa gán, lỗi kèm lần sửa gây ra, UX, dòng `Bố cục` và dòng `Độ phủ` *(khi có bản đồ)*, link mở `index.html`. Hỏi bằng `AskUserQuestion`:
 - Không có lỗi: **Chốt bàn giao (Khuyến nghị)** · **Sửa trước** *(nói điểm cần sửa)*.
 - Có lỗi: **Sửa lỗi rồi kiểm lại (Khuyến nghị)** *(liệt kê)* · **Chốt, để lỗi lại** *(ghi vào QA.md là lỗi đã biết)*.
-- Có **nợ cũ**: hỏi thêm một câu trong cùng lượt: **Nhận nợ cũ vào mốc** *(promote; lần sau chỉ chặn lỗi mới)* · **Sửa trước** *(liệt kê theo nhóm: tương phản, ý định, trạng thái, bàn phím, tương tác, console lượt sâu)*.
+- Có **nợ cũ**: hỏi thêm một câu trong cùng lượt: **Nhận nợ cũ vào mốc** *(promote; lần sau chỉ chặn lỗi mới)* · **Sửa trước** *(liệt kê theo nhóm: tương phản, ý định, mã lộ, trạng thái, bàn phím, tương tác, lối tắt, console lượt sâu)*.
 
 Không có công cụ `AskUserQuestion` *(ví dụ Codex)*: viết câu hỏi và các lựa chọn đánh số ra tin nhắn. Hỏi xong thì **kết thúc lượt**. Im lặng không phải đồng ý.
 

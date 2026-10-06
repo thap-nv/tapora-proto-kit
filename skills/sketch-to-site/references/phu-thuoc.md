@@ -4,13 +4,14 @@
 
 Kiểm nhanh: `python <skills>/sketch-to-site/scripts/preflight.py --deps` *(liệt kê skill thiếu theo mức; thoát mã 1 nếu thiếu mức 🔴)*. Script tìm skill ở thư mục cạnh `sketch-to-site`, ở `.claude/skills`, `.agents/skills`, `.codex/skills` của dự án và của thư mục người dùng, và trong plugin đã cài.
 Gói `tapora-proto-kit` đã kèm mọi skill trong bảng. `huashu-design` trong gói là bản rút gọn, đã bỏ slide, animation, video và âm thanh.
-Danh sách này **đo bằng grep** mọi tên skill xuất hiện trong thư mục `sketch-to-site/` (29/09): 14 skill. Thêm một chỗ trỏ tới skill mới thì **thêm dòng ở đây và ở `DEPS` trong `preflight.py`**.
+Danh sách này **đo bằng grep** mọi tên skill xuất hiện trong thư mục `sketch-to-site/` (29/09, thêm `sketch-to-map` 06/10): 15 skill. Thêm một chỗ trỏ tới skill mới thì **thêm dòng ở đây và ở `DEPS` trong `preflight.py`**.
 
 | Mức | Skill | Dùng ở | Thiếu thì sao |
 |---|---|---|---|
 | 🔴 **Bắt buộc** | `sketch-to-concept` | B0 *(Phần A: Cổng 1–2, `CONCEPT.md`)* | **Hỏng** khi dự án chưa có `CONCEPT.md`: không có bước lên concept |
 | 🔴 | `ui-ux-pro-max` | `sketch-to-concept` A2 *(script tra token)* · B1 *(luật app)* · `preflight.py` P07 *(dữ liệu font, kiểm dấu tiếng Việt)* | **Hỏng**: không tra được, P07 thành P15, `--selftest` trả mã 1 |
-| 🟠 **Nên chép** | `laws-of-ux-checklist` | B4 bước 3 | Nhẹ: 12 điểm đã chép sẵn vào `qa-gate.md` mục 3 |
+| 🟠 **Nên chép** | `sketch-to-map` | Dự án lớn *(ngưỡng ở mục 0 của nó)*: bản đồ chức năng trước B2 *(`map/`)* · B3 `map.mjs slice` · B4 độ phủ trong `qa-check.py` | Dự án lớn không có bước bản đồ, không theo dõi chức năng hoãn; `qa-check.py` in dòng bỏ qua độ phủ |
+| 🟠 | `laws-of-ux-checklist` | B4 bước 3 | Nhẹ: 12 điểm đã chép sẵn vào `qa-gate.md` mục 3 |
 | 🟠 | `laws-of-ux-review` | Cổng 4 | Mất lựa chọn soát sâu 0–60 |
 | 🟠 | `laws-of-ux` | Cổng 4, qua `laws-of-ux-review` | Review **không chạy được**: nó đọc `laws-of-ux/references/ux-laws-complete.md`. **Luôn chép cả ba `laws-of-ux*` cùng nhau** |
 | 🟠 | `design-taste-frontend` | Site giới thiệu: luật bố cục §4.7, dấu hiệu AI §9, soát §14 · stack React §3 · soát site cũ §11 | Mất bản đầy đủ của luật bố cục. Bản tóm tắt ở `qa-gate.md` mục 4 vẫn dùng được |

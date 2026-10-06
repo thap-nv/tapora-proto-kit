@@ -36,12 +36,19 @@ python <skills>/sketch-to-site/scripts/preflight.py <thư-mục> --save <file.js
 | `P19` | CẢNH BÁO | `var(--x)` không có giá trị dự phòng mà trang *(kể cả CSS/JS nạp kèm)* không định nghĩa `--x`. Bỏ qua trang nạp `tokens.js` *(bảng concept)* |
 | `P20` | CẢNH BÁO | Màu viết cứng trong `<style>` hay file `.css` *(không tính `tokens.css`, `themes.css`, định nghĩa biến, giá trị dự phòng)*; lớp màu thô của Tailwind *(`bg-zinc-100`, `text-[#333]`)*. Cố ý thì ghi `/* color-ok: <lý do> */` cùng dòng |
 | `P21` | LỖI | `themes.css` cũ hơn `themes.json` *(đã sửa json mà chưa chạy `themes.mjs`)* |
+| `P22` | LỖI | **Lối tắt đá đi:** liên kết trong nội dung *(không tính `<nav>`, `<aside>`)* mà chữ là việc *(Đổi, Xếp, Bán, Thêm, Đặt, Thu tiền…)* sang trang khác, trang đó không có đường về *(đọc `?from=`, `history.back`, chữ "Quay lại")* và liên kết không mang `?from=`. Sửa: mở việc **ngay trên trang** *(hộp thoại, ngăn trượt, sheet)*; chỉ sang trang khi việc dài nhiều bước, kèm `?from=` và nút Quay lại giữ trạng thái |
+| `P23` | LỖI | **Tự chuyển trang:** `location.href = …`, `location.assign/replace` trong mã của trang *(đổi tham số trên chính trang thì im)*. Xong việc thì ở lại, báo kết quả kèm liên kết mở tiếp. Cố ý *(chọn vai ở trang lối vào, đăng nhập xong)* thì ghi `// nav-ok: <lý do>` cùng dòng |
+| `P24` | CẢNH BÁO | Mã tham chiếu của tài liệu *(UC-, BR-, XD-, OQ-, F-…; có `map/ids.json` thì cả hệ mã trong đó)* trong chữ của trang. Chỉ cảnh báo vì trang có thể ẩn mã lúc chạy; bộ kiểm đo lại trên trang đã render và **chặn** ở đó *(mục 2, `mã lộ`)* |
+| `P25` | CẢNH BÁO | Một việc mang nhiều nhãn: cùng `data-feature` mà chữ khác, hay cùng đối tượng mà động từ đồng nghĩa khác giữa các trang *(Đổi buổi · Dời buổi; Huỷ · Hủy)* |
+| `P26` | CẢNH BÁO | Ô số điện thoại hay ngày chỉ nhận một cách nhập *(pattern không nhận `+`, `maxlength` ≤ 10, regex `^0…{9}$` mà file không chuẩn hoá `+84`, dấu cách; ô ngày chữ với pattern dd/mm/yyyy)* |
+
+P22, P23 đọc **mọi trang cùng lúc** *(cần xem trang đích)*, kể cả khuôn HTML trong chuỗi JS; bỏ qua trang bắt đầu bằng `_` *(`_system.html`)* và file `.js` dùng chung. Đo trên một prototype thật 28 trang *(05/10/2026)*: bắt đủ 17 lối tắt đá đi và 1 chỗ tự chuyển trang mà review theo từng trang chấm đạt.
 
 Thoát mã `1` khi còn **LỖI**. Cảnh báo thì phải **đọc từng dòng** rồi sửa, hoặc ghi lý do giữ vào `DECISIONS.md`.
 
 **Phạm vi đọc:** trang HTML **và** CSS/JS cục bộ mà trang nạp *(`<link rel=stylesheet>`, `<script src>`)*. File dùng chung chỉ báo một lần. **Không đọc** chữ do JS sinh lúc chạy *(ví dụ emoji nằm trong chuỗi JS rồi `innerHTML` ra)*. Phần đó phải soát bằng ảnh chụp ở mục 2.
 
-⚠️ **Script đã được thử trên trang cố ý làm hỏng** *(`--selftest`: 18/18 mã kêu trên trang hỏng · im trên trang sạch, kể cả `data-clip-ok` có lý do và selector `[data-clip-ok]` trong CSS · `--kind app` bỏ P11 · CSS nạp kèm báo đúng một lần · màn app kêu P16, P17 và không kêu P11 · `--compare` bỏ qua dòng xê dịch, bắt đúng lỗi mới · P21 kêu khi băm lệch, im khi khớp · P19 bỏ qua trang nạp tokens.js)*. Selftest cũng đã được **bẻ thử**: tắt một phép kiểm thì selftest phải trả mã 1. Sửa script thì chạy lại `--selftest`.
+⚠️ **Script đã được thử trên trang cố ý làm hỏng** *(`--selftest`: 18/18 mã kêu trên trang hỏng · im trên trang sạch, kể cả `data-clip-ok` có lý do và selector `[data-clip-ok]` trong CSS · `--kind app` bỏ P11 · CSS nạp kèm báo đúng một lần · màn app kêu P16, P17 và không kêu P11 · `--compare` bỏ qua dòng xê dịch, bắt đúng lỗi mới · P21 kêu khi băm lệch, im khi khớp · P19 bỏ qua trang nạp tokens.js · P22–P26 kêu đúng số lần trên bộ trang mẫu; đường về, `?from=`, menu, `nav-ok`, `_system.html` thì im)*. Selftest cũng đã được **bẻ thử**: tắt một phép kiểm thì selftest phải trả mã 1. Sửa script thì chạy lại `--selftest`.
 
 ---
 
@@ -58,12 +65,17 @@ Mỗi bước, bộ chạy tự đo:
   - Phép đo tràn ngang không thấy lỗi này, vì phần tràn nằm trong khung.
   - Cố ý *(tràn lề, marquee, slide ló)* thì gắn `data-clip-ok="<lý do>"` vào khung, ví dụ `data-clip-ok="marquee chạy ngang"`. Thiếu lý do thì preflight báo P18. **Không** gắn cho chỗ tràn không cố ý *(mục 6)*.
 - **tương phản trên nền thật** *(`probes.js`)*: mọi chữ và placeholder đang hiện. Phép đo trộn các lớp nền trong suốt, lấy mẫu dải chuyển, theo cả lớp anh em nằm dưới chữ *(dải màu đầu app)*. Ngưỡng 4,5:1, chữ lớn 3:1. Điểm nằm trên ảnh thì bỏ, không đoán. Chữ nằm trên lớp `pointer-events:none` mà bị đo nhầm nền: gắn `data-contrast-bg="<selector lớp đó>"` vào chữ hoặc khung *(chữ vẫn được đo)*;
-- **màu theo ý định**: nút nhãn nguy hiểm tô màu chính, nút đồng ý tô màu nguy hiểm, cùng nhãn nguy hiểm mà hai màu. Nhãn nguy hiểm: *xoá, gỡ, thu hồi, từ chối, vô hiệu hoá, chấm dứt, khoá tài khoản, đặt lại, khôi phục mặc định, huỷ + việc gì*. "Huỷ", "Huỷ bỏ" của hộp thoại là thoát ra; xoá hay đặt lại bộ lọc, ô tìm kiếm, lựa chọn không làm mất dữ liệu: không tính. "Đặt lại" chỉ là nhãn nguy hiểm khi đi với thứ bị mất dữ liệu *(đặt lại dữ liệu, cài đặt, mặc định, tất cả)*. "Đặt lại mật khẩu" và đặt hàng lại *("Đặt lại" trơn, "đặt lại đơn, lịch…")* không tính. Nhãn đồng ý: *lưu, xác nhận, đồng ý, tiếp tục, gửi, duyệt, thanh toán, đặt, tạo, thêm*. Hai danh sách chép ở `templates/qa-kit/probes.js`: sửa một chỗ thì sửa cả hai.
+- **màu theo ý định**: nút nhãn nguy hiểm tô màu chính, nút đồng ý tô màu nguy hiểm, cùng nhãn nguy hiểm mà hai màu. Nhãn nguy hiểm: *xoá, gỡ, thu hồi, từ chối, vô hiệu hoá, chấm dứt, khoá tài khoản, đặt lại, khôi phục mặc định, huỷ + việc gì*. "Huỷ", "Huỷ bỏ" của hộp thoại là thoát ra; xoá hay đặt lại bộ lọc, ô tìm kiếm, lựa chọn không làm mất dữ liệu: không tính. "Đặt lại" chỉ là nhãn nguy hiểm khi đi với thứ bị mất dữ liệu *(đặt lại dữ liệu, cài đặt, mặc định, tất cả)*. "Đặt lại mật khẩu" và đặt hàng lại *("Đặt lại" trơn, "đặt lại đơn, lịch…")* không tính. Nhãn đồng ý: *lưu, xác nhận, đồng ý, tiếp tục, gửi, duyệt, thanh toán, đặt, tạo, thêm*. Hai danh sách chép ở `templates/qa-kit/probes.js`: sửa một chỗ thì sửa cả hai;
+- **mã lộ** *(chặn)*: mã tham chiếu của tài liệu *(UC-, BR-, XD-, OQ-, F-…)* trong chữ đang hiện và trong `title`, `aria-label`, `placeholder`, `alt`. Đo trên trang đã render nên trang ẩn mã lúc chạy không bị báo; mã của dữ liệu *(mã học viên `SX-0412`)* không tính. Hệ mã riêng của dự án *(SV-, DD-…)*: thêm vào `"codes"` của `qa.config.json`;
+- **bố cục** *(cảnh báo, không chặn; chỉ số của `sketch-to-map`)*: hơn một nút chính nhìn thấy cùng lúc *(có hộp thoại đang mở thì chỉ đếm trong hộp)* · nhóm menu hơn 7 mục · hơn 5 tab · khung viền từ 2px và khung lồng 3 lớp ở màn đầu. In ở dòng `Bố cục (n, cảnh báo, không chặn)`.
+
+**Độ phủ** *(dự án có `map/features.js` của `sketch-to-map`)*: `qa-check.py` chạy thêm `map.mjs coverage`. Mỗi màn đã dựng phải gắn `data-feature="<mã>"` *(viết nguyên văn)* cho mọi chức năng đặt trên màn và mọi lối tắt đi từ màn; lối tắt gắn thêm `data-mo="<kiểu đã khai>"`. Thiếu hay mã lạ thì chưa sạch; màn chưa dựng *(dựng theo đợt)* chỉ được đếm.
 
 **Lượt kiểm sâu** *(chỉ `handover.py run`; `templates/qa-kit/deep.mjs`)*: chạy ở bộ khói khổ desktop của mỗi trang; dự án không có bộ khói thì bộ khổ desktop đầu tiên của trang. `handover.py` in dòng `Lượt sâu: n bộ (…)`, hoặc `Lượt sâu không chạy: <lý do>`.
 - **trạng thái:** chữ của từng control khi di chuột và khi focus bằng bàn phím phải đạt ngưỡng;
 - **bàn phím:** Tab tới được mọi control trong vòng Tab *(có hộp thoại modal thì chỉ xét trong hộp thoại)* · widget nhiều mục có đường vào bằng bàn phím · widget khai roving tabindex thì phím mũi tên phải chạy · control tự dựng mang trạng thái đổi được bằng Enter hoặc Space;
 - **tương tác:** bấm thật từng control hứa trạng thái *(`aria-pressed`, `aria-expanded`, `aria-checked`, `aria-selected`, `aria-sort`, role switch, tab, option)*: phải đổi thứ gì đó, và khi thuộc tính trạng thái đổi thì control phải nhìn khác;
+- **lối tắt:** bấm thật từng nút hứa mở tại chỗ *(`data-mo` là `hop-thoai`, `ngan-truot`, `sheet`; `data-modal-open`; `data-sheet-open`)* rồi nhấn Esc: phải ở lại trang, mở một lớp phủ *(hộp thoại, ngăn trượt, sheet hiện trong khung nhìn)*, Esc đóng nó, và focus về lại nút mở. Dòng lỗi: `lối tắt sang trang khác` · `bấm lối tắt mà không mở gì trên trang` · `Esc không đóng` · `đóng xong focus không về nút mở`;
 - `data-demo-state="<trạng thái>"`: phần tử vẽ một trạng thái tĩnh *(trang `_system.html`)*, không phải control thật; lượt sâu không bấm thử. **Không** gắn lên control thật để né *(mục 6)*.
 
 **Độ chặt:** như chữ bị cắt, chỉ chặn lỗi **mới** so với mốc. Chưa có mốc thì mọi dòng là lỗi: sửa về 0. Mốc do bộ kiểm cũ ghi *(chưa đo mục đó, chưa có lượt sâu)* thì dòng là **nợ cũ**: in ra mà không chặn; `handover-check` hỏi người dùng sửa hay nhận vào mốc. Bộ mới *(trang mới thêm vào dự án đã có mốc)* mang dòng đã có ở bộ khác trong mốc *(component dùng chung)* thì dòng đó cũng là nợ cũ. Lỗi console của lượt sâu được so với mốc như các phép đo khác. Nợ cũ in gộp: mỗi mục một dòng, kèm `×n` khi gặp ở nhiều bước, khổ, theme.
@@ -165,7 +177,9 @@ Chạy trên **từng trang**, đọc code thật, mỗi điểm ✅/❌ kèm `f
 ```markdown
 **Kiểm cơ giới:** 0 lỗi · n cảnh báo (đã xử: …)
 **Hiển thị:** 1440 ✅ · 768 ✅ · 390 ✅ — ảnh ở `_qa/`
-**Đo trên trang:** tương phản 0 · ý định 0 · sâu 0 *(trạng thái, bàn phím, tương tác)* · nợ cũ n *(nếu có)*
+**Đo trên trang:** tương phản 0 · ý định 0 · mã lộ 0 · sâu 0 *(trạng thái, bàn phím, tương tác, lối tắt)* · nợ cũ n *(nếu có)*
+**Bố cục:** lối tắt đá đi 0 · tự chuyển trang 0 *(P22, P23)* · n cảnh báo *(dòng `Bố cục` của bộ kiểm; nêu cái nào giữ và vì sao)*
+**Độ phủ** *(có bản đồ)*: x/y chức năng có trên trang đã dựng · n ở màn chưa dựng *(đợt sau)* · 0 thiếu
 **UX 12 điểm:** Trang chủ 12/12 · Sản phẩm 11/12 (❌ #7: …)
 **Review độc lập:** n vấn đề (chặn nghiệm thu · nên sửa · nhỏ), đã sửa n, đưa lên cổng n · hoặc: không có review độc lập
 **Còn chờ:** 4 ảnh thật (…) · 2 số minh hoạ (…)
@@ -213,7 +227,7 @@ Chạy trên **từng trang**, đọc code thật, mỗi điểm ✅/❌ kèm `f
 ```text
 Bạn review prototype {tên dự án} trước khi nghiệm thu, như một giám đốc thiết kế nhận bản của người khác. Bạn không dựng nó. Chỉ đọc, không sửa file nào. Mặc định bản này chưa đạt cho tới khi ảnh chứng minh ngược lại; qua bộ kiểm không phải bằng chứng về gu.
 
-Đọc: {thư mục prototype}/CONCEPT.md, {thư mục prototype}/DESIGN.md (sơ đồ trang ở mục 9), {thư mục prototype}/DECISIONS.md (phạm vi ở Cổng 3, giả định ở B1; thứ đã khoá ở một cổng thì chỉ nêu, không đề xuất đổi), mã nguồn trong {thư mục prototype}/site/ (để dẫn file:dòng), và {skills}/sketch-to-site/references/qa-gate.md mục 4.
+Đọc: {thư mục prototype}/CONCEPT.md, {thư mục prototype}/DESIGN.md (sơ đồ trang ở mục 9, hay map/MAP.md khi có), {thư mục prototype}/DECISIONS.md (phạm vi ở Cổng 3, giả định ở B1; thứ đã khoá ở một cổng thì chỉ nêu, không đề xuất đổi), mã nguồn trong {thư mục prototype}/site/ (để dẫn file:dòng), và {skills}/sketch-to-site/references/qa-gate.md mục 4.
 
 Mã nguồn đọc bằng grep -n hay đọc đúng đoạn cần dẫn, không in cả file ra.
 
@@ -232,6 +246,7 @@ Soát theo thứ tự:
 8. Tương tác thật: đối chiếu dòng "sâu" trong kết quả handover; control nào trông bấm được mà không làm gì.
 9. Câu chữ: nút bắt đầu bằng động từ; lỗi nói cách sửa; không giọng "AI cố tỏ ra sâu sắc".
 10. Concept còn nguyên: Ý, ẩn dụ, khoảnh khắc đọc lần hai, tương tác đặc trưng thấy ở những trang nào, mất ở trang nào.
+11. Lối tắt và chi phí thao tác: việc hằng ngày của mỗi vai mất mấy lần bấm từ trang chủ; nút mở việc của trang khác thì mở tại chỗ (hộp thoại, ngăn trượt, sheet) hay đá sang trang kia không đường về; một việc hai nhãn. Đối chiếu dòng Bố cục, P22–P25.
 
 Mỗi vấn đề phải có bằng chứng: file:dòng, một số đo của bộ kiểm, hoặc một chỗ cụ thể trên một ảnh cụ thể (trang, khổ, theme). "Trông chung chung" không phải một vấn đề.
 

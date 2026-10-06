@@ -194,7 +194,13 @@ ws.addEventListener('message', ev => {
 const send = (method, params = {}) => new Promise(r => { const i = ++id; pend.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
 const waitLoad = ms => new Promise(r => { const t = setTimeout(r, ms); loadWaiters.push(() => { clearTimeout(t); r(); }); });
 // Bơm lõi màu và phép đo vào trang trước mỗi lần đo: trang có thể vừa chuyển. probes.js tự bỏ qua khi đã có
-const inject = async () => { if (!PROBE_SRC) return false; for (const src of PROBE_SRC) await send('Runtime.evaluate', { expression: src }); return true; };
+// Hệ mã riêng của dự án cho __qa.codes(): "codes" trong qa.config.json (mặc định UC-, BR-, XD-, OQ-… có sẵn trong probes.js)
+const inject = async () => {
+  if (!PROBE_SRC) return false;
+  await send('Runtime.evaluate', { expression: `window.__qaCodes = ${JSON.stringify(Array.isArray(cfg.codes) ? cfg.codes : [])}` });
+  for (const src of PROBE_SRC) await send('Runtime.evaluate', { expression: src });
+  return true;
+};
 await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
 // File tải xuống (nút xuất) lưu trong hồ sơ tạm, xoá cùng hồ sơ khi chạy xong; mặc định headless lưu vào Downloads của máy
 await send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: join(prof, 'downloads') });
@@ -228,7 +234,7 @@ if (tm === 'dark' || tm === 'light') await send('Emulation.setEmulatedMedia', { 
 async function measureDims() {
   const probed = await inject();
   const safe = f => `(()=>{try{return __qa.${f}()}catch(e){return ['LỖI ĐO '+e.message]}})()`;
-  const measure = probed ? `,contrast:${safe('contrast')},intent:${safe('intent')}` : '';
+  const measure = probed ? `,contrast:${safe('contrast')},intent:${safe('intent')},codes:${safe('codes')},layout:${safe('layout')}` : '';
   const dimsReply = await send('Runtime.evaluate', { expression: `JSON.stringify({sw:document.documentElement.scrollWidth,cw:document.documentElement.clientWidth,cut:(${layoutCheck})(),wide:(${wideCheck})()${measure}})`, returnByValue: true });
   const dims = dimsReply.result?.result?.value;
   if (dims === undefined) errors.push('EVAL không đo được bố cục: ' + String(dimsReply.result?.exceptionDetails?.exception?.description || dimsReply.error?.message || 'không có giá trị').split('\n')[0]);

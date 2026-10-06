@@ -16,6 +16,7 @@
   4. **Difference:** what sets the product apart from competitors
   5. **Direction:** 3 words · likes · dislikes or bans
   6. **Constraints:** brand, required colours or fonts, references and how closely to follow them
+  7. **Scale** *(counted, never asked)*: requirement docs (how many, total size, folder) · function names · roles · surfaces. Record it in the *Quy mô* row of Gate 1 in `DECISIONS.md`, with whether it meets the `sketch-to-map` threshold (§0 there: from 2 requirement docs, or 15 function names, or 2 roles, or several surfaces)
 
 ### 🛑 Gate 1 · Concept brief
 

@@ -61,13 +61,14 @@ test('khuôn DECISIONS.md và DESIGN.md theo 4 cổng mới', () => {
   assert.match(des, /CONCEPT\.md/);
 });
 
-test('phụ thuộc: sketch-to-concept có trong bảng phu-thuoc.md và DEPS, --deps đủ 14/14', () => {
+test('phụ thuộc: sketch-to-concept và sketch-to-map có trong bảng phu-thuoc.md và DEPS, --deps đủ 15/15', () => {
   assert.match(read(path.join(S2S, 'references', 'phu-thuoc.md')), /\| 🔴[^|]*\| `sketch-to-concept` \|/);
   assert.match(read(path.join(S2S, 'SKILL.md')), /^## 9\. [^\n]*\n\n[^\n]*`references\/phu-thuoc\.md`/m);
   assert.match(read(path.join(S2S, 'scripts', 'preflight.py')), /"sketch-to-concept", \["SKILL\.md", "templates\/concept-board\.html"\]/);
   const r = spawnSync(PYTHON, [path.join(S2S, 'scripts', 'preflight.py'), '--deps'], { encoding: 'utf8', cwd: REPO });
   assert.equal(r.status, 0, r.stdout + r.stderr);
-  assert.match(r.stdout, /14\/14 có đủ/);
+  assert.match(read(path.join(S2S, 'references', 'phu-thuoc.md')), /\| 🟠[^|]*\| `sketch-to-map` \|/);
+  assert.match(r.stdout, /15\/15 có đủ/);
 });
 
 test('preflight --selftest vẫn qua', () => {

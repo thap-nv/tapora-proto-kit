@@ -90,6 +90,7 @@ VI_FONT_ISSUES = {
 DEPS = [
     ("🔴 bắt buộc", "sketch-to-concept", ["SKILL.md", "templates/concept-board.html"]),
     ("🔴 bắt buộc", "ui-ux-pro-max", ["scripts/search.py", "data/google-fonts.csv"]),
+    ("🟠 nên chép", "sketch-to-map", ["SKILL.md", "scripts/map.mjs", "templates/map-shell.html"]),
     ("🟠 nên chép", "laws-of-ux-checklist", ["SKILL.md"]),
     ("🟠 nên chép", "laws-of-ux-review", ["SKILL.md"]),
     ("🟠 nên chép", "laws-of-ux", ["references/ux-laws-complete.md", "references/code-patterns.md"]),
@@ -316,7 +317,10 @@ def check_file(path, kind, fonts, seen_assets):
     visible = p.texts + p.alts
     has_vi = any(VI_CHARS.search(t) for _, t in p.texts)
 
+    req = req_code_re(path)
     for line, t in visible:
+        if req.search(t):
+            add("P24", WARN, line, "Mã tham chiếu của tài liệu trong chữ của trang: người dùng không biết mã. Bỏ mã, giữ tên việc; nguồn ghi ở chú thích hay map/features.js. Bộ kiểm đo lại trên trang đã render và chặn ở đó (trang ẩn mã lúc chạy thì chỉ còn cảnh báo này)", req.search(t).group(0))
         if EMOJI.search(t):
             add("P01", ERROR, line, "Emoji trong chữ hiển thị/alt; dùng icon SVG", t[:60])
         if DASHES.search(t):
@@ -366,6 +370,19 @@ def check_file(path, kind, fonts, seen_assets):
     for line in p.img_no_alt:
         add("P08", ERROR, line, "<img> thiếu thuộc tính alt")
 
+    for m in TEL_INPUT.finditer(src):
+        tag = m.group(0)
+        pat = re.search(r"\bpattern=[\"']([^\"']*)[\"']", tag)
+        ml = re.search(r"\bmaxlength=[\"']?(\d+)", tag)
+        if (pat and "+" not in pat.group(1)) or (ml and int(ml.group(1)) <= 10):
+            add("P26", WARN, line_of(src, m.start()), "Ô số điện thoại chỉ nhận một cách nhập: nhận cả +84, dấu cách, dấu chấm rồi tự chuẩn hoá (Postel)", tag[:60])
+    for where, text in [(path, src)] + assets:
+        m = STRICT_PHONE.search(text)
+        if m and not PHONE_NORMALIZE.search(text):
+            add("P26", WARN, line_of(text, m.start()), "Kiểm số điện thoại chỉ nhận 0 và 9 chữ số: chuẩn hoá trước (bỏ dấu cách, dấu chấm, đổi +84 thành 0) rồi mới kiểm (Postel)", m.group(0), where=where)
+    for m in STRICT_DATE.finditer(src):
+        add("P26", WARN, line_of(src, m.start()), "Ô ngày chỉ nhận dd/mm/yyyy: dùng input type=date, hay nhận cả d/m/yy, dấu gạch, dấu chấm (Postel)", m.group(0)[:60])
+
     if MOTION.search(bundle) and not REDUCED.search(bundle):
         m = MOTION.search(src)
         where, text = (path, src) if m else next(((a, t) for a, t in assets if MOTION.search(t)), (path, src))
@@ -408,6 +425,126 @@ def check_file(path, kind, fonts, seen_assets):
     return out
 
 
+# ---- Bố cục và chi phí thao tác (chỉ số của sketch-to-map; rút từ measure-kit/flowscan.js, đo trên một prototype thật 28 trang) ----
+# P22 LỖI: lối tắt hành động (<a href="trang-khác.html"> mà chữ bắt đầu bằng động từ) trong nội dung trang, không tính <nav>, <aside>,
+#   mà trang đích không có đường về (đọc ?from/back/ve/return, history.back, document.referrer, chữ "Quay lại") và liên kết không mang ?from=.
+# P23 LỖI: trang tự chuyển sang trang khác (location.href = …, location.assign/replace) trong mã của trang; đổi tham số trên chính trang
+#   (?…, #…, location.pathname) thì im. Cố ý (chọn vai ở trang lối vào, đăng nhập xong) thì ghi // nav-ok: <lý do> cùng dòng.
+# P22, P23 bỏ qua trang bắt đầu bằng "_" (_system.html: trang mẫu component, không phải luồng thật) và file .js dùng chung.
+# P24 CẢNH BÁO: mã tham chiếu của tài liệu (UC-, BR-, XD-, OQ-, F-…; có map/ids.json thì cả hệ mã trong đó) trong chữ hiển thị.
+#   Chỉ cảnh báo: trang có thể ẩn mã lúc chạy (một prototype thật bỏ mã khỏi chữ bằng JS). Chặn ở bộ kiểm, đo trên trang đã render (probes.js).
+# P25 CẢNH BÁO: một việc mang nhiều nhãn giữa các trang: cùng data-feature mà chữ khác; hay cùng đối tượng mà động từ đồng nghĩa khác
+#   (Đổi buổi · Dời buổi; Huỷ · Hủy).
+# P26 CẢNH BÁO: ô số điện thoại hay ngày chỉ nhận một cách nhập: input tel có pattern không nhận +, maxlength ≤ 10; regex ^0…{9}$
+#   mà file không chuẩn hoá +84 hay dấu cách; input ngày dạng chữ với pattern dd/mm/yyyy.
+ACTION_LINK = re.compile(r"^(?:Bán|Xếp|Đổi|Dời|Ghi|Thêm|Đăng ký|Tạo|Sửa|Huỷ|Hủy|Gửi|Chuyển|Duyệt|Lập|Check-in|Nhập|Xử lý|Khớp|Viết|Mua"
+                         r"|Đặt|Thu tiền|Hoàn|Xoá|Xóa|Bảo lưu|Gia hạn|Xác nhận|Điểm danh|Báo nghỉ|Báo vắng|Nộp|Cập nhật|Gán|Tạm dừng|Ngừng)(?!\w)", re.I)
+RETURN_PATH = re.compile(r"get\(\s*['\"](?:from|back|ve|return|quay)['\"]\s*\)|history\.back\(|document\.referrer|Quay lại")
+CARRY_FROM = re.compile(r"[?&](?:from|back|ve|return)=")
+PAGE_LINK = re.compile(r"<a\b[^>]*?href=[\"']([^\"'#:]*?\.html[^\"']*)[\"'][^>]*>([\s\S]{0,300}?)</a>", re.I)
+CONTROL = re.compile(r"<(button|a)\b([^>]*)>([\s\S]{0,200}?)</\1>", re.I)
+NAV_BLOCK = re.compile(r"<(nav|aside)\b[\s\S]*?</\1>", re.I)
+AUTO_NAV = re.compile(r"(?:window\.)?location\.(?:href|assign|replace)\s*(?:=(?!=)|\()\s*([^;\n]{0,80})|window\.location\s*=(?!=)\s*([^;\n]{0,80})")
+NAV_OK = re.compile(r"nav-ok:\s*\S")
+REQ_PREFIX = ["UC", "BR", "US", "FR", "NFR", "NF", "XD", "OQ", "AC", "REQ", "YC", "EC", "CR", "F"]
+SYN_VERBS = [("đổi", "dời", "chuyển"), ("huỷ", "hủy", "xoá", "xóa"), ("thêm", "tạo"), ("sửa", "chỉnh sửa", "cập nhật")]
+TEL_INPUT = re.compile(r"<input\b[^>]*\btype=[\"']tel[\"'][^>]*>", re.I)
+STRICT_PHONE = re.compile(r"/\^\(?\[?0[^/\n]{0,30}\{[89]\}[^/\n]{0,12}\$/")
+PHONE_NORMALIZE = re.compile(r"\+84|['\"]84['\"]|\\\+\??84|replace\(\s*/(?:\\D|\[\^0-9\]|\[\^\\d\]|\\s|\[\\s)")
+STRICT_DATE = re.compile(r"<input\b[^>]*\btype=[\"']text[\"'][^>]*\bpattern=[\"'][^\"']*\\d\{2\}/\\d\{2\}/\\d\{4\}", re.I)
+blank = lambda m: re.sub(r"[^\n]", " ", m.group(0))    # thay một đoạn bằng khoảng trắng, giữ số dòng và vị trí
+
+
+def req_code_re(path):
+    # Hệ mã của tài liệu: mặc định REQ_PREFIX; có map/ids.json (sketch-to-map, sources.py) ở thư mục prototype thì thêm hệ mã trong đó
+    prefixes = list(REQ_PREFIX)
+    d = os.path.dirname(os.path.abspath(path))
+    for _ in range(5):
+        ids = os.path.join(d, "map", "ids.json")
+        if os.path.isfile(ids):
+            try:
+                with open(ids, encoding="utf-8") as fh:
+                    prefixes += list((json.load(fh).get("systems") or {}).keys())
+            except (OSError, ValueError):
+                pass
+            break
+        d = os.path.dirname(d)
+    alt = "|".join(sorted({re.escape(p) for p in prefixes if p}, key=len, reverse=True))
+    return re.compile(rf"(?<![\w-])(?:{alt})-(?:[A-Z]{{1,4}}-)?\d+(?!\w)")
+
+
+def controls(src):
+    """Nút và liên kết của trang, kể cả khuôn HTML trong chuỗi JS (trang dựng nội dung bằng JS): [(dòng, nhãn, data-feature)]."""
+    src = re.sub(r"<!--[\s\S]*?-->", blank, src)
+    out = []
+    for m in CONTROL.finditer(src):
+        label = " ".join(re.sub(r"<[^>]+>", " ", re.sub(r"\$\{[^}]*\}", "…", m.group(3))).split())
+        if label:
+            feat = re.search(r"\bdata-feature=[\"']([^\"'$]+)[\"']", m.group(2))
+            out.append((line_of(src, m.start()), label, feat.group(1) if feat else ""))
+    return out
+
+
+def layout_scan(files):
+    """P22, P23, P25: đọc mọi trang cùng lúc (trang đích của lối tắt, nhãn giữa các trang)."""
+    out = []
+    pages = {os.path.normcase(os.path.abspath(f)): f for f in files}
+    text = {k: read(f) for k, f in pages.items()}
+    strip = lambda s: " ".join(re.sub(r"<[^>]+>", " ", re.sub(r"\$\{[^}]*\}", "…", s)).split())
+    for key, path in pages.items():
+        if os.path.basename(path).startswith("_"):
+            continue
+        src = re.sub(r"<!--[\s\S]*?-->", blank, text[key])
+        content = NAV_BLOCK.sub(blank, src)
+        for m in PAGE_LINK.finditer(content):
+            label = strip(m.group(2))[:60]
+            if not ACTION_LINK.search(label) or CARRY_FROM.search(m.group(1)):
+                continue
+            href = re.sub(r"\$\{[^}]*\}", "", m.group(1)).split("?")[0].split("#")[0]
+            target = os.path.normcase(os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(path)), href)))
+            if target == key or target not in text or RETURN_PATH.search(text[target]):
+                continue
+            out.append((path, line_of(src, m.start()), "P22", ERROR,
+                        f"Lối tắt hành động «{label}» đá sang {os.path.basename(pages[target])} mà trang đó không có đường về: mở chức năng ngay trên trang này "
+                        "(hộp thoại, ngăn trượt, sheet); chỉ chuyển trang khi việc dài nhiều bước, kèm ?from= và nút Quay lại giữ trạng thái", label))
+        lines = src.split("\n")
+        for m in AUTO_NAV.finditer(src):
+            arg = (m.group(1) or m.group(2) or "").strip().lstrip("(").strip()
+            ln = line_of(src, m.start())
+            if NAV_OK.search(lines[ln - 1]) or re.match(r"""^[`'"]?[?#]|^location\.(pathname|search|hash)|^[`'"]?\$\{location\.pathname""", arg):
+                continue
+            out.append((path, ln, "P23", ERROR,
+                        "Trang tự chuyển sang trang khác: xong việc thì ở lại trang đang làm, báo kết quả kèm liên kết mở tiếp. "
+                        "Cố ý (chọn vai ở trang lối vào, đăng nhập xong) thì ghi // nav-ok: <lý do> cùng dòng", arg[:60]))
+    # P25: nhãn của cùng một việc giữa các trang
+    labels = collections.defaultdict(dict)       # data-feature → {nhãn: (file, dòng)}
+    verbs = collections.defaultdict(dict)        # (nhóm động từ, đối tượng) → {động từ: (file, dòng)}
+    for key, path in pages.items():
+        if os.path.basename(path).startswith("_"):
+            continue
+        for line, label, feat in controls(text[key]):
+            if feat:
+                labels[feat].setdefault(label, (path, line))
+            low = label.lower()
+            for gi, group in enumerate(SYN_VERBS):
+                v = next((v for v in sorted(group, key=len, reverse=True) if low.startswith(v + " ")), None)
+                if v:
+                    obj = low[len(v):].strip()
+                    if obj:
+                        verbs[(gi, obj)].setdefault(v, (path, line, label))
+                    break
+    for feat, seen in labels.items():
+        if len(seen) > 1:
+            (path, line), names = list(seen.values())[0], " · ".join(f"«{n}» ({shown(p)})" for n, (p, _) in seen.items())
+            out.append((path, line, "P25", WARN, f"Cùng việc {feat} mang {len(seen)} nhãn: {names}. Một việc một nhãn trên mọi trang", feat))
+    for (gi, obj), seen in verbs.items():
+        if len(seen) > 1:
+            path, line, _ = list(seen.values())[0]
+            names = " · ".join(f"«{lab}» ({shown(p)})" for p, _, lab in seen.values())
+            out.append((path, line, "P25", WARN, f"Cùng một việc mà động từ khác nhau giữa các nút: {names}. Chọn một nhãn dùng ở mọi trang", obj[:40]))
+    return out
+
+
 def collect(paths):
     files = []
     for p in paths:
@@ -437,12 +574,11 @@ def run(paths, kind, quiet=False):
         print("Không có file HTML nào để kiểm — kiểm lại đường dẫn.")
         return 2, []
     findings, seen_assets, keys = [], set(), set()
-    for f in files:
-        for x in check_file(f, kind, fonts, seen_assets):
-            k = (x[0], x[1], x[2], x[4])            # cùng chỗ, cùng mã: chỉ báo một lần
-            if k not in keys:
-                keys.add(k)
-                findings.append(x)
+    for x in [x for f in files for x in check_file(f, kind, fonts, seen_assets)] + layout_scan(files):
+        k = (x[0], x[1], x[2], x[4])                # cùng chỗ, cùng mã: chỉ báo một lần
+        if k not in keys:
+            keys.add(k)
+            findings.append(x)
     if not quiet:
         if fonts is None:
             print(f"⚠ Không thấy dữ liệu font ở {FONTS_CSV}; P07 không chạy được, mọi font thành P15.")
@@ -689,6 +825,28 @@ APP_PAGE = """<!doctype html><html lang="vi" data-surface="app" data-platform="i
 <section><p class="uppercase tracking-widest">Gợi ý</p><h2>Món quen</h2></section>
 </body></html>"""
 
+# Selftest bố cục: mỗi trang chèn vào đầu <body> của CLEAN_PAGE. LAYOUT_EXPECT: số lần mỗi mã phải kêu
+LAYOUT_PAGES = {
+    "a.html": """<nav><a href="b.html">Thêm mới</a></nav>
+<a href="b.html">Thêm học viên</a> <a href="c.html">Đổi buổi</a> <a href="b.html?from=a">Xếp lịch</a> <a href="b.html">Xem tất cả</a>
+<button data-feature="F-01">Đặt hẹn</button> <button>Đổi buổi học</button>
+<script>
+function xong() { location.href = 'b.html'; }
+function moi() { location.href = '?reset=1'; }
+function vai() { location.href = 'b.html'; // nav-ok: chọn vai ở trang lối vào
+}
+</script>""",
+    "b.html": """<button data-feature="F-01">Đặt lịch hẹn</button> <button>Dời buổi học</button>
+<p>Theo quy tắc UC-12, lớp đủ sĩ số không nhận thêm.</p>
+<label>Số điện thoại <input type="tel" pattern="0[0-9]{9}"></label>
+<label>Số khác <input type="tel" pattern="[+0-9 .]{9,15}"></label>
+<script>const hopLe = v => /^0\\d{9}$/.test(v);</script>""",
+    "c.html": """<a href="a.html" onclick="history.back(); return false">Quay lại</a>
+<script>const hopLe = v => /^0\\d{9}$/.test(String(v).replace(/\\D/g, '').replace(/^84/, '0'));</script>""",
+    "_system.html": """<a href="b.html">Thêm học viên</a>""",
+}
+LAYOUT_EXPECT = {"P22": 1, "P23": 1, "P24": 1, "P25": 2, "P26": 2}
+
 
 def selftest():
     if not os.path.exists(FONTS_CSV):
@@ -764,6 +922,15 @@ def selftest():
         with open(os.path.join(rt, "index.html"), "w", encoding="utf-8") as fh:
             fh.write(CLEAN_PAGE.replace("</head>", '<script src="tokens.js"></script><style>.z{color:var(--chua-co)}</style></head>'))
         p19_skip_ok = "P19" not in {x[2] for x in run([rt], "site", quiet=True)[1]}
+        # Bố cục (P22–P26): lối tắt có và không có đường về, tự chuyển trang có và không có nav-ok, nhãn hai trang, ô SĐT, mã lộ
+        lay = os.path.join(d, "layout")
+        os.makedirs(lay)
+        for name, body in LAYOUT_PAGES.items():
+            with open(os.path.join(lay, name), "w", encoding="utf-8") as fh:
+                fh.write(CLEAN_PAGE.replace("<body>", "<body>" + body, 1))
+        f_lay = run([lay], "site", quiet=True)[1]
+        lay_got = collections.Counter(x[2] for x in f_lay if x[2] in LAYOUT_EXPECT)
+        lay_ok = dict(lay_got) == LAYOUT_EXPECT and not [x for x in f_lay if x[2] == "P22" and "_system" in x[0]]
     # P18 trên từng mẩu: thiếu lý do thì kêu (kể cả viết hoa, xuống dòng trong thẻ); có lý do, selector, chú thích, chữ thường thì im
     p18 = next(rx for code, _, rx, _ in RAW_RULES if code == "P18")
     clip_cases = [
@@ -804,9 +971,13 @@ def selftest():
           f"KHÔNG — giữ nguyên: mã {c_same}, {len(n_same)} mới; thêm emoji: mã {c_new}, {[x[2] for x in n_new]}"))
     print("P18 trên từng mẩu (thiếu lý do thì kêu; có lý do, selector, chú thích thì im): " + ("✓" if not clip_bad else f"KHÔNG — sai ở {clip_bad}"))
     print("Dò tên font bỏ qua chú thích, đọc được khai báo xuống dòng: " + ("✓" if not font_bad else f"KHÔNG — sai ở {font_bad}"))
+    print("Bố cục P22–P26 (kêu đúng số lần; đường về, ?from=, nav, nav-ok, _system im): " + ("✓" if lay_ok else f"KHÔNG — được {dict(lay_got)}, cần {LAYOUT_EXPECT}"))
+    if not lay_ok:
+        for x in f_lay:
+            print("  ", x[2], os.path.basename(x[0]), x[1], x[5])
     for x in f_clean:
         print("  nhầm:", x[2], x[4], x[5])
-    return 0 if not missing and not noisy and app_ok and linked_ok and app_rules_ok and mark_ok and not clip_bad and not font_bad and p21_ok and p19_skip_ok else 1
+    return 0 if not missing and not noisy and app_ok and linked_ok and app_rules_ok and mark_ok and not clip_bad and not font_bad and p21_ok and p19_skip_ok and lay_ok else 1
 
 
 def main():

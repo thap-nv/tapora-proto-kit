@@ -72,7 +72,7 @@ def run(s, out, deep=False):
     intent = sum(len(x['dims'].get('intent') or []) for x in rep if x['dims'])
     ds = next((x for x in rep if x['step'] == 'deep'), None)
     dp = (ds or {}).get('deep') or {}
-    deepn = sum(len(dp.get(k) or []) for k in ('states', 'keyboard', 'interactive')) + len((ds or {}).get('errors') or [])
+    deepn = sum(len(dp.get(k) or []) for k in ('states', 'keyboard', 'interactive', 'shortcuts')) + len((ds or {}).get('errors') or [])
     return name, {'steps': sum(1 for x in rep if x['step'] not in ('load', 'deep')), 'errors': errs, 'overflow': over, 'cut': cut,
                   'contrast': contrast, 'intent': intent, 'deep': deepn, 'deep_ran': ds is not None, 'fails': fails, 'silent': silent}
 
