@@ -1448,3 +1448,15 @@ Soát tay `mapscore.js`: script chấm theo tên nên báo trượt K13, K19, K2
 - Các lượt thừa ở trên đã sửa trong skill sau lần đo (chưa đo lại): lệnh M0 ghi ngay ở bảng lối vào · `Write` và `check` cùng một lượt ở M1, M2 · khối `DECISIONS.md` in sẵn ở SKILL.md mục 3 · `check --shots` sạch in khối *Trình ở cổng* (chức năng suy, ghi chú, module theo thứ tự dựng kèm số Must) · danh sách CHẶN in tới 40 dòng · `m1-kiem-ke.md` nói bản in M0 là đủ và có ví dụ `suy`, `notes`, `hoan`. Ước bớt 4–6 lượt, khoảng 0,10–0,15M mỗi lần, tức gần mục tiêu.
 
 **Dữ liệu:** transcript `transcripts/map-moi/agent-ac1e0076e338c5cf1.jsonl.gz` (`rmm1`), `agent-a616b6a40cb9f262b.jsonl.gz` (`rmm2`), người thử `agent-ada1eb2b208907bd7` (`rmm1`), `agent-ac8470468d08c6c55` (`rmm2`), kèm `.meta.json`; phiên `1f00601b-c0b1-4961-b82f-d0ec6ec26e54`. `features.js`, `layout.js`, `MAP.md`, `treetest.md`, `DECISIONS.md` ở `runs-map/rmm1/`, `runs-map/rmm2/`. Script mới: `phase-map.js`, `fixes-map.js` (thay biến trong lệnh như `phase-edit.js`).
+
+## sketch-to-map: đề r8-map-lon, đường chia worker (soạn 06/10/2026)
+
+Đề để đo đường **chia worker** của `sketch-to-map` (tài liệu vượt ngưỡng đọc nguyên 300 KB) mà vẫn chấm được bằng đáp án `r7-map/key.json`.
+
+- `mk-r8.py` chép `r7-map/sample/` sang `r8-map-lon/sample/`, rồi thêm `docs/yeu-cau/PHU-LUC-DU-LIEU-SONG-XANH.md`: phụ lục dữ liệu xuất từ Excel (750 học viên, 1.050 khoản thu, 950 dòng điểm danh), 328 KB. Tổng 8 tài liệu, 376 KB. Seed cố định: chạy lại ra đúng từng byte (md5 của phụ lục `4996dc5df50625c284306716ba13a0ad`).
+- Phụ lục là dữ liệu, không sinh chức năng nào, nên đáp án giữ nguyên 43 chức năng, 18 bẫy. Ba mục cấp 2 của phụ lục phải vào `skip`.
+- `node mapscore.js --selfcheck r7-map/key.json r8-map-lon/sample/docs` in `Không có chỗ cần sửa.`
+- **Giới hạn:** đề này kiểm cơ chế chia worker (agent chính chỉ đọc mục lục, worker đọc đúng dải dòng, `merge`, độ phủ khi đọc theo phần) và việc nhận ra phụ lục dữ liệu. Nó **không** tái hiện chi phí của 1 MB yêu cầu dày đặc: phần yêu cầu thật vẫn chỉ 48 KB.
+- Chạy thử `sources.py` lúc soạn đề bắt được một lỗi: mã học viên `SX-0001…` ở cột đầu bảng thành hệ mã 750 định nghĩa (`ids.json` 89 KB), nên P24 sẽ báo mã học viên trên trang là mã tham chiếu lộ ra. Đã sửa trong skill: tiền tố từ 50 mã gần như chỉ nằm trong bảng là `data_codes`, không phải hệ mã (`ids.json` còn 11 KB).
+
+Prompt đo: `prompt-map-do-lai.md`.

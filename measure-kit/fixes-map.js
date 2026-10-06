@@ -96,4 +96,18 @@ for (const f of process.argv.slice(2)) {
   }
   const missCost = misses.reduce((s, m) => s + m.lost * (1.25 - 0.1), 0);
   console.log(`  8 mất cache ở lượt: ${misses.map(m => `${m.turn} (${Math.round(m.lost / 1000)}k)`).join(', ') || '-'}${missCost ? ` · tốn thêm ≈ ${Math.round(missCost / 1000)}k` : ''} · lượt 1 đọc cache ${Math.round((T[0]?.u.cache_read_input_tokens || 0) / 1000)}k`);
+
+  // 9 Các chỗ sửa sau lần đo rmm1, rmm2 (06/10/2026) và đường chia worker
+  const turnOf = c => T[c.turn - 1];
+  const m0 = runs(/\bpython3?\b[^;\n|]*sources\.py/);
+  const m0Entry = m0.filter(c => turnOf(c).calls.some(x => x.name === 'Read' && /m1-kiem-ke\.md$/.test(fileOf(x))));
+  const checkSame = re => calls.filter(c => c.name === 'Write' && re.test(fileOf(c))).map(c => `${c.turn}${turnOf(c).calls.some(x => mj('check').test(cmdOf(x))) ? ' cùng lượt' : ' TÁCH lượt'}`);
+  const looked = re => calls.filter(c => c.name === 'Read' && re.test(fileOf(c)) || c.name === 'Grep' && re.test(norm(c.input.path)) || re.test(cmdOf(c)) && !/map\.mjs|sources\.py/.test(cmdOf(c)));
+  console.log(`  9 M0 cùng lượt với Read m1-kiem-ke.md: ${m0Entry.length ? 'có' : 'KHÔNG'} (M0 ở lượt ${m0.map(c => c.turn).join(',') || '-'})`);
+  console.log(`     Write rồi check: features.js ${checkSame(/\/map\/features\.js$/).join(', ') || '-'} · layout.js ${checkSame(/\/map\/layout\.js$/).join(', ') || '-'} · merge && check: ${list(runs(/map\.mjs"?\s+merge[^;\n]*&&[^;\n]*map\.mjs"?\s+check/))}`);
+  console.log(`     tra khuôn DECISIONS: ${list(looked(/templates\/DECISIONS\.md/))} · đọc MAP.md: ${list(looked(/\/map\/MAP\.md/))} · đọc check.json: ${list(looked(/check\.json/))} · đọc sources.json: ${list(looked(/sources\.json/))} · ids.json/states.json: ${list(looked(/(ids|states)\.json/))} · *.example.js: ${list(looked(/\.example\.js/))}`);
+  const gp = agents.filter(c => !c.input.subagent_type || c.input.subagent_type === 'general-purpose');
+  const per = {}; for (const c of gp) per[c.turn] = (per[c.turn] || 0) + 1;
+  const partsRead = calls.filter(c => c.name === 'Read' && /\/map\/parts\//.test(fileOf(c)));
+  console.log(`     worker general-purpose: ${gp.length} ở lượt ${Object.entries(per).map(([t, n]) => `${t}×${n}`).join(', ') || '-'} (nhiều nhất ${Math.max(0, ...Object.values(per))} một lượt; chạy nền ${gp.filter(c => c.input.run_in_background).length}) · agent chính Read map/parts/: ${list(partsRead)}`);
 }
