@@ -247,3 +247,18 @@ test('sources.py: file ưu tiên ghi mức theo tiền tố (Must `M-*`) thì m�
   assert.equal(ids['W-01'].dropped, true);
   assert.notEqual(ids['UC-03'].priority, 'Must');
 });
+
+// Đo rlb1 (06/10): r9 có phần thật 434 KB và phụ lục 328 KB; dòng chia worker in tổng 761,5 KB
+test('sources.py: dòng chia worker in cỡ phần thật, không tính phụ lục dữ liệu', t => {
+  const rows = Array.from({ length: 4000 }, (_, i) => `| HS-${String(i + 1).padStart(4, '0')} | Học sinh số ${i + 1} ở lớp bơi buổi tối | 09${String(10000000 + i)} | Ghi chú dài của dòng dữ liệu mẫu |`).join('\n');
+  const data = `# Phụ lục dữ liệu\n\n## Danh sách học sinh\n| Mã | Họ tên | SĐT | Ghi chú |\n|---|---|---|---|\n${rows}\n`;
+  const real = '# Yêu cầu\n' + Array.from({ length: 4000 }, (_, i) => `## Mục ${i}\n${'Nội dung dài của mục để vượt ngưỡng đọc nguyên. '.repeat(2)}\n`).join('');
+  const { out, j } = run(t, { 'PHU-LUC-DU-LIEU.md': data, 'YEU-CAU.md': real });
+  const src = j('sources.json');
+  assert.equal(src.recommend, 'chia-worker');
+  const line = out.match(/^Cách đọc:.*$/m)[0];
+  const kbOf = n => (n / 1000).toFixed(1).replace('.', ',');
+  assert.ok(line.includes(`(${kbOf(src.read_total)} KB > 300,0 KB`), line);
+  assert.ok(!line.includes(kbOf(src.total)), 'không in tổng kể cả phụ lục');
+  assert.match(line, /không tính phụ lục dữ liệu D\d+ [\d,]+ KB: không giao worker, không cần skip/);
+});

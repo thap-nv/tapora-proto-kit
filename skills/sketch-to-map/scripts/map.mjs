@@ -860,7 +860,7 @@ function cmdMerge() {
   writeFileSync(join(mapDir, 'features.js'), [
     `// Kiểm kê chức năng, gộp bởi map.mjs merge từ map/parts/ (${files.join(', ')}). Định dạng: templates/features.js của sketch-to-map.`,
     'window.FEATURES = {',
-    `  project: ${lit((old && old.project) || '')},`,
+    `  project: ${lit(parts.map(p => p.project).find(Boolean) || (old && old.project) || '')},`,
     '  features: [',
     ...out.map(f => `    ${lit(f)},`),
     '  ],',

@@ -197,3 +197,16 @@ test('merge: phần chỉ có skip (parts/_chung.js) gộp được; in cặp ng
   assert.doesNotMatch(sus, /F-03|F-07/, 'chung mỗi mã Must, hay khác vai: không nghi');
   assert.match(r.stdout, /Read map\/features\.js trước khi Edit/);
 });
+
+test('merge: tên dự án lấy từ project của một phần (parts/_chung.js), không ghi rỗng', t => {
+  // Đo rlb1 (06/10): merge ghi project: '' nên agent phải Edit tay một lần
+  const dir = tmp(t, 'map-merge-proj-');
+  fs.mkdirSync(path.join(dir, 'map', 'parts'), { recursive: true });
+  const part = (file, o) => fs.writeFileSync(path.join(dir, 'map', 'parts', file), `window.PART = ${JSON.stringify(o)};`);
+  part('_chung.js', { project: 'Sóng Xanh', features: [], skip: [{ src: 'D1:1-8', why: 'Tóm tắt' }] });
+  part('lich.js', { module: 'lich', features: [{ name: 'Xem lịch', src: ['UC-01'], roles: ['le-tan'], freq: 'ngay', evidence: 'ro', status: 'pham-vi', spec: 'Mô tả.' }] });
+  assert.equal(run('merge', dir).status, 0);
+  const ctx = { window: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(dir, 'map', 'features.js'), 'utf8'), ctx);
+  assert.equal(ctx.window.FEATURES.project, 'Sóng Xanh');
+});

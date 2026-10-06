@@ -71,7 +71,7 @@ test('m1 mục 6, chia worker: tối đa 4 worker một đợt, _chung.js ghi sk
   const md = read('sketch-to-map/references/m1-kiem-ke.md');
   const s6 = section(md, '## 6. ', '\n## 7.');
   assert.match(s6, /\*\*Tối đa 4 worker, gọi một đợt\*\*/);
-  assert.match(s6, /`map\/parts\/_chung\.js`[^\n]*`skip`[^\n]*window\.PART = \{ features: \[\], skip: \[/);
+  assert.match(s6, /`map\/parts\/_chung\.js`[^\n]*`skip`[^\n]*window\.PART = \{ project: '<tên dự án>', features: \[\], skip: \[/);
   assert.match(s6, /\*\*Giao chủ:\*\*/);
   const prompt = section(s6, '```text', '\n```');
   assert.match(prompt, /^Lượt 1, mọi lệnh Read trong một lượt, không Grep, không Bash:/m);

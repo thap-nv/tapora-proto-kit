@@ -419,7 +419,9 @@ def main():
         extra = "".join(f", không tính phụ lục dữ liệu {d['id']} {kb(d['bytes'])}: không Read, không cần skip" for d in skipped)
         print(f"Cách đọc: đọc nguyên trong một lượt ({kb(read_total)} ≤ {kb(READ_WHOLE)}{extra}): Read " + ", ".join(f"map/_src/{d['id']}.txt" for d in meta if not d.get("data")))
     else:
-        print(f"Cách đọc: chia worker theo module ({kb(total)} > {kb(READ_WHOLE)}): tối đa 4 worker một đợt, mỗi worker đọc đúng dải dòng của module (mục lục ở map/sources.json), tự ghi map/parts/<module>.js (m1-kiem-ke.md mục 6)")
+        skipped = [d for d in meta if d.get("data")]
+        extra = "".join(f", không tính phụ lục dữ liệu {d['id']} {kb(d['bytes'])}: không giao worker, không cần skip" for d in skipped)
+        print(f"Cách đọc: chia worker theo module ({kb(read_total)} > {kb(READ_WHOLE)}{extra}): tối đa 4 worker một đợt, mỗi worker đọc đúng dải dòng của module (mục lục ở map/sources.json), tự ghi map/parts/<module>.js (m1-kiem-ke.md mục 6)")
     print("Đã ghi: map/_src/ · map/sources.json · map/ids.json · map/states.json")
     if manual:
         print(f"CẦN CHUYỂN TAY ({len(manual)}): " + " · ".join(manual) + " · lưu thành .md hay .txt cạnh file gốc rồi chạy lại")
