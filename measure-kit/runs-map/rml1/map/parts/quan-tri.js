@@ -1,0 +1,24 @@
+window.PART = {
+  module: 'quan-tri',
+  features: [
+    { name: 'Xem báo cáo chuyên cần', src: ['UC-11', 'D4:383-385', 'D4:115', 'S-01'], roles: ['quan-ly', 'le-tan'], freq: 'hiem', evidence: 'ro', status: 'pham-vi', spec: 'Chọn khoảng thời gian, mặc định tháng hiện tại; xem tỉ lệ đi học theo lớp và theo HLV, kèm số buổi vắng không phép. Quản lý và Lễ tân xem được, HLV không. Cùng màn báo cáo với doanh thu (UC-11 bước 1 chọn loại).' },
+    { name: 'Xem báo cáo doanh thu', src: ['UC-11', 'D4:386', 'BR-QT-03', 'D4:116', 'S-01', 'NF-04'], roles: ['quan-ly'], freq: 'hiem', evidence: 'ro', status: 'pham-vi', spec: 'Chọn khoảng thời gian, mặc định tháng hiện tại; tổng thu theo tháng, theo loại gói, theo hình thức thanh toán; tiền dạng 1.200.000 ₫. Chỉ Quản lý; Lễ tân không thấy loại báo cáo này (BR-QT-03).' },
+    { name: 'Xuất báo cáo ra file Excel', src: ['D4:117', 'UC-11', 'S-01'], roles: ['quan-ly'], freq: 'hiem', evidence: 'ro', status: 'pham-vi', spec: 'Xuất báo cáo đang xem ra file Excel để gửi kế toán; chỉ Quản lý. Việc này chỉ có ở ma trận quyền, không có bước trong UC-11.', notes: 'chưa rõ xuất cả báo cáo chuyên cần hay chỉ báo cáo doanh thu' },
+    { name: 'Thêm tài khoản nhân viên', src: ['UC-12', 'BR-QT-01', 'BR-QT-02', 'D8:233-245', 'M-08'], roles: ['quan-ly'], freq: 'hiem', evidence: 'ro', status: 'pham-vi', spec: 'Nhập họ tên, số điện thoại (không trùng), vai Quản lý, Lễ tân hoặc HLV; vai HLV thì chọn các lớp HLV phụ trách. Lưu xong hệ thống gửi mật khẩu tạm qua SMS cho nhân viên.', notes: 'HLV là actor phụ của UC-03 (mở lớp): soát trùng việc gán HLV cho lớp với module lớp' },
+    { name: 'Sửa thông tin và lớp phụ trách của nhân viên', src: ['UC-12', 'BR-QT-02', 'D8:239-245', 'M-08'], roles: ['quan-ly'], freq: 'hiem', evidence: 'suy', status: 'pham-vi', spec: 'Đổi số điện thoại, vai, danh sách lớp phụ trách của HLV khi phân công thay đổi. UC-12 chỉ nêu thêm và khoá tài khoản; việc sửa là suy ra.' },
+    { name: 'Khoá tài khoản nhân viên', src: ['UC-12', 'D4:411', 'M-08'], roles: ['quan-ly'], freq: 'hiem', evidence: 'ro', status: 'pham-vi', spec: 'Nhân viên nghỉ việc thì quản lý khoá tài khoản, không xoá, để giữ lịch sử thao tác; tài khoản bị khoá không đăng nhập được web quản trị.' },
+    { name: 'Mở khoá tài khoản nhân viên', src: ['UC-12', 'D4:412', 'BR-QT-05', 'M-08'], roles: ['quan-ly'], freq: 'hiem', evidence: 'ro', status: 'pham-vi', spec: 'Quản lý mở lại tài khoản bị hệ thống khoá do nhập sai mật khẩu 5 lần liền (BR-QT-05).', notes: 'chưa rõ mở khoá có cấp lại mật khẩu tạm qua SMS không, và nhân viên quên mật khẩu thì tự đặt lại hay nhờ quản lý' },
+    { name: 'Đăng nhập web quản trị', src: ['BR-QT-01', 'BR-QT-05', 'D4:99-118', 'M-08'], roles: ['quan-ly', 'le-tan', 'hlv'], freq: 'ngay', evidence: 'ro', status: 'pham-vi', spec: 'Nhân viên đăng nhập bằng số điện thoại và mật khẩu; chỉ ba vai Quản lý, Lễ tân, HLV, phụ huynh không vào web. Sai mật khẩu 5 lần liền thì hệ thống khoá tài khoản. Vào rồi thấy menu theo ma trận quyền; HLV chỉ thấy lớp mình (BR-QT-02).', notes: 'BR-QT-05 là 🟡 I: ngưỡng 8 ký tự và 5 lần sai chờ chủ trung tâm xác nhận' },
+    { name: 'Đổi mật khẩu', src: ['D4:407', 'BR-QT-05', 'M-08'], roles: ['quan-ly', 'le-tan', 'hlv'], freq: 'hiem', evidence: 'suy', status: 'pham-vi', spec: 'Nhân viên đổi mật khẩu tạm nhận qua SMS thành mật khẩu riêng; mật khẩu mới tối thiểu 8 ký tự (BR-QT-05). Tài liệu không có bước này, suy từ mật khẩu tạm ở UC-12 bước 3.' },
+    { name: 'Tra cứu nhật ký thao tác', src: ['BR-QT-04', 'D8:247-255', 'M-08'], roles: ['quan-ly'], freq: 'tuan', evidence: 'ro', status: 'pham-vi', spec: 'Hệ thống tự ghi mọi lần sửa điểm danh, duyệt hoàn tiền, tạm dừng gói, xoá học viên khỏi lớp: ai làm, lúc nào, giá trị trước và sau. Quản lý tra theo người, thời gian, đối tượng khi có khiếu nại.' },
+    { name: 'Đăng nhập app phụ huynh bằng mã OTP', src: ['NF-05', 'BR-QT-01', 'M-06'], roles: ['phu-huynh'], freq: 'hiem', evidence: 'ro', status: 'pham-vi', spec: 'Phụ huynh nhập số điện thoại, nhận mã OTP rồi vào app, không cần mật khẩu. Phụ huynh chỉ dùng app iOS/Android, không có tài khoản web quản trị (BR-QT-01).', notes: 'số điện thoại chưa có trong hồ sơ phụ huynh thì app báo gì: tài liệu chưa nói' },
+  ],
+  skip: [
+    { src: 'D1:104-107', why: 'Findings về báo nghỉ và đổi lịch, đã chuyển thành XD-01, XD-02; không sinh việc quản trị' },
+    { src: 'D8:1-10', why: 'Đầu file schema: tên dự án, hệ quản trị dữ liệu; không có việc' },
+    { src: 'NF-01', why: 'Hiệu năng trang web quản trị, không có việc người dùng làm' },
+    { src: 'NF-02', why: 'Phiên bản iOS, Android tối thiểu, không có việc người dùng làm' },
+    { src: 'NF-03', why: 'Sao lưu tự động là hạ tầng vận hành: không người xem, không cấu hình trên màn' },
+    { src: 'NF-04', why: 'Định dạng hiển thị chung cho mọi màn; đã ghi vào spec báo cáo doanh thu' },
+  ],
+};
