@@ -1376,3 +1376,75 @@ Cây chỉ có nhãn, dựng từ sơ đồ trang của `rm0a` *(menu theo vai, 
 **Đọc kết quả:** tree test bằng mô hình **chạm trần**. Người thử đọc được cả cây, và nhãn của cả hai bản đều rõ, nên số này không phân biệt bố cục tốt với bố cục kém. Chỉ dùng như bước soát nhãn rẻ, không làm cổng chặn. Chỗ yếu của bố cục phải đo bằng số đếm được ở mức luồng (`flowscan.js`) và bằng người bấm thử ở cổng.
 
 Kết quả từng người: `r7-map/treetest/rm0a-a.json`, `rm0a-b.json`, `rm0a-c.json`. Chấm lại: `node treescore.js r7-map/treetest/viec.json r7-map/treetest/rm0a-*.json`.
+
+### Mốc cũ trên giấy: chỉ số bố cục của `rm0a` (tính tay 06/10/2026)
+
+Tính từ sơ đồ trang `runs-map/rm0a/DESIGN.md` mục 9, theo định nghĩa chỉ số của `sketch-to-map` (`references/m2-bo-cuc.md`). Sơ đồ không khai kiểu mở, nên một nút sang trang khác mà không ghi đường về được tính là lối tắt đá đi.
+
+| Chỉ số | `rm0a` |
+|---|---|
+| (1) Lối tắt đá đi không đường về | 3–4: A5 → A1 `?xep=` *(xếp lớp)* · A2 → lớp phủ Đổi lịch **của A5** · A5 *Bán gói* → A6 · A4 lưu xong mời sang A6 *(có thể coi là liên kết mở tiếp)* |
+| (12) Vai thiếu trang chủ theo việc | 2: QL và LT vào thẳng *Lịch tuần* (màn làm việc, không có dải việc hôm nay); *Việc cần xử lý* là mục menu thứ hai. Nhóm menu theo đợt: 0 (GĐ2 để ngoài sơ đồ) |
+| (2) Việc hằng ngày xa nhất | LT bán gói: Học viên → tìm và chọn → Hồ sơ → Bán gói, 3 bước + 1 lần tìm (≈ 11,1 giây) |
+| (5) Màn dày nhất | A5 Hồ sơ học viên: khoảng 10 việc *(4 lớp phủ, 4 tab, Bán gói)*. A2 gom 7 loại việc |
+| (4) Nhóm menu dài nhất | QL: 7 mục phẳng + nhóm Quản trị 3 |
+| Theo dõi phạm vi | 16/26 màn ngoài phạm vi đề xuất không có trạng thái nào sau Cổng 3; GĐ2 nằm ngoài sơ đồ |
+
+### Bản mới `sketch-to-map` 1.0 (đo 06/10/2026)
+
+Prompt `prompt-map-moi.md`. Bản đo là **bản chụp** `skills/` của nhánh `feat/sketch-to-map` khi chưa commit (trên `66e55cb`), mã băm `2ca520e44dfb`. Hai lần `rmm1`, `rmm2`, chạy song song, máy Windows, subagent `general-purpose` chạy nền, model Opus 5.5; mỗi lần tự gọi một người thử `Explore` để soát nhãn. Tài liệu skill của bản chụp còn tên dự án thật ở vài chỗ; transcript đã thay bằng "dự án thật" trước khi lưu.
+
+| | `rmm1` | `rmm2` | mốc cũ `rm0a` |
+|---|---|---|---|
+| Lượt · thời gian | 18 · 16,5 phút | 19 · 16,0 phút | 9 · 7,7 phút |
+| Token quy đổi | 0,79M · trừ mất cache **0,62M** | 0,76M · trừ mất cache **0,62M** | 0,31–0,33M |
+| Người thử nhãn (`Explore`) | 2 lượt · 31k | 2 lượt · 43k | — |
+| Kiểm kê | 66 chức năng (62 phạm vi · 4 hoãn · 7 suy) · 10 module · 4 vai | 62 (58 · 4 · 5) · 10 · 4 | 26 màn, không có danh sách chức năng |
+| `mapscore.js` *(đã soát tay)* | **43/43 · bẫy 18/18** | **43/43 · bẫy 18/18** | 42/43 · 17/18 |
+| K16 học bù | bắt (F-19, `diem_danh.da_hoc_bu`) | bắt | trượt |
+| Dựng thừa N1–N4 · hoãn K41–K43 | 0 · đúng | 0 · đúng | 0 · để ngoài sơ đồ |
+| Nguồn | 12 UC · 9 Must · 1 bước chuyển · 7 nhóm trạng thái · 55 mục: 0 thiếu | như `rmm1` | — |
+| `check` | lần đầu kiểm kê 8 chặn, sau đó 0; lần đầu có `layout.js`: **0 chặn, 0 cảnh báo** | kiểm kê 18 chặn rồi 0; lần đầu có `layout.js`: **0 chặn, 0 cảnh báo** | — |
+| Soát nhãn | 9/10 tới đúng nút, 1 lần quay lại; sửa 2 chỗ đặt | 10/10, 5 lần quay lại; sửa 4 chỗ đặt và nhãn | 30/30 (3 người thử, cây dựng tay) |
+| Ảnh mở trước cổng | 1 | 1 | — |
+
+Soát tay `mapscore.js`: script chấm theo tên nên báo trượt K13, K19, K27, K32 ở `rmm1` và K17, K27 ở `rmm2`. Cả 6 đều có, chỉ khác tên hay gộp: K13 tách thành chuyển lớp (F-14) và dời một buổi (F-18); K19 là F-26 *Xem các buổi học sắp tới* (phụ huynh, UC-06); K32 là F-54 *Đọc thông báo của trung tâm* (UC-10); K17 là F-23 *Huỷ buổi học do trung tâm*, spec *"chọn khoảng giờ bị ảnh hưởng, huỷ mọi buổi một lần"*; K27 gộp vào điểm danh (bé hết buổi bị đánh dấu) và bán gói, cả hai trỏ A-05, giống cách mốc cũ được chấm trúng. Chức năng ngoài đáp án (10 và 15) là tách nhỏ hợp lệ hay chức năng suy (đổi mật khẩu, đối chiếu tiền cuối ngày…), hỏi ở cổng.
+
+**Chỉ số bố cục** (dòng của lần `check` sạch cuối):
+
+| Chỉ số | `rmm1` | `rmm2` | `rm0a` trên giấy |
+|---|---|---|---|
+| (1) lối tắt đá đi | 0 | 0 | 3–4 |
+| (12) vai thiếu trang chủ · nhóm theo đợt | 0 · 0 | 0 · 0 | 2 · 0 |
+| (7) mã lộ | 0 | 0 | — |
+| (2) T1 xa nhất | 2 bước (≈ 8,4 giây) | 3 bước (≈ 11,1 giây) | — |
+| (2) việc hằng ngày xa nhất | 3 bước (≈ 11,1 giây) | 3 bước (≈ 11,1 giây) | 3 bước + 1 lần tìm |
+| (5) màn dày nhất | Gói học 6 chức năng, 3 tab | Hồ sơ 6 chức năng, 3 tab | Hồ sơ khoảng 10 việc, 4 tab |
+| (4) nhóm menu dài nhất | 4 | 4 | 7 |
+| (6) việc nhiều nhãn | 0 | 0 | — |
+| Hoãn có chỗ trong bản đồ | 4/4 | 4/4 | 0 (ngoài sơ đồ) |
+
+**Theo bước** (`phase-map.js`):
+
+| Bước | `rmm1` lượt · quy đổi | `rmm2` lượt · quy đổi |
+|---|---|---|
+| vào | 3 · 70k | 2 · 64k |
+| M0 | 1 · 19k | 1 · 19k |
+| M1 | 5 · 191k | 4 · 165k |
+| M2 | 3 · 110k | 2 · 71k |
+| kiểm bố cục | 4 · 317k *(mất cache 166k)* | 7 · 350k *(mất cache 138k)* |
+| cổng | 2 · 81k | 3 · 93k |
+
+**Soát từng việc** (`fixes-map.js`):
+- Đọc tài liệu: cả 7 bản chữ `map/_src/D1–D7.txt` đọc nguyên trong **một** lượt ở cả hai lần; không đọc lại, không đọc lướt.
+- Đọc mã script: 0. Tự dò hay tự viết script: 0. Ảnh mở: 1. Kết quả lỗi, bị cắt, đường dẫn `/x/`: 0.
+- Mất cache: một lần mỗi lần chạy (138–166k), ở lượt ngay sau lượt viết `layout.js` *(5,3–6,8 phút nghĩ và viết)*: TTL 5 phút của subagent, như các đợt đo trước. Phiên chính có TTL 1 giờ.
+- Lượt thừa, cả hai lần: lệnh M0 chỉ ghi trong `m1-kiem-ke.md` nên lượt vào không chạy được nó (1 lượt) · khối Cổng Bản đồ phải tra khuôn `DECISIONS.md` của `sketch-to-site` (1 lượt) · chức năng suy, ghi chú và module phải lấy từ `MAP.md` (`rmm2` đọc `MAP.md` hai lần) · `Write` rồi chạy `check` ở lượt sau (`rmm2`, 2 lượt).
+- `rmm1` còn đọc `sources.json`, `ids.json` và lục `features.example.js` tìm cách ghi `notes`, `skip`, `suy` (lượt 6–8, khoảng 120k). `rmm2` phải `grep check.json` vì danh sách chặn cắt ở 15 dòng (18 mục).
+
+**Đọc kết quả:**
+- Chất lượng đạt mọi mục tiêu: độ phủ 43/43 ở cả hai lần (mốc cũ 42/43), bắt K16, không dựng thừa, mọi chỉ số chặn đạt và tốt hơn mốc cũ trên giấy ở mọi chỉ số đếm được. Lần `check` đầu sau khi viết `layout.js` đã sạch: luật trong `m2-bo-cuc.md` đủ để viết đúng ngay.
+- Chi phí **trượt mục tiêu**: 18–19 lượt và 0,62M trừ mất cache, so với mục tiêu ≤ 15 lượt và ≤ 0,5M. Gấp khoảng 2 lần mốc cũ, vì mốc cũ chỉ viết một sơ đồ trang dạng văn bản, không kiểm, không bố cục, không khung bấm thử.
+- Các lượt thừa ở trên đã sửa trong skill sau lần đo (chưa đo lại): lệnh M0 ghi ngay ở bảng lối vào · `Write` và `check` cùng một lượt ở M1, M2 · khối `DECISIONS.md` in sẵn ở SKILL.md mục 3 · `check --shots` sạch in khối *Trình ở cổng* (chức năng suy, ghi chú, module theo thứ tự dựng kèm số Must) · danh sách CHẶN in tới 40 dòng · `m1-kiem-ke.md` nói bản in M0 là đủ và có ví dụ `suy`, `notes`, `hoan`. Ước bớt 4–6 lượt, khoảng 0,10–0,15M mỗi lần, tức gần mục tiêu.
+
+**Dữ liệu:** transcript `transcripts/map-moi/agent-ac1e0076e338c5cf1.jsonl.gz` (`rmm1`), `agent-a616b6a40cb9f262b.jsonl.gz` (`rmm2`), người thử `agent-ada1eb2b208907bd7` (`rmm1`), `agent-ac8470468d08c6c55` (`rmm2`), kèm `.meta.json`; phiên `1f00601b-c0b1-4961-b82f-d0ec6ec26e54`. `features.js`, `layout.js`, `MAP.md`, `treetest.md`, `DECISIONS.md` ở `runs-map/rmm1/`, `runs-map/rmm2/`. Script mới: `phase-map.js`, `fixes-map.js` (thay biến trong lệnh như `phase-edit.js`).
