@@ -72,7 +72,7 @@ Cổng **không đánh số**: số 1–4 giữ nguyên cho concept và site, đ
 | Có `map/layout.js`, `DECISIONS.md` chưa có khối Cổng Bản đồ | Kiểm lại → cổng | `Read` `references/m2-bo-cuc.md` · lệnh kiểm ở `m2-bo-cuc.md` mục 4 |
 | `DECISIONS.md` có khối Cổng Bản đồ | Xong. Chuyển `sketch-to-site` *(mục 5)*. Người dùng muốn sửa bản đồ: sửa `features.js` hay `layout.js`, chạy lại lệnh kiểm, mở lại cổng | |
 
-**Ít lượt.** Mỗi lượt đọc lại cả ngữ cảnh. Lệnh và lần đọc không phụ thuộc nhau thì gọi chung một lượt. Ghi file và lệnh kiểm cũng **cùng một lượt**: `Write` hay các `Edit`, rồi Bash `check` trong cùng tin nhắn *(các lệnh gọi chạy theo thứ tự)*. **Không đọc mã** của `sources.py`, `map.mjs`: cách gọi, kết quả, mã thoát ghi đủ ở hai file giai đoạn. **Không tự viết** script dò tài liệu, không dò bằng `node -e`. Không viết HTML: `map/index.html`, `map/MAP.md` do `check` sinh. Trước cổng chỉ mở **một** ảnh.
+**Ít lượt.** Mỗi lượt đọc lại cả ngữ cảnh. Lệnh và lần đọc không phụ thuộc nhau thì gọi chung một lượt. Ghi file và lệnh kiểm cũng **cùng một lượt**: `Write` hay các `Edit`, rồi Bash `check` trong cùng tin nhắn *(các lệnh gọi chạy theo thứ tự)*. Ghi `features.js`, `layout.js` bằng `Write`, không bằng heredoc trong Bash. **Không đọc mã** của `sources.py`, `map.mjs`: cách gọi, kết quả, mã thoát ghi đủ ở hai file giai đoạn. **Không tự viết** script dò tài liệu, không dò bằng `node -e`. Không viết HTML: `map/index.html`, `map/MAP.md` do `check` sinh. Trước cổng chỉ mở **một** ảnh.
 
 ---
 

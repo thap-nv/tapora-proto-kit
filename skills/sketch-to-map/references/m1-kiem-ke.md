@@ -1,7 +1,7 @@
 # M0–M1 · Nguồn và kiểm kê chức năng · sketch-to-map
 
 > **Lượt vào M1** *(một lượt, các lệnh gọi cùng lúc)*: `Read` file này, `CONCEPT.md`, `DECISIONS.md` · Bash lệnh M0 ở mục 1 *(cũng ghi ở bảng lối vào của SKILL.md)*.
-> **Lượt của M1:** `Read` mọi bản chữ trong một lượt *(mục 2)* → `Write` `map/features.js` và Bash `check` **cùng một lượt** *(mục 8)* → sửa mọi mục chặn và chạy lại cùng một lượt → sang M2. Chia worker *(mục 6)*: gọi worker và `Write` `parts/_chung.js` cùng một lượt → `merge && check` → `Read` `features.js` → sửa và `check` cùng một lượt → sang M2.
+> **Lượt của M1:** `Read` mọi bản chữ trong một lượt *(mục 2)* → `Write` `map/features.js` và Bash `check` **cùng một lượt** *(mục 8; `Write` là công cụ, không heredoc trong Bash)* → sửa mọi mục chặn và chạy lại cùng một lượt → sang M2. Chia worker *(mục 6)*: gọi worker và `Write` `parts/_chung.js` cùng một lượt → `merge && check` → `Read` `features.js` → sửa và `check` cùng một lượt → sang M2.
 > Không đọc mã của `sources.py` hay `map.mjs`: cách gọi, kết quả, mã thoát ghi đủ ở đây. Không tự viết script dò tài liệu, không dò bằng `node -e`.
 
 ---
