@@ -1611,3 +1611,36 @@ Soát tay: `rml3` báo trượt K07, K13, K17, K19, K27 và trùng K26; cả nă
 **Đề xuất (chưa sửa):** `sources.py` tính ngưỡng 300 KB trên phần **không phải phụ lục dữ liệu** (tài liệu hay mục tự ghi là dữ liệu, bảng gần như toàn mã `data_codes`), và in "đọc nguyên (không tính phụ lục D3, 327,7 KB)". Ước: bỏ 0,8–0,95M mỗi lần cho kiểu tài liệu này. Đường worker vẫn cần đo trên đề có phần yêu cầu thật trên 300 KB (ví dụ nhân đôi `r7-map` bằng tài liệu khác), nếu muốn kiểm các chỗ sửa vừa làm.
 
 Dữ liệu: `transcripts/map-do-lai-2/` (8 file), `runs-map/rml3/`, `runs-map/rml4/`. `rml3` agent `a3dda6951d60283fd`, `rml4` agent `a8e1a0a1e7c523f4d`.
+
+### Đo lần ba trên r8: `rml5`, `rml6` (bản `c646c87`, 06/10/2026)
+
+Bản `c646c87` làm đề xuất của lần trước: `sources.py` không tính phụ lục dữ liệu vào ngưỡng 300 KB. Trên r8 nó in *"đọc nguyên (48,0 KB ≤ 300,0 KB, không tính phụ lục dữ liệu D3 327,7 KB: không Read, không cần skip)"*, nên lời khuyên của script và việc agent làm khớp nhau. Hai lần chạy máy Windows, Opus 5.5, song song, một đợt (không có worker nên không cần chia đợt). Prompt như `rmm3`. Phiên da5fd00e.
+
+| | `rml3` | `rml4` | `rml5` | `rml6` |
+|---|---|---|---|---|
+| Bản skill | `e183b41` | `e183b41` | `c646c87` | `c646c87` |
+| Đường | tự bỏ D3 | tự bỏ D3 | script bảo bỏ D3 | script bảo bỏ D3 |
+| Agent chính: lượt · quy đổi · thời gian | 14 · 0,49M · 8,3 | 16 · 0,48M · 7,4 | **11 · 0,36M · 5,1** | 15 · 0,51M · 8,0 |
+| Tổng kể cả người thử nhãn | 0,53M | 0,52M | **0,40M** | 0,56M |
+| Kiểm kê (suy) | 65 (2) | 67 (2) | 62 (3) | 70 (2) |
+| Độ phủ sau soát tay | 43/43 · 18/18 | 43/43 · 18/18 | 43/43 · 18/18 | 43/43 · 18/18 |
+| `check` cuối | 0 chặn, 3 cảnh báo | 0 chặn | 0 chặn, 0 cảnh báo | 0 chặn, 1 cảnh báo |
+| Mất cache | không | không | không | không |
+
+Soát tay: `rml5` script chấm 43/43 ngay, K26 trùng (hai chức năng bảo lưu), một "dựng thừa" N3 (F-24 *Lưu tạm điểm danh khi mất mạng*, đúng bẫy kỹ thuật vi mô; chức năng có, đáp án bảo ghi chú). `rml6` báo trượt K07, K13: K13 tách thành F-18 *Đổi một buổi sang lớp khác* + F-19 *Chuyển học viên sang lớp cố định khác* (tách hợp lệ, như các lần trước); K07 *Danh sách lớp, sĩ số và chỗ trống* không có chức năng riêng, chỗ trống nằm trong spec của F-11, sĩ số tối đa trong F-09: tính là gộp, nhưng đây là mục yếu nhất (không có việc "xem danh sách lớp"). Cả hai bắt K16 (học bù). Không dựng N1, N2, N4; K41–K43 hoãn.
+
+**Đã hết lệch:** cả hai không đọc D3 (7 tài liệu thật 48 KB, `D3` bị bỏ khỏi vòng `cat`), `ids.json` có `data_codes: {SX: 750}` và không có `SX` trong `systems`, hai lần không có worker. Bản trước chỉ đúng nhờ agent tự thấy D3 là phụ lục; bản này script nói đúng.
+
+**Soát từng việc (`fixes-map.js`):**
+- `rml5`: Write và check cùng lượt (features lượt 6, layout lượt 8); không đọc `MAP.md`, `check.json`, `sources.json`; 1 ảnh mở trước cổng; không tự viết script dò. M0 ở lượt 2, cùng lượt với `cat m1-kiem-ke.md` bằng Bash (script đo ghi "KHÔNG" vì chỉ nhận `Read`; thực tế cùng lượt). Đọc `*.example.js` 1 lần (lượt 3).
+- `rml6`: đi lệch hơn. Lượt 7 viết `features.js` bằng heredoc, lượt 8 `ls`, lượt 9 `Write` lại (hai lượt thừa, khoảng 110k); đọc `sources.json` hai lần và chạy hai `python -c` dò (lượt 5, 6); mở `m2-bo-cuc.md` ở lượt 3; chạy `check` lần đầu cho 8 chặn, rồi 1, rồi 0. Chặn đều do bố cục, không do kiểm kê.
+
+**Đọc kết quả:** bỏ phụ lục bằng chính lời của script cho 0,40–0,56M (so 1,31–1,47M ở đường worker, `rmm3`/`rmm4` 0,42–0,48M). Chênh giữa hai lần chủ yếu do `rml6` ghi `features.js` hai lần và dò thêm bằng script; `rml5` đi sạch. Độ phủ không đổi và kiểm kê gọn (62–70 chức năng, 2–3 suy). Đây là một lần đo mỗi kiểu, dao động 15–25 % giữa các lần chạy là bình thường.
+
+**Đề xuất (chưa sửa):**
+1. SKILL.md hay `m1-kiem-ke.md` ghi một câu: "ghi `features.js` bằng `Write`, không bằng heredoc" (`rml6` hai lượt, khoảng 110k, một lần trên hai; độ chắc trung bình).
+2. `sources.py` in luôn nội dung `states.json` (một dòng mỗi enum) và nói "không cần đọc `sources.json`": `rml6` đọc hai lần, `rml5` đọc `states.json` bằng `cat` 2 lượt (khoảng 30–40k; độ chắc thấp).
+3. Đường worker vẫn chưa đo, và sau `c646c87` r8 không còn dùng tới nó. Muốn đo phải soạn đề có phần yêu cầu **thật** trên 300 KB (ví dụ nhân đôi `r7-map` bằng tài liệu khác), hoặc chấp nhận chưa đo vì kiểu tài liệu đó hiếm.
+4. `fixes-map.js` mục 9 nhận cả `cat` bằng Bash cho `m1-kiem-ke.md` (script gap, không phải skill).
+
+Dữ liệu: `transcripts/map-do-lai-3/` (4 file, hai lần chạy và hai người thử nhãn Explore), `runs-map/rml5/`, `runs-map/rml6/`. `rml5` agent `abd1f58f831cfd03c`, `rml6` agent `ac0c0d19f4bfa41db`.
