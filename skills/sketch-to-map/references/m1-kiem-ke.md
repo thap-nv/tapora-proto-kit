@@ -1,7 +1,7 @@
 # M0–M1 · Nguồn và kiểm kê chức năng · sketch-to-map
 
 > **Lượt vào M1** *(một lượt, các lệnh gọi cùng lúc)*: `Read` file này, `CONCEPT.md`, `DECISIONS.md` · Bash lệnh M0 ở mục 1 *(cũng ghi ở bảng lối vào của SKILL.md)*.
-> **Lượt của M1:** `Read` mọi bản chữ trong một lượt *(mục 2)* → `Write` `map/features.js` và Bash `check` **cùng một lượt** *(mục 8)* → sửa mọi mục chặn và chạy lại cùng một lượt → sang M2.
+> **Lượt của M1:** `Read` mọi bản chữ trong một lượt *(mục 2)* → `Write` `map/features.js` và Bash `check` **cùng một lượt** *(mục 8)* → sửa mọi mục chặn và chạy lại cùng một lượt → sang M2. Chia worker *(mục 6)*: gọi worker và `Write` `parts/_chung.js` cùng một lượt → `merge && check` → `Read` `features.js` → sửa và `check` cùng một lượt → sang M2.
 > Không đọc mã của `sources.py` hay `map.mjs`: cách gọi, kết quả, mã thoát ghi đủ ở đây. Không tự viết script dò tài liệu, không dò bằng `node -e`.
 
 ---
@@ -44,7 +44,7 @@ Kể cả việc **chỉ được ngụ ý**. Soát từng chỗ dưới, vì s�
 | Quyết định (`XD-`) | Quyết định đè đoạn cũ: theo quyết định, `spec` ghi *"theo XD-02"* |
 | `schema.dbml` | Bước chuyển trạng thái ghi trong note: mục 5 |
 
-**Không** là chức năng: một trường, một màn, một quy tắc chỉ ràng buộc việc đã có *(ghi vào `spec`)*. Một việc mang hai tên ở hai tài liệu thì là **một** chức năng; `check` cảnh báo khi hai tên có động từ đồng nghĩa và cùng đối tượng.
+**Không** là chức năng: một trường, một màn, một quy tắc chỉ ràng buộc việc đã có *(ghi vào `spec`)*. Một việc mang hai tên ở hai tài liệu thì là **một** chức năng; `check` cảnh báo khi hai tên có động từ đồng nghĩa và cùng đối tượng, hay tên này là phần đầu của tên kia mà chung vai.
 
 ## 4. Hai nhánh
 
@@ -53,7 +53,7 @@ Kể cả việc **chỉ được ngụ ý**. Soát từng chỗ dưới, vì s�
 - Quy tắc qua **4 câu sàng lọc** *(rút từ `requirements-to-flow` §1.3–1.4 của một dự án thật)*: quy tắc có **đổi vai** · **sinh trạng thái mới** · **đổi dòng tiền** · **cần màn hay popup riêng** không? Trúng một câu thì thành chức năng, trạng thái hay popup; không trúng thì gộp vào `spec` của chức năng nó ràng buộc.
 - Ca biên lọc 3 tầng: luồng chính · ngoại lệ nghiệp vụ *(vẽ khi trúng 4 câu)* · ca vi mô *(chỉ ghi `notes`)*.
 - Phạm vi lấy từ file ưu tiên, **không xếp lại**: ngoài giai đoạn đầu thì `status: 'hoan'` *(vẫn có trong bản đồ)*; Won't không thành chức năng.
-- Hai đoạn mâu thuẫn mà không có quyết định nào đè: không tự chọn. Ghi vào `notes` của chức năng *(`"mâu thuẫn: D3:40 với D5:12"`)*; câu hỏi ở Cổng Bản đồ.
+- Hai đoạn mâu thuẫn mà không có quyết định nào đè: không tự chọn. Ghi vào `notes` của chức năng, kèm trích ngắn mỗi bên *(`"mâu thuẫn: D3:40 «giữ chỗ trong lớp» với D3:46 «lớp cũ đủ thì xếp lớp khác»"`)*, để viết câu hỏi ở Cổng Bản đồ mà không đọc lại tài liệu.
 
 **Tài liệu thô** *(dòng `Tài liệu thô`)*: với mỗi đối tượng chính, soát danh mục chỗ hay thiếu *(rút từ `requirements-gap-auditor`)*: tạo · sửa · xoá hay lưu trữ · danh sách, tìm, lọc · xem chi tiết · từng bước chuyển trạng thái · ai được làm gì · thông báo · báo cáo, xuất · thao tác hàng loạt · cấu hình. Chỗ thiếu thành chức năng `evidence: 'suy'` *(người dùng xác nhận ở cổng)*, hay câu hỏi.
 
@@ -66,18 +66,22 @@ Hai chỗ duy nhất đo được là sót *(mốc cũ r7-map sót đúng một 
 
 ## 6. Vượt ngưỡng: chia worker theo module
 
-1. Từ mục lục *(`map/sources.json`, `docs[].toc`)* và hệ mã, chia **module theo đối tượng** *(học viên, lớp, lịch, gói…)*, không theo chương tài liệu. Mỗi module một danh sách dải dòng cần đọc *(mục của UC, quy tắc, ca biên thuộc đối tượng đó)*.
-2. Mỗi module một worker *(Agent `general-purpose`)*, **tối đa 4 cùng lúc**, gọi rồi chờ kết quả. Prompt:
+1. Từ mục lục *(`map/sources.json`, `docs[].toc`)* và hệ mã, chia **module theo đối tượng** *(học viên, lớp, lịch, gói…)*, không theo chương tài liệu. Mỗi module một danh sách dải dòng cần đọc *(mục của UC, quy tắc, ca biên thuộc đối tượng đó)*. **Giao chủ:** UC hay mã mà nhiều module cùng chạm *(phụ huynh xem trên app, đổi lịch và chuyển lớp, đăng nhập)* giao cho **đúng một** module, ghi vào prompt của mọi worker *(đo: chỉ ghi tên module thì 3–6 cặp trùng giữa worker)*.
+2. **Tối đa 4 worker, gọi một đợt** *(Agent `general-purpose`, mọi lệnh gọi trong một lượt, rồi chờ)*. Nhiều hơn 4 module thì gộp module nhỏ vào một worker; worker đó ghi mỗi module một file phần *(đo: 7 worker thành hai đợt, mỗi đợt khoảng 5 phút; mỗi worker tốn sẵn khoảng 40–50k dù việc ít)*. **Cùng lượt gọi worker**, `Write` `map/parts/_chung.js` ghi `skip` cho mục không thuộc module nào và không sinh việc *(tóm tắt, mục lục, ma trận actor, bối cảnh, mục tiêu, ngoài phạm vi, bảng dữ liệu)*: `window.PART = { features: [], skip: [ { src: 'D1:28-31', why: 'Tóm tắt, không có việc' } ] };` *(đo: không ghi thì lần `check` đầu chặn 20–21 mục chung)*. Mục chung có việc *(quy tắc chung, ca biên, ma trận quyền)* thì vào dải chung của worker, không ghi `skip`. Prompt mỗi worker:
 
 ```text
-Kiểm kê chức năng cho module <mã-module> (<tên>) của dự án <tên dự án>.
-Đọc đúng các dải dòng này, không đọc file khác: <map/_src/D2.txt dòng 120-260>, <map/_src/D4.txt dòng 30-80>, …
-Đọc luật ở <skills>/sketch-to-map/references/m1-kiem-ke.md mục 3, 4, 5, 7 (chỉ các mục đó).
-Ghi <thư-mục-prototype>/map/parts/<mã-module>.js đúng định dạng mục 7 (PART, không đánh mã F-).
-Trả về đúng một dòng: "<mã-module>: n chức năng, k suy, h hoãn, m câu hỏi".
+Kiểm kê chức năng cho module <mã-module> (<tên>)[, <mã-module-2> (<tên>)] của dự án <tên dự án>.
+Lượt 1, mọi lệnh Read trong một lượt, không Grep, không Bash:
+- luật: Read <skills>/sketch-to-map/references/m1-kiem-ke.md offset 28 limit 39 (mục 3–5) và offset 86 limit 35 (mục 7);
+- tài liệu, đúng các dải này, không đọc file khác: Read <thư-mục-prototype>/map/_src/D2.txt offset 120 limit 141, Read <thư-mục-prototype>/map/_src/D4.txt offset 30 limit 51, …
+Giao chủ: <UC-06> → <mã-module>, <UC-08> → <mã-module>, … Việc của module khác thì bỏ, module kia lo.
+Mã vai: <quan-ly, le-tan, …>; hệ thống tự làm thì roles: [].
+Lượt 2: Write <thư-mục-prototype>/map/parts/<mã-module>.js đúng định dạng mục 7 (PART, không đánh mã F-; nhiều module thì mỗi module một file, cùng lượt). skip chỉ cho mục trong dải riêng của module mà không sinh việc. Mâu thuẫn ghi vào notes kèm trích ngắn hai bên (mục 4).
+Lượt 3: trả về mỗi module đúng một dòng "<mã-module>: n chức năng, k suy, h hoãn, m câu hỏi", đếm trên danh sách vừa viết; không chạy script, không đọc lại file.
 ```
 
-3. Gộp và kiểm trong **một** lệnh: `node <skills>/sketch-to-map/scripts/map.mjs merge <thư-mục-prototype> && node <skills>/sketch-to-map/scripts/map.mjs check <thư-mục-prototype>` *(`merge` đánh mã `F-01…` theo thứ tự file, ghi `map/features.js` mỗi chức năng một dòng; đã có `layout.js` thì không gộp, thoát 2)*. Mục chặn sửa thẳng trong `features.js`, không gọi lại worker. Mục tài liệu không sinh việc *(phụ lục dữ liệu, giới thiệu)* ghi `skip`.
+3. Gộp và kiểm trong **một** lệnh: `node <skills>/sketch-to-map/scripts/map.mjs merge <thư-mục-prototype> && node <skills>/sketch-to-map/scripts/map.mjs check <thư-mục-prototype>` *(`merge` đánh mã `F-01…` theo thứ tự file, ghi `map/features.js` mỗi chức năng một dòng, in các **cặp nghi trùng** giữa các phần: khác module, chung vai, tên này là phần đầu của tên kia hay cùng động từ và chung một mã không phải Must; đã có `layout.js` thì không gộp, thoát 2)*.
+4. Lượt sau: `Read` `map/features.js` *(file do `merge` ghi: chưa Read thì `Edit` bị từ chối)*, cùng lượt in các mục chặn cần xem *(dải ngắn)*. Lượt sau nữa: các `Edit` gộp cặp trùng thật *(giữ một chức năng, gộp `src`, vai, `spec` vào nó)*, ghi `skip`, sửa mục chặn, rồi chạy `check`, cùng một lượt. Sửa bằng `Edit`, không bằng script *(đo: một script trong heredoc hỏng vì `\` của Git Bash, thêm 5 chặn)*. Không gọi lại worker.
 
 ## 7. Định dạng
 
@@ -89,7 +93,7 @@ window.FEATURES = {
   features: [
     { id: 'F-01', name: 'Đặt lịch hẹn', module: 'lich-hen', src: ['UC-01', 'BR-LH-02'], roles: ['le-tan'], freq: 'ngay', evidence: 'ro', status: 'pham-vi', spec: 'Chọn bệnh nhân, dịch vụ, ghế, giờ; ghế đã có hẹn thì không chọn được.' },
     { id: 'F-05', name: 'Tiếp nhận bệnh nhân đến khám', module: 'lich-hen', src: ['UC-04'], roles: ['le-tan'], freq: 'ngay', evidence: 'ro', status: 'pham-vi', states: ['trang_thai_hen.da_toi'], spec: '…' },
-    { id: 'F-14', name: 'Ghi nợ cho bệnh nhân quen', module: 'thu-tien', src: ['D3:88-95'], roles: ['le-tan'], freq: 'tuan', evidence: 'suy', status: 'pham-vi', spec: '…', notes: 'mâu thuẫn: D3:90 với D5:12; câu hỏi mở OQ-02' },
+    { id: 'F-14', name: 'Ghi nợ cho bệnh nhân quen', module: 'thu-tien', src: ['D3:88-95'], roles: ['le-tan'], freq: 'tuan', evidence: 'suy', status: 'pham-vi', spec: '…', notes: 'mâu thuẫn: D3:90 «nợ tối đa 30 ngày» với D5:12 «không cho ghi nợ»; câu hỏi mở OQ-02' },
     { id: 'F-21', name: 'Đặt lịch qua app', module: 'lich-hen', src: ['UC-09', 'S-02'], roles: ['benh-nhan'], freq: 'tuan', evidence: 'ro', status: 'hoan', spec: '…' },
   ],
   skip: [
@@ -128,6 +132,6 @@ In: dòng **Kiểm kê** *(số chức năng, phạm vi, hoãn, suy, module, vai
 | `[kiem-ke]` UC, Must | chặn | Chưa chức năng nào trỏ tới: thêm *(hoãn nếu ngoài đợt)*; không sinh việc thì ghi `skip` kèm lý do |
 | `[kiem-ke]` bước chuyển, nhóm trạng thái | chặn | Mục 5 |
 | `[kiem-ke]` mục `Dn:a-b` | chặn | Mục tài liệu chưa có chức năng trỏ vào trong dải của nó: thêm chức năng, trỏ `src` vào đó, hay ghi `skip` *(chốt chặn rẻ: mục bị bỏ quên thì hiện ra ở đây)* |
-| `[kiem-ke]` cùng việc, nguồn lạ | cảnh báo | Gộp hay đặt tên phân biệt · sửa mã gõ sai |
+| `[kiem-ke]` cùng việc, nguồn lạ | cảnh báo | Hai tên cùng việc *(động từ đồng nghĩa cùng đối tượng, hay tên này là phần đầu của tên kia, chung vai)*: gộp hay đặt tên phân biệt · sửa mã gõ sai |
 
 `Write` `features.js` và lệnh này gọi **cùng một lượt**. Sửa mọi mục chặn bằng các `Edit` và chạy lại, cũng trong một lượt. Sạch thì sang M2: `Read <skills>/sketch-to-map/references/m2-bo-cuc.md` và chạy `map.mjs check <thư-mục-prototype> --brief` *(mỗi chức năng một dòng theo module: đầu vào của M2, không phải đọc lại `features.js`)*, cùng một lượt.

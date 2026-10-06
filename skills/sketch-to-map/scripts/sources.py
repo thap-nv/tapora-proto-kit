@@ -406,7 +406,7 @@ def main():
     if whole:
         print(f"Cách đọc: đọc nguyên trong một lượt ({kb(total)} ≤ {kb(READ_WHOLE)}): Read " + ", ".join(f"map/_src/{d['id']}.txt" for d in meta))
     else:
-        print(f"Cách đọc: chia worker theo module ({kb(total)} > {kb(READ_WHOLE)}): mỗi worker đọc đúng dải dòng của module (mục lục ở map/sources.json), tự ghi map/parts/<module>.js")
+        print(f"Cách đọc: chia worker theo module ({kb(total)} > {kb(READ_WHOLE)}): tối đa 4 worker một đợt, mỗi worker đọc đúng dải dòng của module (mục lục ở map/sources.json), tự ghi map/parts/<module>.js (m1-kiem-ke.md mục 6)")
     print("Đã ghi: map/_src/ · map/sources.json · map/ids.json · map/states.json")
     if manual:
         print(f"CẦN CHUYỂN TAY ({len(manual)}): " + " · ".join(manual) + " · lưu thành .md hay .txt cạnh file gốc rồi chạy lại")

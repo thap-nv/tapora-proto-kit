@@ -11,6 +11,8 @@
 //   node map.mjs visible <thư-mục-prototype> [--treetest]  cây chỉ có nhãn theo từng menu, nút đánh số [A1.2], không có mã chức năng.
 //       --treetest: không in cây; ghi bài soát nhãn map/treetest.md (hướng dẫn người thử, cây, việc bấm thử; không có đáp án) và in
 //       đáp án mỗi việc một dòng (T1 · vai → nhãn của chức năng). Thoát 2 khi layout.js chưa có tasks.
+//   node map.mjs merge <thư-mục-prototype>  gộp phần của worker (map/parts/*.js, cả phần chỉ có skip) thành map/features.js; in cặp
+//       nghi trùng giữa các phần. Thoát 2 khi đã có layout.js hay không đọc được một phần.
 //   node map.mjs slice <thư-mục-prototype> <màn>  một màn cho B3 của sketch-to-site: chức năng kèm spec, tầng, kiểu mở, lối tắt đi và tới
 //   node map.mjs coverage <thư-mục-prototype> [--site site]  độ phủ trên trang đã dựng (B4; qa-check.py tự gọi khi có map/features.js):
 //       mỗi màn đã có file phải gắn data-feature cho chức năng đặt trên nó và lối tắt đi từ nó; in một dòng Độ phủ, mục THIẾU, MÃ LẠ
@@ -110,9 +112,18 @@ function checkFeatures() {
 // ---------- Kiểm kê (M1): đối chiếu features.js với nguồn của sources.py ----------
 // Chặn: UC chưa bị loại, mã Must, bước chuyển trạng thái của schema, nhóm trạng thái có bảng dùng, mục cấp 2–3 của tài liệu
 // (trừ Quy ước, dbml, json) không có chức năng trỏ tới và không nằm trong skip. src trỏ tới mã khi ghi đúng mã, hay ghi dải dòng
-// "D2:120-140" trùm chỗ định nghĩa của mã. Cảnh báo: mã lạ trong src, hai chức năng cùng việc (động từ đồng nghĩa, cùng đối tượng).
+// "D2:120-140" trùm chỗ định nghĩa của mã. Cảnh báo: mã lạ trong src, hai chức năng cùng việc (động từ đồng nghĩa, cùng đối tượng;
+// hay tên này là phần đầu của tên kia, chung vai).
 const SYN = [['thêm', 'tạo', 'lập'], ['đổi', 'dời', 'chuyển'], ['huỷ', 'hủy', 'xoá', 'xóa', 'gỡ'], ['sửa', 'chỉnh sửa', 'cập nhật'],
   ['bảo lưu', 'tạm dừng', 'tạm ngưng'], ['xem', 'tra cứu'], ['gửi', 'nhắn']];
+// Tên này là phần đầu của tên kia sau khi bỏ từ nối ("Chọn con đang xem" · "Chọn con đang xem trên app"), chung một vai.
+// Đo rml2 (06/10): 5 trong 6 cặp trùng giữa worker có dạng này; trên 8 bản kiểm kê đã đo không báo nhầm cặp nào.
+// Từ nối bỏ khi còn dấu: bỏ dấu trước thì "chờ" thành "cho"
+const STOP = new Set(['các', 'của', 'trên', 'cho', 'và', 'bằng', 'sang', 'một', 'những', 'đã', 'được', 'khi', 'theo', 'tại', 'trong', 'với']);
+const words = name => String(name || '').toLowerCase().normalize('NFC').split(/[^\p{L}\p{N}]+/u).filter(w => w && !STOP.has(w)).map(norm).filter(w => w.length > 1);
+const prefixOf = (a, b) => { const [s, l] = a.length <= b.length ? [a, b] : [b, a]; return s.length >= 3 && l.length - s.length <= 3 && s.every((w, i) => l[i] === w); };
+const shareRole = (a, b) => (arr(a.roles).length || arr(b.roles).length ? arr(a.roles).some(r => arr(b.roles).includes(r)) : true);
+const verbOf = name => { const s = String(name || '').toLowerCase().normalize('NFC'); for (let g = 0; g < SYN.length; g++) for (const v of SYN[g]) if (s.startsWith(v + ' ')) return `g${g}`; return s.split(/\s+/)[0]; };
 const INV = {};
 function inventory() {
   if (!SRC || !IDS) return;
@@ -165,11 +176,17 @@ function inventory() {
   for (const r of fRefs) if (r.id && !ids[r.id] && !/^D\d+:/.test(r.id)) W('kiem-ke', `${r.f.id}: nguồn "${r.id}" không có trong ids.json (gõ sai, hay mã của tài liệu khác)`);
   // Hai chức năng cùng việc
   const key = f => { const n = String(f.name || '').toLowerCase().normalize('NFC'); for (let g = 0; g < SYN.length; g++) for (const v of [...SYN[g]].sort((a, b) => b.length - a.length)) if (n.startsWith(v + ' ')) return `${g}|${n.slice(v.length).trim()}`; return `=|${n}`; };
-  const seen = new Map();
+  const seen = new Map(), warned = new Set();
   for (const f of features) {
     const k = key(f);
-    if (seen.has(k)) W('kiem-ke', `${seen.get(k).id} "${seen.get(k).name}" và ${f.id} "${f.name}" có vẻ cùng một việc: gộp, hay đặt tên phân biệt`);
+    if (seen.has(k)) { W('kiem-ke', `${seen.get(k).id} "${seen.get(k).name}" và ${f.id} "${f.name}" có vẻ cùng một việc: gộp, hay đặt tên phân biệt`); warned.add(`${seen.get(k).id}|${f.id}`); }
     else seen.set(k, f);
+  }
+  const ws = features.map(f => words(f.name));
+  for (let i = 0; i < features.length; i++) for (let j = i + 1; j < features.length; j++) {
+    const a = features[i], b = features[j];
+    if (warned.has(`${a.id}|${b.id}`) || !shareRole(a, b) || !prefixOf(ws[i], ws[j])) continue;
+    W('kiem-ke', `${a.id} "${a.name}" và ${b.id} "${b.name}" có vẻ cùng một việc (tên này là phần đầu của tên kia): gộp, hay đặt tên phân biệt`);
   }
 }
 const sourcesLine = () => (!SRC || !IDS ? 'Nguồn: chưa có map/sources.json, map/ids.json (chạy sources.py ở M0): chỉ kiểm dữ liệu'
@@ -563,17 +580,23 @@ const listOut = (title, items, max = MAX) => {
   for (const x of items.slice(0, max)) console.log(`  ${tag(x.metric)} ${x.msg}`);
   if (items.length > max) console.log(`  … còn ${items.length - max}: đủ ở map/check.json`);
 };
-// Khối trình ở Cổng Bản đồ (lần check --shots sạch): chức năng suy, ghi chú (mâu thuẫn, câu hỏi mở), module theo thứ tự dựng
+// Khối trình ở Cổng Bản đồ (lần check --shots sạch): chức năng suy, ghi chú, module theo thứ tự dựng.
+// Mâu thuẫn là câu hỏi ở cổng nên in trước và đủ; chỉ câu hỏi mở bị cắt (đo rml1, rml2: 43 ghi chú, cắt ở 20 thì phải grep tìm mâu thuẫn)
+const MAX_NOTES = 20;
 function gateBlock() {
   const ids = (IDS && IDS.ids) || {};
   const isMust = f => arr(f.src).some(s => (ids[String(s).trim().split(/\s+/)[0]] || {}).priority === 'Must');
-  const cap = (list, n) => [...list.slice(0, n), ...(list.length > n ? [`… còn ${list.length - n}: xem map/features.js`] : [])];
   const inferred = features.filter(f => f.evidence === 'suy');
   console.log('Trình ở cổng:');
   console.log(`  Chức năng suy (${inferred.length}): ${inferred.map(f => `${f.id} ${f.name}`).join(' · ') || 'không có'}`);
   const notes = features.filter(f => String(f.notes || '').trim());
-  console.log(`  Ghi chú (${notes.length}, mâu thuẫn và câu hỏi mở):`);
-  for (const l of cap(notes.map(f => `${f.id} ${f.name}: ${String(f.notes).replace(/\s+/g, ' ').slice(0, 220)}`), 20)) console.log(`    ${l}`);
+  const conflicts = notes.filter(f => /mâu thuẫn/i.test(f.notes)), open = notes.filter(f => !/mâu thuẫn/i.test(f.notes));
+  const line = (f, n) => `    ${f.id} ${f.name}: ${String(f.notes).replace(/\s+/g, ' ').slice(0, n)}`;
+  console.log(`  Ghi chú (${notes.length}: ${conflicts.length} mâu thuẫn, ${open.length} câu hỏi mở):`);
+  for (const f of conflicts) console.log(line(f, 320));
+  const room = Math.max(0, MAX_NOTES - conflicts.length);
+  for (const f of open.slice(0, room)) console.log(line(f, 220));
+  if (open.length > room) console.log(`    … còn ${open.length - room} câu hỏi mở: xem map/features.js`);
   console.log(`  Module theo thứ tự dựng: ${topo().map(m => { const fs = features.filter(f => f.module === m.id); return `${m.name} (${fs.length} chức năng · ${fs.filter(isMust).length} Must · ${fs.filter(f => f.status === 'hoan').length} hoãn)`; }).join(' → ')}`);
 }
 
@@ -848,6 +871,25 @@ function cmdMerge() {
     '',
   ].join('\n'));
   console.log(`Đã gộp ${total} chức năng từ ${parts.length} phần vào map/features.js: ${parts.map(p => `${p.module || p.f} ${arr(p.features).length}`).join(' · ')} · ${skip.length} mục skip`);
+  // Cặp nghi trùng giữa các phần (khác module, chung vai): tên này là phần đầu của tên kia, hay cùng động từ và chung một mã không phải Must.
+  // Mã Must (M-06 "app phụ huynh") gom nhiều việc khác nhau nên không tính. Đo rml1, rml2 (06/10): bắt cả 6 cặp của rml2, 2 trong 3 của rml1
+  const ids = (IDS && IDS.ids) || {};
+  const codes = f => arr(f.src).map(s => String(s).trim().split(/\s+/)[0]).filter(c => CODE.test(c) && (ids[c] || {}).priority !== 'Must');
+  const ws = out.map(f => words(f.name)), cs = out.map(codes);
+  const sus = [];
+  for (let i = 0; i < out.length; i++) for (let j = i + 1; j < out.length; j++) {
+    const a = out[i], b = out[j];
+    if (a.module === b.module || !shareRole(a, b)) continue;
+    const shared = cs[i].filter(c => cs[j].includes(c));
+    const why = prefixOf(ws[i], ws[j]) ? 'tên này là phần đầu của tên kia' : shared.length && verbOf(a.name) === verbOf(b.name) ? `chung ${shared.join(', ')}` : '';
+    if (why) sus.push(`  ${a.id} "${a.name}" (${a.module}) ↔ ${b.id} "${b.name}" (${b.module}): ${why}`);
+  }
+  if (sus.length) {
+    console.log(`Nghi trùng giữa các phần (${sus.length}): cặp nào là một việc thì giữ một chức năng, gộp src, vai, spec vào nó, xoá cái kia; không phải thì để nguyên`);
+    for (const l of sus.slice(0, MAX_BLOCK)) console.log(l);
+    if (sus.length > MAX_BLOCK) console.log(`  … còn ${sus.length - MAX_BLOCK}`);
+  } else console.log('Nghi trùng giữa các phần: không có');
+  console.log('Sửa map/features.js (gộp trùng, skip, mục chặn): Read map/features.js trước khi Edit, vì file vừa do merge ghi; sửa bằng Edit, không bằng script.');
 }
 
 if (cmd === 'check') cmdCheck();

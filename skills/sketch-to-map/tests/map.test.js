@@ -244,11 +244,26 @@ test('check --shots khi sạch in khối Trình ở cổng: chức năng suy, gh
   const suy = data.F.features.filter(f => f.evidence === 'suy');
   assert.ok(suy.length, 'ví dụ cần có chức năng suy');
   for (const f of suy) assert.ok(out.includes(`${f.id} ${f.name}`), f.id);
-  assert.match(out, /^ {2}Ghi chú \(1, mâu thuẫn và câu hỏi mở\):\n {4}F-07 [^:]+: mâu thuẫn: D3:40 với D5:12$/m);
+  assert.match(out, /^ {2}Ghi chú \(1: 1 mâu thuẫn, 0 câu hỏi mở\):\n {4}F-07 [^:]+: mâu thuẫn: D3:40 với D5:12$/m);
   assert.match(out, /^ {2}Module theo thứ tự dựng: Bệnh nhân \(\d+ chức năng · 0 Must · \d+ hoãn\) → /m);
   const bad = example();
   bad.L.shortcuts.push({ from: 'hom-nay', to: 'F-02', mo: 'trang' });
   assert.doesNotMatch(check(t, bad, '--shots').out, /Trình ở cổng/);
+});
+
+test('check --shots: nhiều ghi chú thì mâu thuẫn in trước và đủ, chỉ câu hỏi mở bị cắt', t => {
+  // Đo rml1, rml2 (06/10): 43 ghi chú, khối in 20 rồi "… còn 23", agent phải grep features.js tìm mâu thuẫn (2 lượt)
+  const data = example();
+  data.F.features.forEach((f, i) => { f.notes = `câu hỏi mở số ${i + 1}`; });
+  const last = data.F.features.slice(-3);
+  last.forEach((f, i) => { f.notes = `mâu thuẫn: D1:${40 + i} «giữ chỗ» với D1:${50 + i} «nhả chỗ»`; });
+  const n = data.F.features.length;
+  const { out } = check(t, data, '--shots');
+  assert.match(out, new RegExp(`^ {2}Ghi chú \\(${n}: 3 mâu thuẫn, ${n - 3} câu hỏi mở\\):$`, 'm'));
+  const block = out.slice(out.indexOf('  Ghi chú ('), out.indexOf('  Module theo thứ tự dựng'));
+  for (const f of last) assert.ok(block.includes(`${f.id} ${f.name}: mâu thuẫn: `), `thiếu mâu thuẫn ${f.id}`);
+  assert.ok(block.indexOf('mâu thuẫn: ') < block.indexOf('câu hỏi mở số 1'), 'mâu thuẫn in trước câu hỏi mở');
+  assert.match(block, /… còn \d+ câu hỏi mở: xem map\/features\.js/);
 });
 
 test('visible --treetest: bài soát nhãn ở map/treetest.md không có đáp án; đáp án chỉ in cho agent chính', t => {

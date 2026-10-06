@@ -65,6 +65,32 @@ test('m1-kiem-ke.md trỏ sang M2 bằng một lượt: Read m2-bo-cuc.md và ch
   assert.match(section(md, '## 8. Kiểm: một lệnh', '\n## '), /`Read <skills>\/sketch-to-map\/references\/m2-bo-cuc\.md`[^\n]*`map\.mjs check <thư-mục-prototype> --brief`[^\n]*cùng một lượt/);
 });
 
+test('m1 mục 6, chia worker: tối đa 4 worker một đợt, _chung.js ghi skip mục chung, giao chủ, prompt đọc một lượt, Read features.js trước Edit', () => {
+  // Đo rml1, rml2 (06/10): 7 worker hai đợt; worker không được dặn đọc một lượt thì 6–11 lượt và tự viết script đếm;
+  // 20–21 mục chung chặn sau merge; Edit features.js bị từ chối; 3–6 cặp trùng giữa worker
+  const md = read('sketch-to-map/references/m1-kiem-ke.md');
+  const s6 = section(md, '## 6. ', '\n## 7.');
+  assert.match(s6, /\*\*Tối đa 4 worker, gọi một đợt\*\*/);
+  assert.match(s6, /`map\/parts\/_chung\.js`[^\n]*`skip`[^\n]*window\.PART = \{ features: \[\], skip: \[/);
+  assert.match(s6, /\*\*Giao chủ:\*\*/);
+  const prompt = section(s6, '```text', '\n```');
+  assert.match(prompt, /^Lượt 1, mọi lệnh Read trong một lượt, không Grep, không Bash:/m);
+  assert.match(prompt, /^Giao chủ: /m);
+  assert.match(prompt, /^Lượt 3: [^\n]*đếm trên danh sách vừa viết; không chạy script/m);
+  // Dải dòng của luật ghi trong prompt phải trúng đầu mục thật: sửa m1-kiem-ke.md thì sửa cả số ở đây
+  const lines = md.split('\n');
+  const rng = [...prompt.matchAll(/offset (\d+) limit (\d+) \(mục [^)]+\)/g)].map(m => [+m[1], +m[2]]);
+  assert.equal(rng.length, 2, 'hai dải luật: mục 3–5 và mục 7');
+  assert.match(lines[rng[0][0] - 1], /^## 3\. /);
+  assert.match(lines[rng[0][0] + rng[0][1] - 1], /^## 6\. /, 'dải mục 3–5 dừng ngay trước mục 6');
+  assert.match(lines[rng[1][0] - 1], /^## 7\. /);
+  assert.match(lines[rng[1][0] + rng[1][1] - 1], /^## 8\. /, 'dải mục 7 dừng ngay trước mục 8');
+  assert.match(s6, /cặp nghi trùng/);
+  assert.match(s6, /`Read` `map\/features\.js`[^\n]*`Edit` bị từ chối/);
+  assert.match(s6, /Sửa bằng `Edit`, không bằng script/);
+  assert.match(section(md, '## 4. ', '\n## 5.'), /mâu thuẫn: D\d+:\d+ «[^»]+» với D\d+:\d+ «[^»]+»/, 'mâu thuẫn kèm trích ngắn hai bên');
+});
+
 test('sketch-to-concept: brief đếm Quy mô; bàn giao sang sketch-to-map khi đủ ngưỡng', () => {
   assert.match(read('sketch-to-concept/references/vong-dau.md'), /7\. \*\*Scale\*\*[^\n]*`sketch-to-map` threshold/);
   assert.match(section(read('sketch-to-concept/SKILL.md'), '### Handover', '\n---'), /`sketch-to-map`[^\n]*\*\*new session\*\*/);

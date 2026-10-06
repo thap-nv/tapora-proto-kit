@@ -109,6 +109,17 @@ test('kiểm kê: hai chức năng cùng việc (động từ đồng nghĩa, c�
   assert.match(w, /UC-99/);
 });
 
+test('kiểm kê: tên này là phần đầu của tên kia (bỏ từ nối), chung một vai, thì cảnh báo cùng việc; biến thể theo vai thì không', t => {
+  // Đo rml2 (06/10): 6 cặp trùng giữa worker, luật động từ đồng nghĩa chỉ bắt 1; 5 cặp còn lại có tên này là phần đầu của tên kia
+  const d = example();
+  d.F.features.find(f => f.id === 'F-21').name = 'Đăng nhập app bằng số điện thoại và mã OTP';
+  const { r, json, out } = check(t, d);
+  assert.equal(r.status, 0, out);
+  const w = json.warn.filter(x => x.metric === 'kiem-ke').map(x => x.msg).join('\n');
+  assert.match(w, /F-21 "Đăng nhập app bằng số điện thoại và mã OTP".*F-25 "Đăng nhập app bằng số điện thoại"|F-25 "Đăng nhập app bằng số điện thoại".*F-21/);
+  assert.doesNotMatch(w, /F-20/, '"Đặt lịch hẹn" của lễ tân và "Đặt lịch hẹn trên app" của bệnh nhân là biến thể theo vai, không chung vai');
+});
+
 test('kiểm kê: chưa chạy sources.py thì chỉ kiểm dữ liệu, nói rõ', t => {
   const dir = tmp(t, 'map-nosrc-');
   fs.mkdirSync(path.join(dir, 'map'));
@@ -137,4 +148,38 @@ test('merge: gộp map/parts/*.js thành features.js, mã F-01… theo thứ t�
   assert.equal(run('check', dir).status, 0);
   fs.writeFileSync(path.join(dir, 'map', 'layout.js'), 'window.LAYOUT = {};');
   assert.equal(run('merge', dir).status, 2);
+});
+
+test('merge: phần chỉ có skip (parts/_chung.js) gộp được; in cặp nghi trùng giữa các phần và dặn Read features.js trước khi Edit', t => {
+  // Đo rml1, rml2 (06/10): 3 và 6 cặp trùng giữa worker phải dò bằng grep; Edit features.js bị từ chối vì file do merge ghi chưa được Read
+  const dir = tmp(t, 'map-merge-dup-');
+  fs.mkdirSync(path.join(dir, 'map', 'parts'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'map', 'ids.json'), JSON.stringify({ systems: {}, ids: { 'M-01': { def: 'D2:3', priority: 'Must' }, 'UC-06': { def: 'D1:9' }, 'NF-05': { def: 'D3:4' } } }));
+  const f = (name, src, roles) => ({ name, src, roles, freq: 'tuan', evidence: 'ro', status: 'pham-vi', spec: 'Mô tả.' });
+  const part = (file, o) => fs.writeFileSync(path.join(dir, 'map', 'parts', file), `window.PART = ${JSON.stringify(o)};`);
+  part('_chung.js', { features: [], skip: [{ src: 'D1:1-8', why: 'Tóm tắt, mục lục' }] });
+  part('goi.js', { module: 'goi', features: [
+    f('Xem buổi học sắp tới', ['UC-06', 'M-01'], ['phu-huynh']),
+    f('Chọn con đang xem', ['M-01'], ['phu-huynh']),
+    f('Xem gói học còn lại', ['M-01'], ['phu-huynh']),
+  ] });
+  part('hoc-vien.js', { module: 'hoc-vien', features: [
+    f('Chọn con đang xem trên app', ['BR-HV-03', 'M-01'], ['phu-huynh']),
+    f('Đăng nhập app bằng mã OTP', ['NF-05'], ['phu-huynh']),
+  ] });
+  part('lich.js', { module: 'lich', features: [
+    f('Xem lịch học của con', ['UC-06'], ['phu-huynh']),
+    f('Xem lịch dạy', ['M-01'], ['hlv']),
+  ] });
+  part('quan-tri.js', { module: 'quan-tri', features: [f('Đăng nhập app phụ huynh bằng OTP', ['NF-05'], ['phu-huynh'])] });
+  const r = run('merge', dir);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /8 chức năng từ 5 phần.* 1 mục skip/);
+  const sus = r.stdout.slice(r.stdout.indexOf('Nghi trùng'));
+  assert.match(sus, /^Nghi trùng giữa các phần \(3\)/m);
+  assert.match(sus, /F-01 "Xem buổi học sắp tới" \(goi\) ↔ F-06 "Xem lịch học của con" \(lich\): chung UC-06/, 'chung mã, chung vai, cùng động từ');
+  assert.match(sus, /F-02 "Chọn con đang xem" \(goi\) ↔ F-04 "Chọn con đang xem trên app" \(hoc-vien\): tên này là phần đầu của tên kia/);
+  assert.match(sus, /F-05 "Đăng nhập app bằng mã OTP" \(hoc-vien\) ↔ F-08 "Đăng nhập app phụ huynh bằng OTP" \(quan-tri\): chung NF-05/);
+  assert.doesNotMatch(sus, /F-03|F-07/, 'chung mỗi mã Must, hay khác vai: không nghi');
+  assert.match(r.stdout, /Read map\/features\.js trước khi Edit/);
 });

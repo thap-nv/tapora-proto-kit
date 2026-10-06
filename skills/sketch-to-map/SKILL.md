@@ -113,7 +113,7 @@ Trong thư mục prototype *(mặc định `docs/prototypes/<slug>/`)*:
 map/
 ├── _src/D1.txt…          # mỗi tài liệu thành chữ, số dòng cố định (M0); features.js trỏ D2:120-140
 ├── sources.json · ids.json · states.json   # mục lục, hệ mã, trạng thái của schema (M0)
-├── parts/                # phần kiểm kê của worker (chỉ khi chia worker)
+├── parts/                # phần kiểm kê của worker, _chung.js skip mục chung (chỉ khi chia worker)
 ├── features.js           # kiểm kê, mỗi chức năng một dòng (M1)
 ├── layout.js             # bố cục (M2)
 ├── MAP.md · index.html · check.json   # sinh bởi map.mjs check: không sửa tay
