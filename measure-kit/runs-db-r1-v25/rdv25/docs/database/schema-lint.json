@@ -1,0 +1,101 @@
+{
+  "_ghi_chu": "Cấu hình soát của schema phòng khám. Cỡ bảng theo Q-01 (3 phòng khám, ~40 bác sĩ, ~2.000 lịch hẹn/ngày ≈ 730 nghìn/năm — 🔴 A chưa đo) và N-12 (hàng triệu hóa đơn). S < 10 nghìn · M < 1 triệu · L < 100 triệu · XL ≥ 100 triệu dòng.",
+  "dialect": "postgresql",
+  "tenant_column": "organization_id",
+  "global_tables": [
+    "organizations"
+  ],
+  "audit_fk_suffixes": [],
+  "volumes": {
+    "organizations": "S",
+    "clinics": "S",
+    "people": "M",
+    "patients": "M",
+    "doctors": "S",
+    "users": "S",
+    "rooms": "S",
+    "services": "S",
+    "doctor_schedules": "S",
+    "appointments": "L",
+    "appointment_services": "L",
+    "invoices": "L",
+    "payments": "L",
+    "guardianships": "M",
+    "appointment_deposits": "M",
+    "internal_notes": "M",
+    "allergens": "S",
+    "patient_allergies": "M",
+    "specialties": "S",
+    "doctor_specialties": "S",
+    "patient_insurances": "M"
+  },
+  "access_patterns": [
+    {
+      "id": "AP-01",
+      "desc": "Lễ tân mở hóa đơn của một lịch hẹn",
+      "source": "N-12",
+      "table": "invoices",
+      "eq": ["appointment_id"],
+      "sort": [],
+      "range": [],
+      "freq": "hot"
+    },
+    {
+      "id": "AP-02",
+      "desc": "Lễ tân tra hóa đơn theo bệnh nhân: lịch hẹn của bệnh nhân (mới nhất trước) rồi nối invoices theo appointment_id (AP-01)",
+      "source": "N-12",
+      "table": "appointments",
+      "eq": ["patient_id"],
+      "sort": ["starts_at desc"],
+      "range": [],
+      "freq": "hot"
+    },
+    {
+      "id": "AP-03",
+      "desc": "Lịch của một bác sĩ trong một khoảng thời gian (xếp lịch, kiểm trùng)",
+      "source": "N-02",
+      "table": "appointments",
+      "eq": ["doctor_id"],
+      "sort": [],
+      "range": ["starts_at"],
+      "freq": "hot"
+    },
+    {
+      "id": "AP-04",
+      "desc": "Báo cáo lịch hẹn theo từng phòng khám trong khoảng ngày",
+      "source": "N-19",
+      "table": "appointments",
+      "eq": ["organization_id", "clinic_id"],
+      "sort": [],
+      "range": ["starts_at"],
+      "freq": "normal"
+    },
+    {
+      "id": "AP-05",
+      "desc": "Lễ tân tra bệnh nhân theo một chất gây dị ứng",
+      "source": "N-07",
+      "table": "patient_allergies",
+      "eq": ["allergen_id"],
+      "sort": [],
+      "range": [],
+      "freq": "normal"
+    },
+    {
+      "id": "AP-06",
+      "desc": "Tìm bác sĩ theo chuyên khoa",
+      "source": "N-08",
+      "table": "doctor_specialties",
+      "eq": ["specialty_id"],
+      "sort": [],
+      "range": [],
+      "freq": "normal"
+    }
+  ],
+  "waivers": [],
+  "diagram": {
+    "infra_columns": [
+      "organization_id"
+    ]
+  },
+  "requirement_code_pattern": "(?:N|R)-\\d+"
+}

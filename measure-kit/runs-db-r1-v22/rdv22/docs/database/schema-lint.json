@@ -1,0 +1,27 @@
+{
+  "dialect": "postgresql",
+  "tenant_column": "organization_id",
+  "global_tables": ["organizations"],
+  "volumes": {
+    "organizations": "S", "clinics": "S", "rooms": "S", "doctors": "S", "users": "S",
+    "services": "S", "doctor_schedules": "S", "specialties": "S", "doctor_specialties": "S",
+    "people": "M", "patients": "M", "guardianships": "M", "appointment_deposits": "M",
+    "internal_notes": "M", "patient_allergies": "M", "patient_insurances": "M",
+    "appointments": "L", "appointment_services": "L", "invoices": "L", "payments": "L"
+  },
+  "access_patterns": [
+    { "id": "AP-01", "desc": "Hóa đơn của một lịch hẹn", "source": "N-12", "table": "invoices",
+      "eq": ["organization_id", "appointment_id"], "sort": [], "range": [], "freq": "hot" },
+    { "id": "AP-02", "desc": "Lịch hẹn của một bệnh nhân, mới nhất trước (nối sang hóa đơn theo bệnh nhân; đếm lần khám N-10). patient_id là uuid đã xác định tenant nên không cần organization_id trong index", "source": "N-12", "table": "appointments",
+      "eq": ["patient_id"], "sort": ["starts_at desc"], "range": [], "freq": "hot" },
+    { "id": "AP-03", "desc": "Lịch của một bác sĩ trong khoảng giờ (xem lịch ngày; chặn trùng đi index gist của EXCLUDE). doctor_id đã xác định tenant", "source": "N-02", "table": "appointments",
+      "eq": ["doctor_id"], "sort": [], "range": ["starts_at"], "freq": "hot" },
+    { "id": "AP-04", "desc": "Lịch hẹn của một chi nhánh theo ngày (báo cáo chi nhánh)", "source": "N-19", "table": "appointments",
+      "eq": ["organization_id", "clinic_id"], "sort": [], "range": ["starts_at"], "freq": "hot" },
+    { "id": "AP-05", "desc": "Bệnh nhân theo chất gây dị ứng", "source": "N-07", "table": "patient_allergies",
+      "eq": ["organization_id", "lower(substance)"], "sort": [], "range": [], "freq": "normal" },
+    { "id": "AP-06", "desc": "Dịch vụ theo mã", "source": "N-11", "table": "services",
+      "eq": ["organization_id", "lower(code)"], "sort": [], "range": [], "freq": "normal" }
+  ],
+  "requirement_code_pattern": "[RN]-\\d{2}"
+}

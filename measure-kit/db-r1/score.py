@@ -68,7 +68,7 @@ def segments(text, pat):
                     break
                 seg.append(nx)
                 n += len(nx) + 1
-        elif ln.lstrip().startswith(('|', '-', '*')):
+        elif ln.lstrip().startswith(('|', '- ', '* ', '+ ')):      # gạch đầu dòng cần dấu cách: `**Q-03 …**` là đoạn văn đậm, không phải gạch đầu dòng
             for nx in lines[i + 1:]:
                 if not (nx.startswith((' ', '\t')) and nx.strip()):
                     break

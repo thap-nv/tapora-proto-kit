@@ -47,7 +47,7 @@ Dùng để đo một lần chạy skill `sketch-to-concept` tốn bao nhiêu l�
 | `treetest-prompt.md`, `treescore.js` | Bài thử tìm (tree test): prompt người thử (ba vai a, b, c; subagent `Explore`, cây và việc dán vào prompt) và script chấm: `node treescore.js <viec.json> <kết-quả> …` in thành công, đi thẳng, gần đúng theo việc và theo tầng |
 | `flowscan.js` | Quét mã một prototype đã dựng: mỗi trang đếm nút chính, tab, lớp phủ, ô nhập, viền dày, liên kết đá sang trang khác (tách *lối tắt hành động* với *điều hướng*), chỗ tự chuyển trang, và trang đích có đường về không. `node flowscan.js <thư-mục-site> [--json] [--all]` |
 | `cloud-setup.sh` | Chuẩn bị máy cho một lần đo, trong một lệnh: kiểm node, python, trình duyệt (Linux chưa có thì cài Chromium), mạng; lấy bản skill cần đo ra worktree ở đúng commit; in dòng biến `SKILLS`, `RUNS`. `bash measure-kit/cloud-setup.sh <moi> [<cu>] [--tests]`. Xem mục *Nhánh `measure` và cách lấy bản skill* |
-| `db-r1/` | Đề đo skill thiết kế CSDL `db-schema-design` (bản cũ `requirements-to-erd` ở `db-r1/cu/`), kịch bản **lượt cập nhật**: `sample/` là dự án giả (chuỗi phòng khám đặt lịch, 13 bảng) cùng 20 nhu cầu dữ liệu cài 20 bẫy; `key.json` đáp án; `score.py` chấm; `make_score_tests.py` + `score-tests/` để thử bộ chấm; `PROMPT-DO.md` prompt đo. **Chép `sample/` ra rồi mới chạy; không chép `key.json`, `score.py`.** Xem mục *db-schema-design: đề đo db-r1* |
+| `db-r1/` | Đề đo skill thiết kế CSDL `db-schema-design` (bản cũ `requirements-to-erd` ở `db-r1/cu/`), kịch bản **lượt cập nhật**: `sample/` là dự án giả (chuỗi phòng khám đặt lịch, 13 bảng) cùng 20 nhu cầu dữ liệu cài 20 bẫy; `key.json` đáp án; `score.py` chấm; `make_score_tests.py` + `score-tests/` để thử bộ chấm; `PROMPT-DO.md` prompt đo bản 2.0, `PROMPT-DO-2.md` prompt đo bản 2.1; `pg_load.py` (M3: nạp DDL vào PostgreSQL tạm), `lib/` (thư viện chấm đóng băng), `expected.json` + `test_score.py` (hồi quy của bộ chấm). **Chép `sample/` ra rồi mới chạy; không chép `key.json`, `score.py`, `pg_load.py`, `lib/`.** Dữ liệu: `transcripts/db-r1/`, `runs-db-r1/` (bản 2.0 và cũ, 07/10) và `transcripts/db-r1-v21/`, `runs-db-r1-v21/` (đo 2.1). Xem mục *db-schema-design: đề đo db-r1* |
 
 ## Nhánh `measure` và cách lấy bản skill (từ 05/10/2026)
 
@@ -1886,13 +1886,235 @@ Chấm lại bốn lần đã chạy bằng `db-r1/score.py` **bản 2** và `db
 | M2 không truy được / thay đổi (phá vỡ trên bảng cũ) | 0/21 (2) | 0/22 (5) | 1/27 (11) | 1/23 (6) |
 | M3 lỗi nạp DDL · SQL trong Note chạy được | 0 · 1/1 | 0 · 5/5 | 0 · 1/1 | **1** · 2/2 |
 | M3 FK sinh ngược chiều | 0/43 | **1**/40 | 0/44 | **4**/47 |
-| M4 có kế hoạch / thay đổi rủi ro | 4/5 | 2/9 | 13/15 | 6/9 |
+| M4 có kế hoạch / thay đổi rủi ro | 4/5 | 2/9 | 13/15 | 9/9 ¹ |
 | M5 phản biện đủ 6 · chặn thừa | 6/6 · 0 | 6/6 · 0 | 6/6 · 0 | 6/6 · 0 |
 | M5 số câu hỏi · độ dài | 11 · 13,0k | 11 · 11,8k | 14 · 20,8k | 17 · 24,7k |
 
 **Đọc kết quả** (mỗi phía hai lần; M2 và M4 là phép đo gần đúng):
-- **Bản 2.0 hơn bản cũ ở M1 và M4.** WARN mới trung bình 6 so với 22; thay đổi rủi ro có kế hoạch 79 % (19/24) so với 43 % (6/14). Hai điều này đến từ `check.py` và khối phân loại *phá vỡ / dữ liệu* của `dbml_diff` — phần của skill đáng giữ. Lưu ý M1 thiên về bản mới: agent của bản mới chạy chính bộ soát này và sửa theo, agent của bản cũ không có nó.
+- **Bản 2.0 hơn bản cũ ở M1 và M4.** WARN mới trung bình 6 so với 22; thay đổi rủi ro có kế hoạch 92 % (22/24) ¹ so với 43 % (6/14). Hai điều này đến từ `check.py` và khối phân loại *phá vỡ / dữ liệu* của `dbml_diff` — phần của skill đáng giữ. Lưu ý M1 thiên về bản mới: agent của bản mới chạy chính bộ soát này và sửa theo, agent của bản cũ không có nó.
 - **Ngang nhau ở 20 bẫy, M2 và phần phản biện của M5.** Bản mới không phản biện requirement tốt hơn; cả hai bắt đủ 6/6.
 - **Bản mới kém ở M3 và độ dài sổ câu hỏi.** `rdm2` có một lỗi nạp DDL và 4 khóa ngoại sinh ngược; sổ câu hỏi dài gấp 1,8 lần (22,8k so với 12,4k ký tự).
 - **Phát hiện mới, đúng cho cả hai bản skill: Ref khai bằng `-` (1–1) bị `dbml2sql` sinh ngược chiều.** `a.x - b.id` thành `b.id REFERENCES a(x)`, nghĩa là `appointments.id REFERENCES invoices(appointment_id)`: SQL bắt mỗi lịch hẹn phải có hóa đơn ngay khi tạo. Nạp được vào CSDL rỗng nên chỉ M3 mới thấy. `rdm2` mắc 4 chỗ (và một chỗ làm hỏng nạp DDL vì cột đích không còn unique); `rdc2` mắc 1. Skill 2.0 chưa nói điều này và rule `DB-INT-14` còn nhắc "khai bằng `-`". Cách đúng: 1–1 khai bằng `>` kèm UNIQUE trên cột khóa ngoại.
 - **Hệ quả cho Bước B** (quy tắc định sẵn của plan): giữ `check.py` và khối phân loại thay đổi; lối cập nhật bỏ B0, B1, B4 (không thước nào cho thấy chúng giúp ích); thêm cảnh báo Ref `-` vào bộ soát và bảng sự thật cú pháp.
+
+#### db-schema-design 2.1: đo lại (07/10/2026)
+
+Chạy theo `db-r1/PROMPT-DO-2.md`: **một cặp song song** bản cũ `rdc3` và bản 2.1 `rdn1` (11:44), cùng prompt từng chữ, chỉ đổi đường dẫn skill. Bản 2.1 = `.claude/skills/db-schema-design/` sau các chỗ sửa ở mục `## 2.1` của `CHANGELOG.md`. Trước khi chạy: 119 test của skill và 8 test của bộ chấm (kể cả PostgreSQL) qua, `.agents` đồng bộ. Chấm bằng `score.py` bản 2 và `pg_load.py`, cùng một thước cho cả sáu lần.
+
+**Kết luận: bản 2.1 rẻ hơn bản 2.0 nhưng vẫn đắt hơn bản cũ. Hai vế chi phí của mục tiêu (token, phút) không đạt, vế số lượt cũng không. Điều kiện dừng của plan áp dụng.**
+
+| Lần | Bản | Lượt | Token quy đổi | Phút | Bẫy thiết kế · requirement | M1 ERROR·WARN | M2 không truy được/thay đổi (phá vỡ) | M3 lỗi DDL · SQL Note · FK ngược | M4 có kế hoạch/rủi ro | M5 phản biện · chặn thừa · câu hỏi · ký tự |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `rdc1` | cũ | 32 | 0,82–0,88M | 11,8 | 14 + 1 một phần · 5/5 | 1 · 24 | 0/21 (2) | 0 · 1/1 · 0/43 | 4/5 | 6/6 · 0 · 11 · 13,0k |
+| `rdc2` | cũ | 17 | 0,43–0,47M | 8,6 | 15 · 5/5 | 1 · 20 | 0/22 (5) | 0 · 5/5 · 1/40 | 2/9 | 6/6 · 0 · 11 · 11,8k |
+| `rdc3` | cũ | 20 | 0,48–0,51M | 7,9 | 14 + 1 một phần · 5/5 | 0 · 23 | 0/20 (2) | 0 · 5/6 · 0/42 | 4/6 | 6/6 · 0 · 13 · 12,7k |
+| `rdm1` | 2.0 | 38 | 1,14–1,20M | 15,9 | 15 · 5/5 | 0 · 2 | 1/27 (11) | 0 · 1/1 · 0/44 | 13/15 | 6/6 · 0 · 14 · 20,8k |
+| `rdm2` | 2.0 | 42 | 1,32–1,38M | 18,5 | 15 · 5/5 | 1 · 10 | 1/23 (6) | 1 · 2/2 · 4/47 | 9/9 ¹ | 6/6 · 0 · 17 · 24,7k |
+| `rdn1` | **2.1** | 33 | 0,81–0,86M | 13,4 | 15 · 5/5 | 0 · 7 | 0/18 (2) | 0 · 9/9 · 0/45 | 4/5 | 6/6 · 1* · 15 · 12,3k |
+
+\* M5 báo N-09 "chặn thừa", nhưng dòng đó ghi *"đã áp một phần: `appointments.status` thêm `confirmed`, `arrived`, `no_show`…; đã hỏi: Q-09 (CHẶN phần trigger chuyển trạng thái)"*: N-09 **đã được áp**, chỉ một mảng con được hỏi. Bộ phát hiện bắt chữ "CHẶN" trong dòng nên nhầm. Chấm tay: không chặn thừa. `score.py` chưa sửa.
+
+| So sánh (giữa dải) | Token | Phút | Lượt |
+|---|---|---|---|
+| Trung bình 3 lần cũ | 0,60M | 9,4 | 23 |
+| Trung bình 2 lần 2.0 | 1,26M | 17,2 | 40 |
+| **2.1 (một lần)** | **0,835M** | **13,4** | **33** |
+| 2.1 / trung bình cũ | **1,40** | **1,42** | 1,43 |
+| 2.1 / trung bình 2.0 | 0,66 (−34 %) | 0,78 (−22 %) | 0,83 |
+
+| Vế mục tiêu | Mục tiêu | Kết quả | Kết luận |
+|---|---|---|---|
+| Token quy đổi | ≤ 75 % trung bình cũ (≈ 0,45M), không lần nào quá trung bình cũ (0,60M) | 0,835M = 140 % | **không đạt** |
+| Số phút | ≤ 75 % trung bình cũ (≈ 7,1) | 13,4 = 142 % | **không đạt** |
+| Số lượt | ≤ 14 | 33 | **không đạt** |
+| Điểm bẫy | 15/15 và 5/5 | 15/15 và 5/5 (cũ 14,3 và 5) | đạt |
+| M1–M5 | hơn trung bình cũ ở ≥ 2 thước, không kém ở thước nào | hơn ở M1 (WARN mới 7 so với 22,3) và M4 (80 % so với 50 %); ngang ở M2, M3, M5 (chấm tay) | đạt hai thước, cả hai có điều kiện (xem dưới) |
+
+**Độ chắc.** Bản 2.1 chỉ một lần chạy. Bản cũ từng dao động 0,45–0,85M nên 0,835M nằm ở mép trên dải cũ chứ chưa ngoài dải; nhưng nó cao hơn cả ba lần cũ về phút (13,4 so với 7,9–11,8) và cao hơn cả ba về lượt, còn hai trong ba lần cũ chỉ 0,45–0,50M. M1 thiên về bản mới (agent bản mới chạy chính bộ soát đó). M2 và M4 là phép đo gần đúng. `update.md` dùng chung các mẫu thiết kế phổ biến với đề `db-r1` nên 15/15 có thể là học theo đề.
+
+**Chi phí của 2.1 nằm ở đâu** (số `groupcost.js`, lượt theo `turns.js`):
+- **Không đi theo đường 8 lượt của `update.md`:** 33 lượt, trần là 14. Agent đọc đúng `SKILL.md` và `update.md`, viết schema bằng **một** `Write` (18k ký tự) rồi sửa tiếp bằng 13 lệnh `Edit` trong vài lượt (so với 9–11 lệnh rải 7–8 lượt của 2.0; bản cũ 1 Write + 1–3 Edit).
+- **Dò `_check/report.json` bằng Python tự viết: 5 lượt, 112k.** `--brief` ẩn INFO, danh sách nợ cũ và chi tiết truy vết, nên agent phải tự đào để biết sửa gì. Chế độ rút gọn không đủ để hành động; nó chỉ đẩy việc sang lượt khác.
+- **Từ điển: 3 lượt, 111k.** `dict_update.py` được chạy (hai lần) nhưng agent vẫn đọc `DATA-DICTIONARY.md` ba lần (~10k ký tự mỗi lần) và sửa tay hai chỗ.
+- **Đọc mã script:** 1 lần đọc `dbml_lint.py` vì cột biểu thức trong `access_patterns` phải viết có dấu huyền và tài liệu không nói; AP-05 báo "một phần". Đây là chỗ skill chỉ thiếu.
+- **`check.py` chạy kiểm 5 lần** (trần 3): hai `--brief` đứng riêng, ba lần kèm `dict_update.py` hay `rules.py --changed`; cộng một `promote` ở đầu.
+- **Ghi tài liệu:** `CAU-HOI-BA.md` 12,1k ký tự (46k, ngang bản cũ 12–13k — đã hết phình so với 2.0), `BAO-CAO-DO.md` 7,8k ký tự.
+- Ngữ cảnh lượt cuối ~212k (cũ ~150–180k, 2.0 ~260–300k).
+
+**Bẫy:** không rơi bẫy nào. Hai điều agent tự đi quá chữ đề và ghi ở câu hỏi: giữ `done` cạnh `arrived`; `invoices.appointment_id` thêm UNIQUE (thực thi luôn R-08).
+
+**Áp dụng điều kiện dừng của plan.** Token và phút đều không thấp hơn trung bình cũ ít nhất 25 % ở chất lượng ngang nhau, nên đề nghị: **dùng `requirements-to-erd` làm mặc định cho lượt cập nhật**; giữ `check.py`, `dbml_lint.py`, `dict_update.py` và `db-schema-review` làm công cụ tùy chọn (M1, M3 và M4 cho thấy phần công cụ có giá trị: ít WARN mới, DDL nạp được, thay đổi rủi ro có kế hoạch). Không đề xuất vòng sửa thứ hai; quyết định thuộc BA.
+
+Dữ liệu: `transcripts/db-r1-v21/` (hai transcript nén `rdc3`, `rdn1`), `runs-db-r1-v21/<lần>/docs/`. Prompt: `db-r1/PROMPT-DO-2.md`.
+
+#### db-schema-design 2.2: đo một lần (07/10/2026)
+
+Theo `db-r1/PROMPT-DO-3.md`: **một lần riêng bản 2.2** (`rdv22`, 12:53), không chạy bản cũ kèm. Prompt chạy nguyên văn bước 4 của `PROMPT-DO-2.md`. Trước khi chạy: 135 test qua, `.agents` đồng bộ. Chấm bằng `score.py` bản 2 + `pg_load.py` (thư viện đóng băng 2.0).
+
+| | Trung bình 3 lần cũ | 2.0 (2 lần) | 2.1 (`rdn1`) | **2.2 (`rdv22`)** |
+|---|---|---|---|---|
+| Token quy đổi | 0,60M | 1,26M | 0,835M | **0,56M** (0,54–0,58) |
+| Phút | 9,4 | 17,2 | 13,4 | **17,8** |
+| Lượt | 23 | 40 | 33 | **19** |
+| Bẫy thiết kế · requirement | 14,3 · 5 | 15 · 5 | 15 · 5 | **14 · 5** (D12 rơi) |
+| M1 ERROR · WARN mới | 0,7 · 22,3 | 0,5 · 6 | 0 · 7 | 1 · 6 (cả 7 là báo nhầm của thước 2.0, xem dưới) |
+| M3 lỗi DDL · FK ngược | 0 · 1 trên 3 lần | 1 · 4 | 0 · 0 | **0 · 0** |
+| M4 có kế hoạch | 50 % | 92 % ¹ | 80 % | 78 % (7/9) |
+| M5 sổ câu hỏi | 12,5k ký tự | 22,8k | 12,3k | **9,1k** |
+
+| Vế mục tiêu (so với trung bình cũ) | Kết quả | Kết luận |
+|---|---|---|
+| Token ≤ 75 % (≈ 0,45M) | 0,56M = 93 % (−7 %) | **chưa kết luận** — thấp hơn cũ nhưng chưa tới ngưỡng 25 % |
+| Phút ≤ 75 % (≈ 7,1) | 17,8 = 189 % | **không đạt** (xem phần thời gian) |
+| Lượt ≤ 14 | 19 (cũ 23) | **không đạt** trần, nhưng ít lượt hơn cả trung bình cũ |
+| 15/15 và 5/5 | 14/15 và 5/5 | **không đạt** — D12 rơi, do chính câu chữ của 2.2 (dưới) |
+
+**Đã có tác dụng (so với 2.1):** token −33 %, lượt 33 → 19. Agent đọc `SKILL.md` + `update.md` + tài liệu dự án trong 3 lượt; viết schema bằng một `Write` rồi 7 `Edit` trong cùng một tin nhắn; `check.py` chỉ **kiểm 2 lần sau khi viết**, cả hai đều kèm `--update-dictionary`; **không lượt nào tự viết Python dò `report.json`** (dùng `report.py --debt` một lần); khối từ điển máy sinh đặt đúng chỗ; 7 lệnh `Edit` vào từ điển là phần viết tay thật (thứ tự triển khai, phân loại dữ liệu), không chép lại bảng cột. DDL nạp được, không khóa ngoại nào ngược chiều, sổ câu hỏi ngắn nhất từ trước tới nay.
+
+**Thời gian 17,8 phút không do công cụ.** 1.038 trong 1.066 giây là nghĩ (741 giây; các lần khác 240–525) và viết (297 giây). Tốc độ ra chữ của lượt có file lớn chỉ ~76 ký tự/giây (kể cả nghĩ; các lần khác 181–291); chỉ tính phần viết ~110 ký tự/giây (`rdc3`, `rdn1` ~190). Một lần chạy đơn lẻ không có bản cũ chạy song song thì không tách được phần do máy chủ chậm với phần mô hình nghĩ lâu hơn — số phút lần này **không so được chắc** với các lần trước.
+
+**D12 rơi là lỗi của 2.2.** `invoices` chỉ có unique `(organization_id, appointment_id)`, không index nào dẫn đầu bằng cột khóa ngoại `appointment_id`. Bộ soát 2.2 có báo (`DB-IDX-01 invoices.appointment_id`), nhưng xếp vào **nợ cũ** vì chỗ thiếu này có từ v1.0 — và 2.2 vừa thêm câu "nợ cũ không bắt buộc sửa ở lượt này" vào `--brief` và `update.md`, trong khi chính nhu cầu N-12 đòi tra hóa đơn theo lịch hẹn. Bản 2.1 không có câu đó và đạt D12.
+
+**M1 của lần này là báo nhầm của thước đóng băng 2.0:** `DB-SEC-04 patient_insurances.card_number` (ERROR; 2.2 không còn báo ở bảng bảo hiểm), `DB-INT-07 services.code` (unique biểu thức `lower(code)`), 5 × `DB-IDX-01` trên `organization_id`. Bộ soát 2.2 không báo 7 chỗ này. M2 lệch 3 giá trị enum mới (`confirmed`, `arrived`, `no_show`) không ghi mã N.
+
+**Chỗ còn có thể sửa (chưa làm):** (1) nợ cũ nằm trên bảng/cột mà lượt này sửa hay nhu cầu nhắc tới phải hiện riêng là *phải quyết*, không gộp vào "không bắt buộc"; (2) `update.md` chưa có khuôn `schema-lint.json`: agent đọc fixture test để học, viết cấu hình sau `promote` rồi phải `promote` lại; (3) thời gian: chỉ đo cặp song song với bản cũ mới biết.
+
+Dữ liệu: `transcripts/db-r1-v22/`, `runs-db-r1-v22/rdv22/docs/`. Prompt: `db-r1/PROMPT-DO-3.md`.
+
+#### db-schema-design 2.3: đo một lần (07/10/2026)
+
+Theo `db-r1/PROMPT-DO-4.md`: **một lần riêng bản 2.3** (`rdv23`, 13:46), không chạy bản cũ kèm; prompt chạy nguyên văn bước 4 của `PROMPT-DO-2.md`. Trước khi chạy: 140 test qua, `.agents` đồng bộ. Chấm bằng `score.py` bản 2 + `pg_load.py` (thư viện đóng băng 2.0).
+
+| | TB 3 lần cũ | 2.1 | 2.2 | **2.3** |
+|---|---|---|---|---|
+| Token quy đổi | 0,60M | 0,835M | 0,56M | **0,73M** (0,71–0,75) |
+| Phút | 9,4 | 13,4 | 17,8 | **12,7** |
+| Lượt | 23 | 33 | 19 | **22** |
+| Bẫy thiết kế · requirement | 14,3 · 5 | 15 · 5 | 14 · 5 | **15 · 5** (D12 lấy lại được) |
+| M3 lỗi DDL · SQL Note · FK ngược | 0 · — · 1/3 lần | 0 · 9/9 · 0 | 0 · 4/4 · 0 | **0 · 5/5 · 0/46** |
+| M5 chặn thừa · câu hỏi · ký tự | 0 · 12 · 12,5k | 1* · 15 · 12,3k | 1* · 12 · 9,1k | **0 · 17 · 14,4k** |
+| M2 không truy được / thay đổi (phá vỡ) | 0/21 (3) | 0/18 (2) | 3/21 (5) | **15/62 (30)** |
+
+| Vế mục tiêu (so với TB cũ) | Kết quả | Kết luận |
+|---|---|---|
+| Token ≤ 75 % (≈ 0,45M) | 0,73M = 122 % | **không đạt** (cao hơn cũ) |
+| Phút ≤ 75 % (≈ 7,1) | 12,7 = 135 % | **không đạt** |
+| Lượt ≤ 14 | 22 | **không đạt** trần (ít hơn cũ 23 một lượt) |
+| 15/15 và 5/5 | 15/15 và 5/5 | **đạt** |
+
+**Ghi riêng:** lượt 16 **mất cache** (`đọc cache 0k, ghi 113k` dù lượt trước chỉ cách 18 giây — không do skill, không do nghỉ quá 5 phút). Khoản này khoảng +0,13M nằm trong 0,73M; bỏ ra thì ~0,60M, ngang trung bình cũ. Số nêu trên đây là số thô, chưa trừ. 12,7 phút gồm 491 giây nghĩ và 238 giây viết (2.2: 741 và 297).
+
+**Đã lấy lại:** D12 (index trên `invoices.appointment_id`) đạt; `check.py` kiểm 3 lần đúng trần; `schema-lint.json` viết **trước** `promote` nhưng agent vẫn `rebaseline` một lần (69 nợ cũ) rồi kiểm; không lượt nào tự viết Python dò `report.json`; từ điển máy sinh đặt vào mục "0. Thay đổi so với bản trước" (thay chỗ giữ chỗ); DDL nạp được, 0 khóa ngoại ngược.
+
+**Điều mới đáng lo: sửa lan sang bảng cũ.** So với 2.2, thay đổi trên schema tăng từ 21 lên **62**, trong đó phá vỡ từ 5 lên **30** (20 `Ref` bảng cũ được thêm `[delete: restrict]`, 4 khóa ngoại bị thay bằng khóa ghép, 5 unique mới); M2 không truy được về nhu cầu nào: 3 → **15** (3 index mới trên `doctors(clinic_id)`, `users(person_id)`, `appointment_services(service_id)` đúng là 3 trong 5 mục của khối "NỢ CŨ TRÊN PHẦN VỪA SỬA" — khối do 2.3 thêm; 11 chỗ `ref ~` còn lại là agent tự đổi sang khóa ghép tenant, "để gỡ WARN" theo báo cáo của nó, rồi `DB-IDX-01` mới đòi index lại cho `appointments.patient_id`, `payments.invoice_id`). Kéo theo: `schema.dbml` 22,5k (2.2: 18,7k), sổ câu hỏi 18,3k ký tự và 17 câu (2.2: 11,6k và 12), ba bảng lớn đổi khóa chính sang `uuidv7()` (cần PostgreSQL 18). M4: 25/38 thay đổi rủi ro có kế hoạch (66 %), 13 thiếu; M1 vẫn là báo nhầm của thước 2.0 (5 × `DB-IDX-01` trên `organization_id`, `card_number`) cộng `DB-INT-08 password_reset_tokens.token_hash` mà agent đã miễn trừ có lý do (mã ngẫu nhiên, duy nhất toàn cục).
+
+**Đọc kết quả.** Sửa của 2.3 có tác dụng đúng chỗ (D12), nhưng khối "phải quyết" cộng với việc gỡ WARN từng bước khiến agent dọn nợ cũ trên bảng không liên quan tới nhu cầu nào — mỗi thay đổi phá vỡ là thêm việc migration cho dự án thật và thêm chữ để viết, nên vừa tốn token vừa tăng rủi ro. Một lần chạy nên chưa phân biệt được phần do skill với phần do agent tự quyết; cả hai điểm 2.2 (rơi D12) và 2.3 (sửa lan) đều đến từ cùng một chỗ: ranh giới giữa *nợ cũ chạm nhu cầu* và *nợ cũ chỉ đứng gần*.
+
+Dữ liệu: `transcripts/db-r1-v23/`, `runs-db-r1-v23/rdv23/docs/`. Prompt: `db-r1/PROMPT-DO-4.md`.
+
+#### db-schema-design 2.4: đo một lần (07/10/2026)
+
+Theo `db-r1/PROMPT-DO-5.md`: **một lần riêng bản 2.4** (`rdv24`, 14:13), không chạy bản cũ kèm; prompt chạy nguyên văn bước 4 của `PROMPT-DO-2.md`. Trước khi chạy: 142 test qua, `.agents` đồng bộ. Chấm bằng `score.py` bản 2 + `pg_load.py` (thư viện đóng băng 2.0).
+
+| | TB 3 lần cũ | 2.2 | 2.3 | **2.4** |
+|---|---|---|---|---|
+| Token quy đổi | 0,60M | 0,56M | 0,73M (gồm ~0,13M mất cache) | **0,68M** (0,66–0,70; **không mất cache**) |
+| Phút | 9,4 | 17,8 | 12,7 | **12,7** (nghĩ 475 giây, viết 246; 205 ký tự/giây) |
+| Lượt | 23 | 19 | 22 | **25** |
+| Bẫy thiết kế · requirement | 14,3 · 5 | 14 · 5 | 15 · 5 | **15 · 5** |
+| M2 không truy được / thay đổi (phá vỡ) | 0/21 (3) | 3/21 (5) | 15/62 (30) | **0/20 (3)** |
+| M3 lỗi DDL · FK ngược | 0 · 1 trên 3 lần | 0 · 0 | 0 · 0 | **0 · 0/49** |
+| M4 có kế hoạch | 50 % | 78 % | 66 % | **67 %** (4/6) |
+| M5 chặn thừa · câu hỏi · ký tự | 0 · 12 · 12,5k | 1* · 12 · 9,1k | 0 · 17 · 14,4k | **0 · 16 · 13,3k** |
+
+| Vế mục tiêu | Mục tiêu | Kết quả | Kết luận |
+|---|---|---|---|
+| Token | ≤ 75 % TB cũ (≈ 0,45M) | 0,68M = 113 % | **không đạt** |
+| Phút | ≤ 75 % (≈ 7,1) | 12,7 = 135 % | **không đạt** |
+| Lượt | ≤ 14 | 25 | **không đạt** (TB cũ 23) |
+| 15/15 và 5/5 | | 15/15 và 5/5 | **đạt** |
+| Phá vỡ trên bảng cũ | ≤ 5 | **3** | **đạt** (2.3: 30) |
+| Không truy được | ≤ 3 | **0** | **đạt** (2.3: 15) |
+| D12 vẫn đạt | | đạt | **đạt** |
+
+**Sửa lan đã hết.** Khối cổng báo `Phá vỡ trên bảng cũ: 3 (index/unique 2 · khóa ngoại 1)` — đúng ba thay đổi do nhu cầu đòi (unique `services(organization_id, code)` cho N-11, unique `invoices(appointment_id)` cho R-08, và `Ref` của hóa đơn khai `restrict`); 0 thay đổi không gắn nhu cầu; 0 `Ref` cũ bị đụng. Cùng lúc D12 vẫn đạt: khối "NỢ CŨ TRÊN PHẦN VỪA SỬA" chỉ còn 1 mục (`invoices.appointment_id`) và agent xử lý đúng chỗ.
+
+**Token cao hơn 2.2 và 2.3 đã trừ mất cache vì ba vòng sửa do hai rule xung đột.** `DB-SCL-03` (bảng cỡ L: index dẫn đầu bằng cột tenant) báo `invoice_lines`, `invoices`; agent đổi index thì `DB-IDX-01` (khóa ngoại phải có index dẫn đầu bằng chính nó) báo lại; vòng ba chốt bằng 2 miễn trừ `DB-SCL-03` có lý do. Ba vòng này (kiểm, sửa, `rebaseline`, sửa sổ câu hỏi và từ điển) ≈ 275k trên tổng ≈ 774k tính theo `groupcost.js` (khoảng 36 %). Hai điều thêm: `check.py` kiểm 4 lần `--brief` cộng `promote` (trần 3); cấu hình `schema-lint.json` ghi 2 lần `Write` và 4 lần `Edit`, mỗi lần đổi lại `rebaseline`. Chín lượt đầu ≈ 230k — *đính chính sau khi đọc lại theo tin nhắn:* phần đọc chỉ 3 lượt (lượt 3 gồm `update.md` cùng 4 tài liệu dự án), sáu lượt còn lại là tìm cú pháp cấu hình (Grep `references/` ba lần) và ghi `schema-lint.json`.
+
+**Ghi chú thước:** M1 vẫn là báo nhầm của thước đóng băng 2.0 (8 × `DB-IDX-01` trên `organization_id`, `card_number` ở bảng bảo hiểm) cộng `DB-INT-08 password_reset_tokens.token_hash` mà agent đã miễn trừ có lý do (mã ngẫu nhiên, duy nhất toàn cục). M4: hai thay đổi thiếu kế hoạch là unique và `Ref` của `invoices.appointment_id`. Agent dựng bảng `password_reset_tokens` thay cho cột mật khẩu của N-14 — chấm tay D14 vẫn đạt (không cột mật khẩu rõ, có đặt lại bằng liên kết), nhưng là bảng dựng cho một nhu cầu đã chặn; ghi để BA xem.
+
+**Điều có thể sửa tiếp (chưa làm):** (1) giải xung đột `DB-SCL-03` ↔ `DB-IDX-01` ngay trong bộ soát — bảng con cỡ L của cha chưa có khóa ghép tenant thì chấp nhận index dẫn đầu bằng khóa ngoại và bỏ báo `DB-SCL-03` cho đúng cột đó, hay ngược lại, kèm một dòng trong `update.md`; ước 0,07–0,10M; (2) `update.md` lượt 2: viết `schema-lint.json` một lần đủ (cỡ bảng, `access_patterns`) thay vì sửa nhiều lần; (3) ~~bắt buộc đọc cả lô tài liệu trong một tin nhắn~~ — sai, agent đã đọc gộp; thay bằng bớt lần kiểm thừa (hai lần chạy `check.py` chỉ để lấy danh sách B8 và sau khi sửa chữ trong `Note`). Cả ba làm ở bản 2.5. Mục tiêu ≤ 75 % TB cũ vẫn xa (cần ≈ 0,45M).
+
+Dữ liệu: `transcripts/db-r1-v24/`, `runs-db-r1-v24/rdv24/docs/`. Prompt: `db-r1/PROMPT-DO-5.md`.
+
+¹ *Đính chính 07/10, sau lần đo 2.5:* `score.py` coi dòng mở đầu bằng chữ đậm (`**Q-03 · … · CHẶN** — N-14`) là gạch đầu dòng nên chỉ đọc đúng dòng đó, bỏ sót các dòng Nguồn / Hệ quả / Hướng ngay dưới. Đã sửa (gạch đầu dòng phải là `- `, `* `, `+ ` có dấu cách) và thêm test. Chấm lại cả 10 lần chạy: chỉ hai số đổi — M4 của `rdm2` 6/9 → **9/9** (nên M4 trung bình bản 2.0 là 92 %, không phải 79 %) và D14 của `rdv25` "một phần" → **đạt**. Mọi điểm khác giữ nguyên.
+
+#### db-schema-design 2.5: đo một lần (07/10/2026)
+
+Theo `db-r1/PROMPT-DO-6.md`: **một lần riêng bản 2.5** (`rdv25`, 14:47), không chạy bản cũ kèm; prompt chạy nguyên văn bước 4 của `PROMPT-DO-2.md`. Trước khi chạy: 146 test qua, `.agents` đồng bộ. Chấm bằng `score.py` (đã sửa lỗi chữ đậm ¹) + `pg_load.py`.
+
+| | TB 3 lần cũ | 2.2 | 2.3 | 2.4 | **2.5** |
+|---|---|---|---|---|---|
+| Token quy đổi | 0,60M | 0,56M | 0,73M (gồm ~0,13M mất cache) | 0,68M | **0,60M** (0,58–0,62; không mất cache) |
+| Phút | 9,4 | 17,8 | 12,7 | 12,7 | **18,9** (nghĩ 774 giây, viết 334; 180 ký tự/giây) |
+| Lượt | 23 | 19 | 22 | 25 | **21** |
+| Bẫy thiết kế · requirement | 14,3 · 5 | 14 · 5 | 15 · 5 | 15 · 5 | **15 · 5** |
+| Phá vỡ trên bảng cũ · không truy được | 3 · 0 | 5 · 3 | 30 · 15 | 3 · 0 | **1 · 0** |
+| M3 lỗi DDL · FK ngược | 0 · 1 trên 3 lần | 0 · 0 | 0 · 0 | 0 · 0 | **0 · 0/44** |
+| M4 có kế hoạch | 50 % | 78 % | 66 % | 67 % | **100 %** (5/5) |
+| M5 câu hỏi · ký tự | 12 · 12,5k | 12 · 9,1k | 17 · 14,4k | 16 · 13,3k | **17 · 11,1k** |
+
+| Vế mục tiêu | Mục tiêu | Kết quả | Kết luận |
+|---|---|---|---|
+| Token | ≤ 75 % TB cũ (≈ 0,45M) | 0,60M = 100 % | **không đạt** — lần đầu ngang bản cũ |
+| Phút | ≤ 75 % (≈ 7,1) | 18,9 = 201 % | **không đạt** |
+| Lượt | ≤ 14 | 21 (TB cũ 23) | **không đạt** |
+| 15/15 và 5/5 · D12 | | 15/15 và 5/5 · đạt | **đạt** |
+| Phá vỡ trên bảng cũ ≤ 5 · không truy được ≤ 3 | | 1 · 0 | **đạt** |
+
+**Ba chỗ sửa của 2.5 đều có tác dụng:** đọc gộp trong 2 lượt; `--suggest-config` dùng ngay, `schema-lint.json` **một lần `Write`, không `Edit`**, không Grep `references/`; **không còn vòng sửa qua lại** giữa `DB-SCL-03` và `DB-IDX-01`; `check.py` kiểm **3 lần** (mốc, sau khi viết, sau khi sửa) — lần đầu đúng trần. Agent còn tự hoàn lại 3 `delete: restrict` trên `Ref` cũ khi khối cổng báo phá vỡ trên bảng cũ (còn 1).
+
+**Chi phí còn lại** (`groupcost.js`, các nhóm có chồng lượt): ba lượt `rules.py --show` đọc 8 rule trước khi viết (≈ 134k kể cả nội dung mang theo), bảy lượt kiểm và sửa (≈ 207k), hai lượt `report.py --trace` và `check.py --help` (≈ 41k; agent tìm cách cho bộ truy vết thấy sổ câu hỏi rồi truyền `--requirements 1-yeu-cau,docs/database`, sinh một báo nhầm `dict_update.py`). **Thời gian 18,9 phút vẫn do mô hình**: 774 giây nghĩ (cao nhất trong các lần đo), không có bản cũ chạy kèm để tách phần máy chủ.
+
+**Ghi chú thước:** M1 1 · 7 vẫn là báo nhầm của thước đóng băng 2.0 (6 × `DB-IDX-01` trên `organization_id`, `DB-INT-07 services.code` unique biểu thức, `DB-SEC-04` `card_number` ở bảng bảo hiểm). M3: một câu SQL trong `Note` không tách được khỏi lời văn.
+
+Dữ liệu: `transcripts/db-r1-v25/`, `runs-db-r1-v25/rdv25/docs/`. Prompt: `db-r1/PROMPT-DO-6.md`.
+
+
+#### db-schema-design 2.6: đo một lần (07/10/2026)
+
+Theo `db-r1/PROMPT-DO-7.md`: **một lần riêng bản 2.6** (`rdv26`, 15:31), không chạy bản cũ kèm; prompt chạy nguyên văn bước 4 của `PROMPT-DO-2.md`. Trước khi chạy: 148 test qua, `.agents` đồng bộ. Chấm bằng `score.py` + `pg_load.py`, không sửa gì sau khi thấy kết quả.
+
+| | TB 3 lần cũ | 2.4 | 2.5 | **2.6** |
+|---|---|---|---|---|
+| Token quy đổi | 0,60M | 0,68M | 0,60M | **0,60M** (0,58–0,62; không mất cache) |
+| Phút | 9,4 | 12,7 | 18,9 | **10,2** (nghĩ 388 giây, viết 197; 178 ký tự/giây) |
+| Lượt | 23 | 25 | 21 | **22** |
+| Bẫy thiết kế · requirement | 14,3 · 5 | 15 · 5 | 15 · 5 | **15 · 5** |
+| Phá vỡ trên bảng cũ · không truy được | 3 · 0 | 3 · 0 | 1 · 0 | **2 · 0** (2 unique do nhu cầu đòi) |
+| M3 lỗi DDL · FK ngược | 0 · 1 trên 3 lần | 0 · 0 | 0 · 0 | **0/138 · 0/45** |
+| M4 có kế hoạch | 50 % | 67 % | 100 % | **100 %** (5/5) |
+| M5 câu hỏi · ký tự | 12 · 12,5k | 16 · 13,3k | 17 · 11,1k | **12 · 10,7k** |
+
+| Vế mục tiêu | Mục tiêu | Kết quả | Kết luận |
+|---|---|---|---|
+| Token | ≤ 75 % TB cũ (≈ 0,45M) | 0,60M = 100 % | **không đạt** |
+| Phút | ≤ 75 % (≈ 7,1) | 10,2 = 109 % | **không đạt** |
+| Lượt | ≤ 14 | 22 (TB cũ 23) | **không đạt** |
+| 15/15 và 5/5 · D12 | | 15/15 và 5/5 · đạt | **đạt** |
+| Phá vỡ bảng cũ ≤ 5 · không truy được ≤ 3 | | 2 · 0 | **đạt** |
+
+**Điều ghi thẳng: token KHÔNG giảm so với 2.5** (cùng 0,58–0,62M). Mức tiết kiệm ~0,1M ước từ việc sửa bộ truy vết và bớt tra rule không hiện ra trong tổng.
+
+**Chỗ sửa của 2.6 có tác dụng, thấy được trong transcript:**
+- Bộ truy vết: lần kiểm đầu (chưa có sổ câu hỏi) báo 3 định danh chưa có chỗ chứa — đúng, vì chưa ai ghi; sau khi sổ câu hỏi được viết, các lần kiểm sau báo **0 chưa có chỗ chứa, 3 đã hỏi hay cố ý không dựng**. Agent **không** chạy `report.py --trace`, **không** đọc `check.py --help`, sổ câu hỏi chỉ **một** `Write` và một `Edit` (2.5: hai `Write`).
+- `rules.py --show` còn 2 lệnh, mỗi lệnh gộp 6–7 mã (2.5: 3 lệnh).
+
+**Chỗ không như kỳ vọng:**
+- Agent vẫn tra nợ cũ: 5 lệnh `report.py --debt --rule …` trong một lượt (thay cho `rules.py --show`, rẻ hơn nhưng vẫn là một lượt).
+- `check.py` kiểm **4** lần (trần 3). Nguyên nhân thật: `schema-lint.json` ghi **hai** lần — lần đầu trước `promote`, lần hai sau khi viết schema vì `volumes` và `access_patterns` phải thêm cho các bảng mới, mà bảng mới chỉ có sau khi viết schema (`--suggest-config` chạy trên schema cũ). Cấu hình đổi sau `promote` kéo `rebaseline` và thêm một lần kiểm. Đây là giới hạn của quy trình, chưa sửa.
+- Thời gian 10,2 phút thấp hơn 2.5 (18,9) chủ yếu vì mô hình nghĩ ít hơn (388 so với 774 giây). Mỗi bản chỉ một lần chạy, không có bản cũ chạy kèm: **không quy được phần cải thiện này cho các chỗ sửa**.
+
+**Ghi chú thước:** M3 báo SQL trong `Note` chạy được 2/4, nhưng hai câu hỏng là **lời văn** ("…cần CREATE EXTENSION btree_gist:" và "…bằng CREATE UNIQUE INDEX CONCURRENTLY;") bị bộ tách câu của `pg_load.py` lấy nhầm — mở `schema.dbml` xem. DDL thật 0 lỗi trên 138 câu, 0 khóa ngoại ngược. Chưa sửa `pg_load.py` để không đổi thước sau khi thấy kết quả. M1 (1 · 6) vẫn là báo nhầm của thước đóng băng 2.0 (6 × `DB-IDX-01` trên `organization_id`, `card_number` ở bảng bảo hiểm). N-14 và N-18 xếp "không làm" (trái R-09; giá trị suy ra) thay vì "đã hỏi" — bộ chấm vẫn cho đạt.
+
+Dữ liệu: `transcripts/db-r1-v26/`, `runs-db-r1-v26/rdv26/docs/`. Prompt: `db-r1/PROMPT-DO-7.md`.

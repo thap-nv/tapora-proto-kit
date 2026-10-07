@@ -1,0 +1,452 @@
+// =====================================================================
+//  Phòng khám đa khoa chuỗi — đặt lịch khám
+//  v1.1 2026-10-07 — áp nhu cầu dữ liệu giai đoạn 2 (N-01 → N-20)
+//  Nguồn: 1-yeu-cau/YEU-CAU-PHONG-KHAM.md (R-01 → R-12)
+//         1-yeu-cau/NHU-CAU-DU-LIEU-MOI.md (N-01 → N-20)
+//  Câu hỏi còn mở với BA: docs/database/CAU-HOI-BA.md (Q-03 →)
+//  v1.0 2026-09-01 — schema đầu tiên (đề đo db-r1)
+// =====================================================================
+
+Project clinic_chain {
+  database_type: 'PostgreSQL'
+  Note: '''
+    Chuỗi phòng khám đa khoa, nhiều phòng khám thuộc một tổ chức (organization).
+    Mọi bảng nghiệp vụ mang organization_id (bảng con của hóa đơn, lịch hẹn, bác sĩ suy tenant qua bảng cha).
+    Múi giờ lưu UTC. Khóa chính bảng lớn (appointments, invoices, payments) dùng uuidv7() — cần PostgreSQL 18 trở lên, nếu thấp hơn thì sinh UUIDv7 ở ứng dụng (xem Q-15).
+  '''
+}
+
+Enum user_role {
+  admin
+  receptionist
+  doctor
+}
+
+Enum appointment_status {
+  booked [note: 'Đã đặt']
+  confirmed [note: 'Đã xác nhận (N-09)']
+  arrived [note: 'Đã đến (N-09)']
+  done [note: 'Đã khám xong, hoàn thành (R-08, N-10; giữ từ v1.0 — xem Q-08)']
+  no_show [note: 'Vắng mặt (N-09)']
+  cancelled [note: 'Đã hủy']
+}
+
+Enum payment_method {
+  cash
+  card
+  transfer
+}
+
+Enum allergy_severity {
+  mild [note: 'Nhẹ']
+  severe [note: 'Nặng']
+}
+
+Table organizations {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(160) [not null]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table clinics {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  name varchar(160) [not null]
+  address varchar(255)
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (organization_id, id) [unique, note: 'Đích của khóa ngoại ghép giữ cùng tổ chức (appointments → clinics)']
+  }
+
+  Note: 'Một phòng khám (chi nhánh). Nguồn: R-01. Báo cáo theo chi nhánh lọc theo clinic_id ở appointments, không tách bảng theo chi nhánh (N-19).'
+}
+
+Table people {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  full_name varchar(160) [not null]
+  phone varchar(20)
+  email varchar(160)
+  birth_date date
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
+
+  indexes {
+    (organization_id, full_name)
+  }
+
+  Note: 'Một dòng = một con người. Danh tính nằm ở đây, vai ở các bảng patients, doctors, users. Một nhân viên lễ tân đồng thời là bệnh nhân = một dòng people, hai dòng vai (N-03). Nguồn: R-02, N-03.'
+}
+
+Table patients {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  person_id uuid [not null, unique]
+  record_code varchar(32) [not null, note: 'Mã hồ sơ bệnh nhân (N-04). Duy nhất trong tổ chức giữa các hồ sơ chưa ẩn; hồ sơ đã ẩn nhả mã, mã được cấp lại cho người khác']
+  created_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz [note: 'Ẩn hồ sơ khỏi danh sách (N-13). Không xóa thật: hóa đơn, thanh toán, lịch hẹn cũ của người đó vẫn giữ để đối chiếu']
+
+  indexes {
+    (organization_id, id) [unique, note: 'Đích của khóa ngoại ghép giữ cùng tổ chức (appointments → patients)']
+  }
+
+  Note: '''
+    Hồ sơ bệnh nhân. Một người tối đa một hồ sơ bệnh nhân. Nguồn: R-02, R-03, N-04, N-13.
+    N-04 — mã hồ sơ unique theo tổ chức, chỉ tính hồ sơ chưa ẩn (unique một phần, DB-IDX-12):
+      CREATE UNIQUE INDEX patients_org_record_code_uq ON patients (organization_id, record_code) WHERE deleted_at IS NULL;
+    Hồ sơ đã ẩn mà được khôi phục khi mã đã cấp cho người khác thì phải cấp mã mới (xem Q-09).
+    person_id giữ unique ĐẦY ĐỦ (không một phần): ẩn hồ sơ không mở đường tạo hồ sơ thứ hai cho cùng một người, quay lại thì khôi phục hồ sơ cũ (R-03).
+    N-13 — khi deleted_at chuyển từ NULL sang có giá trị, lịch hẹn tương lai của người đó tự hủy (trigger hoặc việc nền):
+      CREATE TRIGGER patients_hide_cancels_future AFTER UPDATE OF deleted_at ON patients FOR EACH ROW WHEN (OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL) EXECUTE FUNCTION cancel_future_appointments_of_patient();
+      -- hàm: UPDATE appointments SET status = 'cancelled' WHERE patient_id = NEW.id AND starts_at > now() AND status IN ('booked', 'confirmed');
+    Hóa đơn và thanh toán không bị đụng: mọi khóa ngoại đi qua bệnh nhân là restrict, ẩn chỉ đặt deleted_at.
+  '''
+}
+
+Table doctors {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  person_id uuid [not null, unique]
+  clinic_id uuid [not null]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (organization_id, id) [unique, note: 'Đích của khóa ngoại ghép giữ cùng tổ chức (appointments → doctors)']
+    (clinic_id)
+  }
+
+  Note: 'Hồ sơ bác sĩ; mỗi bác sĩ thuộc một phòng khám chính. Chuyên khoa ở doctor_specialties (N-08). Nguồn: R-02, R-05.'
+}
+
+Table users {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  person_id uuid [not null]
+  role user_role [not null]
+  login_email varchar(160) [not null]
+  password_hash varchar(255) [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (organization_id, login_email) [unique]
+    (person_id)
+  }
+
+  Note: 'Tài khoản đăng nhập (nhân viên, bác sĩ, cổng bác sĩ). Một người có thể có nhiều tài khoản, mỗi vai một dòng. Mật khẩu chỉ lưu bản băm; quên mật khẩu thì đặt lại bằng password_reset_tokens, không lưu mật khẩu để đọc lại (N-14, xem Q-07). Nguồn: R-09.'
+}
+
+Table rooms {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  clinic_id uuid [not null]
+  name varchar(80) [not null]
+
+  indexes {
+    (clinic_id, name) [unique]
+  }
+
+  Note: 'Phòng khám bệnh trong một phòng khám. Chưa có phòng mổ (N-17 đang chờ Q-04). Nguồn: R-06.'
+}
+
+Table services {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  code varchar(32) [not null, note: 'Mã dịch vụ, ví dụ KHAM-TQ (N-11). Duy nhất trong tổ chức; hai tổ chức khác nhau dùng trùng mã được']
+  name varchar(160) [not null]
+  price numeric(12,2) [not null, check: `price >= 0`, note: 'Giá hiện hành. Hóa đơn KHÔNG đọc cột này: giá lúc khám đã chép vào invoice_lines.unit_price (N-01)']
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (organization_id, code) [unique]
+  }
+
+  Note: 'Danh mục dịch vụ và giá hiện hành. Nguồn: R-07, N-01, N-11.'
+}
+
+Table specialties {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  name varchar(120) [not null, note: 'Tên chuyên khoa, duy nhất trong tổ chức']
+  is_active boolean [not null, default: true, note: 'Quản trị viên bớt chuyên khoa = tắt cờ này, không xóa dòng (còn bác sĩ gắn với nó)']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (organization_id, name) [unique]
+  }
+
+  Note: 'Danh mục chuyên khoa do quản trị viên tự thêm, bớt trên màn hình quản trị — là dòng dữ liệu, không phải enum (N-08). Nguồn: N-08.'
+}
+
+Table doctor_specialties {
+  doctor_id uuid [not null]
+  specialty_id uuid [not null]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (doctor_id, specialty_id) [pk]
+    (specialty_id, doctor_id)
+  }
+
+  Note: 'Bảng nối: một bác sĩ thuộc nhiều chuyên khoa, một chuyên khoa có nhiều bác sĩ. Tenant suy qua doctors. Nguồn: N-08.'
+}
+
+Table doctor_schedules {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  doctor_id uuid [not null]
+  weekday smallint [not null, note: '1 = thứ hai … 7 = chủ nhật']
+  start_time time [not null]
+  end_time time [not null]
+
+  indexes {
+    (doctor_id, weekday)
+  }
+
+  Note: 'Ca làm việc cố định hằng tuần của bác sĩ. Nguồn: R-05.'
+}
+
+Table appointments {
+  id uuid [pk, default: `uuidv7()`]
+  organization_id uuid [not null]
+  clinic_id uuid [not null]
+  patient_id uuid [not null]
+  doctor_id uuid [not null, note: 'Bác sĩ phụ trách — đúng một (R-04). Ca khám nhóm nhiều bác sĩ (N-16) đang chờ Q-03, chưa dựng']
+  starts_at timestamptz [not null, note: 'Giờ bắt đầu']
+  ends_at timestamptz [not null, note: 'Giờ kết thúc (N-02). Phải lớn hơn starts_at; dùng để chặn bác sĩ trùng giờ']
+  status appointment_status [not null, default: 'booked']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (organization_id, clinic_id, starts_at)
+    (organization_id, patient_id, starts_at)
+    (organization_id, doctor_id, starts_at)
+  }
+
+  Note: '''
+    Lịch hẹn khám. Mỗi lịch hẹn có đúng một bác sĩ phụ trách (R-04). Nguồn: R-03, R-04, N-02, N-09, N-10, N-13, N-19.
+    N-02 — một bác sĩ không có hai lịch hẹn trùng thời gian; lịch đã hủy không giữ chỗ, hai khoảng liền nhau (kết thúc đúng lúc kia bắt đầu) không tính là trùng:
+      CREATE EXTENSION IF NOT EXISTS btree_gist;
+      ALTER TABLE appointments ADD CONSTRAINT appointments_time_order CHECK (ends_at > starts_at);
+      ALTER TABLE appointments ADD CONSTRAINT appointments_doctor_no_overlap EXCLUDE USING gist (doctor_id WITH =, tstzrange(starts_at, ends_at) WITH &&) WHERE (status <> 'cancelled');
+    N-09 — máy trạng thái (từ → sang). Chắc chắn theo N-09: booked → confirmed | cancelled; confirmed → arrived | no_show. Giả định 🔴 A (Q-08): confirmed → cancelled; arrived → done. Trạng thái cuối: done, no_show, cancelled. Cưỡng chế ở ứng dụng hoặc trigger BEFORE UPDATE OF status.
+    N-10 — số lần khám đã hoàn thành của bệnh nhân KHÔNG lưu: đếm dòng status = 'done' theo patient_id (dùng chỉ mục organization_id, patient_id, starts_at).
+    N-13 — ẩn bệnh nhân thì lịch hẹn tương lai (starts_at > now(), status booked hoặc confirmed) chuyển cancelled; xem trigger ở patients.
+    N-19 — báo cáo theo chi nhánh dùng chỉ mục (organization_id, clinic_id, starts_at), không tách bảng theo chi nhánh. Bảng lớn lên thì phân vùng theo khoảng starts_at, không theo chi nhánh.
+  '''
+}
+
+Table appointment_services {
+  appointment_id uuid [not null]
+  service_id uuid [not null]
+  quantity smallint [not null, default: 1]
+
+  indexes {
+    (appointment_id, service_id) [pk]
+    (service_id)
+  }
+
+  Note: 'Dịch vụ được thực hiện trong một lịch hẹn. Chưa mang giá: giá lúc khám chép vào invoice_lines khi phát hành hóa đơn (N-01). Nguồn: R-07.'
+}
+
+Table invoices {
+  id uuid [pk, default: `uuidv7()`]
+  organization_id uuid [not null]
+  appointment_id uuid [not null, unique, note: 'Lịch hẹn được lập hóa đơn. Một lịch hẹn đúng một hóa đơn (R-08); tra theo lịch hẹn dùng chính chỉ mục unique này (N-12)']
+  issued_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (organization_id, id) [unique, note: 'Đích của khóa ngoại ghép giữ cùng tổ chức (payments → invoices)']
+  }
+
+  Note: '''
+    Hóa đơn của một lịch hẹn. Nguồn: R-08, N-01, N-12, N-13.
+    Tổng tiền KHÔNG lưu: cộng quantity x unit_price của invoice_lines.
+    N-12 — tra theo lịch hẹn: unique (appointment_id). Tra theo bệnh nhân: appointments (organization_id, patient_id, starts_at) rồi invoices.appointment_id; không chép patient_id vào hóa đơn.
+    Hóa đơn bệnh nhân đã ẩn vẫn còn (N-13): khóa ngoại tới lịch hẹn là restrict.
+  '''
+}
+
+Table invoice_lines {
+  invoice_id uuid [not null]
+  service_id uuid [not null]
+  quantity smallint [not null, check: `quantity > 0`, note: 'Số lượng, chép từ appointment_services lúc phát hành']
+  unit_price numeric(12,2) [not null, check: `unit_price >= 0`, note: 'Đơn giá SNAPSHOT: chép từ services.price tại lúc phát hành hóa đơn (lúc khám), không đổi khi bảng giá đổi (N-01)']
+
+  indexes {
+    (invoice_id, service_id) [pk]
+    (service_id)
+  }
+
+  Note: 'Dòng chi tiết của hóa đơn, mang giá lúc khám. Bất biến sau khi phát hành. Tenant suy qua invoices. Nguồn: N-01.'
+}
+
+Table payments {
+  id uuid [pk, default: `uuidv7()`]
+  organization_id uuid [not null]
+  invoice_id uuid [not null]
+  amount numeric(12,2) [not null]
+  method payment_method [not null]
+  paid_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (organization_id, invoice_id)
+  }
+
+  Note: 'Một khoản thanh toán cho hóa đơn. Hoàn tiền là dòng mới mang số âm. Hóa đơn của bệnh nhân đã ẩn vẫn giữ thanh toán (N-13). Nguồn: R-08, N-13.'
+}
+
+Table appointment_deposits {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  appointment_id uuid [not null, unique, note: 'Lịch hẹn nhận cọc. Tối đa một khoản cọc cho mỗi lịch hẹn (N-05: "một khoản")']
+  amount numeric(12,2) [not null, check: `amount > 0`, note: 'Số tiền đặt cọc']
+  received_on date [not null, note: 'Ngày nhận cọc (ngày theo giờ địa phương của phòng khám)']
+  created_at timestamptz [not null, default: `now()`]
+
+  Note: 'Khoản đặt cọc của một lịch hẹn, nhận trước khi có hóa đơn nên không nằm trong payments (payments gắn hóa đơn). Chưa có khấu trừ, hoàn cọc: xem Q-10. Nguồn: N-05.'
+}
+
+Table patient_guardianships {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  guardian_person_id uuid [not null, note: 'Người bảo hộ — một người trong people (có thể là bác sĩ, lễ tân hay người ngoài)']
+  ward_patient_id uuid [not null, note: 'Bệnh nhân được bảo hộ (nhỏ tuổi)']
+  starts_on date [not null, note: 'Bảo hộ từ ngày']
+  ends_on date [note: 'Hết bảo hộ vào ngày; để trống = còn hiệu lực']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    ward_patient_id
+    guardian_person_id
+  }
+
+  Note: '''
+    Quan hệ bảo hộ giữa một người và một bệnh nhân (N-03): ai bảo hộ ai, từ ngày nào, đến ngày nào. Bảng quan hệ trên people, không đẻ thêm bảng danh tính (R-02). Nguồn: N-03.
+    CHECK (ends_on IS NULL OR ends_on >= starts_on)
+    Một người không bảo hộ cùng một bệnh nhân hai lần cùng lúc:
+      CREATE UNIQUE INDEX patient_guardianships_active_uq ON patient_guardianships (guardian_person_id, ward_patient_id) WHERE ends_on IS NULL;
+    Người bảo hộ không được là chính bệnh nhân (guardian_person_id khác patients.person_id của ward_patient_id): kiểm bằng trigger, vì CHECK không nhìn sang bảng khác.
+  '''
+}
+
+Table internal_notes {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  appointment_id uuid [note: 'Ghi chú gắn lịch hẹn']
+  patient_id uuid [note: 'Ghi chú gắn bệnh nhân']
+  invoice_id uuid [note: 'Ghi chú gắn hóa đơn']
+  body text [not null, note: 'Nội dung ghi chú nội bộ']
+  created_by uuid [not null, note: 'Nhân viên ghi chú']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (appointment_id, created_at)
+    (patient_id, created_at)
+    (invoice_id, created_at)
+  }
+
+  Note: '''
+    Ghi chú nội bộ của nhân viên, gắn ĐÚNG MỘT trong ba loại đối tượng: lịch hẹn, bệnh nhân, hóa đơn (N-06). Ba khóa ngoại rỗng được, không dùng cặp *_type + *_id (DB-MOD-06). Nguồn: N-06.
+    CHECK (num_nonnulls(appointment_id, patient_id, invoice_id) = 1)
+    Ghi một lần, không sửa (sửa = ghi chú mới) — giả định 🔴 A, xem Q-13. Ghi chú có thể chứa thông tin sức khỏe: xếp dữ liệu nhạy cảm (Q-12).
+  '''
+}
+
+Table patient_allergies {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  patient_id uuid [not null]
+  substance varchar(120) [not null, note: 'Tên chất gây dị ứng (nhập tự do, tra không phân biệt hoa thường — xem Q-11)']
+  severity allergy_severity [not null, note: 'Mức độ: nhẹ hoặc nặng']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (patient_id, `lower(substance)`) [unique]
+    (organization_id, `lower(substance)`)
+  }
+
+  Note: 'Dị ứng của bệnh nhân — một bệnh nhân nhiều dị ứng (N-07). Tra ngược theo chất: chỉ mục (organization_id, lower(substance)). Dữ liệu sức khỏe, xem Q-12. Nguồn: N-07.'
+}
+
+Table patient_insurances {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  patient_id uuid [not null, unique, note: 'Bệnh nhân sở hữu hồ sơ bảo hiểm. Tối đa một hồ sơ cho mỗi bệnh nhân (N-15)']
+  card_number varchar(40) [not null, note: 'Số thẻ bảo hiểm']
+  insurer_name varchar(120) [not null, note: 'Nhà bảo hiểm']
+  valid_until date [note: 'Hạn dùng của thẻ; để trống = không thời hạn (🔴 A)']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Note: 'Hồ sơ bảo hiểm của bệnh nhân, quan hệ 1–1 (khóa ngoại kèm unique). Đổi thẻ = ghi đè dòng này, không giữ lịch sử thẻ. Số thẻ là dữ liệu cá nhân (Q-12). Nguồn: N-15.'
+}
+
+Table password_reset_tokens {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null]
+  user_id uuid [not null, note: 'Tài khoản cần đặt lại mật khẩu']
+  token_hash varchar(128) [not null, unique, note: 'Băm của mã trong liên kết một lần; mã gốc không lưu']
+  expires_at timestamptz [not null, note: 'Hết hạn của liên kết']
+  used_at timestamptz [note: 'Thời điểm đã dùng; có giá trị = liên kết hết tác dụng']
+  created_by uuid [note: 'Quản trị viên yêu cầu hộ; trống = người dùng tự yêu cầu']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (user_id, created_at)
+  }
+
+  Note: 'Liên kết đặt lại mật khẩu dùng một lần, thay cho việc ghi lại mật khẩu để đọc cho bác sĩ (N-14 bị từ chối vì trái R-09, xem Q-07). Dòng hết hạn hoặc đã dùng xóa bằng việc nền sau ít ngày. Nguồn: N-14, R-09.'
+}
+
+// ---- Khóa ngoại: khai hành vi xóa ở Ref rời (DB-INT-05) -----------------
+
+Ref: clinics.organization_id > organizations.id [delete: restrict]
+Ref: people.organization_id > organizations.id [delete: restrict]
+Ref: patients.organization_id > organizations.id [delete: restrict]
+Ref: patients.person_id > people.id [delete: restrict]
+Ref: doctors.organization_id > organizations.id [delete: restrict]
+Ref: doctors.person_id > people.id [delete: restrict]
+Ref: doctors.clinic_id > clinics.id [delete: restrict]
+Ref: users.organization_id > organizations.id [delete: restrict]
+Ref: users.person_id > people.id [delete: restrict]
+Ref: rooms.organization_id > organizations.id [delete: restrict]
+Ref: rooms.clinic_id > clinics.id [delete: restrict]
+Ref: services.organization_id > organizations.id [delete: restrict]
+Ref: specialties.organization_id > organizations.id [delete: restrict]
+Ref: doctor_specialties.doctor_id > doctors.id [delete: cascade]
+Ref: doctor_specialties.specialty_id > specialties.id [delete: restrict]
+Ref: doctor_schedules.organization_id > organizations.id [delete: restrict]
+Ref: doctor_schedules.doctor_id > doctors.id [delete: restrict]
+Ref: appointments.organization_id > organizations.id [delete: restrict]
+Ref: appointments.(organization_id, clinic_id) > clinics.(organization_id, id) [delete: restrict]
+Ref: appointments.(organization_id, patient_id) > patients.(organization_id, id) [delete: restrict]
+Ref: appointments.(organization_id, doctor_id) > doctors.(organization_id, id) [delete: restrict]
+Ref: appointment_services.appointment_id > appointments.id [delete: restrict]
+Ref: appointment_services.service_id > services.id [delete: restrict]
+Ref: invoices.organization_id > organizations.id [delete: restrict]
+Ref: invoices.appointment_id > appointments.id [delete: restrict]
+Ref: invoice_lines.invoice_id > invoices.id [delete: restrict]
+Ref: invoice_lines.service_id > services.id [delete: restrict]
+Ref: payments.organization_id > organizations.id [delete: restrict]
+Ref: payments.(organization_id, invoice_id) > invoices.(organization_id, id) [delete: restrict]
+Ref: appointment_deposits.organization_id > organizations.id [delete: restrict]
+Ref: appointment_deposits.appointment_id > appointments.id [delete: restrict]
+Ref: patient_guardianships.organization_id > organizations.id [delete: restrict]
+Ref: patient_guardianships.guardian_person_id > people.id [delete: restrict]
+Ref: patient_guardianships.ward_patient_id > patients.id [delete: restrict]
+Ref: internal_notes.organization_id > organizations.id [delete: restrict]
+Ref: internal_notes.appointment_id > appointments.id [delete: restrict]
+Ref: internal_notes.patient_id > patients.id [delete: restrict]
+Ref: internal_notes.invoice_id > invoices.id [delete: restrict]
+Ref: internal_notes.created_by > users.id [delete: restrict]
+Ref: patient_allergies.organization_id > organizations.id [delete: restrict]
+Ref: patient_allergies.patient_id > patients.id [delete: cascade]
+Ref: patient_insurances.organization_id > organizations.id [delete: restrict]
+Ref: patient_insurances.patient_id > patients.id [delete: cascade]
+Ref: password_reset_tokens.organization_id > organizations.id [delete: restrict]
+Ref: password_reset_tokens.user_id > users.id [delete: cascade]
+Ref: password_reset_tokens.created_by > users.id [delete: set null]

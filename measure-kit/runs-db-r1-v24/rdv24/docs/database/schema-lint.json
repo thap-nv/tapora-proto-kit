@@ -1,0 +1,59 @@
+{
+  "_ghi_chu": "Cấu hình soát của dự án mẫu phòng khám. Cỡ dữ liệu theo Q-01 (3 phòng khám, ~40 bác sĩ, ~2.000 lịch hẹn/ngày) — giả định 🔴 A, chưa đo.",
+  "dialect": "postgresql",
+  "tenant_column": "organization_id",
+  "global_tables": [
+    "appointment_services",
+    "organizations"
+  ],
+  "audit_fk_suffixes": [],
+  "volumes": {
+    "organizations": "S",
+    "clinics": "S",
+    "rooms": "S",
+    "doctors": "S",
+    "doctor_schedules": "S",
+    "services": "S",
+    "people": "M",
+    "patients": "M",
+    "users": "S",
+    "appointments": "L",
+    "appointment_services": "L",
+    "invoices": "L",
+    "payments": "L",
+    "invoice_lines": "L",
+    "guardianships": "S",
+    "appointment_deposits": "M",
+    "internal_notes": "M",
+    "allergens": "S",
+    "patient_allergies": "M",
+    "specialties": "S",
+    "doctor_specialties": "S",
+    "patient_insurances": "M",
+    "password_reset_tokens": "S"
+  },
+  "access_patterns": [
+    { "id": "AP-01", "desc": "Hóa đơn của một lịch hẹn", "source": "N-12",
+      "table": "invoices", "eq": ["appointment_id"], "sort": [], "range": [], "freq": "hot" },
+    { "id": "AP-02", "desc": "Lịch hẹn của một bệnh nhân, mới nhất trước (đường tới hóa đơn theo bệnh nhân, và đếm số lần khám)", "source": "N-12",
+      "table": "appointments", "eq": ["patient_id"], "sort": ["starts_at desc"], "range": [], "freq": "hot" },
+    { "id": "AP-03", "desc": "Bệnh nhân dị ứng một chất", "source": "N-07",
+      "table": "patient_allergies", "eq": ["allergen_id"], "sort": [], "range": [], "freq": "normal" },
+    { "id": "AP-04", "desc": "Lịch hẹn của một phòng khám theo ngày (báo cáo, danh sách trong ngày)", "source": "R-11",
+      "table": "appointments", "eq": ["organization_id", "clinic_id"], "sort": [], "range": ["starts_at"], "freq": "hot" }
+  ],
+  "waivers": [
+    { "rule": "DB-INT-08", "target": "password_reset_tokens.token_hash",
+      "reason": "Liên kết đặt lại chỉ mang mã, chưa biết tổ chức khi tra; mã băm 256 bit ngẫu nhiên nên unique toàn cục không rò thông tin (N-14, Q-07)" },
+    { "rule": "DB-SCL-03", "target": "invoice_lines",
+      "reason": "Khóa chính ghép và index khóa ngoại dẫn đầu bằng cột cha (invoice_id) để lấy các dòng của một hóa đơn và kiểm khóa ngoại nhanh, cùng kiểu với payments.invoice_id có sẵn; id cha là uuid toàn hệ thống nên đã ngầm theo tổ chức, truy vấn vẫn lọc organization_id. Chưa cần chia dữ liệu theo tổ chức ở cỡ Q-01 (khoảng 2.000 lịch hẹn mỗi ngày)." },
+    { "rule": "DB-SCL-03", "target": "invoices.appointment_id",
+      "reason": "Unique appointment_id vừa cưỡng chế một hóa đơn cho một lịch hẹn (R-08) vừa là index tra theo lịch hẹn (N-12); id lịch hẹn là uuid toàn hệ thống nên đã ngầm theo tổ chức. Thêm organization_id dẫn đầu làm mất index khóa ngoại dẫn đầu bằng appointment_id (DB-IDX-01). Chưa cần chia dữ liệu theo tổ chức ở cỡ Q-01." }
+  ],
+  "diagram": {
+    "infra_columns": [
+      "organization_id"
+    ]
+  },
+  "requirement_code_pattern": "R-\\d+|N-\\d+"
+}

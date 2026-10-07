@@ -81,6 +81,15 @@ class Segments(unittest.TestCase):
         seg = s.segments(txt, s.code_pat('N-16'))
         self.assertEqual(['| N-16 | đã hỏi: Q-03 |'], seg)
 
+    def test_bold_paragraph_is_not_a_bullet(self):
+        """Đo 2.5: `**Q-03 · … · CHẶN** — N-14` rồi các dòng Nguồn/Hệ quả/Hướng liền dưới — đoạn phải gồm cả các dòng đó."""
+        s = self.score
+        txt = '**Q-03 · trái quy định · CHẶN** — N-14\nNguồn: x\nHướng (a) đặt lại bằng link dùng một lần\n\n**Q-04** — N-16'
+        seg = s.segments(txt, s.code_pat('N-14'))
+        self.assertEqual(1, len(seg))
+        self.assertIn('đặt lại', seg[0])
+        self.assertNotIn('N-16', seg[0])
+
     def test_expression_unique_counts_as_column(self):
         s = self.score
         import dbml_model as dm

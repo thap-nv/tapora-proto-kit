@@ -1,0 +1,91 @@
+{
+  "dialect": "postgresql",
+  "tenant_column": "organization_id",
+  "global_tables": [
+    "appointment_services",
+    "organizations"
+  ],
+  "audit_fk_suffixes": [],
+  "volumes": {
+    "organizations": "S",
+    "clinics": "S",
+    "people": "M",
+    "patients": "M",
+    "doctors": "S",
+    "users": "S",
+    "rooms": "S",
+    "services": "S",
+    "doctor_schedules": "S",
+    "specialties": "S",
+    "doctor_specialties": "S",
+    "appointments": "L",
+    "appointment_services": "L",
+    "invoices": "L",
+    "invoice_lines": "L",
+    "payments": "L",
+    "guardianships": "M",
+    "appointment_deposits": "M",
+    "internal_notes": "M",
+    "patient_allergies": "M",
+    "patient_insurances": "M"
+  },
+  "access_patterns": [
+    {
+      "id": "AP-01",
+      "desc": "N-12: tra hóa đơn theo lịch hẹn",
+      "source": "N-12",
+      "table": "invoices",
+      "eq": ["appointment_id"],
+      "sort": [],
+      "range": [],
+      "freq": "hot"
+    },
+    {
+      "id": "AP-02",
+      "desc": "N-12/N-10: lịch hẹn của một bệnh nhân (đường tới hóa đơn theo bệnh nhân, đếm lần khám hoàn thành)",
+      "source": "N-12",
+      "table": "appointments",
+      "eq": ["patient_id"],
+      "sort": ["starts_at desc"],
+      "range": [],
+      "freq": "hot"
+    },
+    {
+      "id": "AP-03",
+      "desc": "N-04: tra bệnh nhân theo mã hồ sơ trong tổ chức (unique một phần ghi ở Note)",
+      "source": "N-04",
+      "table": "patients",
+      "eq": ["organization_id", "record_code"],
+      "sort": [],
+      "range": [],
+      "freq": "hot"
+    },
+    {
+      "id": "AP-04",
+      "desc": "N-07: lễ tân tra bệnh nhân theo chất gây dị ứng",
+      "source": "N-07",
+      "table": "patient_allergies",
+      "eq": ["organization_id", "lower(substance)"],
+      "sort": [],
+      "range": [],
+      "freq": "normal"
+    },
+    {
+      "id": "AP-05",
+      "desc": "N-01: đọc dòng chi tiết khi in hóa đơn",
+      "source": "N-01",
+      "table": "invoice_lines",
+      "eq": ["invoice_id"],
+      "sort": [],
+      "range": [],
+      "freq": "hot"
+    }
+  ],
+  "waivers": [],
+  "diagram": {
+    "infra_columns": [
+      "organization_id"
+    ]
+  },
+  "requirement_code_pattern": "(?:N|R)-\\d+"
+}

@@ -1,39 +1,205 @@
 {
-  "_ghi_chu": "Điểm CHẤM TAY của bốn lần chạy 07/10/2026 (rdc1, rdm1, rdc2, rdm2) và hai thư mục thử bộ chấm (tot, naive). Mỗi bẫy mặc định là `default`, trừ các bẫy ghi ở `except`. Điểm tay ghi ở README measure-kit trước khi sửa score.py; D13 của rdm1 và rdm2 là đạt vì cascade chỉ xuống bảng con (ghi chú, dị ứng, bảo hiểm), hóa đơn và thanh toán là restrict. `quality` ghim kết quả M1, M2, M4, M5 của bộ chấm ở lần soạn này để thay đổi sau là thay đổi có chủ ý; M2 và M4 là phép đo gần đúng. `pg` là kết quả pg_load.py (M3, chỉ chạy khi RUN_PG=1): số lỗi nạp DDL và số khóa ngoại dbml2sql sinh ngược chiều so với DBML (Ref khai bằng `-`).",
+  "_ghi_chu": "Điểm CHẤM TAY của bốn lần chạy 07/10/2026 (rdc1, rdm1, rdc2, rdm2) và hai thư mục thử bộ chấm (tot, naive). Mỗi bẫy mặc định là `default`, trừ các bẫy ghi ở `except`. Điểm tay ghi ở README measure-kit trước khi sửa score.py; D13 của rdm1 và rdm2 là đạt vì cascade chỉ xuống bảng con (ghi chú, dị ứng, bảo hiểm), hóa đơn và thanh toán là restrict. `quality` ghim kết quả M1, M2, M4, M5 của bộ chấm ở lần soạn này để thay đổi sau là thay đổi có chủ ý; M2 và M4 là phép đo gần đúng. `pg` là kết quả pg_load.py (M3, chỉ chạy khi RUN_PG=1): số lỗi nạp DDL và số khóa ngoại dbml2sql sinh ngược chiều so với DBML (Ref khai bằng `-`). 07/10 sau đo 2.5: sửa lỗi score.py đọc dòng chữ đậm (**…**) như gạch đầu dòng — M4 của rdm2 đổi 6/9 → 9/9, điểm khác giữ nguyên.",
   "runs": {
     "rdc1": {
-      "dir": "../runs-db-r1/rdc1", "default": "đạt", "except": { "D13": "một phần" },
-      "tally": { "thiết kế": [14, 1, 0], "requirement": [5, 0, 0] },
-      "quality": { "M1": { "error": 1, "warn": 24 }, "M2": { "changes": 21, "untraced": 0, "breaking": 2 }, "M4": { "risky": 5, "planned": 4 }, "M5": { "over_blocked": [], "not_built": 6 } }
+      "dir": "../runs-db-r1/rdc1",
+      "default": "đạt",
+      "except": {
+        "D13": "một phần"
+      },
+      "tally": {
+        "thiết kế": [
+          14,
+          1,
+          0
+        ],
+        "requirement": [
+          5,
+          0,
+          0
+        ]
+      },
+      "quality": {
+        "M1": {
+          "error": 1,
+          "warn": 24
+        },
+        "M2": {
+          "changes": 21,
+          "untraced": 0,
+          "breaking": 2
+        },
+        "M4": {
+          "risky": 5,
+          "planned": 4
+        },
+        "M5": {
+          "over_blocked": [],
+          "not_built": 6
+        }
+      }
     },
     "rdm1": {
-      "dir": "../runs-db-r1/rdm1", "default": "đạt", "except": {},
-      "tally": { "thiết kế": [15, 0, 0], "requirement": [5, 0, 0] },
-      "quality": { "M1": { "error": 0, "warn": 2 }, "M2": { "changes": 27, "untraced": 1, "breaking": 11 }, "M4": { "risky": 15, "planned": 13 }, "M5": { "over_blocked": [], "not_built": 6 } }
+      "dir": "../runs-db-r1/rdm1",
+      "default": "đạt",
+      "except": {},
+      "tally": {
+        "thiết kế": [
+          15,
+          0,
+          0
+        ],
+        "requirement": [
+          5,
+          0,
+          0
+        ]
+      },
+      "quality": {
+        "M1": {
+          "error": 0,
+          "warn": 2
+        },
+        "M2": {
+          "changes": 27,
+          "untraced": 1,
+          "breaking": 11
+        },
+        "M4": {
+          "risky": 15,
+          "planned": 13
+        },
+        "M5": {
+          "over_blocked": [],
+          "not_built": 6
+        }
+      }
     },
     "rdc2": {
-      "dir": "../runs-db-r1/rdc2", "default": "đạt", "except": {},
-      "tally": { "thiết kế": [15, 0, 0], "requirement": [5, 0, 0] },
-      "quality": { "M1": { "error": 1, "warn": 20 }, "M2": { "changes": 22, "untraced": 0, "breaking": 5 }, "M4": { "risky": 9, "planned": 2 }, "M5": { "over_blocked": [], "not_built": 6 } }
+      "dir": "../runs-db-r1/rdc2",
+      "default": "đạt",
+      "except": {},
+      "tally": {
+        "thiết kế": [
+          15,
+          0,
+          0
+        ],
+        "requirement": [
+          5,
+          0,
+          0
+        ]
+      },
+      "quality": {
+        "M1": {
+          "error": 1,
+          "warn": 20
+        },
+        "M2": {
+          "changes": 22,
+          "untraced": 0,
+          "breaking": 5
+        },
+        "M4": {
+          "risky": 9,
+          "planned": 2
+        },
+        "M5": {
+          "over_blocked": [],
+          "not_built": 6
+        }
+      }
     },
     "rdm2": {
-      "dir": "../runs-db-r1/rdm2", "default": "đạt", "except": {},
-      "tally": { "thiết kế": [15, 0, 0], "requirement": [5, 0, 0] },
-      "quality": { "M1": { "error": 1, "warn": 10 }, "M2": { "changes": 23, "untraced": 1, "breaking": 6 }, "M4": { "risky": 9, "planned": 6 }, "M5": { "over_blocked": [], "not_built": 6 } }
+      "dir": "../runs-db-r1/rdm2",
+      "default": "đạt",
+      "except": {},
+      "tally": {
+        "thiết kế": [
+          15,
+          0,
+          0
+        ],
+        "requirement": [
+          5,
+          0,
+          0
+        ]
+      },
+      "quality": {
+        "M1": {
+          "error": 1,
+          "warn": 10
+        },
+        "M2": {
+          "changes": 23,
+          "untraced": 1,
+          "breaking": 6
+        },
+        "M4": {
+          "risky": 9,
+          "planned": 9
+        },
+        "M5": {
+          "over_blocked": [],
+          "not_built": 6
+        }
+      }
     },
     "tot": {
-      "dir": "score-tests/tot", "default": "đạt", "except": {},
-      "tally": { "thiết kế": [15, 0, 0], "requirement": [5, 0, 0] }
+      "dir": "score-tests/tot",
+      "default": "đạt",
+      "except": {},
+      "tally": {
+        "thiết kế": [
+          15,
+          0,
+          0
+        ],
+        "requirement": [
+          5,
+          0,
+          0
+        ]
+      }
     },
     "naive": {
-      "dir": "score-tests/naive", "default": "không", "except": { "D02": "một phần" },
-      "tally": { "thiết kế": [0, 1, 0], "requirement": [0, 0, 0] }
+      "dir": "score-tests/naive",
+      "default": "không",
+      "except": {
+        "D02": "một phần"
+      },
+      "tally": {
+        "thiết kế": [
+          0,
+          1,
+          0
+        ],
+        "requirement": [
+          0,
+          0,
+          0
+        ]
+      }
     }
   },
   "pg": {
-    "rdc1": { "ddl_errors": 0, "fk_reversed": 0 },
-    "rdm1": { "ddl_errors": 0, "fk_reversed": 0 },
-    "rdc2": { "ddl_errors": 0, "fk_reversed": 1 },
-    "rdm2": { "ddl_errors": 1, "fk_reversed": 4 }
+    "rdc1": {
+      "ddl_errors": 0,
+      "fk_reversed": 0
+    },
+    "rdm1": {
+      "ddl_errors": 0,
+      "fk_reversed": 0
+    },
+    "rdc2": {
+      "ddl_errors": 0,
+      "fk_reversed": 1
+    },
+    "rdm2": {
+      "ddl_errors": 1,
+      "fk_reversed": 4
+    }
   }
 }
