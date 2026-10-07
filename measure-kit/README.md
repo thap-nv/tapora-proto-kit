@@ -2118,3 +2118,40 @@ Theo `db-r1/PROMPT-DO-7.md`: **một lần riêng bản 2.6** (`rdv26`, 15:31), 
 **Ghi chú thước:** M3 báo SQL trong `Note` chạy được 2/4, nhưng hai câu hỏng là **lời văn** ("…cần CREATE EXTENSION btree_gist:" và "…bằng CREATE UNIQUE INDEX CONCURRENTLY;") bị bộ tách câu của `pg_load.py` lấy nhầm — mở `schema.dbml` xem. DDL thật 0 lỗi trên 138 câu, 0 khóa ngoại ngược. Chưa sửa `pg_load.py` để không đổi thước sau khi thấy kết quả. M1 (1 · 6) vẫn là báo nhầm của thước đóng băng 2.0 (6 × `DB-IDX-01` trên `organization_id`, `card_number` ở bảng bảo hiểm). N-14 và N-18 xếp "không làm" (trái R-09; giá trị suy ra) thay vì "đã hỏi" — bộ chấm vẫn cho đạt.
 
 Dữ liệu: `transcripts/db-r1-v26/`, `runs-db-r1-v26/rdv26/docs/`. Prompt: `db-r1/PROMPT-DO-7.md`.
+
+## db-rv1: soát schema có sẵn — `db-schema-review` 2.7 và 2.8 (07/10/2026)
+
+Theo `db-rv1/PROMPT-DO-RV.md`: **một cặp song song, mỗi bản một lần** (`rvc27` = 2.7 + chỉ ghim `npx`; `rvn28` = 2.8), cùng đề — soát bản v4.4 làm dở (56 bảng, 205 KB) của một dự án thật, cùng tài liệu requirement và báo cáo soát kỳ trước. Bản đóng băng đầu vào, băm sha256 ở `scratchpad/rvbase.sha256`; thước `db-rv1/score_review.py` (6 test qua). **Lần chạy thứ nhất cả hai bị cắt vì chạm giới hạn phiên của API (429)** sau ~6 phút và ~0,8M token mỗi bên, chưa viết xong báo cáo; **bỏ, chạy lại từ thư mục sạch** (transcript giữ ở `transcripts/db-rv1/partial-*`). Số dưới đây là lần chạy thứ hai.
+
+| | **2.7** (mốc) | **2.8** | 2.8 / 2.7 |
+|---|---|---|---|
+| Token quy đổi | 1,66–1,70M | **1,58–1,61M** | 95 % |
+| Phút | 16,8 | **15,1** | 90 % |
+| Lượt · lệnh `Bash` | 57 · 46 | **52 · 36** | 91 % · 78 % |
+| Token ra (output) | 24–33k | 19–26k | ~80 % |
+| Phát hiện cốt lõi G1–G5 (regex) | 5/5 | 5/5 | — |
+| Phát hiện phụ X1–X5 | 5/5 | 5/5 | — |
+| Số liệu đúng · số bảng lạ · file chỉ-đọc bị sửa | đạt · 0 · 0 | đạt · 0 · 0 | — |
+| Báo cáo | 38,7k ký tự (1 `Write` + 16 `Edit`) | 55,3k (khối máy ~17k + viết tay 38,3k, 9 `Edit`) | **143 %** |
+
+| Vế mục tiêu | Mục tiêu | Kết quả | Kết luận |
+|---|---|---|---|
+| Token | ≤ 75 % của 2.7 | 95 % | **chưa kết luận** (thấp hơn nhưng chưa tới 25 %) |
+| Phút | ≤ 75 % | 90 % | **chưa kết luận** |
+| Lượt | thấp hơn | 52 < 57 | thấp hơn, nhưng trong nhiễu của một lần chạy |
+| G1–G5 không rơi | ≥ 2.7 | 5/5 = 5/5 | **đạt** — nhưng thước đã bão hòa (xem dưới) |
+| Số liệu đúng · không sửa file chỉ-đọc | cả hai | cả hai | **đạt** |
+
+**Điều ghi thẳng: 2.8 không rẻ hơn đáng kể.** Giảm 5–10 % nằm trong khoảng dao động của một lần chạy (bản cũ từng dao động gấp 1,9 giữa hai lần). Dự đoán trước đo — *"bản soát tốn ~30 lệnh, khoảng 10 là đường vòng; báo cáo gõ tay giảm một nửa"* — **đúng một nửa**:
+
+- **Đường vòng giảm thật:** lệnh `check.py` 4 (2 trong số đó ghép với `npx dbml2sql`) + 1 `rebaseline` → 1 lệnh `--review`; Python tự viết 8 → 3; lệnh `npx dbml2sql` chạy tay 6 → 0 *(⚠ một phần do lỗi `@dbml/*` 10.3.0 sáng 07/10 hôm đó làm lệnh chạy tay không ghim của agent 2.7 hỏng — chi phí môi trường, không do skill; 2.8 dùng `_check/schema.sql` có sẵn)*; `Edit` sửa báo cáo 16 → 9. 2.7 phải sửa **số** đã gõ tay trong báo cáo ít nhất 7 lần sau khi viết (24→26, 35→37, 52→50, "bốn→năm", cỡ M 12→11, dòng d984→d983…); khối máy của 2.8 đúng từ đầu.
+- **Phần tốn nhất không đổi:** cả hai **đọc schema 141–157 KB qua 11–14 lượt `Read`** (ngữ cảnh ~40k token nằm lại qua 40+ lượt sau) — đây là cách tìm ra phát hiện nặng nhất, không phải đường vòng — và **vẫn viết tay ~38k ký tự** báo cáo. Khối máy **cộng thêm** vào báo cáo thay vì thay chữ viết tay: agent 2.8 đọc lại 9,7k ký tự khối máy rồi viết phần của mình dài như 2.7 viết cả báo cáo, nên báo cáo dài hơn 43 %.
+- **2.8 theo đúng luồng mới:** một `check.py --review`, `report.py --review-md`, `rules.py --manual review --changed`, `report.py --rule … --limit`; đọc báo cáo kỳ trước bằng `grep -n "^#"` rồi `Read` cả file (23k ký tự) — dòng dặn trong `SKILL.md` bị bỏ một nửa.
+
+**Chất lượng: không phân biệt được bằng thước này.** G1–G5 đạt cả hai, và bản nháp tay của chính người viết skill cũng chấm 5/5 — thước bão hòa như db-r1. Đọc hai báo cáo: **cả hai agent tìm thêm một phát hiện nặng mà thước không có và máy không bắt** — các index khai `[unique]` kèm `note: 'Partial: WHERE …'` nhưng `dbml2sql` sinh unique đầy đủ không có điều kiện, chặn luồng hợp lệ *(ví dụ `free_learning_rights (student_id, swim_style_id)`: quyền thứ hai bị chặn sau khi quyền đầu đã đóng; người viết kiểm lại ở `out.sql`: đúng, ≥ 4 chỗ khớp mẫu đơn giản nhất, hai agent đếm 9)* — và **cả hai tự kiểm DDL của 11 `ref: -` rồi kết luận `DB-INT-14` báo nhầm**, nên rule nhiễu này tốn công cả hai bên.
+
+**Độ chắc:** mỗi bản một lần; đề và `golden.json` do chính người viết skill dựng (G1–G5 là kết quả soát của chính họ, có thể thiên về hai bản cùng một cách); chấm bằng regex là đại diện; số trong lời viết tay **chưa được kiểm hết** — chỉ kiểm số đầu báo cáo và các cặp "N mới/N cũ" của ba rule. Hai lần chạy đầu bị 429 không tính.
+
+**Chỗ chi phí còn nằm (không sửa trong đợt này):** (1) đọc schema nguyên bản — một rule bắt "`note` ghi `Partial` mà DDL ra unique đầy đủ" sẽ để máy báo phát hiện nặng nhất thay vì bắt agent đọc 150 KB để thấy; (2) báo cáo viết tay 38k ký tự — không có trần độ dài trong `SKILL.md`; (3) `DB-INT-14` báo nhầm `ref: -` inline.
+
+Dữ liệu: `transcripts/db-rv1/`, `runs-db-rv1/{rvc27,rvn28}/` (chỉ báo cáo và `_check/report.json`). Thước: `db-rv1/golden.json`, `score_review.py`, `test_score_review.py`. Prompt: `db-rv1/PROMPT-DO-RV.md`.

@@ -1,0 +1,42 @@
+{
+  "_ghi_chu": "Thước chấm lần đo soát schema (db-schema-review) trên bản v4.4 làm dở của một dự án thật 56 bảng. 5 phát hiện G1-G5 đã được kiểm chứng bằng lệnh ngày 07/10/2026 (xem README mục db-rv1) TRƯỚC khi sửa skill. Dữ liệu dự án không nằm trong repo này: chỉ có băm sha256 của các file không được sửa. Mỗi phát hiện đạt khi MỘT cửa sổ 900 ký tự trong báo cáo chứa đủ mọi mẫu (regex, không phân biệt hoa thường). Đây là chấm bằng regex — chỉ là đại diện; đọc báo cáo để xem lời có đúng không.",
+  "window": 900,
+  "core": {
+    "G1": {
+      "title": "Khóa ngoại ghép chỉ có trên giấy: ghi chú hứa composite FK nhưng schema có 0 Ref nhiều cột (DB-INT-12 / DB-MOD-14)",
+      "all": ["composite|khóa ngoại ghép|FK ghép", "INT-12|MOD-14|tenant|tổ chức", "\\b0\\b|không có|chưa có|chưa thực|trên giấy|chưa được"]
+    },
+    "G2": {
+      "title": "roles: 'đúng một vai master' (organization_id NULL) không được cưỡng chế vì NULL trong UNIQUE (DB-INT-09)",
+      "all": ["roles", "master", "NULL", "unique|NULLS NOT DISTINCT|INT-09"]
+    },
+    "G3": {
+      "title": "211 khóa ngoại chưa khai hành vi xóa, toàn bộ ref inline (DB-INT-05)",
+      "all": ["INT-05", "211|\\b46\\b|\\b165\\b", "delete|xóa"]
+    },
+    "G4": {
+      "title": "Khóa ngoại mới của v4.4 chưa có index (DB-IDX-01), nêu cụ thể ít nhất 3 cột",
+      "all": ["IDX-01"],
+      "any_n": {"n": 3, "of": ["users\\.role_id", "role_permissions\\.permission_id", "coach_certificates\\.certificate_type_id", "persons\\.age_group_id", "students\\.customer_source_id", "facilities\\.bank_account_id", "prospects\\.age_group_id", "prospects\\.customer_source_id", "course_products\\.age_group_id", "schedule_change_requests\\.preferred_time_slot_id", "guardianship_transfer_requests\\.current_guardianship_id"]}
+    },
+    "G5": {
+      "title": "Tài liệu requirement chưa theo kịp v4.4: USE-CASE còn nói can_check_in (cột đã bỏ)",
+      "all": ["can_check_in", "USE-CASE|UC-|requirement|tài liệu", "đã bỏ|không còn|thay|lệch|cũ|bỏ "]
+    }
+  },
+  "extra": {
+    "X1": {"title": "Hỏi: đã có CSDL nào nạp v4.3 chưa (16 thay đổi phá vỡ + 19 chạm dữ liệu cần migration hay không)", "all": ["phá vỡ|breaking", "\\b16\\b", "nạp|chạy thật|môi trường|migration|đã có dữ liệu"]},
+    "X2": {"title": "Câu cũ của v4.3 còn mở: ảnh khuôn mặt không có nhật ký ai đã xem", "all": ["ảnh", "xem|truy cập|access", "nhật ký|log"]},
+    "X3": {"title": "Khoảng hiệu lực bảng giá không có EXCLUDE", "all": ["EXCLUDE", "price_list_items|bảng giá|hiệu lực"]},
+    "X4": {"title": "external_coaches không có nguồn mã cụ thể", "all": ["external_coaches", "nguồn|BR-NG"]},
+    "X5": {"title": "Thấy DB-INT-14 báo nhầm hoặc kiểm chiều khóa ngoại bằng SQL thật", "all": ["INT-14", "báo nhầm|dương tính giả|đúng chiều|không ngược|miễn|false positive"]}
+  },
+  "numbers": {"must_contain": ["56 bảng", "612 cột"], "allowed_table_counts": [56, 44, 12]},
+  "read_only_sha256": {
+    "schema.dbml": "7bdb58204449c5853f517791911e0ed4fe94a596ca0764fae9f9ed770dd962ac",
+    "schema-lint.json": "fb6ece2a4fb6219858ceac0f90b7482d823dd85fcd0c1d3f1fe9c984e6df0f27",
+    "DATA-DICTIONARY.md": "323d4b430b5a81f8c2696acf1c8491252790d03cfc1d5d5045463b142ea2ce52",
+    "schema.html": "f70ea65e1c373afe92854e386b7f88b0d9a00a623c39cc1dc68337079e806825",
+    "_check/last-green.dbml": "e9ae34dbe36917b8d6667cc58dfde995689e04201bf02c0ecbec7ba149c01745"
+  }
+}
