@@ -1,0 +1,6 @@
+# Câu hỏi cho BA
+**Q-03 · N-16 · mâu thuẫn · CHẶN** — R-04 nói mỗi lịch hẹn có đúng một bác sĩ, N-16 nói ca nhóm có từ hai bác sĩ. Hệ quả: doctor_id NOT NULL trên appointments sẽ không đủ. Hướng (a) tách ca nhóm thành loại lịch hẹn riêng; (b) bảng appointment_doctors.
+**Q-04 · N-17 · thiếu dữ liệu · CHẶN** — phòng mổ và độ dài ca phẫu thuật không có trong mô hình; không cưỡng chế được "không trùng phòng mổ". Hỏi BA: phòng mổ là gì, ca dài bao lâu.
+**Q-05 · N-18 · giá trị suy ra** — số buổi còn lại = tổng gói − đã dùng; lưu riêng sẽ lệch khi hủy buổi. Đề xuất tính ra từ bảng buổi điều trị, không thêm cột.
+**Q-06 · N-19 · cản mở rộng** — bảng riêng cho từng chi nhánh: thêm chi nhánh thứ tư là thêm bảng. Dùng một bảng appointments có clinic_id + index (clinic_id, starts_at); báo cáo nhanh bằng bảng tổng hợp.
+**Q-07 · N-20 · dữ liệu sinh trắc của trẻ em** — giữ vô thời hạn và mọi lễ tân xem được là rủi ro quy định dữ liệu cá nhân. Đề xuất hạn lưu, quyền xem riêng, mục đích và đồng ý của người giám hộ trước khi dựng bảng.

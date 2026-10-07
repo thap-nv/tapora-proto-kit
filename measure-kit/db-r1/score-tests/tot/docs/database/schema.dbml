@@ -1,0 +1,296 @@
+// =====================================================================
+//  Phòng khám đa khoa chuỗi — đặt lịch khám
+//  v1.0 2026-09-01 — schema hiện có của dự án mẫu (đề đo db-r1)
+//  Nguồn: 1-yeu-cau/YEU-CAU-PHONG-KHAM.md (R-01 → R-12)
+// =====================================================================
+
+Project clinic_chain {
+  database_type: 'PostgreSQL'
+  Note: '''
+    Chuỗi phòng khám đa khoa, nhiều phòng khám thuộc một tổ chức (organization).
+    Mọi bảng nghiệp vụ mang organization_id. Múi giờ lưu UTC.
+  '''
+}
+
+Enum user_role {
+  admin
+  receptionist
+  doctor
+}
+
+Enum appointment_status {
+  booked
+  confirmed
+  arrived
+  no_show
+  cancelled
+}
+
+Enum payment_method {
+  cash
+  card
+  transfer
+}
+
+Table organizations {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(160) [not null]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table clinics {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  name varchar(160) [not null]
+  address varchar(255)
+  created_at timestamptz [not null, default: `now()`]
+
+  Note: 'Một phòng khám (chi nhánh). Nguồn: R-01.'
+}
+
+Table people {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  full_name varchar(160) [not null]
+  phone varchar(20)
+  email varchar(160)
+  birth_date date
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
+
+  indexes {
+    (organization_id, full_name)
+  }
+
+  Note: 'Một dòng = một con người. Danh tính nằm ở đây, vai ở các bảng patients, doctors, users. Nguồn: R-02.'
+}
+
+Table patients {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  person_id uuid [not null, unique, ref: - people.id]
+  patient_code varchar(24) [not null]
+  created_at timestamptz [not null, default: `now()`]
+  deleted_at timestamptz
+
+  indexes {
+    (organization_id, patient_code)
+  }
+
+  Note: '''
+    Hồ sơ bệnh nhân. Tổng số lần khám = suy ra từ appointments (N-10), không lưu.
+    UNIQUE (một phần): CREATE UNIQUE INDEX uq_patients__code ON patients (organization_id, patient_code) WHERE deleted_at IS NULL
+  '''
+}
+
+Table doctors {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  person_id uuid [not null, unique, ref: - people.id]
+  clinic_id uuid [not null, ref: > clinics.id]
+  created_at timestamptz [not null, default: `now()`]
+
+  Note: 'Hồ sơ bác sĩ; mỗi bác sĩ thuộc một phòng khám chính. Nguồn: R-02, R-05.'
+}
+
+Table users {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  person_id uuid [not null, ref: > people.id]
+  role user_role [not null]
+  login_email varchar(160) [not null]
+  password_hash varchar(255) [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (organization_id, login_email) [unique]
+  }
+
+  Note: 'Tài khoản đăng nhập. Một người có thể có nhiều tài khoản, mỗi vai một dòng. Nguồn: R-09.'
+}
+
+Table rooms {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  clinic_id uuid [not null, ref: > clinics.id]
+  name varchar(80) [not null]
+
+  indexes {
+    (clinic_id, name) [unique]
+  }
+
+  Note: 'Phòng khám bệnh trong một phòng khám. Nguồn: R-06.'
+}
+
+Table services {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  code varchar(24) [not null]
+  name varchar(160) [not null]
+  price numeric(12,2) [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (organization_id, code) [unique]
+  }
+}
+
+Table doctor_schedules {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  doctor_id uuid [not null, ref: > doctors.id]
+  weekday smallint [not null, note: '1 = thứ hai … 7 = chủ nhật']
+  start_time time [not null]
+  end_time time [not null]
+
+  indexes {
+    (doctor_id, weekday)
+  }
+
+  Note: 'Ca làm việc cố định hằng tuần của bác sĩ. Nguồn: R-05.'
+}
+
+Table appointments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  clinic_id uuid [not null, ref: > clinics.id]
+  patient_id uuid [not null, ref: > patients.id]
+  doctor_id uuid [not null, ref: > doctors.id]
+  starts_at timestamptz [not null]
+  ends_at timestamptz [not null]
+  status appointment_status [not null, default: 'booked']
+  deposit_amount numeric(12,2) [check: `deposit_amount >= 0`]
+  deposit_received_on date
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (organization_id, clinic_id, starts_at)
+    (patient_id, starts_at)
+    (doctor_id, starts_at)
+  }
+
+  Note: '''
+    Lịch hẹn. Nguồn: R-03, R-04, N-02, N-05, N-09.
+    CHECK: CHECK (ends_at > starts_at)
+    EXCLUDE: EXCLUDE USING gist (doctor_id WITH =, tstzrange(starts_at, ends_at) WITH &&) WHERE (status <> 'cancelled')
+    Chuyển trạng thái: booked → confirmed | cancelled; confirmed → arrived | no_show.
+  '''
+}
+
+Table appointment_services {
+  appointment_id uuid [not null, ref: > appointments.id]
+  service_id uuid [not null, ref: > services.id]
+  quantity smallint [not null, default: 1]
+
+  indexes {
+    (appointment_id, service_id) [pk]
+  }
+
+  Note: 'Dịch vụ được thực hiện trong một lịch hẹn. Nguồn: R-07.'
+}
+
+Table invoices {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  appointment_id uuid [not null, ref: > appointments.id]
+  issued_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (appointment_id)
+  }
+
+  Note: 'Hóa đơn của một lịch hẹn. Nguồn: R-08, N-12.'
+}
+
+Table payments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  invoice_id uuid [not null, ref: > invoices.id]
+  amount numeric(12,2) [not null]
+  method payment_method [not null]
+  paid_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (invoice_id)
+  }
+
+  Note: 'Một khoản thanh toán cho hóa đơn. Hoàn tiền là dòng mới mang số âm. Nguồn: R-08.'
+}
+
+Table invoice_lines {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  invoice_id uuid [not null, ref: > invoices.id]
+  service_id uuid [not null, ref: > services.id]
+  quantity smallint [not null, check: `quantity > 0`]
+  unit_price numeric(12,2) [not null, check: `unit_price >= 0`, note: 'Snapshot giá lúc khám (N-01)']
+
+  indexes {
+    (invoice_id)
+    (service_id)
+  }
+}
+
+Table notes_appointments {
+  note_id uuid [pk]
+  appointment_id uuid [not null, ref: > appointments.id]
+}
+
+Table patient_allergies {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  patient_id uuid [not null, ref: > patients.id]
+  substance varchar(120) [not null]
+  severity smallint [not null]
+
+  indexes {
+    (patient_id)
+    (organization_id, substance)
+  }
+}
+
+Table specialties {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  name varchar(120) [not null]
+  is_active boolean [not null, default: true]
+}
+
+Table doctor_specialties {
+  doctor_id uuid [not null, ref: > doctors.id]
+  specialty_id uuid [not null, ref: > specialties.id]
+
+  indexes {
+    (doctor_id, specialty_id) [pk]
+    (specialty_id)
+  }
+}
+
+Table patient_insurances {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  patient_id uuid [not null, unique, ref: > patients.id]
+  card_no varchar(40) [not null]
+  expires_on date
+}
+
+Table patient_guardianships {
+  id uuid [pk, default: `gen_random_uuid()`]
+  organization_id uuid [not null, ref: > organizations.id]
+  guardian_person_id uuid [not null, ref: > people.id]
+  patient_id uuid [not null, ref: > patients.id]
+  starts_on date [not null]
+  ends_on date
+
+  indexes {
+    (patient_id)
+    (guardian_person_id)
+  }
+}
+
+Ref fk_invoices__appointment: invoices.appointment_id > appointments.id [delete: restrict]
+Ref fk_payments__invoice: payments.invoice_id > invoices.id [delete: restrict]
+Ref fk_appointments__patient: appointments.patient_id > patients.id [delete: restrict]

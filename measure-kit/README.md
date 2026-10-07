@@ -47,6 +47,7 @@ Dùng để đo một lần chạy skill `sketch-to-concept` tốn bao nhiêu l�
 | `treetest-prompt.md`, `treescore.js` | Bài thử tìm (tree test): prompt người thử (ba vai a, b, c; subagent `Explore`, cây và việc dán vào prompt) và script chấm: `node treescore.js <viec.json> <kết-quả> …` in thành công, đi thẳng, gần đúng theo việc và theo tầng |
 | `flowscan.js` | Quét mã một prototype đã dựng: mỗi trang đếm nút chính, tab, lớp phủ, ô nhập, viền dày, liên kết đá sang trang khác (tách *lối tắt hành động* với *điều hướng*), chỗ tự chuyển trang, và trang đích có đường về không. `node flowscan.js <thư-mục-site> [--json] [--all]` |
 | `cloud-setup.sh` | Chuẩn bị máy cho một lần đo, trong một lệnh: kiểm node, python, trình duyệt (Linux chưa có thì cài Chromium), mạng; lấy bản skill cần đo ra worktree ở đúng commit; in dòng biến `SKILLS`, `RUNS`. `bash measure-kit/cloud-setup.sh <moi> [<cu>] [--tests]`. Xem mục *Nhánh `measure` và cách lấy bản skill* |
+| `db-r1/` | Đề đo skill thiết kế CSDL `db-schema-design` (bản cũ `requirements-to-erd` ở `db-r1/cu/`), kịch bản **lượt cập nhật**: `sample/` là dự án giả (chuỗi phòng khám đặt lịch, 13 bảng) cùng 20 nhu cầu dữ liệu cài 20 bẫy; `key.json` đáp án; `score.py` chấm; `make_score_tests.py` + `score-tests/` để thử bộ chấm; `PROMPT-DO.md` prompt đo. **Chép `sample/` ra rồi mới chạy; không chép `key.json`, `score.py`.** Xem mục *db-schema-design: đề đo db-r1* |
 
 ## Nhánh `measure` và cách lấy bản skill (từ 05/10/2026)
 
@@ -1745,3 +1746,26 @@ Cộng 1–3 trên lần này: ≈ 1,1M thô (bớt ≈ 0,5M), ≈ 0,9M nếu b�
 
 - Transcript `transcripts/map-do-lai-4/` (6 file `.jsonl.gz` kèm `.meta.json`, đã thay tên dự án thật, kiểm `grep` ra 0): `rlb1` `agent-a3920b07157c4d7a8`, người thử `ad87e4d169b534edf`, worker `ac0d6daf8c0a953fb` (hoc-vien, lop), `a776f72fe90cd502c` (lich, diem-danh), `a9f7014a10698a320` (goi-hoc), `a41f50e19a4af4c46` (thong-bao, bao-cao, quan-tri).
 - Kết quả `runs-map/rlb1/`: `map/features.js`, `layout.js`, `MAP.md`, `treetest.md`, `ids.json`, `map/parts/` (9 file, gồm `_chung.js`), `DECISIONS.md`.
+
+
+## db-schema-design: đề đo db-r1 (soạn 07/10/2026)
+
+Đo skill thiết kế CSDL sau khi viết lại (`requirements-to-erd` → `db-schema-design`, 07/10/2026), chỉ kịch bản **lượt cập nhật**: schema đã có, thêm nhu cầu dữ liệu mới. Kết quả chưa có: `PROMPT-DO.md` chờ BA duyệt.
+
+| File | Làm gì |
+|---|---|
+| `db-r1/sample/` | Dự án giả, miền trung tính: chuỗi phòng khám đặt lịch. `docs/database/schema.dbml` 13 bảng (qua cả hai parser DBML), `DATA-DICTIONARY.md` viết tay, `1-yeu-cau/YEU-CAU-PHONG-KHAM.md` (R-01 → R-12), `1-yeu-cau/NHU-CAU-DU-LIEU-MOI.md` (N-01 → N-20). Chép ra rồi mới chạy |
+| `db-r1/key.json` | Đáp án 20 bẫy: **D01–D15 thiết kế** (snapshot giá · chồng lịch · một người nhiều vai · unique trên bảng xóa mềm · tiền · polymorphic · danh sách nhét một cột · enum hay bảng tra cứu · cờ trạng thái · giá trị suy ra · unique theo tenant · FK cần index · hành vi xóa · mật khẩu · 1–1) và **R01–R05 requirement** (mâu thuẫn bản số · rule thiếu dữ liệu · đòi lưu giá trị suy ra · bảng riêng từng chi nhánh · giữ ảnh sinh trắc vô thời hạn). Không chép vào thư mục chạy |
+| `db-r1/score.py` | `python score.py key.json <thư-mục-chạy> [--json]`: chấm từng bẫy `đạt / một phần / không / tay` bằng `dbml_model` + `dbml_lint` của skill (đường dẫn qua `--scripts` hay `DB_SCRIPTS`), bẫy requirement thì tìm phản biện trong `BAO-CAO-DO.md` và `CAU-HOI-BA.md`; in thêm số ERROR/WARN mới so với schema mẫu |
+| `db-r1/make_score_tests.py`, `db-r1/score-tests/` | Hai thư mục chạy giả: `naive` rơi hết bẫy (0/15, 0/5), `tot` qua hết (15/15, 5/5). **Chạy trước mỗi lần đo** để biết bộ chấm còn đúng |
+| `db-r1/cu/` | Bản cũ `requirements-to-erd` chép nguyên trước khi sửa (22/09) — mốc nền và đường lùi |
+| `db-r1/PROMPT-DO.md` | Prompt đo: bản cũ 2 lần, bản mới 2 lần, từng cặp song song, subagent `general-purpose` chạy nền; mục tiêu token mới ≤ 60 % bản cũ, điểm bẫy ≥ cũ, 5/5 bẫy requirement. Tối đa một vòng sửa và một lần đo lại |
+
+Lưu ý khi chạy:
+- Subagent không có BA: prompt bảo ghi câu hỏi ra `docs/database/CAU-HOI-BA.md` và đi tiếp với giả định; bỏ bước vẽ ERD HTML để hai bản cùng điều kiện.
+- Skill mới cần `npx` (hai parser DBML chạy qua `npx -y`, lần đầu cần mạng).
+- `paths.js` rút gọn đường dẫn theo `…/cu/tapora-proto-kit/skills`; đề này dùng `<SP>/cu/requirements-to-erd` và `<SP>/moi/db-schema-design` nên đường dẫn trong `turns.js` hiện đầy đủ.
+
+### Kết quả
+
+*(Chưa đo.)*
