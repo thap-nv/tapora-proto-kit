@@ -1,0 +1,51 @@
+{
+  "dialect": "postgresql",
+  "tenant_column": "organization_id",
+  "global_tables": ["organizations"],
+  "audit_fk_suffixes": ["_by"],
+  "default_on_delete": "restrict",
+  "volumes": {
+    "organizations": "S",
+    "clinics": "S",
+    "people": "M",
+    "patients": "M",
+    "doctors": "S",
+    "users": "S",
+    "rooms": "S",
+    "services": "S",
+    "doctor_schedules": "S",
+    "appointments": "M",
+    "appointment_services": "M",
+    "invoices": "M",
+    "payments": "M",
+    "appointment_deposits": "S",
+    "guardianships": "S",
+    "internal_notes": "M",
+    "allergens": "S",
+    "patient_allergies": "M",
+    "specialties": "S",
+    "doctor_specialties": "S",
+    "patient_insurances": "M"
+  },
+  "max_indexes_per_table": 8,
+  "money_pattern": "(^|_)(price|amount|total|fee)(_|$)",
+  "requirement_code_pattern": "R-\\d+|N-\\d+",
+  "access_patterns": [
+    { "id": "AP-01", "desc": "Hóa đơn của một lịch hẹn", "source": "N-12",
+      "table": "invoices", "eq": ["appointment_id"], "sort": [], "range": [], "freq": "hot" },
+    { "id": "AP-02", "desc": "Lịch hẹn của một bệnh nhân, mới nhất trước (đường vào tra hóa đơn theo bệnh nhân)", "source": "N-12",
+      "table": "appointments", "eq": ["patient_id"], "sort": ["starts_at desc"], "range": [], "freq": "hot" },
+    { "id": "AP-03", "desc": "Bệnh nhân dị ứng một chất", "source": "N-07",
+      "table": "patient_allergies", "eq": ["organization_id", "allergen_id"], "sort": [], "range": [], "freq": "normal" },
+    { "id": "AP-04", "desc": "Ghi chú nội bộ của một bệnh nhân, mới nhất trước", "source": "N-06",
+      "table": "internal_notes", "eq": ["organization_id", "patient_id"], "sort": ["created_at desc"], "range": [], "freq": "normal" },
+    { "id": "AP-05", "desc": "Lịch hẹn của một phòng khám trong khoảng ngày (báo cáo từng chi nhánh)", "source": "N-19",
+      "table": "appointments", "eq": ["organization_id", "clinic_id"], "sort": [], "range": ["starts_at"], "freq": "normal" },
+    { "id": "AP-06", "desc": "Đếm lần khám đã hoàn thành của một bệnh nhân", "source": "N-10",
+      "table": "appointments", "eq": ["patient_id"], "sort": [], "range": [], "freq": "hot" }
+  ],
+  "waivers": [
+    { "rule": "DB-IDX-12", "target": "people", "reason": "Unique (organization_id, id) chứa khóa chính id nên dòng đã xóa mềm không thể chiếm chỗ của dòng khác; index này chỉ làm đích cho khóa ngoại ghép của bảng mới (DB-INT-12)" },
+    { "rule": "DB-INT-07", "target": "services.code", "reason": "Mã dịch vụ đã unique theo (organization_id, lower(code)) bằng index biểu thức, bộ soát không nhận ra dạng này (N-11)" }
+  ]
+}

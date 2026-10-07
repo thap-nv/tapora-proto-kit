@@ -1750,7 +1750,7 @@ Cộng 1–3 trên lần này: ≈ 1,1M thô (bớt ≈ 0,5M), ≈ 0,9M nếu b�
 
 ## db-schema-design: đề đo db-r1 (soạn 07/10/2026)
 
-Đo skill thiết kế CSDL sau khi viết lại (`requirements-to-erd` → `db-schema-design`, 07/10/2026), chỉ kịch bản **lượt cập nhật**: schema đã có, thêm nhu cầu dữ liệu mới. Kết quả chưa có: `PROMPT-DO.md` chờ BA duyệt.
+Đo skill thiết kế CSDL sau khi viết lại (`requirements-to-erd` → `db-schema-design`, 07/10/2026), chỉ kịch bản **lượt cập nhật**: schema đã có, thêm nhu cầu dữ liệu mới. Đã đo 07/10/2026 theo `PROMPT-DO.md`: kết quả ở mục *Kết quả* cuối phần này.
 
 | File | Làm gì |
 |---|---|
@@ -1768,4 +1768,101 @@ Lưu ý khi chạy:
 
 ### Kết quả
 
-*(Chưa đo.)*
+Đo 07/10/2026, bốn lần (`rdc1`, `rdm1` chạy 09:22; `rdc2`, `rdm2` chạy 09:38), subagent `general-purpose` nền, model mặc định, prompt nguyên văn `PROMPT-DO.md`. Bản mới là `db-schema-design` ở bản hiện có của dự án Bơi Đạt (`SKILL.md` 7.636 byte, 16 file `references/`); bản cũ là `db-r1/cu/requirements-to-erd` (`SKILL.md` 26.760 byte). Trước khi đo: 87 test của skill qua hết, `score-tests/tot` 15/15 · 5/5, `naive` 0/15 · 0/5.
+
+**Kết luận: chưa đạt mục tiêu chi phí. Bản mới tốn khoảng 1,9 lần bản cũ (mục tiêu ≤ 0,6 lần). Chất lượng bằng nhau hoặc nhỉnh hơn một chút khi chấm tay.**
+
+| Lần | Bản | Lượt | Token quy đổi | Phút | Bẫy thiết kế (tự động → tay) | Bẫy requirement (tự động → tay) | ERROR/WARN mới |
+|---|---|---|---|---|---|---|---|
+| `rdc1` | cũ | 32 | 0,82–0,88M | 11,8 | 13 → 14 (+1 một phần) | 5 → 5 | 25 |
+| `rdm1` | mới | 38 | 1,14–1,20M | 15,9 | 9 → 15 | 4 → 5 | 2 |
+| `rdc2` | cũ | 17 | 0,43–0,47M | 8,6 | 14 → 15 | 5 → 5 | 21 |
+| `rdm2` | mới | 42 | 1,32–1,38M | 18,5 | 11 → 15 | 5 → 5 | 12 |
+
+| So cũ/mới | Giá trị |
+|---|---|
+| Token mới / cũ (giữa dải, trung bình hai lần) | 1,26M / 0,65M = **1,94** (cặp 1: 1,38 · cặp 2: 3,0) |
+| Dao động trong cùng một phía | cũ 0,45M → 0,85M (gấp 1,9) · mới 1,17M → 1,35M (gấp 1,15) |
+| Điểm bẫy thiết kế, chấm tay | cũ 14, 15 · mới 15, 15 |
+| Bẫy requirement, chấm tay | 5/5 cả bốn lần |
+| Số phút | cũ 11,8 và 8,6 · mới 15,9 và 18,5 |
+
+Chênh token lớn hơn nhiều so với ngưỡng 25 %, và kể cả cặp thuận nhất (mới thấp nhất 1,14M so với cũ cao nhất 0,88M) vẫn là 1,3 lần. Không có lần nào mất cache (không lượt nào nghỉ quá 5 phút).
+
+#### Điểm tự động và điểm chấm tay lệch nhau: `score.py` chưa đáng tin ở bẫy thiết kế
+
+Bộ chấm qua `tot` và `naive` nhưng cứng theo tên và kiểu viết của `tot`, nên chấm sai bản mới nhiều hơn bản cũ. Mọi dòng "tay" dưới đây là chấm lại sau khi mở `schema.dbml` và `CAU-HOI-BA.md` của từng lần; chưa sửa `score.py`.
+
+| Bẫy | Lỗi của bộ chấm | Chạm lần |
+|---|---|---|
+| D04 | đòi cột tên đúng `patient_code`; đề N-04 chỉ nói "mã hồ sơ", cả bốn lần đặt `record_code` kèm index một phần | rdc1, rdm1, rdc2 |
+| D05 | tìm "deposit" trong tên **cột**; bản mới dựng bảng `appointment_deposits` với cột `amount numeric(12,2)` | rdm1, rdm2 |
+| D07 | lấy bảng đầu tiên khớp `allerg`, tức `allergens` (không có khóa bệnh nhân), bỏ qua `patient_allergies` | rdm1, rdm2 |
+| D11 | `dm.unique_sets` không hiểu index biểu thức `(organization_id, lower(code))` | rdm1, rdm2 |
+| D13 | tính mọi cascade xuống bảng con (ghi chú, dị ứng, bảo hiểm); đáp án chỉ cấm cascade xuống hóa đơn và thanh toán. Cả hai lần mới đều `restrict` ở lịch hẹn, hóa đơn, thanh toán | rdm1, rdm2 |
+| D15 | chỉ nhận unique đúng `(patient_id)`; bản mới dùng `(organization_id, patient_id)` | rdm1 |
+| R04 | cần chữ `N-19` gần `một bảng`/`clinic_id`/`index` trong cửa sổ 400 ký tự, mà `rdm1` không có `BAO-CAO-DO.md` (xem dưới) và Q-14 đặt các từ đó xa hơn cửa sổ | rdm1 |
+| Cột *Ghi chú* | đoạn trích lệch một dòng ở D14→R05, chỉ khó đọc, không đổi điểm | mọi lần |
+
+D13 là chỗ chấm tay có tính phán đoán: chấp nhận khi cascade chỉ xuống bảng con của bệnh nhân/lịch hẹn/hóa đơn và hóa đơn, thanh toán là `restrict`. Nếu muốn chặt hơn thì hai lần mới ra 14/15.
+
+`rdm1` **không ghi được `BAO-CAO-DO.md`**: agent nháp vào file tên `report_a.md` và công cụ từ chối ("Subagents should return findings as text"), rồi không thử lại bằng đúng tên. Nội dung đó nằm trong báo cáo cuối của agent; hai lần cũ và `rdm2` ghi được. Lỗi của cách agent chọn tên file, không phải của skill.
+
+#### Bảng điểm từng bẫy (✓ đạt · ◐ một phần · ✗ không; `a → b` là tự động → tay)
+
+| Bẫy | rdc1 cũ | rdm1 mới | rdc2 cũ | rdm2 mới |
+|---|---|---|---|---|
+| D01 snapshot giá | ✓ | ✓ | ✓ | ✓ |
+| D02 chồng lịch | ✓ | ✓ | ✓ | ✓ |
+| D03 một người nhiều vai | ✓ | ✓ | ✓ | ✓ |
+| D04 unique bảng xóa mềm | ✗ → ✓ | ✗ → ✓ | ✗ → ✓ | ✓ |
+| D05 tiền | ✓ | ✗ → ✓ | ✓ | ✗ → ✓ |
+| D06 polymorphic | ✓ | ✓ | ✓ | ✓ |
+| D07 danh sách một cột | ✓ | ✗ → ✓ | ✓ | ✗ → ✓ |
+| D08 enum hay bảng tra cứu | ✓ | ✓ | ✓ | ✓ |
+| D09 cờ trạng thái | ✓ | ✓ | ✓ | ✓ |
+| D10 giá trị suy ra | ✓ | ✓ | ✓ | ✓ |
+| D11 unique theo tenant | ✓ | ✗ → ✓ | ✓ | ✗ → ✓ |
+| D12 FK cần index | ✓ | ✓ | ✓ | ✓ |
+| D13 hành vi xóa | ◐ (không khai `Ref` rời nào) | ✗ → ✓ | ✓ | ✗ → ✓ |
+| D14 mật khẩu | ✓ | ✓ | ✓ | ✓ |
+| D15 1–1 cần UNIQUE | ✓ | ✗ → ✓ | ✓ | ✓ |
+| R01 mâu thuẫn bản số | ✓ | ✓ | ✓ | ✓ |
+| R02 rule thiếu dữ liệu | ✓ | ✓ | ✓ | ✓ |
+| R03 giá trị suy ra | ✓ | ✓ | ✓ | ✓ |
+| R04 bảng theo chi nhánh | ✓ | ✗ → ✓ | ✓ | ✓ |
+| R05 sinh trắc trẻ em | ✓ | ✓ | ✓ | ✓ |
+
+Không bẫy nào rơi ở bản mới sau khi chấm tay, nên không có chuyện "skill không nói / agent bỏ qua / bộ soát bắt mà không sửa" cho bẫy. Có vài chỗ bản mới tự đi quá chữ đề (ghi ở `CAU-HOI-BA.md` của từng lần): `done` giữ song song `arrived` và hai mũi tên chuyển trạng thái thêm; `rdm2` đổi `patients.person_id` từ unique toàn bảng sang unique một phần (vượt chữ N-04); `rdm1` đổi `card_number` thành `insurance_number` vì quy tắc tên (`DB-SEC-04`) báo ERROR nhầm số thẻ thanh toán.
+
+`ERROR/WARN mới`: bản mới ít hơn rõ (2 và 12 so với 25 và 21), nhưng bản mới có `schema-lint.json` với miễn trừ (2 ở `rdm1`, 16 ở `rdm2`) còn bản cũ chấm bằng cấu hình mặc định, nên hai cột không so ngang được.
+
+#### Chi phí nằm ở đâu ở bản mới
+
+| | rdc1 | rdc2 | rdm1 | rdm2 |
+|---|---|---|---|---|
+| Tài liệu skill đọc | `SKILL.md` 22,8k ký tự, một lượt | như rdc1 | `SKILL.md` + 6 `references/` ≈ 40k ký tự | `SKILL.md` + 12 `references/` ≈ 87k ký tự |
+| Đọc mã script | không | không | không | không |
+| `check.py` | không có | không có | 8 lần | 9 lần |
+| Ghi cache | 184k | 125k | 262k | 279k |
+| Đọc cache | 4,3M | 1,8M | 6,9M | 8,2M |
+| Ngữ cảnh lượt cuối | 183k | 147k | 259k | 301k |
+| Ghi `schema.dbml` | 1 Write + 3 Edit | 1 Write + 1 Edit | 9 lệnh Edit (7 lượt) | 11 lệnh Edit (8 lượt) |
+| `CAU-HOI-BA.md` | 13k ký tự (Q-03→Q-13) | 12k | 20k (Q-03→Q-16) | 24,5k (Q-03→Q-19) |
+
+- Phần chênh nằm ở **số lượt nhân với ngữ cảnh**, không ở việc viết: các lượt Write lớn gần như bằng nhau giữa hai bản (`DATA-DICTIONARY.md` 17–23k ký tự ở cả bốn lần). Bản mới có ngữ cảnh lượt cuối cao hơn 1,4–2,0 lần và nhiều lượt hơn, nên đọc cache cao gấp 1,6–4,6 lần.
+- Ba lượt tốn nhất của `rdm2`: viết `DATA-DICTIONARY.md` (73k), viết `CAU-HOI-BA.md` (64k) và lượt Edit 34 ký tự ngay sau đó (65k, vì phải ghi cache 31k token của file vừa viết).
+- Skill mới không làm agent đọc mã script. Có đọc cả kho `references/` ở `rdm2` (12 trên 16 file) nhưng không ở `rdm1` (6 file): hai lần cùng đề đọc khác nhau, nên khoản này dao động.
+
+#### Đề xuất (ước từ số đo, chưa sửa skill)
+
+| # | Đề xuất | Lượt trong transcript | Token ước tiết kiệm | Độ chắc |
+|---|---|---|---|---|
+| 1 | Chỉ dẫn viết `schema.dbml` bằng một lệnh Write thay vì nhiều lượt Edit rời (bản cũ: một Write rồi 1–3 Edit) | `rdm2` lượt 15–20, 24, 32; `rdm1` lượt 9–13, 24 | 0,12–0,18M | trung bình |
+| 2 | Giới hạn `check.py`: một lần sau khi viết xong, một lần sau khi sửa; hiện 8–9 lần | trải khắp `rdm1`, `rdm2` | 0,10–0,15M | trung bình |
+| 3 | Bảng "nhu cầu loại nào đọc `references/` nào", thay vì đọc theo bước | `rdm2` lượt 6–7 (modeling-patterns 12,5k, integrity-constraints 9,6k) | 0,05–0,08M | thấp (`rdm1` đọc ít hơn mà điểm bằng) |
+| 4 | Mẫu `CAU-HOI-BA.md` ngắn cho câu không chặn; chỉ câu CHẶN viết đầy đủ | `rdm2` lượt 29, 30; `rdm1` lượt 25 | 0,04–0,06M | thấp |
+
+Cộng cả bốn khoảng **0,31–0,47M**, đưa bản mới từ 1,26M xuống 0,8–0,95M, tức vẫn **1,2–1,5 lần** bản cũ trung bình (0,65M). **Mục tiêu 60 % không đạt bằng bốn chỗ sửa này**; chỉ gần được nếu đổi cấu trúc, ví dụ trong chế độ lượt cập nhật bỏ soát tay 29 rule ở B8 và gộp B2 thành một lượt. Chưa làm vòng sửa nào; chờ BA.
+
+Dữ liệu: `transcripts/db-r1/` (bốn transcript nén, tiền tố `rdc1`, `rdm1`, `rdc2`, `rdm2`) và `runs-db-r1/<lần>/docs/` (schema, từ điển, câu hỏi, báo cáo của từng lần; `rdm1` không có `BAO-CAO-DO.md`). Lệnh đo: `node parts2.js`, `node turns.js` ở `measure-kit/`. Mỗi phía chỉ hai lần: bản cũ dao động gấp 1,9 giữa hai lần, nên con số 1,94 chưa chắc bằng con số 1,3–1,4 của cặp 1.

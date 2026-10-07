@@ -1,0 +1,932 @@
+{
+ "schema": "docs/database\\schema.dbml",
+ "syntax_ok": true,
+ "findings": [
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "clinics",
+   "col": "organization_id",
+   "line": 59,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: clinics.organization_id > organizations.id [delete: restrict]",
+   "target": "clinics.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "people",
+   "col": "organization_id",
+   "line": 69,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: people.organization_id > organizations.id [delete: restrict]",
+   "target": "people.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "patients",
+   "col": "organization_id",
+   "line": 87,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: patients.organization_id > organizations.id [delete: restrict]",
+   "target": "patients.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "doctors",
+   "col": "organization_id",
+   "line": 109,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: doctors.organization_id > organizations.id [delete: restrict]",
+   "target": "doctors.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "doctors",
+   "col": "person_id",
+   "line": 110,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: doctors.person_id > people.id [delete: restrict]",
+   "target": "doctors.person_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "doctors",
+   "col": "clinic_id",
+   "line": 111,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: doctors.clinic_id > clinics.id [delete: restrict]",
+   "target": "doctors.clinic_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "users",
+   "col": "organization_id",
+   "line": 119,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: users.organization_id > organizations.id [delete: restrict]",
+   "target": "users.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "users",
+   "col": "person_id",
+   "line": 120,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: users.person_id > people.id [delete: restrict]",
+   "target": "users.person_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "rooms",
+   "col": "organization_id",
+   "line": 136,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: rooms.organization_id > organizations.id [delete: restrict]",
+   "target": "rooms.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "rooms",
+   "col": "clinic_id",
+   "line": 137,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: rooms.clinic_id > clinics.id [delete: restrict]",
+   "target": "rooms.clinic_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "services",
+   "col": "organization_id",
+   "line": 149,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: services.organization_id > organizations.id [delete: restrict]",
+   "target": "services.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "doctor_schedules",
+   "col": "organization_id",
+   "line": 170,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: doctor_schedules.organization_id > organizations.id [delete: restrict]",
+   "target": "doctor_schedules.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "doctor_schedules",
+   "col": "doctor_id",
+   "line": 171,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: doctor_schedules.doctor_id > doctors.id [delete: restrict]",
+   "target": "doctor_schedules.doctor_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "appointments",
+   "col": "organization_id",
+   "line": 185,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: appointments.organization_id > organizations.id [delete: restrict]",
+   "target": "appointments.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "appointments",
+   "col": "clinic_id",
+   "line": 186,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: appointments.clinic_id > clinics.id [delete: restrict]",
+   "target": "appointments.clinic_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "appointments",
+   "col": "doctor_id",
+   "line": 188,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: appointments.doctor_id > doctors.id [delete: restrict]",
+   "target": "appointments.doctor_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "appointment_services",
+   "col": "appointment_id",
+   "line": 217,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: appointment_services.appointment_id > appointments.id [delete: restrict]",
+   "target": "appointment_services.appointment_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "appointment_services",
+   "col": "service_id",
+   "line": 218,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: appointment_services.service_id > services.id [delete: restrict]",
+   "target": "appointment_services.service_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "invoices",
+   "col": "organization_id",
+   "line": 230,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: invoices.organization_id > organizations.id [delete: restrict]",
+   "target": "invoices.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-05",
+   "level": "WARN",
+   "table": "payments",
+   "col": "organization_id",
+   "line": 251,
+   "msg": "khóa ngoại chưa khai hành vi xóa",
+   "fix": "Ref: payments.organization_id > organizations.id [delete: restrict]",
+   "target": "payments.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-07",
+   "level": "WARN",
+   "table": "people",
+   "col": "email",
+   "line": 72,
+   "msg": "trông như khóa nghiệp vụ nhưng chưa UNIQUE",
+   "fix": "indexes { (organization_id, email) [unique] }",
+   "target": "people.email",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-10",
+   "level": "INFO",
+   "table": "services",
+   "col": "price",
+   "line": 152,
+   "msg": "số có biên hợp lý mà chưa có CHECK",
+   "fix": "price numeric(12,2) [check: `price >= 0`]",
+   "target": "services.price",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-10",
+   "level": "INFO",
+   "table": "appointment_services",
+   "col": "quantity",
+   "line": 219,
+   "msg": "số có biên hợp lý mà chưa có CHECK",
+   "fix": "quantity smallint [check: `quantity >= 0`]",
+   "target": "appointment_services.quantity",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-10",
+   "level": "INFO",
+   "table": "payments",
+   "col": "amount",
+   "line": 253,
+   "msg": "số có biên hợp lý mà chưa có CHECK",
+   "fix": "amount numeric(12,2) [check: `amount >= 0`]",
+   "target": "payments.amount",
+   "debt": true
+  },
+  {
+   "rule": "DB-INT-11",
+   "level": "INFO",
+   "table": "doctor_schedules",
+   "col": "start_time",
+   "line": 173,
+   "msg": "cặp start_time/end_time — nếu không được chồng nhau thì cần EXCLUDE (viết trong Note)",
+   "fix": "",
+   "target": "doctor_schedules.start_time",
+   "debt": true
+  },
+  {
+   "rule": "DB-TYP-01",
+   "level": "INFO",
+   "table": "organizations",
+   "col": "",
+   "line": 0,
+   "msg": "18 bảng PK UUIDv4 (organizations, clinics, people…) — chấp nhận được ở cỡ S/M; bảng lớn lên thì đổi bigint hoặc uuidv7",
+   "fix": "",
+   "target": "uuidv4-summary",
+   "debt": true
+  },
+  {
+   "rule": "DB-TYP-06",
+   "level": "INFO",
+   "table": "organizations",
+   "col": "",
+   "line": 0,
+   "msg": "12 cột varchar(n) ở 8 bảng — PG không nhanh hơn text; nếu n là luật nghiệp vụ thì dùng CHECK",
+   "fix": "",
+   "target": "varchar-summary",
+   "debt": true
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "clinics",
+   "col": "organization_id",
+   "line": 59,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "clinics.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "patients",
+   "col": "organization_id",
+   "line": 87,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "patients.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "doctors",
+   "col": "organization_id",
+   "line": 109,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "doctors.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "doctors",
+   "col": "clinic_id",
+   "line": 111,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (clinic_id) }",
+   "target": "doctors.clinic_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "users",
+   "col": "person_id",
+   "line": 120,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (person_id) }",
+   "target": "users.person_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "rooms",
+   "col": "organization_id",
+   "line": 136,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "rooms.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "doctor_schedules",
+   "col": "organization_id",
+   "line": 170,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "doctor_schedules.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "appointments",
+   "col": "clinic_id",
+   "line": 186,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (clinic_id) }",
+   "target": "appointments.clinic_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "appointments",
+   "col": "doctor_id",
+   "line": 188,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (doctor_id) }",
+   "target": "appointments.doctor_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "appointment_services",
+   "col": "service_id",
+   "line": 218,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (service_id) }",
+   "target": "appointment_services.service_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "invoices",
+   "col": "organization_id",
+   "line": 230,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "invoices.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "payments",
+   "col": "organization_id",
+   "line": 251,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "payments.organization_id",
+   "debt": true
+  },
+  {
+   "rule": "DB-IDX-07",
+   "level": "INFO",
+   "table": "users",
+   "col": "login_email",
+   "line": 122,
+   "msg": "định danh gõ tay có index/unique nhưng không phân biệt hoa thường — lower() hoặc citext?",
+   "fix": "indexes { (`lower(login_email)`) [unique] }",
+   "target": "users.login_email",
+   "debt": true
+  },
+  {
+   "rule": "DB-MOD-18",
+   "level": "INFO",
+   "table": "doctor_schedules",
+   "col": "",
+   "line": 168,
+   "msg": "không có cột created_at hay mốc tương đương",
+   "fix": "created_at timestamptz [not null, default: `now()`]",
+   "target": "doctor_schedules",
+   "debt": true
+  },
+  {
+   "rule": "DB-MOD-18",
+   "level": "INFO",
+   "table": "payments",
+   "col": "",
+   "line": 249,
+   "msg": "không có cột created_at hay mốc tương đương",
+   "fix": "created_at timestamptz [not null, default: `now()`]",
+   "target": "payments",
+   "debt": true
+  },
+  {
+   "rule": "DB-SCL-02",
+   "level": "INFO",
+   "table": "appointment_services",
+   "col": "",
+   "line": 216,
+   "msg": "bảng không có organization_id — thêm tenant thì phải đi vòng qua bảng cha",
+   "fix": "organization_id uuid [not null, ref: > organizations.id]",
+   "target": "appointment_services",
+   "debt": true
+  }
+ ],
+ "waived": [
+  {
+   "rule": "DB-INT-07",
+   "level": "INFO",
+   "table": "patients",
+   "col": "patient_code",
+   "line": 89,
+   "msg": "trông như khóa nghiệp vụ nhưng chưa UNIQUE (đoán theo tên)",
+   "fix": "indexes { (organization_id, patient_code) [unique] }",
+   "target": "patients.patient_code",
+   "waived_reason": "Đã có unique một phần uq_patients__org_code (WHERE deleted_at IS NULL) khai trong Note — N-04; DBML không có WHERE."
+  },
+  {
+   "rule": "DB-INT-07",
+   "level": "WARN",
+   "table": "services",
+   "col": "code",
+   "line": 150,
+   "msg": "trông như khóa nghiệp vụ nhưng chưa UNIQUE",
+   "fix": "indexes { (organization_id, code) [unique] }",
+   "target": "services.code",
+   "waived_reason": "Đã có unique theo biểu thức (organization_id, lower(code)) uq_services__org_code — N-11; bộ soát chưa nhận index biểu thức."
+  },
+  {
+   "rule": "DB-INT-07",
+   "level": "INFO",
+   "table": "patient_insurances",
+   "col": "card_number",
+   "line": 446,
+   "msg": "trông như khóa nghiệp vụ nhưng chưa UNIQUE (đoán theo tên)",
+   "fix": "indexes { (organization_id, card_number) [unique] }",
+   "target": "patient_insurances.card_number",
+   "waived_reason": "N-15 không nói số thẻ phải duy nhất; chưa ràng buộc tới khi Q-19 trả lời (thẻ gia đình có thể dùng chung)."
+  },
+  {
+   "rule": "DB-INT-14",
+   "level": "WARN",
+   "table": "patients",
+   "col": "person_id",
+   "line": 105,
+   "msg": "quan hệ 1–1 khai bằng \"-\" nhưng cột FK chưa UNIQUE",
+   "fix": "đặt unique cho (person_id)",
+   "target": "patients.person_id",
+   "waived_reason": "Quan hệ 1–1 giữ bằng unique một phần uq_patients__person_id (WHERE deleted_at IS NULL) khai trong Note — để người đã ẩn có thể lập hồ sơ mới (DB-IDX-12, N-04, N-13)."
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "patients",
+   "col": "person_id",
+   "line": 88,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (person_id) }",
+   "target": "patients.person_id",
+   "waived_reason": "Cột được phủ bởi index một phần uq_patients__person_id khai trong Note; DBML không có WHERE nên bộ soát không thấy."
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "invoice_lines",
+   "col": "organization_id",
+   "line": 270,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "invoice_lines.organization_id",
+   "waived_reason": "organization_id chỉ để lọc/RLS; mọi truy vấn vào bảng đi qua khóa cha đã có index (invoice_id); organizations không bị xóa cứng; cỡ M nên DB-SCL-03 chưa đòi."
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "appointment_deposits",
+   "col": "organization_id",
+   "line": 293,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "appointment_deposits.organization_id",
+   "waived_reason": "Như invoice_lines.organization_id — truy vấn đi qua unique (appointment_id)."
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "guardianships",
+   "col": "organization_id",
+   "line": 314,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "guardianships.organization_id",
+   "waived_reason": "Như invoice_lines.organization_id — truy vấn đi qua (patient_id, valid_from) hoặc (guardian_person_id)."
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "internal_notes",
+   "col": "organization_id",
+   "line": 341,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "internal_notes.organization_id",
+   "waived_reason": "Như invoice_lines.organization_id — truy vấn đi qua index của ba khóa cha."
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "INFO",
+   "table": "internal_notes",
+   "col": "created_by",
+   "line": 346,
+   "msg": "khóa ngoại kiểm toán (created_by) không index — chỉ cần khi xóa cứng dòng users",
+   "fix": "indexes { (created_by) }",
+   "target": "internal_notes.created_by",
+   "waived_reason": "Tài khoản users không bị xóa cứng (tắt bằng is_active), nên không có phép xóa cha cần quét bảng con."
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "patient_allergies",
+   "col": "organization_id",
+   "line": 387,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "patient_allergies.organization_id",
+   "waived_reason": "Như invoice_lines.organization_id — truy vấn đi qua khóa chính (patient_id, allergen_id) hoặc (allergen_id, patient_id)."
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "doctor_specialties",
+   "col": "organization_id",
+   "line": 427,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "doctor_specialties.organization_id",
+   "waived_reason": "Như invoice_lines.organization_id — bảng nối cỡ S, truy vấn đi qua khóa chính (doctor_id, specialty_id) hoặc (specialty_id, doctor_id)."
+  },
+  {
+   "rule": "DB-IDX-01",
+   "level": "WARN",
+   "table": "patient_insurances",
+   "col": "organization_id",
+   "line": 444,
+   "msg": "khóa ngoại chưa có index (JOIN và xóa dòng cha sẽ quét cả bảng)",
+   "fix": "indexes { (organization_id) }",
+   "target": "patient_insurances.organization_id",
+   "waived_reason": "Như invoice_lines.organization_id — truy vấn đi qua unique (patient_id)."
+  },
+  {
+   "rule": "DB-IDX-02",
+   "level": "WARN",
+   "table": "patients",
+   "col": "",
+   "line": 85,
+   "msg": "AP-05 [Tìm hồ sơ bệnh nhân theo mã hồ sơ (chưa ẩn)]: index không có — eq(organization_id,patient_code) sort() range()",
+   "fix": "indexes { (organization_id, patient_code) }",
+   "target": "pattern:AP-05",
+   "waived_reason": "Index phục vụ là unique một phần uq_patients__org_code (WHERE deleted_at IS NULL) khai trong Note; DBML không biểu diễn được WHERE nên bộ chấm không thấy. Thêm index thường song song sẽ trùng."
+  },
+  {
+   "rule": "DB-MOD-18",
+   "level": "INFO",
+   "table": "invoice_lines",
+   "col": "",
+   "line": 269,
+   "msg": "không có cột created_at hay mốc tương đương",
+   "fix": "created_at timestamptz [not null, default: `now()`]",
+   "target": "invoice_lines",
+   "waived_reason": "Dòng của hóa đơn bất biến sau khi phát hành; mốc thời gian là invoices.issued_at (bảng nối thuần có thuộc tính, DB-MOD-18 ngoại lệ)."
+  },
+  {
+   "rule": "DB-SEC-04",
+   "level": "ERROR",
+   "table": "patient_insurances",
+   "col": "card_number",
+   "line": 446,
+   "msg": "bí mật/dữ liệu thẻ lưu nguyên văn",
+   "fix": "card_number_hash text [not null]",
+   "target": "patient_insurances.card_number",
+   "waived_reason": "Là số thẻ bảo hiểm y tế (định danh người được bảo hiểm), không phải số thẻ thanh toán hay bí mật xác thực; nhân viên phải đọc lại để in và tra cứu nên không băm được. Phân loại cá nhân/nhạy cảm ghi ở từ điển (DB-SEC-01); bảo vệ bằng quyền xem + mã hóa lúc nghỉ ở hạ tầng."
+  }
+ ],
+ "notes": [
+  "access pattern: 7 đủ · 1 không có"
+ ],
+ "stats": {
+  "tables": 22,
+  "columns": 126,
+  "enums": 4,
+  "enum_values": 14,
+  "refs": 47,
+  "indexes": 25
+ },
+ "diff": {
+  "old": {
+   "tables": 13,
+   "columns": 72,
+   "enums": 3,
+   "enum_values": 9,
+   "refs": 24,
+   "indexes": 8
+  },
+  "new": {
+   "tables": 22,
+   "columns": 126,
+   "enums": 4,
+   "enum_values": 14,
+   "refs": 47,
+   "indexes": 25
+  },
+  "changes": [
+   {
+    "kind": "bảng",
+    "op": "+",
+    "name": "invoice_lines",
+    "class": "cộng thêm",
+    "detail": "5 cột",
+    "rule": ""
+   },
+   {
+    "kind": "bảng",
+    "op": "+",
+    "name": "appointment_deposits",
+    "class": "cộng thêm",
+    "detail": "6 cột",
+    "rule": ""
+   },
+   {
+    "kind": "bảng",
+    "op": "+",
+    "name": "guardianships",
+    "class": "cộng thêm",
+    "detail": "7 cột",
+    "rule": ""
+   },
+   {
+    "kind": "bảng",
+    "op": "+",
+    "name": "internal_notes",
+    "class": "cộng thêm",
+    "detail": "8 cột",
+    "rule": ""
+   },
+   {
+    "kind": "bảng",
+    "op": "+",
+    "name": "allergens",
+    "class": "cộng thêm",
+    "detail": "5 cột",
+    "rule": ""
+   },
+   {
+    "kind": "bảng",
+    "op": "+",
+    "name": "patient_allergies",
+    "class": "cộng thêm",
+    "detail": "5 cột",
+    "rule": ""
+   },
+   {
+    "kind": "bảng",
+    "op": "+",
+    "name": "specialties",
+    "class": "cộng thêm",
+    "detail": "5 cột",
+    "rule": ""
+   },
+   {
+    "kind": "bảng",
+    "op": "+",
+    "name": "doctor_specialties",
+    "class": "cộng thêm",
+    "detail": "3 cột",
+    "rule": ""
+   },
+   {
+    "kind": "bảng",
+    "op": "+",
+    "name": "patient_insurances",
+    "class": "cộng thêm",
+    "detail": "7 cột",
+    "rule": ""
+   },
+   {
+    "kind": "cột",
+    "op": "+",
+    "name": "patients.patient_code",
+    "class": "dữ liệu",
+    "detail": "NOT NULL không mặc định — bảng đã có dòng thì phải backfill trước",
+    "rule": ""
+   },
+   {
+    "kind": "cột",
+    "op": "~",
+    "name": "patients.person_id",
+    "class": "cộng thêm",
+    "detail": "bỏ UNIQUE",
+    "rule": ""
+   },
+   {
+    "kind": "cột",
+    "op": "+",
+    "name": "services.code",
+    "class": "dữ liệu",
+    "detail": "NOT NULL không mặc định — bảng đã có dòng thì phải backfill trước",
+    "rule": ""
+   },
+   {
+    "kind": "index",
+    "op": "+",
+    "name": "services(organization_id, `lower(code)`)",
+    "class": "phá vỡ",
+    "detail": "thêm UNIQUE",
+    "rule": ""
+   },
+   {
+    "kind": "cột",
+    "op": "+",
+    "name": "appointments.ends_at",
+    "class": "dữ liệu",
+    "detail": "NOT NULL không mặc định — bảng đã có dòng thì phải backfill trước",
+    "rule": ""
+   },
+   {
+    "kind": "index",
+    "op": "+",
+    "name": "invoices(appointment_id)",
+    "class": "phá vỡ",
+    "detail": "thêm UNIQUE",
+    "rule": ""
+   },
+   {
+    "kind": "giá trị enum",
+    "op": "+",
+    "name": "appointment_status.arrived",
+    "class": "cộng thêm",
+    "detail": "",
+    "rule": ""
+   },
+   {
+    "kind": "giá trị enum",
+    "op": "+",
+    "name": "appointment_status.confirmed",
+    "class": "cộng thêm",
+    "detail": "",
+    "rule": ""
+   },
+   {
+    "kind": "giá trị enum",
+    "op": "+",
+    "name": "appointment_status.no_show",
+    "class": "cộng thêm",
+    "detail": "",
+    "rule": ""
+   },
+   {
+    "kind": "enum",
+    "op": "+",
+    "name": "allergy_severity",
+    "class": "cộng thêm",
+    "detail": "2 giá trị",
+    "rule": ""
+   },
+   {
+    "kind": "ref",
+    "op": "~",
+    "name": "patients(person_id) → people",
+    "class": "phá vỡ",
+    "detail": "hành vi xóa — → restrict",
+    "rule": ""
+   },
+   {
+    "kind": "ref",
+    "op": "~",
+    "name": "appointments(patient_id) → patients",
+    "class": "phá vỡ",
+    "detail": "hành vi xóa — → restrict",
+    "rule": ""
+   },
+   {
+    "kind": "ref",
+    "op": "~",
+    "name": "invoices(appointment_id) → appointments",
+    "class": "phá vỡ",
+    "detail": "hành vi xóa — → restrict",
+    "rule": ""
+   },
+   {
+    "kind": "ref",
+    "op": "~",
+    "name": "payments(invoice_id) → invoices",
+    "class": "phá vỡ",
+    "detail": "hành vi xóa — → restrict",
+    "rule": ""
+   }
+  ],
+  "notes_changed": 6
+ },
+ "dictionary": {
+  "not_mentioned": [],
+  "stale_columns": [],
+  "gone_sections": []
+ },
+ "trace_full": {
+  "docs": 2,
+  "lines": 46,
+  "unhoused": [
+   {
+    "rule": "DB-REQ-12",
+    "ident": "appointments_dn",
+    "count": 1,
+    "where": "NHU-CAU-DU-LIEU-MOI.md:25",
+    "text": "| N-19 | **Mỗi chi nhánh có bảng lịch hẹn riêng** (`appointments_hn`, `appointments_hcm`, `appointments_dn`) để báo cáo từng chi nhánh chạy nhanh. |"
+   },
+   {
+    "rule": "DB-REQ-12",
+    "ident": "appointments_hcm",
+    "count": 1,
+    "where": "NHU-CAU-DU-LIEU-MOI.md:25",
+    "text": "| N-19 | **Mỗi chi nhánh có bảng lịch hẹn riêng** (`appointments_hn`, `appointments_hcm`, `appointments_dn`) để báo cáo từng chi nhánh chạy nhanh. |"
+   },
+   {
+    "rule": "DB-REQ-12",
+    "ident": "appointments_hn",
+    "count": 1,
+    "where": "NHU-CAU-DU-LIEU-MOI.md:25",
+    "text": "| N-19 | **Mỗi chi nhánh có bảng lịch hẹn riêng** (`appointments_hn`, `appointments_hcm`, `appointments_dn`) để báo cáo từng chi nhánh chạy nhanh. |"
+   }
+  ],
+  "stated": [],
+  "no_source": [],
+  "dead_codes": [],
+  "pattern": true
+ },
+ "trace": [
+  {
+   "rule": "DB-REQ-12",
+   "ident": "appointments_dn",
+   "count": 1,
+   "where": "NHU-CAU-DU-LIEU-MOI.md:25",
+   "text": "| N-19 | **Mỗi chi nhánh có bảng lịch hẹn riêng** (`appointments_hn`, `appointments_hcm`, `appointments_dn`) để báo cáo từng chi nhánh chạy nhanh. |"
+  },
+  {
+   "rule": "DB-REQ-12",
+   "ident": "appointments_hcm",
+   "count": 1,
+   "where": "NHU-CAU-DU-LIEU-MOI.md:25",
+   "text": "| N-19 | **Mỗi chi nhánh có bảng lịch hẹn riêng** (`appointments_hn`, `appointments_hcm`, `appointments_dn`) để báo cáo từng chi nhánh chạy nhanh. |"
+  },
+  {
+   "rule": "DB-REQ-12",
+   "ident": "appointments_hn",
+   "count": 1,
+   "where": "NHU-CAU-DU-LIEU-MOI.md:25",
+   "text": "| N-19 | **Mỗi chi nhánh có bảng lịch hẹn riêng** (`appointments_hn`, `appointments_hcm`, `appointments_dn`) để báo cáo từng chi nhánh chạy nhanh. |"
+  }
+ ]
+}
