@@ -1866,3 +1866,33 @@ Không bẫy nào rơi ở bản mới sau khi chấm tay, nên không có chuy�
 Cộng cả bốn khoảng **0,31–0,47M**, đưa bản mới từ 1,26M xuống 0,8–0,95M, tức vẫn **1,2–1,5 lần** bản cũ trung bình (0,65M). **Mục tiêu 60 % không đạt bằng bốn chỗ sửa này**; chỉ gần được nếu đổi cấu trúc, ví dụ trong chế độ lượt cập nhật bỏ soát tay 29 rule ở B8 và gộp B2 thành một lượt. Chưa làm vòng sửa nào; chờ BA.
 
 Dữ liệu: `transcripts/db-r1/` (bốn transcript nén, tiền tố `rdc1`, `rdm1`, `rdc2`, `rdm2`) và `runs-db-r1/<lần>/docs/` (schema, từ điển, câu hỏi, báo cáo của từng lần; `rdm1` không có `BAO-CAO-DO.md`). Lệnh đo: `node parts2.js`, `node turns.js` ở `measure-kit/`. Mỗi phía chỉ hai lần: bản cũ dao động gấp 1,9 giữa hai lần, nên con số 1,94 chưa chắc bằng con số 1,3–1,4 của cặp 1.
+
+#### db-r1: chấm lại bằng thước 2.1 (07/10/2026, chưa sửa skill)
+
+Chấm lại bốn lần đã chạy bằng `db-r1/score.py` **bản 2** và `db-r1/pg_load.py`. Làm trước khi sửa skill để biết bản 2.0 hơn bản cũ ở thước nào; định nghĩa thước ghi ở đây trước khi chấm.
+
+- **Bộ chấm sửa xong:** thư viện chấm đóng băng ở `db-r1/lib/` (bản 2.0 của `dbml_model`, `dbml_lint`, `dbml_diff`, `req_trace`) nên sửa skill không làm thước dịch; tám lỗi đã sửa (D04, D05, D07, D11, D13, D15, R04, cột *Ghi chú*); tìm câu trả lời theo **đoạn** (tiêu đề → cả mục, dòng bảng → một dòng) thay cho cửa sổ ký tự. `python -m unittest test_score` ở `db-r1/`: điểm tự động **bằng điểm chấm tay** trên cả sáu thư mục (`expected.json`), thêm `RUN_PG=1` để chạy cả M3.
+- **Định nghĩa năm thước** (cùng một cấu hình cho mọi lần chạy, không tính miễn trừ của lần chạy):
+  - **M1 nợ mới:** số ERROR/WARN có ở kết quả mà không có ở schema mẫu, soát bằng cấu hình mặc định + `tenant_column: organization_id`.
+  - **M2 vượt chữ đề:** thay đổi (`dbml_diff`) không truy được về mã `N-xx`/`R-xx`/`Q-xx` trong `note` của phần tử đó hay trong báo cáo, câu hỏi, từ điển. Phép đo gần đúng.
+  - **M3 DDL trên PostgreSQL 18** (`pg_load.py`, dựng cụm tạm, mỗi lần ~12 giây): số lỗi nạp DDL do `dbml2sql` sinh; số câu SQL khai trong `Note` chạy được; **số khóa ngoại `dbml2sql` sinh ngược chiều so với DBML**.
+  - **M4 kế hoạch an toàn dữ liệu:** thay đổi *phá vỡ* hay *dữ liệu* mà tài liệu có nhắc cùng `backfill|điền|dữ liệu cũ|NOT VALID|VALIDATE|…`. Phép đo gần đúng.
+  - **M5 câu chặn:** sáu nhu cầu không được dựng theo chữ (N-14, N-16→N-20) đều có phản biện; số nhu cầu phải áp mà bị hỏi/chặn thừa; số câu hỏi và độ dài sổ câu hỏi.
+
+| Thước | rdc1 cũ | rdc2 cũ | rdm1 mới | rdm2 mới |
+|---|---|---|---|---|
+| 20 bẫy, tự động = tay | 14 + 1 một phần · 5/5 | 15 · 5/5 | 15 · 5/5 | 15 · 5/5 |
+| M1 ERROR · WARN | 1 · 24 | 1 · 20 | 0 · 2 | 1 · 10 |
+| M2 không truy được / thay đổi (phá vỡ trên bảng cũ) | 0/21 (2) | 0/22 (5) | 1/27 (11) | 1/23 (6) |
+| M3 lỗi nạp DDL · SQL trong Note chạy được | 0 · 1/1 | 0 · 5/5 | 0 · 1/1 | **1** · 2/2 |
+| M3 FK sinh ngược chiều | 0/43 | **1**/40 | 0/44 | **4**/47 |
+| M4 có kế hoạch / thay đổi rủi ro | 4/5 | 2/9 | 13/15 | 6/9 |
+| M5 phản biện đủ 6 · chặn thừa | 6/6 · 0 | 6/6 · 0 | 6/6 · 0 | 6/6 · 0 |
+| M5 số câu hỏi · độ dài | 11 · 13,0k | 11 · 11,8k | 14 · 20,8k | 17 · 24,7k |
+
+**Đọc kết quả** (mỗi phía hai lần; M2 và M4 là phép đo gần đúng):
+- **Bản 2.0 hơn bản cũ ở M1 và M4.** WARN mới trung bình 6 so với 22; thay đổi rủi ro có kế hoạch 79 % (19/24) so với 43 % (6/14). Hai điều này đến từ `check.py` và khối phân loại *phá vỡ / dữ liệu* của `dbml_diff` — phần của skill đáng giữ. Lưu ý M1 thiên về bản mới: agent của bản mới chạy chính bộ soát này và sửa theo, agent của bản cũ không có nó.
+- **Ngang nhau ở 20 bẫy, M2 và phần phản biện của M5.** Bản mới không phản biện requirement tốt hơn; cả hai bắt đủ 6/6.
+- **Bản mới kém ở M3 và độ dài sổ câu hỏi.** `rdm2` có một lỗi nạp DDL và 4 khóa ngoại sinh ngược; sổ câu hỏi dài gấp 1,8 lần (22,8k so với 12,4k ký tự).
+- **Phát hiện mới, đúng cho cả hai bản skill: Ref khai bằng `-` (1–1) bị `dbml2sql` sinh ngược chiều.** `a.x - b.id` thành `b.id REFERENCES a(x)`, nghĩa là `appointments.id REFERENCES invoices(appointment_id)`: SQL bắt mỗi lịch hẹn phải có hóa đơn ngay khi tạo. Nạp được vào CSDL rỗng nên chỉ M3 mới thấy. `rdm2` mắc 4 chỗ (và một chỗ làm hỏng nạp DDL vì cột đích không còn unique); `rdc2` mắc 1. Skill 2.0 chưa nói điều này và rule `DB-INT-14` còn nhắc "khai bằng `-`". Cách đúng: 1–1 khai bằng `>` kèm UNIQUE trên cột khóa ngoại.
+- **Hệ quả cho Bước B** (quy tắc định sẵn của plan): giữ `check.py` và khối phân loại thay đổi; lối cập nhật bỏ B0, B1, B4 (không thước nào cho thấy chúng giúp ích); thêm cảnh báo Ref `-` vào bộ soát và bảng sự thật cú pháp.
