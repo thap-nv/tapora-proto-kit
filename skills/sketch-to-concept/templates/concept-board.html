@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bảng concept</title>
 <!-- Mẫu từ sketch-to-concept/templates/concept-board.html. Chép thành concept/index.html, KHÔNG sửa file này:
-     mọi nội dung lấy từ concepts.js. Cùng thư mục cần: concepts.js, color.js, tokens.js, theme.js và màn của mỗi concept có màn riêng (a.html…).
+     mọi nội dung lấy từ concepts.js. Cùng thư mục cần: concepts.js, color.js, tokens.js, theme.js và màn của mỗi concept có màn riêng (a.html…,
+     cộng a-<key>.html cho mỗi bề mặt khai trong CONCEPTS.surfaces).
      Bố cục: danh sách concept theo vòng bên trái · ma trận trộn · màn xem trước lớn · chi tiết và So trục gập lại. -->
 <script src="theme.js"></script>
 <script src="concepts.js"></script>
@@ -160,6 +161,7 @@
       </section>
       <section class="stack" aria-label="Màn xem trước">
         <div class="bar">
+          <div class="seg" role="group" aria-label="Bề mặt" data-surface-seg hidden><span>Bề mặt</span></div>
           <div class="seg" role="group" aria-label="Đang xem"><button type="button" data-tab="concept">Concept <span data-tab-concept></span></button><button type="button" data-tab="mix">Bản trộn</button></div>
           <p class="code">Mã trộn: <output data-mix-code></output><button type="button" data-copy>Sao chép</button><span role="status" data-copy-status></span></p>
           <span data-open-slot></span>
@@ -210,16 +212,19 @@
   const roundOf = c => +(c.round || 1);
   const noteOf = n => ((D.rounds || []).find(r => +r.n === n) || {}).note || '';
   const rounds = [...new Set(cs.map(roundOf))].sort((a, b) => a - b);
-  let width = 1440;
+  // Bề mặt (hệ nhiều bề mặt): màn lớn xem màn <id>-<key>.html của bề mặt đang chọn; ảnh ở danh sách luôn là màn chính
+  const SURF = T.surfaces(D);
+  const widthOf = key => (SURF.find(s => s.key === key) || {}).width || 1440;
+  let width = widthOf('');
   const mode = () => (window.theme ? window.theme.get() : 'light');
   const palette = c => (mode() === 'dark' && c.colors.dark) || c.colors.light || c.colors.dark;
   // Chế độ của bảng màu đang hiện (concept chỉ có một nền thì là nền đó): vai dẫn xuất đo theo đúng chế độ này
   const paletteMode = c => (mode() === 'dark' && c.colors.dark) ? 'dark' : (c.colors.light ? 'light' : 'dark');
   const ratio = r => (r === null ? 'Không đo được' : r.toFixed(2).replace('.', ',') + ':1');
-  const src = (screen, mix) => `${screen}.html?theme=${mode()}` + (mix ? `&mix=${encodeURIComponent(mix)}` : '');
+  const src = (screen, mix, key) => `${T.pageOf(screen, key)}.html?theme=${mode()}` + (mix ? `&mix=${encodeURIComponent(mix)}` : '');
   // Concept chỉ đổi lớp Hình (có screen): xem trên màn của concept nó mượn, với Hình của chính nó
   const ownMix = c => T.formatMix({ man: T.screenOf(c), mau: c.id, chu: c.id, nut: c.id });
-  const conceptSrc = c => (c.screen ? src(c.screen, ownMix(c)) : src(c.id));
+  const conceptSrc = (c, key) => (c.screen ? src(c.screen, ownMix(c), key) : src(c.id, '', key));
   // Lớp Ý của concept chỉ đổi Hình là của màn nó mượn: trường để trống thì lấy của concept đó
   const yOf = (c, k) => c[k] || (c.screen && (byId(c.screen) || {})[k]) || '';
 
@@ -243,7 +248,12 @@
   const seed = c => ({ man: T.screenOf(c), mau: c.id, chu: c.id, nut: c.id });
   // mixed: người dùng đã chọn ô trong ma trận. Chưa chọn thì bản trộn đi theo concept đang xem.
   // folded, showAll: trạng thái người dùng đặt, giữ qua lần dựng lại khi đổi nền
-  const state = { view: rec.id, tab: 'concept', mix: seed(rec), mixed: false, folded: new Set(), showAll: new Set() };
+  const state = { view: rec.id, tab: 'concept', surface: '', mix: seed(rec), mixed: false, folded: new Set(), showAll: new Set() };
+  if (SURF.length > 1) {
+    const seg = $('[data-surface-seg]');
+    seg.insertAdjacentHTML('beforeend', SURF.map(s => `<button type="button" data-set-surface="${esc(s.key)}">${esc(s.label)}</button>`).join(''));
+    seg.hidden = false;
+  }
 
   function warnings(c) {
     const out = [];
@@ -347,7 +357,7 @@
   function preview() {
     const c = byId(state.view), m = state.mix, code = T.formatMix(m);
     $('[data-mix-code]').textContent = code;
-    const s = state.tab === 'concept' ? conceptSrc(c) : src(m.man, code);
+    const s = state.tab === 'concept' ? conceptSrc(c, state.surface) : src(m.man, code, state.surface);
     const fr = $('iframe[data-preview]');
     if (fr.getAttribute('src') !== s) fr.setAttribute('src', s);
     $('[data-preview-caption]').textContent = state.tab === 'concept'
@@ -374,6 +384,7 @@
   function pressed() {
     for (const b of $$('[data-set-theme]')) b.setAttribute('aria-pressed', String(b.dataset.setTheme === mode()));
     for (const b of $$('[data-set-width]')) b.setAttribute('aria-pressed', String(+b.dataset.setWidth === width));
+    for (const b of $$('[data-set-surface]')) b.setAttribute('aria-pressed', String(b.dataset.setSurface === state.surface));
   }
   function render() {
     list();
@@ -421,6 +432,8 @@
   document.addEventListener('change', e => { const i = e.target.closest('input[type="radio"][name^="mix-"]'); if (i) pick(i); });
   for (const b of $$('[data-set-theme]')) b.addEventListener('click', () => { window.theme.set(b.dataset.setTheme); render(); });
   for (const b of $$('[data-set-width]')) b.addEventListener('click', () => { width = +b.dataset.setWidth; pressed(); fit(); });
+  // Đổi bề mặt thì khổ màn theo khổ của bề mặt đó (HLV trên điện thoại: 390)
+  for (const b of $$('[data-set-surface]')) b.addEventListener('click', () => { state.surface = b.dataset.setSurface; width = widthOf(state.surface); preview(); pressed(); fit(); });
   $('[data-copy]').addEventListener('click', async () => {
     const code = $('[data-mix-code]').textContent, st = $('[data-copy-status]');
     try { await navigator.clipboard.writeText(code); st.textContent = 'Đã chép.'; }

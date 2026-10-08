@@ -23,6 +23,12 @@
   const WHY = ['mau', 'chu', 'hinh', 'chatNen'];
   // Màn mà concept hiện trên đó: màn của chính nó, hoặc màn của concept nó mượn (screen)
   const screenOf = c => (c && c.screen) || (c && c.id);
+  // Bề mặt (hệ nhiều bề mặt): màn chính <id>.html là key '', mỗi bề mặt khác một màn <id>-<key>.html. Không khai thì chỉ có màn chính
+  const surfaces = data => (Array.isArray(data && data.surfaces) && data.surfaces.length
+    ? data.surfaces.map(s => ({ key: String((s && s.key) || ''), label: String((s && s.label) || ''), width: +(s && s.width) === 390 ? 390 : 1440 }))
+    : [{ key: '', label: '', width: 1440 }]);
+  // Tên file màn (không đuôi) của một màn ở một bề mặt
+  const pageOf = (screen, key) => (key ? `${screen}-${key}` : String(screen));
   // Cặp chữ/nền cần đo. Vai trò màu theo cột của ui-ux-pro-max/data/colors.csv, viết kebab-case
   const PAIRS = [
     ['foreground', 'background', 'Chữ chính trên nền'],
@@ -175,6 +181,18 @@
     const list = Array.isArray(data.rounds) ? data.rounds : [];
     for (const r of list) if (!posInt(r && r.n)) out.push(`CONCEPTS.rounds: n phải là số nguyên từ 1 (đang là "${r && r.n}").`);
     const rounds = new Set([1].concat(list.map(r => +(r && r.n))));
+    if (data.surfaces !== undefined && !Array.isArray(data.surfaces)) out.push('CONCEPTS.surfaces phải là mảng, mỗi bề mặt một dòng { key, label, width }.');
+    else if (data.surfaces) {
+      const keys = data.surfaces.map(s => (s && s.key) || '');
+      if (keys.filter(k => k === '').length !== 1) out.push("CONCEPTS.surfaces: cần đúng một bề mặt key '' (màn chính <id>.html).");
+      keys.forEach((k, i) => {
+        const s = data.surfaces[i] || {};
+        if (!/^[a-z0-9-]*$/.test(k)) out.push(`CONCEPTS.surfaces: key "${k}" chỉ gồm chữ thường a-z, số và dấu gạch ngang.`);
+        if (!String(s.label || '').trim()) out.push(`CONCEPTS.surfaces: bề mặt "${k}" thiếu label.`);
+        if (k && keys.indexOf(k) !== i) out.push(`CONCEPTS.surfaces: key "${k}" bị trùng.`);
+        if (s.width !== undefined && ![1440, 390].includes(+s.width)) out.push(`CONCEPTS.surfaces: width của "${k}" là 1440 hoặc 390.`);
+      });
+    }
     let recs = 0;
     for (const c of data.concepts) {
       const id = String(c && c.id);
@@ -259,7 +277,7 @@
     return c;
   }
 
-  const api = { AXES, HINH_AXES, WHY, PLATFORM, varName, screenOf, hexToRgb, contrast, grade, checkPairs, parseMix, formatMix, resolve, cssText, validate, lint, diffAxes, fontsHref, apply };
+  const api = { AXES, HINH_AXES, WHY, PLATFORM, varName, screenOf, surfaces, pageOf, hexToRgb, contrast, grade, checkPairs, parseMix, formatMix, resolve, cssText, validate, lint, diffAxes, fontsHref, apply };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.ConceptTokens = api;
 

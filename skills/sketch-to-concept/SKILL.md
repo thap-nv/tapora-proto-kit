@@ -6,7 +6,7 @@ description: >-
 
 # Sketch to Concept · Settle the concept before building the prototype
 
-> **v1.6 (08/10/2026)** · Gate 2 opens the board in the browser and says what to look at before asking. Change history: `CHANGELOG.md` at the repo root.
+> **v1.6 (08/10/2026)** · Gate 2 opens one page (the board, or the hub of several) and says what to look at before asking. Change history: `CHANGELOG.md` at the repo root.
 > **Language:** talk to the user in the language they write in: gate questions and options, progress notes, reports. Files the user reads (`DECISIONS.md`, `CONCEPT.md`, the board, names, ideas, axes and `why` in `concepts.js`) are in that language too; the templates are in Vietnamese. Screen content follows the language of the brief.
 > **Paths:** `<skills>` is the parent of the folder holding this SKILL.md. Read referenced skills by path, never through the Skill tool (convention at the top of `sketch-to-site`). On Windows, give `node` and `python` paths with the drive letter and forward slashes (`W:/…`), never Git Bash's `/w/…`: they cannot read it.
 > The job: bring the user to a concept that is **theirs**. Non-designers struggle to describe a concept but react well to options they can see, so the skill builds 3 real concepts, then **stops** for the user to choose.
@@ -76,25 +76,26 @@ Gates are numbered **continuously** with `sketch-to-site` (Gates 3 and 4 are the
 
 ### Start *(no board yet)*
 
-The prototype folder has no `concept/concepts.js`. In the next turn, read `references/vong-dau.md` (A1 to A3, Gate 1, short paths) and `references/concept-method.md` with `Read`, and check the tools in the same turn: `AskUserQuestion` · headless Edge/Chrome for screenshots · `WebSearch` (needed for the real-benchmark source; when it is a deferred tool, load it with `ToolSearch` in this same turn) · image generation. Then follow `vong-dau.md`: A1 → 🛑 Gate 1 → A2 → A3 → 🛑 Gate 2 below.
+The prototype folder has no `concept/concepts.js` and no `concept/boards.js`. In the next turn, read `references/vong-dau.md` (A1 to A3, Gate 1, short paths) and `references/concept-method.md` with `Read`, and check the tools in the same turn: `AskUserQuestion` · headless Edge/Chrome for screenshots · `WebSearch` (needed for the real-benchmark source; when it is a deferred tool, load it with `ToolSearch` in this same turn) · image generation. Then follow `vong-dau.md`: A1 → 🛑 Gate 1 → A2 → A3 → 🛑 Gate 2 below.
 
 ### Re-entry *(a board exists)*
 
-The prototype folder already has `concept/concepts.js`: **skip** A1 and A2. Suggest a **new session** first: `concepts.js` and `DECISIONS.md` are enough to resume. In the next turn, read `references/vong-moi.md`, `concept/concepts.js` and `DECISIONS.md` with `Read` (a new round edits both: do not `cat` them), and in the same turn run this one command in the prototype folder:
+The prototype folder already has `concept/concepts.js`, or `concept/boards.js` (one board per portal): **skip** A1 and A2. Suggest a **new session** first: `concepts.js` and `DECISIONS.md` are enough to resume. In the next turn, read `references/vong-moi.md`, `concept/concepts.js` and `DECISIONS.md` with `Read` (a new round edits both: do not `cat` them), and in the same turn run this one command in the prototype folder:
 
 ```bash
 S="<skills>"; cp "$S/sketch-to-concept/templates/concept-board.html" concept/index.html && cp "$S/sketch-to-concept/templates/tokens.js" "$S/sketch-to-site/templates/color.js" concept/; sed -n '/^### 2\.5/,/^## 3\./p;/^## 4\./,/^### 5\.3/p;/^### 5\.4/,/^## 6\./p' "$S/sketch-to-concept/references/concept-method.md"; grep -E '^### |^- \*\*(Cue words|Dial):' "$S/sketch-to-site/references/style-catalogue.md"; node "$S/sketch-to-concept/scripts/roles.mjs" concept/
 ```
 
 It refreshes the board templates (a board from before 1.4 does not know rounds or borrowed screens), and prints the method sections a round uses (spread, axes, colour, type, form reasons), the style family index (name, cue words, dial) and the role map of every screen: which colour role paints what, which weights each type role uses, where radius, shadow and texture sit. Then follow `vong-moi.md`; nothing else needs reading.
+Several boards: `Read` each board's `concepts.js`, run the command in each `concept/<dir>/` (its `concept/` becomes that folder), and copy `templates/concept-hub.html` to `concept/index.html`.
 
 ### 🛑 Gate 2 · Choose a concept
 
-**One message:** the lines below, the command that opens every board (`Start-Process "<prototype>/concept/index.html"` on Windows · `open` · `xdg-open`), then `AskUserQuestion`. Calls in one message run in order, so the board is open when the questions appear. No local display: give the path and offer to publish `concept/` as an Artifact (`sketch-to-site` §8).
+**One message:** the lines below, the command that opens the board (`Start-Process "<prototype>/concept/index.html"` on Windows · `open` · `xdg-open`; with several boards it is the hub, one tab per board), then `AskUserQuestion`. Open only that page, never a screen file: every surface is on the board. Calls in one message run in order, so the board is open when the questions appear. No local display: give the path and offer to publish `concept/` as an Artifact (`sketch-to-site` §8).
 
 Above the questions, at most 8 lines in the user's language, naming the board's own labels:
 - the board is open in the browser, with a Markdown link to it;
-- how to look: click each concept in the left list (after a new round the new ones sit under *Vòng n*) · switch *Khổ màn* 1440/390 · try each concept's signature interaction, named per concept · open *So trục* to compare axes · to mix, pick layers in the *Trộn* matrix and press *Sao chép* for the code;
+- how to look: several boards have a tab each at the top · click each concept in the left list (after a new round the new ones sit under *Vòng n*) · switch *Khổ màn* 1440/390, and *Bề mặt* when there are several · try each concept's signature interaction, named per concept · open *So trục* to compare axes · to mix, pick layers in the *Trộn* matrix and press *Sao chép* for the code;
 - the recommendation and its reason from the brief, one line;
 - notes: a concept still ≤ 5 after rework (score and reason), warnings still open;
 - the questions below wait until they have looked: no need to answer now.
@@ -104,6 +105,7 @@ Then ask (options in the user's language):
 2. **Second background** (dark mode following the device setting; light mode if the concept is dark): No, one background like the concept (recommended) · Yes, add a second background. Skip it when the user already said so in the brief. *Yes*: do not rebuild the board; `sketch-to-site` B2 adds the second theme and measures every pair.
 3. **Rhythm:** Like the concept · Calmer · Livelier. In words, no dial numbers.
 
+- **Several boards:** question 1 once per board, with its own concepts; over 4 questions, the rest next turn.
 - **Mix:** ask for the **mix code** from the *Trộn* panel of the board (e.g. `man:A mau:B chu:A nut:A`), or ask which layer comes from which concept.
 - **Not there yet, new round:** follow `references/vong-moi.md`. A user **torn between two** concepts is also a new round: the layer that misses is *Layout*, the closest concept is the one they lean to.
 - Once chosen: record `DECISIONS.md`, write `CONCEPT.md` in the prototype folder from `templates/CONCEPT.md`. The CSS block for its §3, run in the prototype folder (replace `<id>` and `<mix code>`; an empty string when not mixed): `node -e "global.window = global; require('./concept/concepts.js'); const T = require('./concept/tokens.js'); console.log(T.cssText(T.resolve(CONCEPTS, '<id>', T.parseMix('<mix code>'))))"`
@@ -128,6 +130,7 @@ Default `docs/prototypes/<slug>/`; follow the project's convention if it has one
 ├── CONCEPT.md          # the chosen concept: token source until Gate 3
 └── concept/            # index.html, concepts.js (every round), color.js, tokens.js, theme.js, each concept's screens, shots/
 ```
+One board per portal: each board in `concept/<dir>/`; `concept/` keeps only the hub `index.html` and `boards.js`.
 
 ---
 

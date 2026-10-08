@@ -16,6 +16,8 @@
 // - round: the concept's round (default 1). rounds: one line per round; note = the user's verbatim feedback that opened it.
 // - screen: a concept that changes only the form layer gives the id of the concept whose screen it reuses, and has no screen file.
 // - recommended: true on exactly one concept, after building and checking.
+// - surfaces (only a multi-surface system): one line per surface; key '' is the main screen <id>.html, any other key is <id>-<key>.html.
+//   width: 1440 or 390 (the board's preview width for that surface). The board's Bề mặt switch shows each surface.
 // - Text the user reads on the board (name, idea, axes values, why, content) is in the user's language.
 // - content: content SHARED by every key screen, so the user compares concepts, not content.
 window.CONCEPTS = {
@@ -28,6 +30,7 @@ window.CONCEPTS = {
     // numbers (the real figures on one line, joined by ' · '), cardTitle, cardText
   },
   rounds: [{ n: 1, note: '' }],
+  // surfaces: [{ key: '', label: '', width: 1440 }, { key: 'app', label: '', width: 390 }],
   concepts: [
     // {
     //   id: 'a', name: '', round: 1,

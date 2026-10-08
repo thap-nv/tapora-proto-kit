@@ -7,7 +7,22 @@
   - Stop rule step 1, in all three skills: open the page in the browser before asking (`Start-Process` on Windows · `open` · `xdg-open`). Say in 2–3 lines what to look at, and that the questions wait until the user has looked. With no local display, offer to publish it as an Artifact.
   - `sketch-to-concept` Gate 2: one message holds the guide, the open command and `AskUserQuestion`, so there is no extra turn. The guide names the board's own labels (*Khổ màn*, *So trục*, *Trộn*, *Sao chép*, *Vòng n*) and gives the recommendation and the notes. Preview lines are at most 40 characters, because the preview pane cut longer ones.
   - To stay under the size limits, `sketch-to-site` drops two stop-rule lines that repeated the excuses table, and `sketch-to-map` shortens five lines. `sketch-to-map/SKILL.md` is now 11,992 of 12,000 characters (as the test counts).
-- Tests: step 1 of the stop rule carries the open command in all three skills, and the Gate 2 guide names labels that exist on the board.
+- `sketch-to-concept` Gate 2 opens one page, even with several surfaces or portals. Why: on a real two-portal project, Gate 2 opened five tabs: the two boards, plus three phone screens of a second surface that the board could not show.
+  - Several surfaces on one board: `concepts.js` takes `surfaces` (the main screen `{id}.html`, then one `{id}-<key>.html` per other surface, width 1440 or 390).
+    - The board gets a *Bề mặt* switch. The preview, the mix and borrowed screens follow it, and the preview width changes to that surface's width.
+    - `tokens.js` validates the field. `shots.mjs` reports a concept that is missing a surface screen.
+  - One board per portal: each board lives in `concept/<dir>/`, and `concept/index.html` is the new hub (`templates/concept-hub.html`), with one tab per board read from `concept/boards.js` (`templates/boards.js`).
+    - A board loads when its tab first opens and then stays loaded, so mix choices survive switching tabs. `#<dir>` in the address picks the tab.
+    - `check.mjs concept/` on the hub checks every board and reports concept ids repeated across boards. With `--round`, it skips boards that have no concepts in that round.
+  - Docs:
+    - Gate 1 asks whether the surfaces of a multi-surface system share one concept.
+    - A3 step 1 and `vong-moi.md` cover both layouts. Re-entry also starts from `concept/boards.js`.
+    - Gate 2 opens only the board or the hub, never a screen file, and asks question 1 once per board.
+- Tests:
+  - Step 1 of the stop rule carries the open command in all three skills, and the Gate 2 guide names labels that exist on the board.
+  - The *Bề mặt* switch.
+  - The hub: tabs, boards kept loaded, `#<dir>`, errors, preflight and no overflow at 390.
+  - `check.mjs` on a hub, and `shots.mjs` with `surfaces`.
 
 ## 1.7.0 (2026-10-08)
 

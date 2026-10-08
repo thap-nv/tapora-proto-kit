@@ -285,3 +285,21 @@ test('validate: rounds phải là mảng, vòng là số nguyên từ 1, recomme
   rec.concepts[1].recommended = true;
   assert.deepEqual(T.validate(rec), []);
 });
+
+// Hệ nhiều bề mặt (v7 thật: nhân viên desktop + HLV điện thoại): bảng phải biết màn <id>-<key>.html, không thì agent mở màn riêng lẻ
+test('surfaces: mặc định chỉ có màn chính; khai sai thì validate báo; pageOf ghép tên file màn', () => {
+  const one = { concepts: [{ id: 'a', colors: { light: { background: '#FFFFFF' } } }] };
+  assert.deepEqual(T.surfaces(one), [{ key: '', label: '', width: 1440 }]);
+  const two = Object.assign({}, one, { surfaces: [{ key: '', label: 'Nhân viên' }, { key: 'hlv', label: 'HLV', width: 390 }] });
+  assert.deepEqual(T.validate(two), []);
+  assert.deepEqual(T.surfaces(two), [{ key: '', label: 'Nhân viên', width: 1440 }, { key: 'hlv', label: 'HLV', width: 390 }]);
+  assert.equal(T.pageOf('a', ''), 'a');
+  assert.equal(T.pageOf('a', 'hlv'), 'a-hlv');
+  const bad = s => T.validate(Object.assign({}, one, { surfaces: s }));
+  assert.deepEqual(bad({ key: 'hlv' }), ['CONCEPTS.surfaces phải là mảng, mỗi bề mặt một dòng { key, label, width }.']);
+  assert.deepEqual(bad([{ key: 'hlv', label: 'HLV' }]), ["CONCEPTS.surfaces: cần đúng một bề mặt key '' (màn chính <id>.html)."]);
+  assert.deepEqual(bad([{ key: '', label: 'Chính' }, { key: 'HLV', label: 'HLV' }]),
+    ['CONCEPTS.surfaces: key "HLV" chỉ gồm chữ thường a-z, số và dấu gạch ngang.']);
+  assert.deepEqual(bad([{ key: '', label: 'Chính' }, { key: 'hlv', label: ' ' }, { key: 'hlv', label: 'HLV', width: 800 }]),
+    ['CONCEPTS.surfaces: bề mặt "hlv" thiếu label.', 'CONCEPTS.surfaces: key "hlv" bị trùng.', 'CONCEPTS.surfaces: width của "hlv" là 1440 hoặc 390.']);
+});

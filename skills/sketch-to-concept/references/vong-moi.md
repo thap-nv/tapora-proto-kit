@@ -1,9 +1,10 @@
 # New round on the same concept board
 
-> Read when: at Gate 2 the user picks *Not there yet, new round* · or the prototype folder already has `concept/concepts.js` (re-entry, SKILL.md §3).
+> Read when: at Gate 2 the user picks *Not there yet, new round* · or the prototype folder already has `concept/concepts.js` or `concept/boards.js` (re-entry, SKILL.md §3).
 > A new round **adds** concepts to the same board. Screens, images and data of earlier rounds stay; no new folder.
 > The reading is done in one turn by SKILL.md §3 *Re-entry*: this file, `concept/concepts.js` and `DECISIONS.md` with `Read` (steps 2–3 edit both, and `Edit` needs the file read; do not `cat` them, or you read them twice), plus one command that refreshes the templates and prints the `concept-method.md` sections a round uses, the style family index and the role map of every screen. Arriving here from Gate 2 in the same session, you already have the files and the method: run only the role map, `node <skills>/sketch-to-concept/scripts/roles.mjs concept/`. Do not reread the requirements, do not rerun `search.py`, do not open templates or the sample file: the block to write is in step 3.
 > Talk to the user in their language; write `DECISIONS.md` and the note in `rounds` verbatim.
+> **Several boards** (`concept/boards.js`, one per portal): a round runs per board, so `concept/` below means `concept/<dir>/`, except `check.mjs concept/`, which checks every board. New ids never repeat an id of another board.
 
 ## 1. Where you are
 

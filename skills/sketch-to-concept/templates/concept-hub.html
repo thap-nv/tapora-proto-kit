@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bảng concept</title>
+<!-- Mẫu từ sketch-to-concept/templates/concept-hub.html. Dự án có nhiều bảng concept (mỗi portal một bảng concept/<dir>/):
+     chép thành concept/index.html, KHÔNG sửa file này: danh sách bảng lấy từ boards.js cùng thư mục.
+     Mỗi bảng một tab; bảng nạp trong khung khi mở tab lần đầu, rồi giữ nguyên khi chuyển tab (lựa chọn trộn còn nguyên).
+     #<dir> trên địa chỉ là tab đang mở. -->
+<script src="boards.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* Cùng bảng màu khung với concept-board.html */
+  :root{--ui-bg:#F6F6F4;--ui-surface:#FFFFFF;--ui-ink:#1A1A19;--ui-muted:#5E5E5A;--ui-line:#E2E2DE;--ui-focus:#2459C7;--ui-warn-bg:#FFF4D6;--ui-warn-ink:#5C4200}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ui-bg:#111110;--ui-surface:#1A1A19;--ui-ink:#EDEDEA;--ui-muted:#A1A19C;--ui-line:#2C2C2A;--ui-focus:#8AB4FF;--ui-warn-bg:#3A2E0A;--ui-warn-ink:#FFE2A0}}
+  :root[data-theme="dark"]{--ui-bg:#111110;--ui-surface:#1A1A19;--ui-ink:#EDEDEA;--ui-muted:#A1A19C;--ui-line:#2C2C2A;--ui-focus:#8AB4FF;--ui-warn-bg:#3A2E0A;--ui-warn-ink:#FFE2A0}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;display:flex;flex-direction:column;background:var(--ui-bg);color:var(--ui-ink);font:15px/1.55 'Be Vietnam Pro',system-ui,sans-serif}
+  :focus-visible{outline:2px solid var(--ui-focus);outline-offset:2px}
+  .top{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--ui-line);background:var(--ui-surface)}
+  h1{margin:0;font-size:18px;line-height:1.3;font-weight:600}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px}
+  .tabs button{border:1px solid var(--ui-line);border-radius:8px;background:var(--ui-surface);color:var(--ui-ink);padding:6px 14px;font:inherit;font-size:14px;cursor:pointer}
+  .tabs button[aria-selected="true"]{background:var(--ui-ink);color:var(--ui-bg);border-color:var(--ui-ink)}
+  .warn{margin:16px;padding:10px 14px;border-radius:8px;background:var(--ui-warn-bg);color:var(--ui-warn-ink)}
+  .warn ul{margin:6px 0 0;padding-left:20px}
+  .warn[hidden]{display:none}
+  main{position:relative;flex:1;min-height:0}
+  /* Tab ẩn vẫn giữ khổ: bảng trong khung không phải tính lại bố cục khi mở lại */
+  .panel{position:absolute;inset:0}
+  .panel[hidden]{display:block;visibility:hidden}
+  .panel iframe{display:block;width:100%;height:100%;border:0;background:var(--ui-bg)}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1 data-project>Bảng concept</h1>
+  <div class="tabs" role="tablist" aria-label="Các bảng concept" data-tabs></div>
+</header>
+<div class="warn" role="alert" data-hub-error hidden></div>
+<main data-panels></main>
+<script>
+(() => {
+  const B = window.BOARDS;
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  // boards.js thiếu hoặc sai quy ước: báo rõ rồi dừng
+  const problems = [];
+  if (!B) problems.push('Không đọc được boards.js: kiểm file nằm cùng thư mục với index.html và không có lỗi cú pháp.');
+  else if (!Array.isArray(B.boards) || !B.boards.length) problems.push('boards.js chưa có bảng nào: mỗi bảng một dòng { dir, label }.');
+  else B.boards.forEach((b, i) => {
+    const d = String((b && b.dir) || '');
+    if (!/^[a-z0-9-]+$/.test(d)) problems.push(`Bảng ${i + 1}: dir "${d}" chỉ gồm chữ thường a-z, số và dấu gạch ngang.`);
+    if (!String((b && b.label) || '').trim()) problems.push(`Bảng "${d}": thiếu label.`);
+    if (B.boards.findIndex(x => x && x.dir === d) !== i) problems.push(`Bảng "${d}" bị trùng.`);
+  });
+  if (problems.length) {
+    const box = $('[data-hub-error]');
+    box.innerHTML = `<strong>Chưa dựng được trang gom.</strong><ul>${problems.map(m => `<li>${esc(m)}</li>`).join('')}</ul>`;
+    box.hidden = false;
+    return;
+  }
+
+  const boards = B.boards;
+  if (B.project) { $('[data-project]').textContent = B.project; document.title = `Bảng concept · ${B.project}`; }
+  $('[data-tabs]').innerHTML = boards.map(b => `<button type="button" role="tab" id="tab-${b.dir}" aria-controls="panel-${b.dir}" aria-selected="false" tabindex="-1" data-board="${b.dir}">${esc(b.label)}</button>`).join('');
+  $('[data-panels]').innerHTML = boards.map(b => `<section class="panel" role="tabpanel" id="panel-${b.dir}" aria-labelledby="tab-${b.dir}" data-panel="${b.dir}" hidden></section>`).join('');
+
+  const known = d => boards.some(b => b.dir === d);
+  function select(dir, focus) {
+    const b = boards.find(x => x.dir === dir);
+    for (const t of $$('[data-board]')) { const on = t.dataset.board === dir; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; }
+    for (const p of $$('[data-panel]')) p.hidden = p.dataset.panel !== dir;
+    const panel = $(`[data-panel="${dir}"]`);
+    // Nạp bảng lần đầu mở tab; về sau giữ nguyên khung, bảng không tải lại
+    if (!panel.querySelector('iframe')) panel.innerHTML = `<iframe src="${dir}/index.html" title="Bảng concept ${esc(b.label)}" allow="clipboard-write"></iframe>`;
+    if (location.hash.slice(1) !== dir) { try { history.replaceState(null, '', `#${dir}`); } catch (e) { /* file:// chặn: tab vẫn đổi, chỉ địa chỉ không ghi */ } }
+    if (focus) $(`#tab-${dir}`).focus();
+  }
+
+  document.addEventListener('click', e => { const t = e.target.closest('[data-board]'); if (t) select(t.dataset.board); });
+  // Phím mũi tên, Home, End chuyển tab (mẫu tabs của ARIA)
+  $('[data-tabs]').addEventListener('keydown', e => {
+    const i = boards.findIndex(b => b.dir === (document.activeElement.dataset || {}).board);
+    const n = boards.length;
+    const to = { ArrowRight: i + 1, ArrowLeft: i - 1 + n, Home: 0, End: n - 1 }[e.key];
+    if (to === undefined || i < 0) return;
+    e.preventDefault();
+    select(boards[to % n].dir, true);
+  });
+  addEventListener('hashchange', () => { const d = location.hash.slice(1); if (known(d)) select(d); });
+  const start = location.hash.slice(1);
+  select(known(start) ? start : boards[0].dir);
+})();
+</script>
+</body>
+</html>

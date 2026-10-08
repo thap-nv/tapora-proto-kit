@@ -1,6 +1,7 @@
 // Chụp bảng concept và các màn then chốt ở bộ khổ cố định, in mỗi ảnh một dòng kết quả đo.
 // node <skills>/sketch-to-concept/scripts/shots.mjs <thư-mục-concept> [--round <n>] [file.html ...]
 //   Mặc định: index.html ở 1440; màn của mọi concept trong concepts.js (<id>.html và <id>-<bề mặt>.html) ở 1440 và 390.
+//   Có CONCEPTS.surfaces: concept có màn riêng thiếu màn <id>-<key>.html của một bề mặt là một dòng lỗi.
 //   Concept chỉ đổi lớp Hình (screen): chụp màn của concept nó mượn với Hình của nó, tên ảnh mang id của nó.
 //   --round <n>: chỉ chụp concept của vòng n (và bảng). Có liệt kê file thì chỉ chụp các file đó.
 //   Vòng n không có concept nào: thoát 2. Concept không có file màn (của nó, hoặc màn nó mượn): một dòng lỗi.
@@ -70,10 +71,16 @@ else if (D) {
     console.error(`Không có concept nào ở vòng ${roundArg}. Concept của vòng mới phải ghi round: ${roundArg} trong concepts.js.`);
     process.exit(2);
   }
+  // Bề mặt khai trong concepts.js (surfaces): concept có màn riêng cần đủ màn <id>-<key>.html của từng bề mặt
+  const surfaces = Array.isArray(D.surfaces) ? D.surfaces.filter(s => s && s.key) : [];
   for (const c of inRound) {
     const screen = c.screen || c.id;
     if (!filesOf(screen).length) missing.push(`${c.id}: không thấy màn ${screen}.html trong thư mục concept`);
-    if (!c.screen) { for (const f of filesOf(c.id)) jobs.push(...both(f)); continue; }
+    if (!c.screen) {
+      for (const s of surfaces) if (!htmlFiles.includes(`${c.id}-${s.key}.html`)) missing.push(`${c.id}: không thấy màn ${c.id}-${s.key}.html (bề mặt ${s.label}) trong thư mục concept`);
+      for (const f of filesOf(c.id)) jobs.push(...both(f));
+      continue;
+    }
     const up = String(c.id).toUpperCase();
     const query = '?mix=' + encodeURIComponent(`man:${String(c.screen).toUpperCase()} mau:${up} chu:${up} nut:${up}`);
     for (const f of filesOf(c.screen)) for (const j of both(f)) jobs.push({ ...j, as: c.id + f.slice(c.screen.length, -5), query });

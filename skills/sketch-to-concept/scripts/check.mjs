@@ -9,6 +9,7 @@
 //   --round <n>: chỉ báo concept của vòng n; So trục vẫn so với mọi concept trên bảng.
 //   --shots: tự kiểm sau khi dựng màn (A3 bước 5, vòng mới bước 6), một lệnh thay cho ba: kiểm dữ liệu như trên, rồi preflight.py
 //   trên thư mục, rồi shots.mjs (cùng --round). Lỗi của preflight và dòng ảnh chưa OK cộng vào dòng tổng cuối.
+//   Thư mục là trang gom (có boards.js, không có concepts.js): kiểm từng bảng con với cùng tham số, mỗi bảng mở đầu bằng "▸ <label> · <dir>/".
 // Dùng tokens.js và color.js của kit, không dùng bản chép trong dự án. Font kiểm bằng preflight.py --font.
 // Thoát 0 khi không có lỗi, 1 khi có lỗi, 2 khi sai tham số hoặc không đọc được concepts.js, 4 khi --shots không có trình duyệt.
 import { readFileSync, existsSync } from 'node:fs';
@@ -41,12 +42,54 @@ if (!dir || !existsSync(dir) || (ri >= 0 && !(round > 0))) {
   process.exit(2);
 }
 
+// window là chính ngữ cảnh, như trình duyệt và lệnh node -e của Cổng 2: concepts.js viết CONCEPTS.concepts.push(...) vẫn chạy
+const load = (file, name) => { const ctx = {}; ctx.window = ctx; vm.runInNewContext(readFileSync(file, 'utf8'), ctx); return ctx[name]; };
+
+// Trang gom (nhiều bảng: boards.js, mỗi bảng một thư mục con): kiểm từng bảng như một bảng riêng, cùng tham số, rồi một dòng tổng.
+// Thêm: index.html phải là trang gom; id concept không trùng giữa các bảng (Cổng 2 gọi concept theo id); --round bỏ qua bảng không có vòng đó
+function hub() {
+  let B;
+  try { B = load(join(dir, 'boards.js'), 'BOARDS'); } catch (e) { console.error(`Không đọc được boards.js: ${e.message}`); return 2; }
+  const boards = B && Array.isArray(B.boards) ? B.boards : [];
+  if (!boards.length) { console.error('boards.js chưa có bảng nào: mỗi bảng một dòng { dir, label }.'); return 2; }
+  const pass = [...(round === null ? [] : ['--round', String(round)]), ...(withShots ? ['--shots'] : [])];
+  let errors = 0, warns = 0;
+  const page = join(dir, 'index.html');
+  if (!existsSync(page) || !readFileSync(page, 'utf8').includes('boards.js')) {
+    errors++;
+    console.log('Trang gom: index.html chưa phải trang gom, chép sketch-to-concept/templates/concept-hub.html thành index.html.');
+  }
+  const owner = new Map(), dup = [];
+  for (const b of boards) {
+    const sub = join(dir, String(b.dir));
+    console.log(`▸ ${b.label} · ${b.dir}/`);
+    let cs;
+    try { cs = load(join(sub, 'concepts.js'), 'CONCEPTS').concepts || []; } catch (e) {
+      errors++;
+      console.log(`Không đọc được ${b.dir}/concepts.js: ${e.message.split('\n')[0]}`);
+      continue;
+    }
+    for (const c of cs) { const id = String(c && c.id); if (owner.has(id)) dup.push(`${id} (${owner.get(id)}/ và ${b.dir}/)`); else owner.set(id, b.dir); }
+    if (round !== null && !cs.some(c => +(c.round || 1) === round)) { console.log(`Không có concept vòng ${round}, bỏ qua.`); continue; }
+    const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url), sub, ...pass], { encoding: 'utf8' });
+    if (r.status === 4) { console.error((r.stderr || '').trim()); return 4; }
+    const lines = (r.stdout || '').split(/\r?\n/).filter(l => l.trim());
+    const total = lines.find(l => /^→ \d+ lỗi · \d+ lưu ý$/.test(l));
+    for (const l of lines) if (l !== total) console.log(l);
+    if (!total) { errors++; console.log(`Không kiểm được bảng này: ${(r.stderr || '').trim()}`); continue; }
+    const [e, w] = total.match(/(\d+) lỗi · (\d+) lưu ý/).slice(1).map(Number);
+    errors += e;
+    warns += w;
+  }
+  if (dup.length) { errors++; console.log(`Bảng: id trùng giữa các bảng, Cổng 2 gọi concept theo id: ${dup.join(' · ')}`); }
+  console.log(`→ ${errors} lỗi · ${warns} lưu ý`);
+  return errors ? 1 : 0;
+}
+if (!existsSync(join(dir, 'concepts.js')) && existsSync(join(dir, 'boards.js'))) process.exit(hub());
+
 let D;
 try {
-  const ctx = {};
-  ctx.window = ctx;   // như trình duyệt và lệnh node -e của Cổng 2: concepts.js viết CONCEPTS.concepts.push(...) vẫn chạy
-  vm.runInNewContext(readFileSync(join(dir, 'concepts.js'), 'utf8'), ctx);
-  D = ctx.CONCEPTS;
+  D = load(join(dir, 'concepts.js'), 'CONCEPTS');
 } catch (e) {
   console.error(`Không đọc được concepts.js: ${e.message}`);
   process.exit(2);

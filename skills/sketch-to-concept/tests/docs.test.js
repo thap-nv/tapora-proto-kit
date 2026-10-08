@@ -46,7 +46,8 @@ test('mọi đường dẫn trong SKILL.md và concept-method.md đều có th�
 
 test('SKILL.md và vong-dau.md nhắc đủ các khuôn của skill', () => {
   const md = ROUND1();
-  for (const f of ['templates/concept-board.html', 'templates/concepts.js', 'templates/tokens.js', 'templates/key-screen.html', 'templates/CONCEPT.md', 'references/concept-method.md']) {
+  for (const f of ['templates/concept-board.html', 'templates/concepts.js', 'templates/tokens.js', 'templates/key-screen.html', 'templates/CONCEPT.md', 'references/concept-method.md',
+    'templates/concept-hub.html', 'templates/boards.js']) {
     assert.ok(md.includes(f), `SKILL.md chưa nhắc ${f}`);
   }
   assert.ok(md.includes('<skills>/sketch-to-site/templates/color.js'), 'SKILL.md chưa dặn chép color.js');
@@ -175,7 +176,25 @@ test('Cổng 2: mở bảng bằng trình duyệt trước khi hỏi, hướng d
   assert.match(g2, /at most 40 characters/);
   // Hướng dẫn gọi đúng nhãn trên bảng
   const board = read(path.join(SKILL, 'templates', 'concept-board.html'));
-  for (const s of ['Khổ màn', 'So trục', 'Mã trộn', 'Sao chép', 'Vòng ${n}']) assert.ok(board.includes(s), `bảng mất nhãn ${s}`);
+  for (const s of ['Khổ màn', 'So trục', 'Mã trộn', 'Sao chép', 'Vòng ${n}', 'Bề mặt']) assert.ok(board.includes(s), `bảng mất nhãn ${s}`);
+});
+
+// v7 thật: Cổng 2 mở 5 tab (hai bảng của hai portal và ba màn -hlv.html riêng lẻ)
+test('Cổng 2 mở đúng một trang: bảng có mọi bề mặt, nhiều portal thì trang gom; lối vào lại nhận boards.js', () => {
+  const md = read(path.join(SKILL, 'SKILL.md'));
+  const g2 = between(md, '### 🛑 Gate 2', '### Handover');
+  assert.match(g2, /never a screen file/);
+  assert.match(g2, /hub, one tab per board/);
+  assert.ok(g2.includes('*Bề mặt*'), 'hướng dẫn xem nhắc nút Bề mặt');
+  assert.match(g2, /\*\*Several boards:\*\* question 1 once per board/);
+  assert.match(between(md, '### Start', '### Re-entry'), /no `concept\/boards\.js`/);
+  const re = between(md, '### Re-entry', '### 🛑 Gate 2');
+  assert.match(re, /`concept\/boards\.js`/);
+  assert.match(re, /`templates\/concept-hub\.html` to `concept\/index\.html`/);
+  const a3 = read(path.join(SKILL, 'references', 'vong-dau.md'));
+  assert.match(a3, /\*\*Several surfaces on one board:\*\* declare them in `surfaces`/);
+  assert.match(a3, /\*\*One board per portal\*\*[^\n]*ids never repeat across boards[^\n]*`check\.mjs concept\/` checks every board/);
+  assert.match(read(path.join(SKILL, 'references', 'vong-moi.md')), /\*\*Several boards\*\* \(`concept\/boards\.js`/);
 });
 
 test('vong-moi.md đủ các bước của vòng mới và ba trường hợp vào lại', () => {

@@ -501,3 +501,113 @@ test('thẻ Bản trộn lấy mã từ concept đang xem tới khi người dù
   assert.equal(step(r, 'chon').check, 'man:B mau:A chu:D nut:D');
   assert.equal(step(r, 'xemC').check, 'man:B mau:A chu:D nut:D');
 });
+
+// v7 thật: bảng chỉ hiện <id>.html, nên Cổng 2 mở thêm từng màn <id>-hlv.html ra tab riêng
+test('bề mặt: bảng có nút Bề mặt khi khai từ 2 bề mặt; chọn bề mặt thì màn lớn, bản trộn và màn mượn đổi sang file của bề mặt đó', t => {
+  const dir = fixture(ROUND2 + "\nCONCEPTS.surfaces = [{ key: '', label: 'Nhân viên' }, { key: 'hlv', label: 'HLV', width: 390 }];\n");
+  const screen = fs.readFileSync(path.join(SKILL, 'templates', 'key-screen.html'), 'utf8');
+  for (const id of ['a', 'b', 'c']) fs.writeFileSync(path.join(dir, `${id}-hlv.html`), screen.replace('data-concept="a"', `data-concept="${id}"`));
+  const state = `JSON.stringify({
+    seg: [...document.querySelectorAll('[data-set-surface]')].map(b => b.textContent + ':' + b.getAttribute('aria-pressed')),
+    width: document.querySelector('[data-set-width][aria-pressed="true"]').dataset.setWidth,
+    preview: decodeURIComponent(document.querySelector('iframe[data-preview]').getAttribute('src')),
+    open: decodeURIComponent(document.querySelector('[data-open-slot] a').getAttribute('href')),
+    thumbs: [...document.querySelectorAll('iframe[data-screen]')].map(f => f.getAttribute('src').split('?')[0]) })`;
+  const r = run(dir, 'index.html', [
+    { name: 'dau', check: state },
+    { name: 'hlv', js: `document.querySelector('[data-set-surface="hlv"]').click()`, check: state },
+    { name: 'tron', js: `document.querySelector('input[name="mix-mau"][value="b"]').click()`, check: state },
+    { name: 'muon', js: `document.querySelector('[data-view="d"]').click()`, check: state },
+    { name: 've', js: `document.querySelector('[data-set-surface=""]').click()`, check: state }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  const v = n => JSON.parse(step(r, n).check);
+  assert.deepEqual(v('dau').seg, ['Nhân viên:true', 'HLV:false']);
+  assert.equal(v('dau').width, '1440');
+  assert.match(v('dau').preview, /^a\.html\?theme=light$/);
+  assert.deepEqual(v('hlv').seg, ['Nhân viên:false', 'HLV:true']);
+  assert.equal(v('hlv').width, '390');
+  assert.match(v('hlv').preview, /^a-hlv\.html\?theme=light$/);
+  assert.equal(v('hlv').open, v('hlv').preview);
+  assert.match(v('tron').preview, /^a-hlv\.html\?theme=light&mix=man:A mau:B chu:A nut:A$/);
+  assert.match(v('muon').preview, /^b-hlv\.html\?theme=light&mix=man:B mau:D chu:D nut:D$/);
+  assert.match(v('ve').preview, /^b\.html\?/);
+  assert.equal(v('ve').width, '1440');
+  for (const n of ['dau', 'hlv', 'muon']) assert.deepEqual(v(n).thumbs, ['a.html', 'b.html', 'c.html', 'b.html'], `${n}: ảnh nhỏ giữ màn chính`);
+
+  const one = run(fixture(), 'index.html', [{ name: 'mot', check: `String(document.querySelector('[data-surface-seg]').hidden)` }]);
+  noErrors(one);
+  assert.equal(step(one, 'mot').check, 'true', 'một bề mặt thì không có nút Bề mặt');
+});
+
+// Nhiều portal (v7 thật: concept/quan-ly/ và concept/nguoi-dung/, Cổng 2 mở từng bảng): concept/index.html là trang gom, mỗi bảng một tab
+const BOARDS_JS = "window.BOARDS = { project: 'Dự án thử', boards: [{ dir: 'quan-ly', label: 'Portal quản lý' }, { dir: 'nguoi-dung', label: 'Portal người dùng' }] };\n";
+function hubFixture(boardsJs = BOARDS_JS) {
+  const dir = tmpdir('concept-hub-');
+  fs.copyFileSync(path.join(SKILL, 'templates', 'concept-hub.html'), path.join(dir, 'index.html'));
+  if (boardsJs !== null) fs.writeFileSync(path.join(dir, 'boards.js'), boardsJs);
+  for (const d of ['quan-ly', 'nguoi-dung']) fs.cpSync(fixture(), path.join(dir, d), { recursive: true });
+  return dir;
+}
+const HUB_STATE = `JSON.stringify({
+  tabs: [...document.querySelectorAll('[role="tab"]')].map(b => b.textContent + ':' + b.getAttribute('aria-selected') + ':' + b.tabIndex),
+  frames: [...document.querySelectorAll('[data-panel] iframe')].map(f => f.getAttribute('src')),
+  visible: [...document.querySelectorAll('[data-panel]')].filter(p => getComputedStyle(p).visibility === 'visible').map(p => p.dataset.panel),
+  hash: location.hash, title: document.title, focus: document.activeElement.id,
+  allow: [...document.querySelectorAll('[data-panel] iframe')].every(f => /clipboard-write/.test(f.getAttribute('allow'))),
+  same: !window.__q || document.querySelector('[data-panel="quan-ly"] iframe') === window.__q })`;
+
+test('trang gom: mỗi bảng một tab; chuyển tab giữ bảng của tab kia, không nạp lại; phím mũi tên chuyển tab', t => {
+  const r = run(hubFixture(), 'index.html', [
+    { name: 'dau', check: HUB_STATE },
+    { name: 'sang', js: `window.__q = document.querySelector('[data-panel="quan-ly"] iframe'); document.querySelector('[data-board="nguoi-dung"]').click()`, check: HUB_STATE },
+    { name: 've', js: `document.querySelector('[data-board="quan-ly"]').click()`, check: HUB_STATE },
+    { name: 'phim', js: `document.querySelector('#tab-quan-ly').focus(); document.querySelector('#tab-quan-ly').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))`, check: HUB_STATE }]);
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  const v = n => JSON.parse(step(r, n).check);
+  assert.deepEqual(v('dau'), { tabs: ['Portal quản lý:true:0', 'Portal người dùng:false:-1'], frames: ['quan-ly/index.html'], visible: ['quan-ly'],
+    hash: '#quan-ly', title: 'Bảng concept · Dự án thử', focus: '', allow: true, same: true });
+  assert.deepEqual(v('sang').frames, ['quan-ly/index.html', 'nguoi-dung/index.html']);
+  assert.deepEqual(v('sang').visible, ['nguoi-dung']);
+  assert.equal(v('sang').hash, '#nguoi-dung');
+  assert.deepEqual(v('ve').visible, ['quan-ly']);
+  assert.equal(v('ve').same, true, 'mở lại tab thì bảng cũ còn nguyên, không nạp lại');
+  assert.deepEqual(v('phim').tabs, ['Portal quản lý:false:-1', 'Portal người dùng:true:0']);
+  assert.equal(v('phim').focus, 'tab-nguoi-dung');
+});
+
+test('trang gom: #<dir> trên địa chỉ mở đúng tab, chỉ nạp bảng đó; khổ 390 không tràn ngang', t => {
+  const r = run(hubFixture(), 'index.html', [{ name: 'hash', check: HUB_STATE }], { w: 390, h: 844, query: '#nguoi-dung' });
+  if (!r) return t.skip('không có trình duyệt');
+  noErrors(r);
+  const v = JSON.parse(step(r, 'hash').check);
+  assert.deepEqual(v.frames, ['nguoi-dung/index.html']);
+  assert.deepEqual(v.visible, ['nguoi-dung']);
+  for (const s of r) assert.ok(s.dims === null || s.dims.sw <= s.dims.cw, `${s.step}: tràn ngang ${JSON.stringify(s.dims)}`);
+});
+
+test('trang gom: thiếu boards.js hay dir sai quy ước thì báo rõ, không ném lỗi', t => {
+  const err = `JSON.stringify({ shown: !document.querySelector('[data-hub-error]').hidden,
+    items: [...document.querySelectorAll('[data-hub-error] li')].map(e => e.textContent), frames: document.querySelectorAll('iframe').length })`;
+  const none = run(hubFixture(null), 'index.html', [{ name: 'err', check: err }]);
+  if (!none) return t.skip('không có trình duyệt');
+  assert.deepEqual(none.flatMap(s => s.errors).filter(e => !e.startsWith('LOG ')), [], 'chỉ được có lỗi tải file, không có lỗi JS');
+  const a = JSON.parse(step(none, 'err').check);
+  assert.equal(a.shown, true);
+  assert.match(a.items[0], /Không đọc được boards\.js/);
+  assert.equal(a.frames, 0);
+  const bad = run(hubFixture("window.BOARDS = { boards: [{ dir: 'Quản lý', label: 'Portal quản lý' }, { dir: 'nguoi-dung', label: '' }] };\n"), 'index.html', [{ name: 'err', check: err }]);
+  noErrors(bad);
+  assert.deepEqual(JSON.parse(step(bad, 'err').check).items,
+    ['Bảng 1: dir "Quản lý" chỉ gồm chữ thường a-z, số và dấu gạch ngang.', 'Bảng "nguoi-dung": thiếu label.']);
+});
+
+test('preflight: trang gom dựng từ khuôn không có lỗi, không có cảnh báo', () => {
+  const dir = tmpdir('concept-hub-pf-');
+  fs.copyFileSync(path.join(SKILL, 'templates', 'concept-hub.html'), path.join(dir, 'index.html'));
+  fs.writeFileSync(path.join(dir, 'boards.js'), BOARDS_JS);
+  const r = spawnSync(PYTHON, [PREFLIGHT, dir], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /0 lỗi · 0 cảnh báo/, r.stdout);
+});

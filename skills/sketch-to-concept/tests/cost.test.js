@@ -270,6 +270,27 @@ CONCEPTS.concepts.push(Object.assign(JSON.parse(JSON.stringify(CONCEPTS.concepts
   assert.match(r.stdout, /^e: không thấy màn e\.html/m);
 });
 
+test('shots.mjs: khai surfaces thì concept có màn riêng thiếu màn của một bề mặt là dòng lỗi; màn bề mặt có thì được chụp', t => {
+  const dir = fixture();
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  fs.appendFileSync(path.join(dir, 'concepts.js'), `
+CONCEPTS.surfaces = [{ key: '', label: 'Nhân viên' }, { key: 'hlv', label: 'HLV', width: 390 }];
+CONCEPTS.rounds = [{ n: 1, note: '' }, { n: 2, note: 'x' }];
+CONCEPTS.concepts.push(Object.assign(JSON.parse(JSON.stringify(CONCEPTS.concepts[2])), { id: 'e', round: 2, recommended: false }));
+CONCEPTS.concepts.push(Object.assign(JSON.parse(JSON.stringify(CONCEPTS.concepts[2])), { id: 'f', round: 2, recommended: false }));
+`);
+  const screen = fs.readFileSync(path.join(dir, 'c.html'), 'utf8');
+  fs.writeFileSync(path.join(dir, 'e.html'), screen.replace('data-concept="c"', 'data-concept="e"'));
+  fs.writeFileSync(path.join(dir, 'f.html'), screen.replace('data-concept="c"', 'data-concept="f"'));
+  fs.writeFileSync(path.join(dir, 'f-hlv.html'), screen.replace('data-concept="c"', 'data-concept="f"'));
+  const r = spawnSync(process.execPath, [path.join(SKILL, 'scripts', 'shots.mjs'), dir, '--round', '2'], { encoding: 'utf8', timeout: 240000 });
+  if (r.status === 4) return t.skip('không có trình duyệt');
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.match(r.stdout, /^e: không thấy màn e-hlv\.html \(bề mặt HLV\)/m);
+  assert.doesNotMatch(r.stdout, /^f: không thấy/m);
+  assert.match(r.stdout, /^f-hlv\.html 390: /m);
+});
+
 // Mục nhỏ còn lại sau review 1.4
 test('shots.mjs: id có gạch ngang không làm nhận nhầm màn (a-2.html là màn của a-2, không phải màn phụ của a)', t => {
   const dir = fixture();
@@ -359,6 +380,52 @@ CONCEPTS.concepts.push(Object.assign(JSON.parse(JSON.stringify(CONCEPTS.concepts
   const bad = check(dir);
   assert.equal(bad.status, 2);
   assert.match(bad.stderr, /concepts\.js/);
+});
+
+// Nhiều portal: concept/ là trang gom (boards.js), mỗi bảng một thư mục con. Lệnh của tài liệu (check.mjs concept/) chạy cho mọi bảng
+function hubFixture() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'concept-hub-'));
+  fs.copyFileSync(path.join(SKILL, 'templates', 'concept-hub.html'), path.join(dir, 'index.html'));
+  fs.writeFileSync(path.join(dir, 'boards.js'), "window.BOARDS = { project: 'Thử', boards: [{ dir: 'quan-ly', label: 'Portal quản lý' }, { dir: 'nguoi-dung', label: 'Portal người dùng' }] };\n");
+  for (const d of ['quan-ly', 'nguoi-dung']) { const b = fixture(); fs.cpSync(b, path.join(dir, d), { recursive: true }); fs.rmSync(b, { recursive: true, force: true }); }
+  return dir;
+}
+const renameTo = ids => `\nCONCEPTS.concepts.forEach((c, i) => { c.id = '${ids}'[i]; });\n`;
+
+test('check.mjs trên trang gom: kiểm từng bảng dưới tên của nó, một dòng tổng; id trùng giữa hai bảng là lỗi', t => {
+  const dir = hubFixture();
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const dup = check(dir);
+  assert.equal(dup.status, 1, dup.stdout + dup.stderr);
+  assert.match(dup.stdout, /^Bảng: id trùng giữa các bảng[^\n]*a \(quan-ly\/ và nguoi-dung\/\)/m);
+  fs.appendFileSync(path.join(dir, 'nguoi-dung', 'concepts.js'), renameTo('def'));
+  const r = check(dir);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const out = r.stdout, at = s => { const i = out.search(s); assert.ok(i >= 0, `thiếu ${s}\n${out}`); return i; };
+  assert.ok(at(/^▸ Portal quản lý · quan-ly\/$/m) < at(/^a: OK$/m) && at(/^a: OK$/m) < at(/^▸ Portal người dùng · nguoi-dung\/$/m)
+    && at(/^▸ Portal người dùng/m) < at(/^d: OK$/m), out);
+  assert.equal((out.match(/^→ /gm) || []).length, 1, 'chỉ một dòng tổng');
+  assert.match(out, /^→ 0 lỗi · 0 lưu ý$/m);
+});
+
+test('check.mjs trên trang gom: --round bỏ qua bảng không có vòng đó; thiếu thư mục bảng hay index.html không phải trang gom là lỗi', t => {
+  const dir = hubFixture();
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  fs.appendFileSync(path.join(dir, 'nguoi-dung', 'concepts.js'), renameTo('def') + `
+CONCEPTS.rounds = [{ n: 1, note: '' }, { n: 2, note: 'x' }];
+CONCEPTS.concepts.push(Object.assign(JSON.parse(JSON.stringify(CONCEPTS.concepts[1])), { id: 'g', round: 2, screen: 'e', recommended: false,
+  axes: Object.assign({}, CONCEPTS.concepts[1].axes, { nen: 'Sáng tinh', chatNen: 'Giấy' }), colors: { light: CONCEPTS.concepts[0].colors.light } }));
+`);
+  const r = check(dir, '--round', '2');
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /^▸ Portal quản lý · quan-ly\/\nKhông có concept vòng 2, bỏ qua\.$/m);
+  assert.match(r.stdout, /^g: OK$/m);
+  fs.rmSync(path.join(dir, 'quan-ly'), { recursive: true, force: true });
+  fs.copyFileSync(path.join(SKILL, 'templates', 'concept-board.html'), path.join(dir, 'index.html'));
+  const bad = check(dir);
+  assert.equal(bad.status, 1, bad.stdout + bad.stderr);
+  assert.match(bad.stdout, /^Không đọc được quan-ly\/concepts\.js/m);
+  assert.match(bad.stdout, /^Trang gom: index\.html chưa phải trang gom/m);
 });
 
 // Ngân sách màn then chốt: khung đầu + khối tương tác đặc trưng. Ba lần chạy ở 1.4 viết màn 12–20 KB, 21–51% trang nằm ngoài

@@ -30,7 +30,7 @@ test('manifest plugin nói về bước concept, bỏ "five decision gates"', ()
 test('CHANGELOG ghi phiên bản mới của các skill', () => {
   const entries = read('CHANGELOG.md').split(/^## /m);
   const v171 = entries[1];
-  for (const s of ['`sketch-to-concept` 1.6', '`sketch-to-site` 4.8', '`sketch-to-map` 1.1', 'Start-Process', 'IDE'])
+  for (const s of ['`sketch-to-concept` 1.6', '`sketch-to-site` 4.8', '`sketch-to-map` 1.1', 'Start-Process', 'IDE', 'surfaces', 'templates/concept-hub.html', 'concept/boards.js'])
     assert.ok(v171.includes(s), `CHANGELOG 1.7.1 thiếu ${s}`);
   const v170 = entries.find(s => s.startsWith('1.7.0 ('));
   for (const s of ['`sketch-to-site` 4.7', '`evolve-site` 1.11', '`handover-check` 1.5', '`tweak-site` 1.5', 'references/trang-loi-vao.md', 'data-shot', 'thumbs', '--missing'])
