@@ -6,7 +6,7 @@ description: >-
 
 # Sketch to Map · Bản đồ chức năng và bố cục trước khi dựng
 
-> **v1.0 (06/10/2026)** · Lịch sử phiên bản ở `CHANGELOG.md` của kit.
+> **v1.1 (08/10/2026)** · Lịch sử phiên bản ở `CHANGELOG.md` của kit.
 > **Đường dẫn:** `<skills>` là thư mục cha của thư mục chứa SKILL.md này. Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`. Lệnh `python` tự viết mà in tiếng Việt thì đặt `PYTHONIOENCODING=utf-8` trước lệnh *(script của skill đã tự đặt)*.
 > **Ngôn ngữ:** nói với người dùng bằng ngôn ngữ họ viết. Chữ người dùng đọc *(tên chức năng, màn, nhãn, `DECISIONS.md`)* theo ngôn ngữ đó.
 > Việc của skill: trước khi dựng, **mọi chức năng có tên, có chỗ, có lối vào ngắn**, và người dùng **bấm thử** việc hằng ngày của họ trên một khung xám. Đo trên một prototype 28 trang đã qua nghiệm thu: không thiếu use case nào, nhưng 17 lối tắt đá người dùng sang trang khác không đường về, một màn gánh 10 use case, việc hằng ngày không có lối vào. Thiếu là ở **bố cục**, không ở đọc tài liệu.
@@ -28,7 +28,7 @@ description: >-
 ## 1. Luật dừng *(cùng luật với `sketch-to-site` mục 1: sửa thì sửa cả ba skill)*
 
 **Cổng (🛑)** là chỗ chỉ con người được quyết. Tới cổng thì:
-1. **Trình bày** thứ nhìn thấy được: khung bấm thử, ảnh, dòng chỉ số. Không hỏi mở kiểu *"bạn thấy bố cục thế nào?"*.
+1. **Trình bày** thứ nhìn thấy được: khung bấm thử, ảnh, dòng chỉ số. **Mở sẵn** khung bằng trình duyệt *(`Start-Process` · `open` · `xdg-open`; link `.html` mở mã nguồn trong IDE; cloud: gợi ý đăng Artifact)*, nói 2–3 dòng cần xem gì rồi mới hỏi; câu hỏi chờ họ xem xong. Không hỏi mở kiểu *"bạn thấy bố cục thế nào?"*.
 2. **Hỏi** bằng `AskUserQuestion`: tối đa 4 câu một lượt, mỗi câu 2–4 lựa chọn; lựa chọn khuyến nghị đứng **đầu**, ghi *(Khuyến nghị)*.
 3. **Dừng.** Không có công cụ hỏi thì viết câu hỏi ra rồi **kết thúc lượt**. **Không tự chọn thay**, kể cả ở chế độ tự động hay phiên không người trực.
 4. **Ghi** đáp án **nguyên văn** vào `DECISIONS.md` *(khuôn `<skills>/sketch-to-site/templates/DECISIONS.md`)*.
@@ -61,7 +61,7 @@ Người dùng trả lời *Tuỳ bạn* cho một câu hỏi ở cổng: đó l
 M0 Nguồn ─► M1 Kiểm kê ─► M2 Bố cục ─► Kiểm bố cục (chỉ số + soát nhãn) ─► 🛑 Cổng Bản đồ ─► sketch-to-site, phiên mới
 ```
 
-Cổng **không đánh số**: số 1–4 giữ nguyên cho concept và site, để dự án đang làm dở không đọc lệch `DECISIONS.md`.
+Cổng **không đánh số**: số 1–4 giữ cho concept và site, để dự án làm dở không đọc lệch `DECISIONS.md`.
 
 **Lối vào.** Nhìn thư mục prototype, chọn đúng một dòng. Lượt kế tiếp làm **cả cột Lượt vào trong một lượt**: các lệnh `Read` và lệnh Bash gọi cùng lúc.
 
@@ -79,7 +79,7 @@ Cổng **không đánh số**: số 1–4 giữ nguyên cho concept và site, đ
 ## 3. 🛑 Cổng Bản đồ
 
 **Trình bày** *(một tin nhắn)*:
-- Link `map/index.html` và `map/MAP.md`. **Mời người dùng bấm thử** danh sách *Bấm thử việc hằng ngày* trên khung trước khi trả lời: mỗi việc bắt đầu từ trang chủ của vai, chấm *Dễ · Được · Khó*, rồi *Chép kết quả* dán lại.
+- Link `map/index.html` *(mở sẵn)* và `map/MAP.md`. **Mời người dùng bấm thử** danh sách *Bấm thử việc hằng ngày* trên khung trước khi trả lời: mỗi việc bắt đầu từ trang chủ của vai, chấm *Dễ · Được · Khó*, rồi *Chép kết quả* dán lại.
 - Dòng **Kiểm kê**, dòng **Nguồn** và dòng **Chỉ số bố cục** của lần `check --shots` sạch, nguyên văn; dòng **Soát nhãn** *(`m2-bo-cuc.md` mục 5)*.
 - Chức năng `suy`, mâu thuẫn và câu hỏi mở, module theo thứ tự dựng: khối **Trình ở cổng** của chính lần `check` đó *(không cần đọc `MAP.md`)*.
 - 3–5 **chỗ đặt đáng bàn**: cảnh báo đang giữ và lý do, việc hằng ngày xa nhất, màn dày nhất.
@@ -125,16 +125,14 @@ map/
 
 ## 5. Bàn giao
 
-- Link Markdown tới `map/index.html` và `map/MAP.md`. Ba dòng: kiểm kê · chỉ số bố cục · đợt đầu.
-- Bước kế là `sketch-to-site`, trong **phiên mới**: `map/`, `CONCEPT.md`, `DECISIONS.md` là đủ để làm tiếp, còn phiên này mang cả tài liệu yêu cầu trong ngữ cảnh. Ở đó B1 đọc `MAP.md` thay vì đọc lại cả tài liệu, B3 dựng từng màn theo `map.mjs slice`, B4 kiểm độ phủ và bố cục trên trang đã dựng.
+- Link `map/index.html` và `map/MAP.md`. Ba dòng: kiểm kê · chỉ số bố cục · đợt đầu.
+- Bước kế là `sketch-to-site`, trong **phiên mới**: `map/`, `CONCEPT.md`, `DECISIONS.md` là đủ để làm tiếp, còn phiên này mang cả tài liệu yêu cầu trong ngữ cảnh. Ở đó B1 đọc `MAP.md` thay cho tài liệu, B3 dựng theo `map.mjs slice`, B4 kiểm độ phủ.
 - Đợt sau: `evolve-site` Cấp 3 dựng module hoãn; chỗ đặt đã có trong bản đồ.
-- Người dùng muốn **chia sẻ** khung bấm thử cho người khác thì đề xuất đăng `map/` thành Artifact.
+- Muốn **chia sẻ** khung bấm thử: đề xuất đăng `map/` thành Artifact.
 
 ---
 
 ## 6. Cớ hay gặp khi bố cục, và sự thật
-
-Rút từ lỗi đo được trên prototype thật đã qua nghiệm thu, và trên lần chạy không có skill này.
 
 | Cớ | Sự thật |
 |---|---|

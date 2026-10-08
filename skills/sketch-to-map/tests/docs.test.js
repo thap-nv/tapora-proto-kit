@@ -12,7 +12,7 @@ const section = (md, from, to) => { const i = md.indexOf(from); assert.ok(i >= 0
 test('SKILL.md là bộ định tuyến: ≤ 12 000 ký tự, một ghi chú phiên bản, lối vào mỗi dòng một lượt, không có bước M1–M2', () => {
   const md = read('sketch-to-map/SKILL.md');
   assert.ok(md.length <= 12000, `SKILL.md dài ${md.length} ký tự`);
-  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.split(' (')[0]), ['> **v1.0']);
+  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.split(' (')[0]), ['> **v1.1']);
   assert.match(md, /`W:\/…`[^\n]*`\/w\/…`/);
   const rows = section(md, '**Lối vào.**', '**Ít lượt.**').split('\n').filter(l => l.startsWith('| ') && !l.startsWith('| Thư mục') && !l.startsWith('|---'));
   assert.equal(rows.length, 4);

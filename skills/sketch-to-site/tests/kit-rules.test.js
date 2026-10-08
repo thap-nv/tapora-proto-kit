@@ -96,6 +96,15 @@ test('bảng cớ bỏ cổng giống hệt ở sketch-to-site, sketch-to-concep
   assert.match(site, /\*\*Dấu hiệu phải dừng lại:\*\*/);
 });
 
+// 1.7.1: cổng hỏi ngay khi người dùng chưa thấy gì; link tới file .html trên máy mở mã nguồn trong IDE, không mở trang
+test('bước Trình bày của luật dừng ở cả ba skill: mở sẵn trang bằng trình duyệt, nói cần xem gì, câu hỏi chờ', () => {
+  for (const f of ['skills/sketch-to-site/SKILL.md', 'skills/sketch-to-concept/SKILL.md', 'skills/sketch-to-map/SKILL.md']) {
+    const step = read(f).split('\n').find(l => /^1\. \*\*(Trình bày|Show)\*\*/.test(l));
+    assert.ok(step, `${f}: thiếu bước Trình bày`);
+    for (const s of ['Start-Process', '`open`', '`xdg-open`', 'IDE', 'Artifact']) assert.ok(step.includes(s), `${f}: bước Trình bày thiếu ${s}`);
+  }
+});
+
 test('evolve-site: kiểm trước, dựng sau ở đầu B3; bẻ thử bước phủ định ở B4', () => {
   const md = read(E2);
   const b3 = section(md, '### B3 · Dựng tính năng', '### B4');

@@ -6,7 +6,7 @@ description: >-
 
 # Sketch to Concept · Settle the concept before building the prototype
 
-> **v1.5 (06/10/2026)** · The brief counts the project's scale; a large project goes on to `sketch-to-map`. Change history: `CHANGELOG.md` at the repo root.
+> **v1.6 (08/10/2026)** · Gate 2 opens the board in the browser and says what to look at before asking. Change history: `CHANGELOG.md` at the repo root.
 > **Language:** talk to the user in the language they write in: gate questions and options, progress notes, reports. Files the user reads (`DECISIONS.md`, `CONCEPT.md`, the board, names, ideas, axes and `why` in `concepts.js`) are in that language too; the templates are in Vietnamese. Screen content follows the language of the brief.
 > **Paths:** `<skills>` is the parent of the folder holding this SKILL.md. Read referenced skills by path, never through the Skill tool (convention at the top of `sketch-to-site`). On Windows, give `node` and `python` paths with the drive letter and forward slashes (`W:/…`), never Git Bash's `/w/…`: they cannot read it.
 > The job: bring the user to a concept that is **theirs**. Non-designers struggle to describe a concept but react well to options they can see, so the skill builds 3 real concepts, then **stops** for the user to choose.
@@ -28,7 +28,7 @@ Method for each layer: `references/concept-method.md`.
 ## 1. Stop rule *(same rule as `sketch-to-site` §1 and `sketch-to-map` §1: change all three)*
 
 A **gate (🛑)** is a decision only a human makes. At a gate:
-1. **Show** something visible: the board, screenshots. Do not ask open questions like *"which style do you like?"*.
+1. **Show** something visible: the board, screenshots. **Open it** in the browser before asking (`Start-Process "<path>"` on Windows · `open` on macOS · `xdg-open` on Linux): a Markdown link to a local `.html` opens its source in the IDE, not the page. No local display (cloud session): offer to publish it as an Artifact. Above the questions, 2–3 lines on what to look at, and that the questions wait until they have looked. Do not ask open questions like *"which style do you like?"*.
 2. **Ask** with `AskUserQuestion`: at most 4 questions per turn, 2–4 options each; the recommended option goes **first**, marked recommended (*"(Khuyến nghị)"* in Vietnamese); aesthetic options carry a `preview`.
 3. **Stop.** Without an ask tool, write the questions and **end the turn**. **Never choose for the user**, even in auto mode or an unattended session.
 4. **Record** the answers **verbatim** in `DECISIONS.md` (template `<skills>/sketch-to-site/templates/DECISIONS.md`).
@@ -90,8 +90,17 @@ It refreshes the board templates (a board from before 1.4 does not know rounds o
 
 ### 🛑 Gate 2 · Choose a concept
 
-Present the link to `concept/index.html` and the screenshots, then ask **in one turn** (options in the user's language):
-1. **Concept:** four fixed options, however many concepts the board has: `<recommended concept>` (recommended) · `<second concept>` · *Mix (paste the code from the board)* · **Not there yet, new round**. Other concepts: the user types them in *Other*. The `preview` of the two concept options has 5 lines: **Ý** · **Màu** · **Chữ** · **Màn then chốt** · **Giống kiểu**. Give the reason for the recommendation with facts from the brief.
+**One message:** the lines below, the command that opens every board (`Start-Process "<prototype>/concept/index.html"` on Windows · `open` · `xdg-open`), then `AskUserQuestion`. Calls in one message run in order, so the board is open when the questions appear. No local display: give the path and offer to publish `concept/` as an Artifact (`sketch-to-site` §8).
+
+Above the questions, at most 8 lines in the user's language, naming the board's own labels:
+- the board is open in the browser, with a Markdown link to it;
+- how to look: click each concept in the left list (after a new round the new ones sit under *Vòng n*) · switch *Khổ màn* 1440/390 · try each concept's signature interaction, named per concept · open *So trục* to compare axes · to mix, pick layers in the *Trộn* matrix and press *Sao chép* for the code;
+- the recommendation and its reason from the brief, one line;
+- notes: a concept still ≤ 5 after rework (score and reason), warnings still open;
+- the questions below wait until they have looked: no need to answer now.
+
+Then ask (options in the user's language):
+1. **Concept:** four fixed options, however many concepts the board has: `<recommended concept>` (recommended) · `<second concept>` · *Mix (paste the code from the board)* · **Not there yet, new round**. Other concepts: the user types them in *Other*. The `preview` of the two concept options has 5 lines: **Ý** · **Màu** · **Chữ** · **Màn then chốt** · **Giống kiểu**, each at most 40 characters: the preview pane cuts longer lines. Give the reason for the recommendation with facts from the brief.
 2. **Second background** (dark mode following the device setting; light mode if the concept is dark): No, one background like the concept (recommended) · Yes, add a second background. Skip it when the user already said so in the brief. *Yes*: do not rebuild the board; `sketch-to-site` B2 adds the second theme and measures every pair.
 3. **Rhythm:** Like the concept · Calmer · Livelier. In words, no dial numbers.
 

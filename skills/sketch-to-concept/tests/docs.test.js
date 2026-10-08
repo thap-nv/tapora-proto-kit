@@ -167,6 +167,17 @@ test('Cổng 2 câu 1: bốn lựa chọn cố định, có "Chưa hợp, làm v
   assert.doesNotMatch(g2, /một vòng biến thể|a variant round/);
 });
 
+test('Cổng 2: mở bảng bằng trình duyệt trước khi hỏi, hướng dẫn xem ngắn trên câu hỏi, preview không tràn khung', () => {
+  const g2 = between(read(path.join(SKILL, 'SKILL.md')), '### 🛑 Gate 2', '### Handover');
+  assert.match(g2, /Start-Process "<prototype>\/concept\/index\.html"/);
+  for (const s of ['*Khổ màn*', '*So trục*', '*Trộn*', '*Sao chép*', '*Vòng n*', 'signature interaction', 'Artifact']) assert.ok(g2.includes(s), `Cổng 2 thiếu ${s}`);
+  assert.match(g2, /questions below wait/, 'phải nói câu hỏi chờ người dùng xem xong');
+  assert.match(g2, /at most 40 characters/);
+  // Hướng dẫn gọi đúng nhãn trên bảng
+  const board = read(path.join(SKILL, 'templates', 'concept-board.html'));
+  for (const s of ['Khổ màn', 'So trục', 'Mã trộn', 'Sao chép', 'Vòng ${n}']) assert.ok(board.includes(s), `bảng mất nhãn ${s}`);
+});
+
 test('vong-moi.md đủ các bước của vòng mới và ba trường hợp vào lại', () => {
   const v = read(path.join(SKILL, 'references', 'vong-moi.md'));
   for (const s of ['Which layers miss', 'closest', '`screen`', 'rounds', 'verbatim', 'every concept already on the board', 'Do not touch',

@@ -6,7 +6,7 @@ description: >-
 
 # Sketch to Site · Thiết kế website và app từ đầu
 
-> **v4.7 (08/10/2026)** · Nhiều bề mặt hay nhiều vai: trang lối vào theo `references/trang-loi-vao.md`, kiểu chốt ở Cổng 3, ảnh do `qa-check.py` chụp. Các bước ở `references/b0-b2.md`, `references/b3-b4.md`, mỗi giai đoạn vào bằng một lượt; kiểm một lệnh: `scripts/system-check.mjs` *(B2)*, `scripts/qa-check.py` *(B4)*. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
+> **v4.8 (08/10/2026)** · Cổng mở sẵn trang cần xem trong trình duyệt rồi mới hỏi *(mục 1)*. Các bước ở `references/b0-b2.md`, `references/b3-b4.md`, mỗi giai đoạn vào bằng một lượt; kiểm một lệnh: `scripts/system-check.mjs` *(B2)*, `scripts/qa-check.py` *(B4)*. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
 > **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này (`.claude/skills/`, `~/.codex/skills/`, hoặc thư mục cài plugin). Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`: hai chương trình này không đọc được. Lệnh `python` tự viết mà in tiếng Việt thì đặt `PYTHONIOENCODING=utf-8` trước lệnh: console Windows (cp1252) dừng giữa chừng với `UnicodeEncodeError`.
 > **Skill tham chiếu:** `design-taste-frontend`, `high-end-visual-design`, `minimalist-ui`, `industrial-brutalist-ui`, `gpt-taste`, `stitch-design-taste`, `full-output-enforcement` đã tắt tự kích hoạt. Đọc chúng như tài liệu: mở `<skills>/<tên>/SKILL.md` bằng công cụ đọc file, không gọi qua công cụ Skill. Cần một mục *(ví dụ `design-taste-frontend` §4.7)* thì tìm dòng tiêu đề của mục đó *(`grep -n "^#.* 4\.7 "`)* rồi chỉ đọc đoạn ấy: `design-taste-frontend` dài khoảng 87 KB.
 > Việc của skill: **đưa người dùng tới một thiết kế là của họ**, không phải của mô hình. Mô hình lo phần tay nghề: token, bố cục, tương tác, tự kiểm. Concept, phong cách và nghiệm thu là quyền của con người, và skill **dừng lại để hỏi** đúng ở những chỗ đó.
@@ -35,9 +35,9 @@ description: >-
 
 **Cổng (🛑)** là chỗ chỉ con người được quyết. Tới cổng thì:
 
-1. **Trình bày** thứ cần quyết, bằng thứ nhìn thấy được: bảng so sánh, preview, ảnh chụp bản dựng. Đừng hỏi mở kiểu *"bạn thích phong cách nào?"*.
+1. **Trình bày** thứ cần quyết, bằng thứ nhìn thấy được: bảng so sánh, preview, ảnh chụp bản dựng. **Mở sẵn** trang đó trong trình duyệt rồi mới hỏi *(`Start-Process "<đường-dẫn>"` · `open` · `xdg-open`)*: link tới file `.html` chỉ mở mã nguồn trong IDE. Không có màn hình *(cloud)*: gợi ý đăng Artifact. Trên câu hỏi, 2–3 dòng nói cần xem gì; câu hỏi chờ người dùng xem xong. Đừng hỏi mở kiểu *"bạn thích phong cách nào?"*.
 2. **Hỏi** bằng công cụ `AskUserQuestion`: tối đa 4 câu một lượt, mỗi câu 2–4 lựa chọn. Nếu có khuyến nghị thì đặt lựa chọn đó **đầu tiên** và thêm *"(Khuyến nghị)"*. Với lựa chọn thẩm mỹ, gắn `preview` *(mô tả ngắn hoặc ASCII bố cục)*.
-3. **Dừng.** Không có công cụ hỏi thì viết câu hỏi ra rồi **kết thúc lượt**. **Không tự chọn thay**, kể cả ở chế độ tự động, auto mode hay phiên không người trực. Đây là quyết định chỉ người dùng làm được, nên dừng lại không bị coi là tắc việc.
+3. **Dừng.** Không có công cụ hỏi thì viết câu hỏi ra rồi **kết thúc lượt**. **Không tự chọn thay**, kể cả ở chế độ tự động, auto mode hay phiên không người trực.
 4. **Ghi** đáp án vào `DECISIONS.md` *(mẫu ở `templates/DECISIONS.md`)*: cổng, câu hỏi, đáp án **nguyên văn**, ngày.
 
 **Chỉ được qua cổng mà không hỏi khi:**
@@ -47,7 +47,6 @@ description: >-
 
 **Đừng:**
 - Hỏi thứ suy ra được từ bối cảnh. Cổng chỉ hỏi thứ **làm thay đổi đầu ra**.
-- Hỏi trước khi có gì để xem. Không bắt chọn concept khi chưa dựng bảng concept thật.
 - Gom câu của cổng sau vào cổng trước cho đỡ một lượt.
 - Coi im lặng là đồng ý. Người dùng không trả lời thì nhắc lại câu hỏi.
 
@@ -189,7 +188,7 @@ Mặc định `docs/prototypes/<slug>/`. Dự án có quy ước khác thì theo
 
 ## 8. Bàn giao
 
-- Link Markdown tới `site/index.html` và `DESIGN.md`. Lệnh mở: `Start-Process "<đường-dẫn>"` (Windows) · `open` (macOS) · `xdg-open` (Linux).
+- Link Markdown tới `site/index.html` và `DESIGN.md`; mở sẵn `site/index.html` như mục 1.
 - Ba dòng: concept đã chọn · kết quả kiểm *(số thật)* · việc còn chờ *(ảnh thật, số minh hoạ cần thay)*.
 - Có app: link thêm tới `site/app/index.html` *(trang tổng quan)*, cách mở trên điện thoại thật và danh sách **cần làm ở app thật** *(`mobile-app.md` mục 7, 9)*.
 - Người dùng chốt ở Cổng 4 → `python _qa/handover.py promote _qa/handover/<ngày-giờ>` để lấy **mốc bàn giao đầu**. Chạy lại `run` trước nếu đã sửa sau lần chạy đó.

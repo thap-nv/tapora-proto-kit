@@ -29,7 +29,10 @@ test('manifest plugin nói về bước concept, bỏ "five decision gates"', ()
 
 test('CHANGELOG ghi phiên bản mới của các skill', () => {
   const entries = read('CHANGELOG.md').split(/^## /m);
-  const v170 = entries[1];
+  const v171 = entries[1];
+  for (const s of ['`sketch-to-concept` 1.6', '`sketch-to-site` 4.8', '`sketch-to-map` 1.1', 'Start-Process', 'IDE'])
+    assert.ok(v171.includes(s), `CHANGELOG 1.7.1 thiếu ${s}`);
+  const v170 = entries.find(s => s.startsWith('1.7.0 ('));
   for (const s of ['`sketch-to-site` 4.7', '`evolve-site` 1.11', '`handover-check` 1.5', '`tweak-site` 1.5', 'references/trang-loi-vao.md', 'data-shot', 'thumbs', '--missing'])
     assert.ok(v170.includes(s), `CHANGELOG 1.7.0 thiếu ${s}`);
   const latest = entries.find(s => s.startsWith('1.6.0 ('));
@@ -62,7 +65,7 @@ test('ghi nguồn superpowers, README chạy test ở cả hai thư mục, SKILL
   assert.ok(lic.includes('| [obra/superpowers](https://github.com/obra/superpowers) | © 2025 Jesse Vincent |'), 'thiếu dòng ghi nguồn superpowers');
   assert.ok(read('README.md').includes('node --test skills/sketch-to-concept/tests/ skills/sketch-to-site/tests/'), 'README thiếu lệnh test hai thư mục');
   assert.ok(lic.includes('| [plugin87/ux-ui-agent-skills](https://github.com/plugin87/ux-ui-agent-skills) | © 2026 Thientan Soparat |'), 'thiếu dòng ghi nguồn ux-ui-agent-skills');
-  for (const [f, v] of [['sketch-to-site', 'v4.7'], ['sketch-to-concept', 'v1.5'], ['evolve-site', 'v1.11'], ['tweak-site', 'v1.5'], ['handover-check', 'v1.5'], ['sketch-to-map', 'v1.0']]) {
+  for (const [f, v] of [['sketch-to-site', 'v4.8'], ['sketch-to-concept', 'v1.6'], ['evolve-site', 'v1.11'], ['tweak-site', 'v1.5'], ['handover-check', 'v1.5'], ['sketch-to-map', 'v1.1']]) {
     assert.ok(read(`skills/${f}/SKILL.md`).split('\n').some(l => l.startsWith(`> **${v} (`)), `${f} thiếu ghi chú ${v}`);
   }
 });
@@ -80,9 +83,9 @@ test('mọi SKILL.md: name trùng thư mục, description tối đa 1.024 ký t�
   }
 });
 
-test('phát hành 1.7.0: hai manifest cùng phiên bản, CHANGELOG có mục 1.7.0 ở đầu, mô tả plugin nhắc sketch-to-map', () => {
-  for (const f of ['.claude-plugin/plugin.json', '.codex-plugin/plugin.json']) assert.equal(JSON.parse(read(f)).version, '1.7.0', f);
-  assert.ok(read('CHANGELOG.md').split(/^## /m)[1].startsWith('1.7.0 ('), 'mục đầu của CHANGELOG phải là 1.7.0');
+test('phát hành 1.7.1: hai manifest cùng phiên bản, CHANGELOG có mục 1.7.1 ở đầu, mô tả plugin nhắc sketch-to-map', () => {
+  for (const f of ['.claude-plugin/plugin.json', '.codex-plugin/plugin.json']) assert.equal(JSON.parse(read(f)).version, '1.7.1', f);
+  assert.ok(read('CHANGELOG.md').split(/^## /m)[1].startsWith('1.7.1 ('), 'mục đầu của CHANGELOG phải là 1.7.1');
   assert.match(JSON.parse(read('.codex-plugin/plugin.json')).interface.longDescription, /sketch-to-map/);
 });
 

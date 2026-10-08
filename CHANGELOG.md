@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.1 (2026-10-08)
+
+- Skills: `sketch-to-concept` 1.6, `sketch-to-site` 4.8, `sketch-to-map` 1.1.
+- Gates now open the page the user has to look at before they ask. Why: at Gate 2 the question appeared in the same turn as one line of text. No board was open and nothing said what to look at. A Markdown link to a local `.html` opens its source in the IDE, not the page, so the user had to find the file and open it themselves.
+  - Stop rule step 1, in all three skills: open the page in the browser before asking (`Start-Process` on Windows · `open` · `xdg-open`). Say in 2–3 lines what to look at, and that the questions wait until the user has looked. With no local display, offer to publish it as an Artifact.
+  - `sketch-to-concept` Gate 2: one message holds the guide, the open command and `AskUserQuestion`, so there is no extra turn. The guide names the board's own labels (*Khổ màn*, *So trục*, *Trộn*, *Sao chép*, *Vòng n*) and gives the recommendation and the notes. Preview lines are at most 40 characters, because the preview pane cut longer ones.
+  - To stay under the size limits, `sketch-to-site` drops two stop-rule lines that repeated the excuses table, and `sketch-to-map` shortens five lines. `sketch-to-map/SKILL.md` is now 11,992 of 12,000 characters (as the test counts).
+- Tests: step 1 of the stop rule carries the open command in all three skills, and the Gate 2 guide names labels that exist on the board.
+
 ## 1.7.0 (2026-10-08)
 
 - Skills: `sketch-to-site` 4.7, `evolve-site` 1.11, `handover-check` 1.5, `tweak-site` 1.5.
