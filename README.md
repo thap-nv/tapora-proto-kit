@@ -155,8 +155,8 @@ python _qa/handover.py promote _qa/handover/<date-time>
 | `python _qa/quick.py --dry` | Any time | Shows the changed files and the suites that would run |
 | `python _qa/handover.py run` | Before handover | Runs every suite on every theme, with screenshots on every theme. Compares against `_qa/last-green/` and matches each difference to a ledger line. |
 | `python _qa/handover.py promote _qa/handover/<date-time>` | After sign-off | Makes that run the new baseline and starts a fresh ledger |
-| `python _qa/handover.py thumbs` | Before `run`, when overview screenshots changed | Re-captures the thumbnails listed in `thumbs` |
-| `python _qa/handover.py ledger` | Start of `handover-check` | Prints the changes since the last handover, one line each, the pages edited directly or only through shared files, the overview thumbnails to retake, and files changed after the last quick check. No browser. |
+| `python _qa/handover.py thumbs [--all \| --missing]` | Run for you: `qa-check.py` before every full check, `quick.py` with `--missing` | Captures the entry-page previews, one image per theme: `<img data-shot>` on `site/index.html` (`sketch-to-site` `references/trang-loi-vao.md`), plus `thumbs` in `qa.config.json` for older projects. Only images that are missing or older than their page, the files it loads or the declaration are taken; `--all` retakes all, `--missing` only the missing ones. Prints one summary line with the entry page size. |
+| `python _qa/handover.py ledger` | Start of `handover-check` | Prints the changes since the last handover, one line each, the pages edited directly or only through shared files, the entry-page previews whose page changed, and files changed after the last quick check. No browser. |
 | `python _qa/run_all.py <out> [filter]` | Feature checks, `evolve-site` baseline screenshots, debugging | Runs suites without any baseline, then lists the screenshots of the suites it ran |
 | `python _qa/compare.py <a> <b>` | Debugging | Compares two runs step by step |
 
@@ -195,7 +195,7 @@ A run is clean when it has 0 console errors, 0 failed steps, 0 silent steps, 0 n
 | `noisy` | `[suite, step]` pairs whose value changes between runs by design, such as a live clock. They are ignored when comparing. |
 | `theme_switch_prefix` | Suites whose name starts with this prefix switch themes themselves, so they run only on the default theme |
 | `preflight_kind` | `site` for marketing sites, `app` for web apps |
-| `thumbs` | `{dir, items: [[page, steps-key, size]]}` for overview screenshots |
+| `thumbs` | `{dir, items: [[page, steps-key, size]]}`: entry-page previews of older projects. New projects declare them on the `<img>` tags instead; `dir` (default `assets/shots`) applies to both |
 | `browser` | Path to the browser, if auto-detection fails |
 
 **Steps file: `_qa/steps-<key>.json`**

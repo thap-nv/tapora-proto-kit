@@ -17,7 +17,7 @@
 
 **Phạm vi** *(Cổng 3, hay đợt đầu ở Cổng Bản đồ; nguyên văn)*: <…> · **Sơ đồ trang:** `DESIGN.md` mục 9 *(có bản đồ: `map/MAP.md`)* · **Bắt đầu:** <dd/mm/yyyy>
 
-**Chỉ gồm trang trong phạm vi Cổng 3.** Trang ngoài phạm vi không ghi vào sổ.
+**Chỉ gồm trang trong phạm vi Cổng 3.** Trang ngoài phạm vi không ghi vào sổ. Có trang lối vào *(sơ đồ có dòng `Lối vào`)* thì nó là dòng cuối: dựng sau mọi bề mặt.
 
 | # | Trang / màn | File | Chức năng *(mã trong bản đồ, nếu có)* | Trạng thái | Kiểm *(dòng kết quả thật)* | Ghi chú |
 |---|---|---|---|---|---|---|

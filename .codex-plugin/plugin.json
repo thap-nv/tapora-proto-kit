@@ -1,7 +1,7 @@
 {
   "name": "tapora-proto-kit",
   "description": "Studio-grade interactive HTML prototypes of websites, web apps and iOS/Android apps, from first concept to handover: settle the concept on a visual board, map every feature and lay out menus and home pages per role for large projects, design from scratch with decision gates, extend or tweak an existing prototype without design drift, and a regression QA kit with rolling baselines. Skill instructions are written in Vietnamese.",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "author": {
     "name": "Thap Nguyen",
     "url": "https://github.com/thap-nv"

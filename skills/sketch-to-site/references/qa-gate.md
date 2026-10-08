@@ -131,7 +131,7 @@ Chạy trên **từng trang**, đọc code thật, mỗi điểm ✅/❌ kèm `f
 
 **Kết luận:** 12/12 → giao · 10–11 → giao kèm ghi chú · 7–9 → sửa trước · ≤ 6 → chặn.
 
-**Soát sâu `laws-of-ux-review`** *(đủ 30 luật, thang 0–60, xếp hạng A–F)* là một lựa chọn ở Cổng 4, **không** chạy trong B4. Gắn *(Khuyến nghị)* khi sản phẩm là **web app** hoặc có trang chỉ đạt **7–9/12**. Luật đầy đủ ở `references/b3-b4.md`, Cổng 4. Review cần `laws-of-ux/references/ux-laws-complete.md`, nên ba skill `laws-of-ux*` phải đi cùng nhau.
+**Soát sâu `laws-of-ux-review`** *(đủ 30 luật, thang 0–60, xếp hạng A–F)* là một lựa chọn ở Cổng 4, **không** chạy trong B4. Gắn *(Khuyến nghị)* khi sản phẩm là **web app** hoặc có trang chỉ đạt **7–9/12**.
 
 ---
 
@@ -247,6 +247,7 @@ Soát theo thứ tự:
 9. Câu chữ: nút bắt đầu bằng động từ; lỗi nói cách sửa; không giọng "AI cố tỏ ra sâu sắc".
 10. Concept còn nguyên: Ý, ẩn dụ, khoảnh khắc đọc lần hai, tương tác đặc trưng thấy ở những trang nào, mất ở trang nào.
 11. Lối tắt và chi phí thao tác: việc hằng ngày của mỗi vai mất mấy lần bấm từ trang chủ; nút mở việc của trang khác thì mở tại chỗ (hộp thoại, ngăn trượt, sheet) hay đá sang trang kia không đường về; một việc hai nhãn. Đối chiếu dòng Bố cục, P22–P25.
+12. Trang lối vào (site/index.html có data-shot): soát theo {skills}/sketch-to-site/references/trang-loi-vao.md mục 6.
 
 Mỗi vấn đề phải có bằng chứng: file:dòng, một số đo của bộ kiểm, hoặc một chỗ cụ thể trên một ảnh cụ thể (trang, khổ, theme). "Trông chung chung" không phải một vấn đề.
 

@@ -328,21 +328,21 @@ test('khuôn AGENTS-qa.md nói lệnh themes.mjs, trang _system.html, tương ph
 
 test('evolve-site 1.8: cờ T thêm màu vào themes.json, component vào _system.html; phần mới đọc được ở mọi theme', () => {
   const md = read(EVO);
-  assert.match(md, /^> \*\*v1\.10 \(/m);
+  assert.match(md, /^> \*\*v1\.11 \(/m);
   assert.match(md, /\*\*T · Token, component\*\*[^\n]*themes\.json[^\n]*_system\.html/);
   assert.match(md, /đọc được ở \*\*mọi theme\*\*/);
 });
 
 test('tweak-site 1.2: đổi màu qua themes.json và themes.mjs; nợ cũ không tự sửa', () => {
   const md = read('skills/tweak-site/SKILL.md');
-  assert.match(md, /^> \*\*v1\.4 \(/m);
+  assert.match(md, /^> \*\*v1\.5 \(/m);
   assert.match(section(md, '## 2. Luật không bỏ', '## 3.'), /themes\.json[^\n]*themes\.mjs/);
   assert.match(section(md, '## 3. Quy trình', '## 4.'), /`nợ cũ`[^\n]*không tự sửa/);
 });
 
 test('handover-check 1.2: bảng đọc kết quả có phép đo mới và nợ cũ; cổng hỏi nợ cũ', () => {
   const md = read('skills/handover-check/SKILL.md');
-  assert.match(md, /^> \*\*v1\.4 \(/m);
+  assert.match(md, /^> \*\*v1\.5 \(/m);
   const b4 = section(md, '### B4 · Đọc kết quả', '### B5');
   assert.match(b4, /\*\*Tương phản, ý định, mã lộ, sâu\*\*[^\n]*lối tắt/);
   assert.match(b4, /^\| \*\*Bố cục\*\* \|/m);

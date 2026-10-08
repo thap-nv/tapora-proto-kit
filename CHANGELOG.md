@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.7.0 (2026-10-08)
+
+- Skills: `sketch-to-site` 4.7, `evolve-site` 1.11, `handover-check` 1.5, `tweak-site` 1.5.
+- `sketch-to-site` 4.7: the entry page (`site/index.html`) of a prototype with two or more surfaces, or one surface whose roles see different menus, has its own rules. Why: the kit had one line on this page, so its quality depended on the run. The real 28-page prototype of 1.6.0 got a plain list of links, while an earlier project got a designed page by chance. The QA kit could already capture previews for this page, but no doc mentioned it.
+  - `references/trang-loi-vao.md` (about 5k characters) has six sections:
+    - six questions the page must answer: what this is, which surfaces, which role to enter as, demo scenarios that open the right screen with the right role, what to know, tools;
+    - three layouts that only decide what leads the first screen: *Trình diễn* for presenting to a client, *Theo vai* for a team that opens it daily with many roles, *Hành trình* when the value is a flow across surfaces;
+    - build rules: wear the chosen concept, one thing leads, real screenshots, build it last, 20 KB budget, reuse `store.js` and `theme.js`;
+    - how to declare previews;
+    - the gate question;
+    - a B4 checklist.
+  - B2 and gate 3:
+    - B2 adds a `Lối vào` row to the sitemap and picks 2–3 layouts.
+    - Gate 3 asks a fourth question, with an ASCII preview filled in with the project's real surfaces, roles and scenarios.
+    - The `DECISIONS.md`, `DESIGN.md` §9 and `BUILD-LOG.md` templates have matching lines.
+  - B3 and B4:
+    - B3 builds the entry page as the last row of the build log.
+    - B4 checks it against section 6. The fresh-eyes review prompt adds a 12th item.
+  - No extra turns. Each phase prints only its own sections of the new file, about 2.5k characters, inside a turn it already makes:
+    - B2: with the first `system-check.mjs` run;
+    - B3: with the preflight of the previous page;
+    - B4: in the same command that prints `qa-gate.md`.
+- QA kit:
+  - Previews are declared on the entry page itself: `<img src="assets/shots/<name>.jpg" data-shot="<name>" data-shot-page="<page>[?query]" data-shot-size="desktop|mobile">`. No steps file or config edit is needed.
+  - `handover.py thumbs`:
+    - reads these declarations and the older `thumbs` config;
+    - passes the page query through a generated steps file, since `run.mjs` takes no query in the file name;
+    - captures one image per theme, four at a time;
+    - retakes only images that are missing, or older than their page, the files that page loads, or the declaration. `--all` retakes every image; `--missing` takes only the missing ones;
+    - prints one summary line with the entry page size, plus a reminder when the page is over 20 KB;
+    - warns on bad declarations;
+    - exits 4 when there is no browser, instead of crashing.
+  - `qa-check.py` runs `thumbs` before the full check when previews are declared. The entry page is then measured with real images, and the run's manifest already includes them. Without declarations, the output is unchanged.
+  - `quick.py` takes only missing previews, such as a surface added by `evolve-site`, so small edits stay fast.
+  - `theme.js` switches `img[data-shot]` to `<name>-<theme>.jpg` for every theme except the default light one. When that theme's image is missing, it falls back to the default image.
+  - `handover.py ledger` reads both kinds of declaration. Its "Ảnh Hub" lines are now "Ảnh lối vào".
+- `qa-gate.md` §3 drops two sentences that `phu-thuoc.md` and the gate 4 rules already cover, so the B4 print stays under 9,000 characters.
+- `evolve-site` 1.11: adding a surface, role or demo scenario updates the entry page in the same batch. Changing its layout reopens that gate 3 question.
+- `handover-check` 1.5: B2 no longer calls `handover.py thumbs`, because `qa-check.py` retakes stale previews in B3.
+- `tweak-site` 1.5: wording only (entry-page previews).
+
 ## 1.6.0 (2026-10-06)
 
 - Skills: new `sketch-to-map` 1.0; `sketch-to-site` 4.6, `sketch-to-concept` 1.5, `evolve-site` 1.10, `tweak-site` 1.4, `handover-check` 1.4.

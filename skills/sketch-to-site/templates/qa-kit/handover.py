@@ -6,15 +6,20 @@
 #       Thoát mã 1 khi có lỗi hoặc có khác biệt không gán được. Nợ cũ in gộp, mỗi mục một dòng; handover.json giữ đủ danh sách.
 #   python _qa/handover.py promote _qa/handover/<ngày-giờ>
 #       sau khi người dùng chốt: lần chạy đó thành last-green, current làm lại từ đó, ledger chuyển vào thư mục chạy.
-#   python _qa/handover.py thumbs
-#       chụp lại ảnh Hub khai báo ở "thumbs" trong qa.config.json, mỗi theme một ảnh. Chạy TRƯỚC run.
+#   python _qa/handover.py thumbs [--all | --missing]
+#       chụp ảnh lối vào, mỗi theme một ảnh: <img data-shot> trên site/index.html (sketch-to-site references/trang-loi-vao.md mục 4)
+#       và "thumbs" trong qa.config.json (dự án cũ). Chỉ chụp ảnh thiếu, hay cũ hơn trang nguồn, file trang nạp, khai báo; --all chụp
+#       lại hết; --missing chỉ chụp ảnh thiếu. qa-check.py tự gọi lệnh này TRƯỚC run, quick.py gọi --missing (bề mặt mới của evolve-site).
+#       Thoát 4 khi không có trình duyệt, 1 khi có ảnh không chụp được.
 #   python _qa/handover.py ledger
 #       in gọn nhật ký từ lần bàn giao trước (mỗi lần sửa một dòng), trang sửa trực tiếp và trang chỉ đổi qua file dùng chung,
-#       ảnh Hub có trang đã đụng, trang tổng quan app, file đổi sau lần kiểm nhanh cuối mà chưa vào nhật ký. Không chạy trình duyệt.
+#       ảnh lối vào có trang đã đụng, trang tổng quan app, file đổi sau lần kiểm nhanh cuối mà chưa vào nhật ký. Không chạy trình duyệt.
 #   python _qa/handover.py usage <lớp> [<lớp> …]
 #       số chỗ dùng từng lớp ở mỗi trang (B6: số chỗ gọi component trong DESIGN.md): đếm lớp trong thuộc tính class,
 #       cả khuôn HTML trong <script>; bỏ <style> và chú thích, nên luật CSS cùng tên không bị đếm.
-import argparse, datetime, json, os, re, shutil, subprocess, sys
+import argparse, datetime, json, math, os, re, shutil, subprocess, sys
+from concurrent.futures import ThreadPoolExecutor
+from html.parser import HTMLParser
 import qalib as Q
 
 
@@ -191,34 +196,148 @@ def cmd_promote(a):
     print(f'last-green = {os.path.relpath(src, Q.ROOT)} ({len(pairs)} bộ). current làm lại từ last-green, ledger trống.')
 
 
-def cmd_thumbs(a):
-    # "thumbs": {"dir": "assets/shots", "items": [[trang, khoá file bước, khổ], ...]}; bước cuối của file bước có "shot"
-    th_cfg = Q.CFG.get('thumbs') or {}
-    items = th_cfg.get('items', [])
-    if not items:
-        print('qa.config.json không khai báo "thumbs". Không có gì để chụp.'); return
-    tmp = os.path.join(Q.HERE, '.thumbs')
-    shutil.rmtree(tmp, ignore_errors=True)
-    for page, steps, size in items:
+SHOT_NAME = re.compile(r'^[a-z0-9-]+$')
+ENTRY_KB = 20  # ngân sách trang lối vào (trang-loi-vao.md mục 3): vượt thì nhắc, không chặn
+THUMBS = os.path.join(Q.HERE, '.thumbs')  # file bước sinh từ data-shot (giữ lại: ngày sửa của nó cho biết khai báo đổi), out/ là ảnh tạm
+
+
+class _ShotTags(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.found = []
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag == 'img' and 'data-shot' in a:
+            self.found.append(a)
+    handle_startendtag = handle_starttag
+
+
+def shots_dir():
+    return (Q.CFG.get('thumbs') or {}).get('dir', 'assets/shots')
+
+
+def config_shots(warn):
+    # Dự án cũ: "thumbs": {"dir": "assets/shots", "items": [[trang, khoá file bước, khổ], ...]}; bước cuối của file bước có "shot"
+    out = []
+    for page, steps, size in (Q.CFG.get('thumbs') or {}).get('items', []):
         sf = os.path.join(Q.HERE, 'steps-' + steps + '.json')
-        shot = json.load(open(sf, encoding='utf-8'))['steps'][-1]['shot']
+        if not os.path.exists(sf) or not os.path.exists(os.path.join(Q.SITE, page + '.html')):
+            warn(f'{steps}: không có _qa/steps-{steps}.json hay {Q.SITE_REL}{page}.html, bỏ qua'); continue
+        shot = json.load(open(sf, encoding='utf-8'))['steps'][-1].get('shot')
+        if not shot:
+            warn(f'{steps}: bước cuối của _qa/steps-{steps}.json không có "shot", bỏ qua'); continue
+        out.append({'shot': shot, 'page': page, 'sf': sf, 'size': size})
+    return out
+
+
+def entry_shots(warn, write=True):
+    # Trang lối vào: <img src="assets/shots/<tên>.jpg" data-shot="<tên>" data-shot-page="<trang>[?tham số]" data-shot-size="desktop|mobile">.
+    # run.mjs không nhận "trang.html?x" làm tên file: tham số đi qua khoá query của file bước. Khổ ghi cả vào file bước để đổi khổ là đổi file
+    f = os.path.join(Q.SITE, 'index.html')
+    if not os.path.exists(f):
+        return []
+    p = _ShotTags()
+    p.feed(open(f, encoding='utf-8', errors='ignore').read())
+    out, seen = [], set()
+    for a in p.found:
+        name, target, size = (a.get('data-shot') or '').strip(), (a.get('data-shot-page') or '').strip(), (a.get('data-shot-size') or 'desktop').strip()
+        if not SHOT_NAME.match(name):
+            warn(f'"{name}": tên chỉ gồm a-z, 0-9 và dấu gạch ngang, bỏ qua'); continue
+        if name in seen:
+            warn(f'{name}: trùng tên với một ảnh trước, bỏ qua'); continue
+        if not target:
+            warn(f'{name}: thiếu data-shot-page, bỏ qua'); continue
+        rel, _, q = target.partition('?')
+        rel = os.path.normpath(rel).replace('\\', '/')
+        if not rel.endswith('.html') or not os.path.exists(os.path.join(Q.SITE, rel)):
+            warn(f'{name}: không có {Q.SITE_REL}{rel}, bỏ qua'); continue
+        if size not in Q.run_all.SIZES:
+            warn(f'{name}: khổ "{size}" không có trong "sizes" của qa.config.json ({", ".join(Q.run_all.SIZES)}), bỏ qua'); continue
+        want = f'{shots_dir()}/{name}.jpg'
+        if (a.get('src') or '') != want:
+            warn(f'{name}: src là {a.get("src") or "(trống)"}, ảnh ghi vào {want}')
+        seen.add(name)
+        sf = os.path.join(THUMBS, f'steps-{name}.json')
+        if write:
+            body = {**({'query': '?' + q} if q else {}), 'size': size, 'steps': [{'name': 'xem-truoc', 'wait': 800, 'shot': name, 'jpeg': True}]}
+            text = json.dumps(body, ensure_ascii=False)
+            if not os.path.exists(sf) or open(sf, encoding='utf-8').read() != text:
+                os.makedirs(THUMBS, exist_ok=True)
+                open(sf, 'w', encoding='utf-8').write(text)
+        out.append({'shot': name, 'page': rel[:-len('.html')], 'sf': sf, 'size': size})
+    return out
+
+
+def stale(dst, it):
+    # Ảnh cũ khi trang nguồn, file trang nạp (CSS, JS, data.js…) hay file bước mới hơn ảnh
+    if not os.path.exists(dst):
+        return True
+    t = os.path.getmtime(dst)
+    deps = [os.path.join(Q.SITE, d[len(Q.SITE_REL):]) for d in Q.page_deps(it['page'])] + [it['sf']]
+    return any(os.path.exists(p) and os.path.getmtime(p) > t for p in deps)
+
+
+def shoot(job):
+    it, th, q, dst = job
+    od = os.path.join(THUMBS, 'out', th, it['shot'])
+    env = dict(os.environ, QA_QUERY=q, QA_NOSHOT='')
+    r = subprocess.run(Q.run_all.NODE + [os.path.join(Q.HERE, 'run.mjs'), os.path.join(Q.SITE, it['page'] + '.html'), it['sf'], od] + list(Q.run_all.SIZES[it['size']]),
+                       capture_output=True, text=True, encoding='utf-8', env=env)
+    if r.returncode == 4:
+        return None, next((l for l in r.stderr.splitlines() if 'Không tìm thấy Edge' in l), 'Không tìm thấy Edge, Chrome hay Chromium.'), True
+    try:
+        errs = sum(len(x['errors']) for x in json.loads(r.stdout))
+    except Exception:
+        return None, f'{it["shot"]} ({th}): run.mjs lỗi: {((r.stderr or r.stdout).strip().splitlines() or ["không có kết quả"])[-1][:200]}', False
+    src = os.path.join(od, it['shot'] + '.jpg')
+    if not os.path.exists(src):
+        return None, f'{it["shot"]} ({th}): không có ảnh {it["shot"]}.jpg (bước cuối của file bước cần "shot" và "jpeg": true)', False
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    shutil.copyfile(src, dst)
+    return errs, None, False
+
+
+def cmd_thumbs(a):
+    warns = []
+    items = config_shots(warns.append) + entry_shots(warns.append)
+    for w in warns:
+        print('CẢNH BÁO ảnh lối vào ' + w)
+    if not items:
+        print('Ảnh lối vào: không khai báo (data-shot trên site/index.html hay "thumbs" trong qa.config.json). Không có gì để chụp.'); return
+    jobs, fresh = [], 0
+    for it in items:
         for th, q in Q.THEMES.items():
-            od = os.path.join(tmp, th)
-            env = dict(os.environ, QA_QUERY=q, QA_NOSHOT='')
-            r = subprocess.run(Q.run_all.NODE + [os.path.join(Q.HERE, 'run.mjs'), os.path.join(Q.SITE, page + '.html'), sf, od] + list(Q.run_all.SIZES[size]),
-                               capture_output=True, text=True, encoding='utf-8', env=env)
-            rep = json.loads(r.stdout)
-            errs = sum(len(x['errors']) for x in rep)
-            dst = os.path.join(Q.SITE, th_cfg.get('dir', 'assets/shots'), shot + ('' if th == Q.DEFAULT_THEME else '-' + th) + '.jpg')
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            shutil.copyfile(os.path.join(od, shot + '.jpg'), dst)
-            print(f'{os.path.relpath(dst, Q.ROOT)} · console {errs}')
-    shutil.rmtree(tmp, ignore_errors=True)
+            dst = os.path.join(Q.SITE, shots_dir(), it['shot'] + ('' if th == Q.DEFAULT_THEME else '-' + th) + '.jpg')
+            if a.all or (not os.path.exists(dst) if a.missing else stale(dst, it)):
+                jobs.append((it, th, q, dst))
+            else:
+                fresh += 1
+    shutil.rmtree(os.path.join(THUMBS, 'out'), ignore_errors=True)
+    with ThreadPoolExecutor(4) as ex:
+        res = list(ex.map(shoot, jobs))
+    shutil.rmtree(os.path.join(THUMBS, 'out'), ignore_errors=True)
+    nob = next((err for _, err, no in res if no), None)
+    if nob:
+        print(nob); sys.exit(4)
+    done = [(job, e) for job, (e, err, _) in zip(jobs, res) if err is None]
+    bad = [err for _, err, _ in res if err]
+    for (it, th, q, dst), e in done:
+        print(f'  {os.path.relpath(dst, Q.ROOT).replace(os.sep, "/")} · console {e}')
+    for err in bad:
+        print('LỖI ảnh lối vào ' + err)
+    line = f'Ảnh lối vào: {len(done)} mới chụp · {fresh} còn mới · console {sum(e for _, e in done)}'
+    idx = os.path.join(Q.SITE, 'index.html')
+    if os.path.exists(idx):
+        kb = math.ceil(os.path.getsize(idx) / 1024)
+        line += f' · trang lối vào {kb} KB' + (f' (quá {ENTRY_KB} KB: gọn lại)' if kb > ENTRY_KB else '')
+    print(line)
+    sys.exit(1 if bad else 0)
 
 
 def cmd_ledger(a):
     # B1 của handover-check: các lần sửa từ lần bàn giao trước, mỗi lần một dòng (ledger.jsonl giữ cả giá trị check, có thể rất dài),
-    # trang đã đụng, ảnh Hub có trang đã đụng, file đổi sau lần kiểm nhanh cuối mà chưa vào nhật ký. Không chạy trình duyệt.
+    # trang đã đụng, ảnh lối vào có trang đã đụng, file đổi sau lần kiểm nhanh cuối mà chưa vào nhật ký. Không chạy trình duyệt.
     led = read_ledger()
     page_of = {s[0]: s[1] for s in Q.run_all.SUITES}
     print(f'Nhật ký từ lần bàn giao trước (_qa/current/ledger.jsonl): {len(led)} lần sửa')
@@ -238,13 +357,14 @@ def cmd_ledger(a):
     shared = [p for p in shared if p not in direct]
     print('Trang sửa trực tiếp:', ', '.join(direct) if direct else 'không')
     print('Trang chỉ đổi qua file dùng chung:', ', '.join(shared) if shared else 'không')
-    thumbs = [it[0] for it in (Q.CFG.get('thumbs') or {}).get('items', [])]
+    quiet = lambda s: None
+    thumbs = list(dict.fromkeys(it['page'] for it in config_shots(quiet) + entry_shots(quiet, write=False)))
     if thumbs:
         hit = [p for p in thumbs if p in direct + shared]
-        print('Ảnh Hub có trang đã đụng:', ', '.join(hit) + ' (chụp lại: python _qa/handover.py thumbs)' if hit else 'không')
+        print('Ảnh lối vào có trang đã đụng:', ', '.join(hit) + ' (qa-check tự chụp lại)' if hit else 'không')
     else:
-        # In cả khi không khai báo: không có dòng này thì handover-check mở qa.config.json chỉ để biết B2 không có gì để chụp
-        print('Ảnh Hub: không khai báo ("thumbs" trong qa.config.json), B2 không có ảnh Hub để chụp lại')
+        # In cả khi không khai báo: không có dòng này thì handover-check mở qa.config.json chỉ để biết B2 không có gì để xem
+        print('Ảnh lối vào: không khai báo (data-shot trên site/index.html hay "thumbs" trong qa.config.json), B2 không có ảnh lối vào để xem lại')
     # Trang tổng quan của prototype có app (sketch-to-site dựng ở site/app/index.html). In cả khi không có:
     # đo lại sau 54b403a, handover tốn một lượt find cả dự án chỉ để biết điều này
     ov = Q.SITE_REL + 'app/index.html'
@@ -283,6 +403,6 @@ p = sub.add_parser('run'); p.add_argument('--themes', default=''); p.set_default
 p = sub.add_parser('ledger'); p.set_defaults(f=cmd_ledger)
 p = sub.add_parser('usage'); p.add_argument('cls', nargs='*'); p.set_defaults(f=cmd_usage)
 p = sub.add_parser('promote'); p.add_argument('dir'); p.set_defaults(f=cmd_promote)
-p = sub.add_parser('thumbs'); p.set_defaults(f=cmd_thumbs)
+p = sub.add_parser('thumbs'); p.add_argument('--all', action='store_true'); p.add_argument('--missing', action='store_true'); p.set_defaults(f=cmd_thumbs)
 a = ap.parse_args()
 a.f(a)

@@ -2,12 +2,14 @@
 #   python <skills>/sketch-to-site/scripts/qa-check.py <thư-mục-prototype> [--site site]
 # 1. Bộ kiểm: chưa có _qa/qa.config.json thì cài mới (templates/qa-kit/qa_init.py), kể cả khi thư mục _qa/ đã có sẵn;
 #    có rồi thì chép đè script bằng bản của kit (qa_init.py --update). In dòng cấu hình và các CẢNH BÁO của qa_init.py.
+#    Có ảnh lối vào (<img data-shot> trên trang lối vào, references/trang-loi-vao.md mục 4) thì chụp ảnh thiếu hay cũ (handover.py thumbs),
+#    TRƯỚC khi chạy: trang lối vào được đo với ảnh thật, manifest của lần chạy gồm ảnh mới. In cảnh báo, lỗi và một dòng tổng.
 # 2. python _qa/handover.py run: preflight, mọi bộ ở mọi theme (trang web chụp hết trang theo từng màn), lượt kiểm sâu, so với mốc.
 #    In các dòng số và kết luận; mỗi danh sách tối đa 15 dòng, đủ danh sách ở handover.json của lần chạy.
 # 3. Liệt kê ảnh của lần chạy theo theme và bộ, để mở cùng một lượt.
 # 4. Có bản đồ (map/features.js của sketch-to-map): độ phủ trên trang đã dựng, map.mjs coverage. Thiếu data-feature hay mã lạ thì chưa sạch.
 # Thoát 0 khi sạch, 1 khi còn lỗi (theo handover.py hay độ phủ), 2 khi thiếu thư mục trang, 4 khi không có trình duyệt.
-import argparse, os, re, subprocess, sys
+import argparse, json, os, re, subprocess, sys
 sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
 QA_INIT = os.path.join(os.path.dirname(HERE), 'templates', 'qa-kit', 'qa_init.py')
@@ -38,6 +40,31 @@ else:
 for l in lines:
     if l.startswith(NOTE):
         print('  ' + l)
+
+
+def has_shots():
+    idx = os.path.join(proto, a.site, 'index.html')
+    if os.path.exists(idx) and re.search(r'\bdata-shot\s*=', open(idx, encoding='utf-8', errors='ignore').read()):
+        return True
+    try:
+        return bool((json.load(open(os.path.join(proto, '_qa', 'qa.config.json'), encoding='utf-8')).get('thumbs') or {}).get('items'))
+    except Exception:
+        return False
+
+
+# 1b. Ảnh lối vào: không khai báo thì không in gì. Dòng từng ảnh (thụt lề) bỏ, chỉ in cảnh báo, lỗi, dòng tổng
+thumbs_bad = False
+if has_shots():
+    th = subprocess.run([sys.executable, os.path.join('_qa', 'handover.py'), 'thumbs'], cwd=proto,
+                        capture_output=True, text=True, encoding='utf-8', env=ENV)
+    tl = (th.stdout + th.stderr).splitlines()
+    if th.returncode == 4:
+        print(next((l for l in tl if 'Không tìm thấy Edge' in l), 'Không tìm thấy Edge, Chrome hay Chromium.').strip())
+        sys.exit(4)
+    for l in tl:
+        if l.strip() and not l.startswith('  '):
+            print(l)
+    thumbs_bad = th.returncode != 0
 
 # 2. handover.py run
 run = subprocess.run([sys.executable, os.path.join('_qa', 'handover.py'), 'run'], cwd=proto,
@@ -88,6 +115,9 @@ if root and os.path.isdir(root):
 
 # 4. Độ phủ theo bản đồ (sketch-to-map): chỉ khi dự án có map/features.js
 code = run.returncode
+if thumbs_bad:
+    print('Kết luận: CHƯA SẠCH: ảnh lối vào, xem dòng LỖI ảnh lối vào ở đầu')
+    code = code or 1
 if os.path.exists(os.path.join(proto, 'map', 'features.js')):
     MAP = os.path.join(os.path.dirname(os.path.dirname(HERE)), 'sketch-to-map', 'scripts', 'map.mjs')
     if not os.path.exists(MAP):

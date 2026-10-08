@@ -81,6 +81,7 @@ Mọi component có mặt trên `site/_system.html`, đủ các trạng thái á
 
 | Bề mặt | Trang / màn | Section theo thứ tự | Hành động chính | Dữ liệu cần |
 |---|---|---|---|---|
+| Lối vào *(nhiều bề mặt hay nhiều vai; bỏ dòng nếu không có)* | `site/index.html` | <kiểu, Cổng 3>: <phần theo thứ tự> | <thứ dẫn đầu> | ảnh <n> bề mặt · <n> kịch bản |
 
 **App:** tab *(3–5)* · màn đi sâu từ màn nào · luồng toàn màn. **Nhiều bề mặt:** luồng xuyên bề mặt:
 | Hành động | Ở bề mặt | Thấy thay đổi ở | Dữ liệu đổi |

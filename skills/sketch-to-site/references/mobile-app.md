@@ -9,7 +9,7 @@
 
 ```
 site/
-├── index.html        # nhiều bề mặt: trang lối vào, link tới từng bề mặt · chỉ có app: link tới app/
+├── index.html        # nhiều bề mặt: trang lối vào, theo trang-loi-vao.md · chỉ có app: link tới app/
 ├── assets/           # tokens.css · themes.json · themes.css · tw.js · theme.js · color.js · data.js · store.js · app.css · app.js — mọi bề mặt dùng chung
 ├── admin/            # bề mặt web, nếu có (luật web như cũ)
 └── app/

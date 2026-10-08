@@ -48,7 +48,7 @@ test('evolve-site SKILL.md chỉ giữ luật chung và lối vào: ≤ 18 000 k
   const md = EVO();
   assert.ok(md.length <= 18000, `SKILL.md dài ${md.length} ký tự`);
   assert.deepEqual(md.split('\n').filter(l => /^## \d\. /.test(l)).map(l => l.slice(0, 5)), ['## 0.', '## 1.', '## 2.', '## 3.', '## 4.', '## 5.']);
-  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.split(' (')[0]), ['> **v1.10'], 'lịch sử phiên bản ở CHANGELOG');
+  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.split(' (')[0]), ['> **v1.11'], 'lịch sử phiên bản ở CHANGELOG');
   assert.doesNotMatch(md, /^### (B[1-4] · |🛑 Cổng)/m, 'các bước ở references/b1-b2.md và b3-b4.md');
   for (const h of ['### 1.1 ', '### 1.2 ', '### 1.3 ', '### 1.4 ']) assert.ok(md.includes(h), `thiếu ${h}: tweak-site và các bước trỏ về mục 1`);
   assert.match(md, /`W:\/…`[^\n]*`\/w\/…`/);
@@ -119,7 +119,7 @@ test('mọi lệnh sed trong tài liệu ba skill in ra nội dung có thật, k
 
 test('tweak-site 1.3: một ghi chú phiên bản; tìm, đọc, sửa, kiểm mỗi việc một lượt; Cấp 1 kiểm và chụp bằng quick.py --shots', () => {
   const md = TWEAK();
-  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v1.4 (']);
+  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v1.5 (']);
   assert.match(md, /`W:\/…`[^\n]*`\/w\/…`/);
   const s3 = section(md, '## 3. Quy trình', '## 4.');
   assert.match(s3, /\*\*không phụ thuộc nhau\*\* thì gọi chung một lượt/);
@@ -135,7 +135,7 @@ test('tweak-site 1.3: một ghi chú phiên bản; tìm, đọc, sửa, kiểm m
 
 test('handover-check 1.3: B1 đọc nhật ký bằng handover.py ledger; B3 chạy tổng bằng qa-check.py; UX in đúng nhóm F', () => {
   const md = HAND();
-  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v1.4 (']);
+  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v1.5 (']);
   assert.match(md, /`W:\/…`[^\n]*`\/w\/…`/);
   assert.match(section(md, '## 1.', '## 2.'), /\*\*Ít lượt\.\*\*/);
   const b1 = section(md, '### B1 ·', '### B2');
@@ -239,8 +239,8 @@ test('handover.py ledger: mỗi lần sửa một dòng, trang sửa trực ti�
   assert.match(r.stdout, /^Trang chỉ đổi qua file dùng chung: dat-lich$/m);
   assert.match(r.stdout, /^File đổi sau lần kiểm nhanh cuối, chưa vào nhật ký: site\/dat-lich\.html$/m);
   assert.doesNotMatch(r.stdout, /xxxxxxxxxx/, 'không in giá trị check');
-  // Không khai "thumbs" vẫn in dòng Ảnh Hub (đo ba skill sửa: cả hai lần handover mở qa.config.json chỉ để biết điều này)
-  assert.match(r.stdout, /^Ảnh Hub: không khai báo \("thumbs" trong qa\.config\.json\), B2 không có ảnh Hub để chụp lại$/m);
+  // Không khai ảnh lối vào vẫn in dòng Ảnh lối vào (đo ba skill sửa: cả hai lần handover mở qa.config.json chỉ để biết điều này)
+  assert.match(r.stdout, /^Ảnh lối vào: không khai báo \(data-shot trên site\/index\.html hay "thumbs" trong qa\.config\.json\), B2 không có ảnh lối vào để xem lại$/m);
   // Đo lại sau 54b403a: handover tốn một lượt find cả dự án để biết có trang tổng quan cần cập nhật ở B2 không
   assert.match(r.stdout, /^Trang tổng quan app: không có \(site\/app\/index\.html\), B2 không có trang tổng quan để cập nhật$/m);
   fs.mkdirSync(path.join(dir, 'site', 'app'));
@@ -359,9 +359,9 @@ test('evolve-site B4: bẻ thử bằng breaktest.py, sau vòng sửa chỉ mở
   assert.match(section(read('evolve-site/references/regression-qa.md'), '## 3.', '\n\nKhông thêm'), /python _qa\/breaktest\.py/);
 });
 
-test('handover-check: dòng Ảnh Hub luôn có ở ledger; nợ cũ, bộ mới, bộ mất đọc từ kết quả, không mở handover.json; chọn lát theo tiêu đề', () => {
+test('handover-check: dòng Ảnh lối vào luôn có ở ledger; nợ cũ, bộ mới, bộ mất đọc từ kết quả, không mở handover.json; chọn lát theo tiêu đề', () => {
   const md = HAND();
-  assert.match(section(md, '### B1', '### B2'), /[Dd]òng `Ảnh Hub` luôn có/);
+  assert.match(section(md, '### B1', '### B2'), /[Dd]òng `Ảnh lối vào` luôn có/);
   const b4 = section(md, '### B4', '### B5');
   assert.match(b4, /`nợ cũ n` ở dòng của từng theme/);
   assert.match(b4, /không cần mở `handover\.json`/);
