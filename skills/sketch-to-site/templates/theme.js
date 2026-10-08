@@ -6,6 +6,8 @@
 //   ?theme=system: bỏ ép, về theo máy (theme mặc định cho máy sáng hoặc máy tối)
 //   theme.set('<tên>') · theme.toggle(): đổi giữa theme mặc định sáng và tối · theme.get() · theme.list() · theme.mode()
 //   Người dùng tự chọn thì nhớ cả khi mở lại.
+// Ảnh xem trước của trang lối vào (<img data-shot>, references/trang-loi-vao.md mục 4): src là ảnh của theme mặc định sáng,
+// theme khác tự dùng <tên>-<theme>.jpg cạnh nó (bộ kiểm chụp mỗi theme một ảnh); thiếu ảnh của theme đó thì về ảnh gốc.
 // Dự án chưa có themes.css (trước sketch-to-site v4.2): tên theme vẫn là "light" và "dark" như trước.
 (() => {
   const KEY = 'proto-theme'; // đổi "proto" thành slug của dự án, giống KEY của store.js
@@ -26,9 +28,23 @@
   const list = () => css('--theme-list').split(/\s+/).filter(Boolean);
   const get = () => root.dataset.theme || css('--theme-name') || (dark() ? 'dark' : 'light');
   const mode = () => css('--theme-mode') || (get() === 'dark' ? 'dark' : 'light');
+  const shots = () => {
+    const now = get(), base = css('--theme-default-light') || 'light';
+    document.querySelectorAll('img[data-shot]').forEach(img => {
+      const src = img.dataset.shotSrc || (img.dataset.shotSrc = img.getAttribute('src') || '');
+      const want = now === base ? src : src.replace(/(\.\w+)$/, `-${now}$1`);
+      if (img.getAttribute('src') === want) return;
+      img.onerror = () => { img.onerror = null; img.setAttribute('src', src); };
+      img.setAttribute('src', want);
+    });
+  };
+  addEventListener('DOMContentLoaded', shots);
+  addEventListener('load', shots);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', shots);
   const set = next => {
     try { sessionStorage.removeItem(KEY); localStorage.setItem(KEY, next); } catch {}
     apply(next);
+    shots();
   };
   // Có themes.css mà không khai default.dark (sản phẩm chỉ có theme sáng): ở lại theme mặc định sáng, không đặt "dark" không có thật
   const toggle = () => {

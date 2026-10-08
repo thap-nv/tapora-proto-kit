@@ -45,6 +45,7 @@
 **Đáp án design system và sơ đồ trang (nguyên văn):**
 **Phạm vi (nguyên văn):**
 **Chỗ concept gãy (nếu có, nguyên văn):**
+**Trang lối vào (nguyên văn):** <câu hỏi · các kiểu đưa ra, kiểu khuyến nghị · đáp án | không có trang lối vào>
 **Sửa theo yêu cầu:**
 
 ## 🛑 Cổng 4 · Nghiệm thu — <dd/mm/yyyy> *(sketch-to-site)*

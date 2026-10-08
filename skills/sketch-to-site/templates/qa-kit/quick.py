@@ -12,7 +12,9 @@
 # thì ghi kết quả vào _qa/current/ và thêm một dòng vào _qa/current/ledger.jsonl. Không sạch thì không ghi, thoát mã 1.
 # Mốc do bộ kiểm cũ ghi chưa đo tương phản hay ý định, hoặc bộ mới mang dòng đã có ở bộ khác trong mốc: dòng đó là nợ cũ,
 # in gộp (mỗi mục một dòng) mà không chặn; handover-check hỏi người dùng.
-import argparse, datetime, json, os, shutil, sys
+# Trang lối vào khai ảnh (<img data-shot>) mà ảnh chưa có (evolve-site thêm bề mặt): chụp trước khi đo (handover.py thumbs --missing),
+# để trang lối vào không có ảnh vỡ. Ảnh cũ để qa-check.py của handover-check chụp lại: kiểm nhanh không chụp lại mỗi lần sửa.
+import argparse, datetime, json, os, re, shutil, subprocess, sys
 import qalib as Q
 
 ap = argparse.ArgumentParser()
@@ -31,6 +33,16 @@ if old is None:
 if not (a.dry or a.no_save or a.note):
     print('Thiếu --note "<lần sửa này làm gì>": dòng này vào ledger để handover.py gán khác biệt cho đúng lần sửa')
     sys.exit(2)
+
+idx = os.path.join(Q.SITE, 'index.html')
+if not a.dry and ((Q.CFG.get('thumbs') or {}).get('items') or (os.path.exists(idx) and re.search(r'\bdata-shot\s*=', open(idx, encoding='utf-8', errors='ignore').read()))):
+    th = subprocess.run([sys.executable, os.path.join(Q.HERE, 'handover.py'), 'thumbs', '--missing'], cwd=Q.ROOT,
+                        capture_output=True, text=True, encoding='utf-8', env=dict(os.environ, PYTHONIOENCODING='utf-8'))
+    for l in (th.stdout + th.stderr).splitlines():
+        if l.startswith(('CẢNH BÁO', 'LỖI', 'Không tìm thấy Edge', 'Traceback')) or (l.startswith('Ảnh lối vào:') and not l.startswith('Ảnh lối vào: 0 mới chụp')):
+            print(l)
+    if th.returncode == 4:
+        sys.exit(4)
 
 new = Q.manifest()
 changed = Q.changed_files(old, new)

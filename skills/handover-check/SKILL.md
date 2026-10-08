@@ -6,7 +6,7 @@ description: >-
 
 # Handover Check · Kiểm tổng trước bàn giao
 
-> **v1.4 (06/10/2026)** · Đọc thêm dòng `Bố cục`, `Độ phủ` *(có bản đồ của `sketch-to-map`)*, `mã lộ` và lượt sâu `lối tắt`. Ít lượt: B1 đọc nhật ký bằng một lệnh `handover.py ledger`; B3 chạy tổng bằng một lệnh `qa-check.py` *(cài hoặc cập nhật bộ kiểm, chạy tổng, in kết quả gọn và tên từng ảnh)*; bảng UX và luật sửa in đúng mục. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
+> **v1.5 (08/10/2026)** · Ảnh lối vào cũ do `qa-check.py` chụp lại ở B3, không gọi riêng `thumbs`. Ít lượt: B1 đọc nhật ký bằng một lệnh `handover.py ledger`; B3 chạy tổng bằng một lệnh `qa-check.py` *(cài hoặc cập nhật bộ kiểm, chạy tổng, in kết quả gọn và tên từng ảnh)*; bảng UX và luật sửa in đúng mục. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
 > **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này. Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`: hai chương trình này không đọc được. Lệnh `python` tự viết mà in tiếng Việt thì đặt `PYTHONIOENCODING=utf-8` trước lệnh: console Windows (cp1252) dừng giữa chừng với `UnicodeEncodeError`.
 > Lệnh dưới đây là của bộ kiểm trong `<skills>/sketch-to-site/templates/qa-kit/`. Lệnh `python _qa/…` chạy từ thư mục prototype, tức thư mục chứa `_qa/`. Dự án ghi lệnh riêng trong `AGENTS.md` hoặc `CLAUDE.md` thì theo đó.
 
@@ -45,14 +45,14 @@ Một lượt: `Read` `FEATURE-DECISIONS.md`, cùng lúc với lệnh:
 python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype> --update; cd <thư-mục-prototype> && python _qa/handover.py ledger
 ```
 - `--update` chép đè script của bộ kiểm bằng bản của kit đang dùng, không đụng cấu hình, file bước, mốc, nhật ký.
-- `ledger` in mỗi lần sửa từ lần bàn giao trước một dòng *(giờ, ghi chú, file, số `check` đổi)*, rồi trang sửa trực tiếp, trang chỉ đổi qua file dùng chung, ảnh Hub có trang đã đụng, trang tổng quan app, và file đổi sau lần kiểm nhanh cuối mà chưa vào nhật ký. Dòng `Ảnh Hub` luôn có: không khai báo `thumbs` thì B2 không có ảnh Hub để chụp, khỏi mở `qa.config.json`. Đừng đọc `ledger.jsonl`: nó giữ cả giá trị từng `check`, có thể rất dài.
+- `ledger` in mỗi lần sửa từ lần bàn giao trước một dòng *(giờ, ghi chú, file, số `check` đổi)*, rồi trang sửa trực tiếp, trang chỉ đổi qua file dùng chung, ảnh lối vào có trang đã đụng, trang tổng quan app, và file đổi sau lần kiểm nhanh cuối mà chưa vào nhật ký. Dòng `Ảnh lối vào` luôn có: không khai báo thì không có ảnh lối vào để xem lại, khỏi mở `qa.config.json` hay `index.html`. Đừng đọc `ledger.jsonl`: nó giữ cả giá trị từng `check`, có thể rất dài.
 
-Rút ra, cùng các dòng của `FEATURE-DECISIONS.md` từ lần bàn giao trước: màn nào đã đụng · dòng nào ghi *chưa có bước kiểm* · màn trong ảnh Hub có đổi không · có tính năng thêm hay bỏ không. File chưa vào nhật ký là sửa ngoài quy trình: xử ở B4.
+Rút ra, cùng các dòng của `FEATURE-DECISIONS.md` từ lần bàn giao trước: màn nào đã đụng · dòng nào ghi *chưa có bước kiểm* · màn trong ảnh lối vào có đổi không · có tính năng thêm hay bỏ không. File chưa vào nhật ký là sửa ngoài quy trình: xử ở B4.
 
 ### B2 · Việc làm đổi site, làm TRƯỚC khi chạy tổng
 `promote` từ chối nếu site đổi sau lần chạy, nên mọi thay đổi file phải xong ở bước này:
 - Thêm bước kiểm cho các dòng *chưa có bước kiểm*. Bộ nào sinh từ script `gen_*.py` thì sửa script rồi sinh lại.
-- Màn trong ảnh Hub đổi *(dòng `Ảnh Hub có trang đã đụng` của `ledger`; ảnh khai báo ở `thumbs` trong `qa.config.json`)* → `python _qa/handover.py thumbs`, rồi mở mọi ảnh lệnh in trong một lượt.
+- Màn trong ảnh lối vào đổi *(dòng `Ảnh lối vào có trang đã đụng` của `ledger`)*: không chụp ở đây. `qa-check.py` ở B3 chụp lại ảnh cũ trước khi chạy và in dòng `Ảnh lối vào`; xem chúng trên ảnh trang `index` của lần chạy.
 - Tính năng thêm hay bỏ → cập nhật trang tổng quan hoặc bảng đối chiếu yêu cầu của prototype, nếu dự án có. Trang tổng quan: dòng `Trang tổng quan app` của `ledger`. Bảng đối chiếu: chỉ khi tài liệu đã đọc ở B1 nhắc tới. Không đi tìm bằng `find` hay `ls`.
 - Sau bước này, nếu có đổi file → `python _qa/quick.py --note "handover: <việc>"`.
 

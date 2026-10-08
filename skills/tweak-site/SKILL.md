@@ -6,7 +6,7 @@ description: >-
 
 # Tweak Site · Sửa nhỏ prototype có sẵn
 
-> **v1.4 (06/10/2026)** · Lệnh kiểm báo thêm `mã lộ mới` *(mã tham chiếu lộ ra chữ trên trang)*. Ít lượt: tìm, đọc, sửa, kiểm, mỗi việc gói trong một lượt *(mục 3)*. Cấp 1 kiểm và chụp bằng một lệnh `quick.py --shots`, không tự dựng bộ chụp. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
+> **v1.5 (08/10/2026)** · Ảnh lối vào cũ không chụp lại ở đây: `handover-check` làm. Ít lượt: tìm, đọc, sửa, kiểm, mỗi việc gói trong một lượt *(mục 3)*. Cấp 1 kiểm và chụp bằng một lệnh `quick.py --shots`, không tự dựng bộ chụp. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
 > **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này. Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`: hai chương trình này không đọc được. Lệnh `python` tự viết mà in tiếng Việt thì đặt `PYTHONIOENCODING=utf-8` trước lệnh: console Windows (cp1252) dừng giữa chừng với `UnicodeEncodeError`.
 
 ## 1. Có nhận việc này không
@@ -64,4 +64,4 @@ Mỗi lượt đọc lại cả ngữ cảnh, nên một lần sửa nhỏ gói 
 
 ## 4. Không làm ở đây
 
-Mốc trước khi sửa · 3 khổ màn hình · UX 12 điểm · bộ kiểm mới và bẻ thử · mục `QA.md` · chụp lại ảnh Hub · cập nhật `DESIGN.md` *(icon mới, sơ đồ trang, số chỗ gọi)* · tự viết bộ chụp, gọi riêng `run.mjs`, Edge `--screenshot` hay Playwright. Những việc kiểm nặng thuộc `handover-check`.
+Mốc trước khi sửa · 3 khổ màn hình · UX 12 điểm · bộ kiểm mới và bẻ thử · mục `QA.md` · chụp lại ảnh lối vào · cập nhật `DESIGN.md` *(icon mới, sơ đồ trang, số chỗ gọi)* · tự viết bộ chụp, gọi riêng `run.mjs`, Edge `--screenshot` hay Playwright. Những việc kiểm nặng thuộc `handover-check`.

@@ -6,7 +6,7 @@ description: >-
 
 # Evolve Site · Mở rộng & Cập nhật Prototype có sẵn
 
-> **v1.10 (06/10/2026)** · Nối với bản đồ `map/` của `sketch-to-map` *(B1, B2, B4)*. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
+> **v1.11 (08/10/2026)** · Thêm bề mặt hay kịch bản: cập nhật trang lối vào *(B3)*. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
 > **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này. Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`: hai chương trình này không đọc được. Lệnh `python` tự viết mà in tiếng Việt thì đặt `PYTHONIOENCODING=utf-8` trước lệnh: console Windows (cp1252) dừng giữa chừng với `UnicodeEncodeError`.
 > Việc của skill: thêm, sửa, bỏ tính năng trong prototype có sẵn sao cho phần mới **trông như đã thiết kế cùng ngày với bản đầu**: không tự chế token, không làm gãy dữ liệu đang chạy, không làm vỡ trải nghiệm cũ.
 
