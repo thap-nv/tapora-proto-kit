@@ -9,7 +9,7 @@
 # 3. Liệt kê ảnh của lần chạy theo theme và bộ, để mở cùng một lượt.
 # 4. Có bản đồ (map/features.js của sketch-to-map): độ phủ trên trang đã dựng, map.mjs coverage. Thiếu data-feature hay mã lạ thì chưa sạch.
 # Thoát 0 khi sạch, 1 khi còn lỗi (theo handover.py hay độ phủ), 2 khi thiếu thư mục trang, 4 khi không có trình duyệt.
-import argparse, json, os, re, subprocess, sys
+import argparse, atexit, json, os, re, subprocess, sys, threading
 sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
 QA_INIT = os.path.join(os.path.dirname(HERE), 'templates', 'qa-kit', 'qa_init.py')
@@ -51,6 +51,21 @@ def has_shots():
     except Exception:
         return False
 
+
+# 1a. Một trình duyệt chung cho cả thumbs lẫn run (browser.mjs): hai lệnh con gắn vào qua QA_CDP. Không mở được thì mỗi lệnh tự lo
+bm = os.path.join(proto, '_qa', 'browser.mjs')
+if not ENV.get('QA_CDP') and os.path.exists(bm):
+    try:
+        bp = subprocess.Popen(['node', bm], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, encoding='utf-8')
+        box = []
+        bt = threading.Thread(target=lambda: box.append(bp.stdout.readline()), daemon=True)
+        bt.start(); bt.join(20)
+        burl = (box[0] if box else '').strip()
+        if burl.startswith('http://'):
+            ENV['QA_CDP'] = burl
+        atexit.register(lambda: (bp.stdin.close(), bp.wait(10)))
+    except Exception:
+        pass
 
 # 1b. Ảnh lối vào: không khai báo thì không in gì. Dòng từng ảnh (thụt lề) bỏ, chỉ in cảnh báo, lỗi, dòng tổng
 thumbs_bad = False

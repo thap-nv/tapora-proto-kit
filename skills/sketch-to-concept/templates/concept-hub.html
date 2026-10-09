@@ -7,7 +7,8 @@
 <!-- Mẫu từ sketch-to-concept/templates/concept-hub.html. Dự án có nhiều bảng concept (mỗi portal một bảng concept/<dir>/):
      chép thành concept/index.html, KHÔNG sửa file này: danh sách bảng lấy từ boards.js cùng thư mục.
      Mỗi bảng một tab; bảng nạp trong khung khi mở tab lần đầu, rồi giữ nguyên khi chuyển tab (lựa chọn trộn còn nguyên).
-     #<dir> trên địa chỉ là tab đang mở. -->
+     #<dir> trên địa chỉ là tab đang mở. Bảng mở với ?hub: bỏ dòng tiêu đề (thanh tab đã có tên) và báo Nền đang chọn,
+     thanh tab theo nền của bảng đang mở. -->
 <script src="boards.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet">
@@ -77,10 +78,23 @@
     for (const p of $$('[data-panel]')) p.hidden = p.dataset.panel !== dir;
     const panel = $(`[data-panel="${dir}"]`);
     // Nạp bảng lần đầu mở tab; về sau giữ nguyên khung, bảng không tải lại
-    if (!panel.querySelector('iframe')) panel.innerHTML = `<iframe src="${dir}/index.html" title="Bảng concept ${esc(b.label)}" allow="clipboard-write"></iframe>`;
+    if (!panel.querySelector('iframe')) panel.innerHTML = `<iframe src="${dir}/index.html?hub" title="Bảng concept ${esc(b.label)}" allow="clipboard-write"></iframe>`;
     if (location.hash.slice(1) !== dir) { try { history.replaceState(null, '', `#${dir}`); } catch (e) { /* file:// chặn: tab vẫn đổi, chỉ địa chỉ không ghi */ } }
     if (focus) $(`#tab-${dir}`).focus();
+    paint(dir);
   }
+
+  // Bảng trong khung báo Nền đang chọn (postMessage): thanh tab theo nền của bảng đang mở, không lệch màu với bảng.
+  // Chỉ nhận tin từ khung bảng của chính trang này
+  const themes = {};
+  function paint(dir) { if (themes[dir]) document.documentElement.dataset.theme = themes[dir]; }
+  addEventListener('message', e => {
+    const t = e.data && e.data.conceptBoardTheme;
+    const b = boards.find(x => { const f = $(`[data-panel="${x.dir}"] iframe`); return f && f.contentWindow === e.source; });
+    if (!b || !['light', 'dark'].includes(t)) return;
+    themes[b.dir] = t;
+    if (!$(`[data-panel="${b.dir}"]`).hidden) paint(b.dir);
+  });
 
   document.addEventListener('click', e => { const t = e.target.closest('[data-board]'); if (t) select(t.dataset.board); });
   // Phím mũi tên, Home, End chuyển tab (mẫu tabs của ARIA)

@@ -1,17 +1,19 @@
 // Bộ chạy thử: mở 1 trang, thực hiện chuỗi bước (JS), chụp ảnh từng bước, gom lỗi console.
 // node run.mjs <file.html> <steps.json> <outdir> [w] [h] [mobile]
+// QA_CDP=http://127.0.0.1:<cổng>: gắn vào trình duyệt chung của lệnh (browser.mjs) thay vì mở trình duyệt riêng; mỗi lần chạy vẫn có ngữ cảnh riêng.
 // Mỗi bước còn đo tương phản và màu theo ý định (probes.js, cần color.js cạnh file này); QA_DEEP=1 thêm lượt kiểm sâu (deep.mjs).
 // Node 20 cần cờ --experimental-websocket: thiếu cờ thì script tự chạy lại chính nó với cờ. Node 22 trở lên có sẵn WebSocket.
-// Trình duyệt: biến QA_BROWSER, rồi "browser" trong qa.config.json, rồi tự dò Edge/Chrome/Chromium theo hệ điều hành.
+// Trình duyệt (launch.mjs): biến QA_BROWSER, rồi "browser" trong qa.config.json, rồi tự dò Edge/Chrome/Chromium theo hệ điều hành.
 // Bước có "shot": chụp khung nhìn vào <shot>.png (.jpg khi "jpeg"); "clip": "<selector>" chỉ chụp một khối;
 // "full": true chụp cả trang thành một ảnh; "slices": n chụp cả trang theo từng màn cao bằng khung nhìn: <shot>, <shot>-2, … tối đa n ảnh,
 // "all" thì hết trang. Kèm slices.json: tiêu đề h1–h3 bắt đầu trong từng lát, để danh sách ảnh nói lát nào chứa phần nào.
 // Trước khi chụp "full"/"slices", trang được cuộn qua phần sẽ chụp rồi về chỗ cũ, để phần hiện dần khi cuộn tới có trong ảnh.
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { writeFileSync, readFileSync, mkdtempSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve, dirname, delimiter } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
+import { launch, lowerPriority, openBrowserWs } from './launch.mjs';
 
 if (typeof WebSocket === 'undefined' && !process.env.QA_WS_FLAG) {
   const r = spawnSync(process.execPath, ['--experimental-websocket', fileURLToPath(import.meta.url), ...process.argv.slice(2)],
@@ -29,30 +31,6 @@ try { cfg = JSON.parse(readFileSync(join(HERE, 'qa.config.json'), 'utf8')); } ca
 const kitFile = f => [join(HERE, f), join(HERE, '..', f)].find(p => existsSync(p));
 const PROBE_FILES = ['color.js', 'probes.js'].map(kitFile);
 const PROBE_SRC = PROBE_FILES.every(Boolean) ? PROBE_FILES.map(p => readFileSync(p, 'utf8')) : null;
-
-function findBrowser() {
-  const pick = [process.env.QA_BROWSER, cfg.browser].filter(Boolean);
-  for (const p of pick) if (existsSync(p)) return p;
-  const la = process.env.LOCALAPPDATA || '';
-  const byOs = {
-    win32: ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
-      'C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
-      join(la, 'Google/Chrome/Application/chrome.exe')],
-    darwin: ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-      '/Applications/Chromium.app/Contents/MacOS/Chromium'],
-  }[process.platform] || [];
-  for (const p of byOs) if (existsSync(p)) return p;
-  // Linux, hoặc cài ngoài chỗ mặc định: tìm theo PATH
-  for (const name of ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser', 'microsoft-edge', 'msedge', 'chrome']) {
-    for (const d of (process.env.PATH || '').split(delimiter)) {
-      for (const ext of process.platform === 'win32' ? ['.exe', ''] : ['']) {
-        const p = join(d, name + ext);
-        if (existsSync(p)) return p;
-      }
-    }
-  }
-  return null;
-}
 
 // Chạy trong trang ở mỗi bước. Bắt phần tràn nằm TRONG trang mà phép đo tràn ngang của cả trang không thấy, theo chiều ngang:
 //   chữ tràn ra ngoài hộp của nó (ô bảng, nút, thẻ bị ép hẹp: chữ đè lên ô bên cạnh);
@@ -136,54 +114,66 @@ function wideCheck() {
   }
   return out;
 }
-const BROWSER = findBrowser();
-if (!BROWSER) { console.error('Không tìm thấy Edge, Chrome hay Chromium. Đặt biến QA_BROWSER hoặc khoá "browser" trong _qa/qa.config.json.'); process.exit(4); }
-
-// CDP_PORT chỉ là cách ép cổng bằng tay (tuỳ chọn). Không đặt thì để hệ điều hành chọn cổng trống (--remote-debugging-port=0)
-// rồi đọc cổng thật từ DevToolsActivePort trong hồ sơ: nhiều lần chạy song song không bao giờ đụng cổng nhau
-const fixedPort = +process.env.CDP_PORT || 0;
-let port = fixedPort;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-// Ép cổng bằng tay mà cổng đã có trình duyệt khác (thường là trình duyệt sót từ lần chạy trước) thì dừng hẳn: chạy tiếp là điều khiển nhầm trình duyệt đó
-if (fixedPort) try { await fetch(`http://127.0.0.1:${port}/json/version`); console.error(`Cổng ${port} đã có trình duyệt khác. Tắt trình duyệt còn sót (hồ sơ cdp-* trong thư mục tạm) rồi chạy lại.`); process.exit(3); } catch {}
-const prof = mkdtempSync(join(tmpdir(), 'cdp-'));
-// Linux: /dev/shm của container thường chỉ 64 MB nên trình duyệt dễ sập; chạy bằng root (Docker, VPS) thì Chrome không khởi động nếu thiếu --no-sandbox.
-// QA_BROWSER_ARGS: cờ thêm cho trình duyệt, ví dụ "--no-sandbox" khi container không cho dùng sandbox dù không chạy bằng root
-const linux = process.platform === 'linux';
-const extraArgs = [...(linux ? ['--disable-dev-shm-usage'] : []), ...(linux && process.getuid?.() === 0 ? ['--no-sandbox'] : []),
-  ...(process.env.QA_BROWSER_ARGS || '').split(/\s+/).filter(Boolean)];
-const proc = spawn(BROWSER, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--remote-debugging-port=${fixedPort}`, `--user-data-dir=${prof}`, '--no-first-run', ...extraArgs, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
-// Giữ phần cuối stderr của trình duyệt: không kết nối được thì in ra để biết lý do
-let berr = '';
-proc.stderr.on('data', d => { berr = (berr + d).slice(-2000); });
-proc.on('error', e => { berr += '\n' + e.message; });
-// Cổng do hệ điều hành chọn: đợi trình duyệt ghi DevToolsActivePort (dòng đầu là cổng), cùng ngân sách ~9 giây với vòng /json bên dưới
-if (!fixedPort) {
-  for (let i = 0; i < 60 && !port; i++) {
-    try { port = +readFileSync(join(prof, 'DevToolsActivePort'), 'utf8').split('\n')[0] || 0; } catch {}
-    if (!port) await sleep(150);
+let id = 0; const pend = new Map();
+const onReply = ev => { const m = JSON.parse(ev.data); if (m.id && pend.has(m.id)) { pend.get(m.id)(m); pend.delete(m.id); } };
+let ws;
+const send = (method, params = {}, sock = ws) => new Promise(r => { const i = ++id; pend.set(i, r); try { sock.send(JSON.stringify({ id: i, method, params })); } catch (e) { pend.delete(i); r({ error: { message: e.message } }); } });
+// Hai cách có trình duyệt. QA_CDP=http://127.0.0.1:<cổng>: gắn vào trình duyệt chung của cả lệnh (browser.mjs), lần chạy này được một ngữ cảnh riêng
+// (localStorage, cookie, cache trống như hồ sơ mới) và một cửa sổ riêng, xong thì huỷ. Không có QA_CDP: mở trình duyệt riêng (launch.mjs), xong thì đóng.
+const shared = process.env.QA_CDP || '';
+let browser = null, port = 0, bws = null, contextId = null, targetId = null;
+if (shared) {
+  lowerPriority();
+  port = +new URL(shared).port;
+  try { bws = await openBrowserWs(port); } catch (e) { console.error(`Không nối được trình duyệt chung QA_CDP=${shared}: ${e.message}`); process.exit(2); }
+  bws.addEventListener('message', onReply);
+} else {
+  // Lỗi có .code: 4 không có trình duyệt, 3 CDP_PORT bị giữ, 2 không trả lời
+  try { browser = await launch({ cfg }); } catch (e) { console.error(e.message); process.exit(e.code || 1); }
+  port = browser.port;
+}
+// File tải xuống (nút xuất) lưu vào thư mục tạm riêng của lần chạy, xoá khi xong; mặc định headless lưu vào Downloads của máy
+const dl = mkdtempSync(join(tmpdir(), 'cdp-dl-'));
+// Dọn đúng một lần: khi chạy xong, khi lỗi giữa chừng, khi bị Ctrl+C. Gắn thì chỉ huỷ ngữ cảnh của mình, trình duyệt chung vẫn sống cho lần khác
+let closing = null;
+const cleanup = () => closing ??= (async () => {
+  if (bws) {
+    const brief = p => Promise.race([p, sleep(3000)]);
+    if (targetId) await brief(send('Target.closeTarget', { targetId }, bws));
+    if (contextId) await brief(send('Target.disposeBrowserContext', { browserContextId: contextId }, bws));
+    try { bws.close(); } catch {}
   }
-}
+  if (browser) await browser.close();
+  try { rmSync(dl, { recursive: true, force: true }); } catch {}
+})();
+const fail = async (why, code) => { console.error(why); await cleanup(); process.exit(code); };
+process.on('uncaughtException', e => fail(`Lỗi giữa chừng: ${e?.stack || e}`, 1));
+process.on('unhandledRejection', e => fail(`Lỗi giữa chừng: ${e?.stack || e}`, 1));
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK']) process.on(sig, () => fail(`Dừng (${sig}): đóng trình duyệt, xoá hồ sơ tạm`, 130));
 let target;
-for (let i = 0; i < 60 && port && !target; i++) { try { const l = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); target = l.find(t => t.type === 'page'); } catch {} await sleep(150); }
-if (!target) {
-  const why = berr.trim().split('\n').filter(l => l.trim()).slice(-2).join(' | ').slice(-300);
-  console.error(`Không kết nối được trình duyệt ở cổng ${port}: ${BROWSER}` + (why ? `\n  ${why}` : ''));
-  proc.kill();
-  try { rmSync(prof, { recursive: true, force: true }); } catch {}
-  process.exit(2);
-}
-const ws = new WebSocket(target.webSocketDebuggerUrl);
-await new Promise(r => ws.addEventListener('open', r));
-let id = 0; const pend = new Map(); let errors = [];
+if (bws) {
+  const c = await send('Target.createBrowserContext', {}, bws);
+  contextId = c.result?.browserContextId;
+  if (!contextId) await fail(`Trình duyệt chung QA_CDP=${shared} không tạo được ngữ cảnh riêng: ${c.error?.message || 'không có kết quả'}`, 2);
+  targetId = (await send('Target.createTarget', { url: 'about:blank', browserContextId: contextId, newWindow: true, width: +w, height: +h }, bws)).result?.targetId;
+  for (let i = 0; i < 40 && targetId && !target; i++) { try { target = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()).find(t => t.id === targetId); } catch {} if (!target) await sleep(100); }
+} else target = (await (await fetch(`http://127.0.0.1:${port}/json`)).json()).find(t => t.type === 'page');
+if (!target) await fail(`Trình duyệt ở cổng ${port} không mở được trang`, 2);
+ws = new WebSocket(target.webSocketDebuggerUrl);
+await new Promise((r, j) => { ws.addEventListener('open', r); ws.addEventListener('error', () => j(new Error('WebSocket tới trình duyệt không mở được'))); });
+// Trình duyệt tắt giữa chừng (trình duyệt chung bị đóng, trình duyệt sập): dừng ngay với mã 2, không chạy nốt các bước trên kết nối đã đứt
+let finished = false;
+ws.addEventListener('close', () => { if (!finished && !closing) fail('Trình duyệt đóng giữa chừng' + (shared ? ` (trình duyệt chung QA_CDP=${shared} đã tắt?)` : ''), 2); });
+let errors = [];
 // Theo dõi lúc trang tải xong (Page.loadEventFired) để không đo khi trang chưa dựng xong hay đang chuyển trang.
 // QA_LOAD_TIMEOUT: trần đợi một lần tải, tính bằng ms (mặc định 20000)
 let navigating = false, mainFrame = null;
 const loadWaiters = [];
 const LOAD_TIMEOUT = +process.env.QA_LOAD_TIMEOUT || 20000;
 ws.addEventListener('message', ev => {
+  onReply(ev);
   const m = JSON.parse(ev.data);
-  if (m.id && pend.has(m.id)) { pend.get(m.id)(m); pend.delete(m.id); }
   if (m.method === 'Page.frameStartedLoading' && m.params.frameId === mainFrame) navigating = true;
   // Chuyển trong cùng tài liệu (link #, location.hash, pushState, tel:, mailto:) chỉ có frameStoppedLoading, không có loadEventFired
   if (m.method === 'Page.loadEventFired' || (m.method === 'Page.frameStoppedLoading' && m.params.frameId === mainFrame)) { navigating = false; loadWaiters.splice(0).forEach(f => f()); }
@@ -191,7 +181,6 @@ ws.addEventListener('message', ev => {
   if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') errors.push('ERR ' + m.params.args.map(a => a.value ?? a.description).join(' ').slice(0, 300));
   if (m.method === 'Log.entryAdded' && m.params.entry.level === 'error' && !/favicon/.test(m.params.entry.url || '')) errors.push('LOG ' + m.params.entry.text + ' ' + (m.params.entry.url || ''));
 });
-const send = (method, params = {}) => new Promise(r => { const i = ++id; pend.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
 const waitLoad = ms => new Promise(r => { const t = setTimeout(r, ms); loadWaiters.push(() => { clearTimeout(t); r(); }); });
 // Bơm lõi màu và phép đo vào trang trước mỗi lần đo: trang có thể vừa chuyển. probes.js tự bỏ qua khi đã có
 // Hệ mã riêng của dự án cho __qa.codes(): "codes" trong qa.config.json (mặc định UC-, BR-, XD-, OQ-… có sẵn trong probes.js)
@@ -202,8 +191,9 @@ const inject = async () => {
   return true;
 };
 await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
-// File tải xuống (nút xuất) lưu trong hồ sơ tạm, xoá cùng hồ sơ khi chạy xong; mặc định headless lưu vào Downloads của máy
-await send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: join(prof, 'downloads') });
+// Trang coi như đang có tiêu điểm dù nhiều cửa sổ mở cùng lúc trong trình duyệt chung: deep.mjs bấm Tab và đọc activeElement
+await send('Emulation.setFocusEmulationEnabled', { enabled: true });
+await send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: dl, ...(contextId && { browserContextId: contextId }) }, bws || ws);
 mainFrame = (await send('Page.getFrameTree')).result?.frameTree?.frame?.id ?? null;
 await send('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, deviceScaleFactor: 1, mobile: mobile === '1' });
 // QA_QUERY: tham số thêm cho mọi bộ, ví dụ ?theme=dark để chạy lại các bộ trên một theme khác
@@ -353,15 +343,7 @@ if (process.env.QA_DEEP === '1') {
   report.push({ step: 'deep', errors: errors.filter(x => !seen.has(x) && seen.add(x)), check: null, dims: null, deep: d });
 }
 console.log(JSON.stringify(report, null, 1));
+finished = true;
 ws.close();
-// Đóng cả trình duyệt qua CDP. proc.kill() chỉ tắt tiến trình khởi động; trên Windows trình duyệt thật chạy tiếp, giữ cổng và hồ sơ
-try {
-  const bws = new WebSocket((await (await fetch(`http://127.0.0.1:${port}/json/version`)).json()).webSocketDebuggerUrl);
-  await new Promise(r => bws.addEventListener('open', r));
-  bws.send(JSON.stringify({ id: 1, method: 'Browser.close' }));
-  for (let i = 0; i < 20; i++) { await sleep(150); try { await fetch(`http://127.0.0.1:${port}/json/version`); } catch { break; } }
-} catch {}
-proc.kill();
-// Xoá hồ sơ trình duyệt tạm của lần chạy này; trình duyệt có lúc chưa nhả file ngay: thử lại tối đa 6 lần
-for (let i = 0; i < 6; i++) { await sleep(400); try { rmSync(prof, { recursive: true, force: true }); break; } catch {} }
+await cleanup();
 process.exit(0);

@@ -23,13 +23,14 @@
 import { readFileSync, writeFileSync, existsSync, copyFileSync, mkdirSync, rmSync, mkdtempSync, readdirSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import vm from 'node:vm';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SHELL = join(HERE, '..', 'templates', 'map-shell.html');
 const RUN = join(HERE, '..', '..', 'sketch-to-site', 'templates', 'qa-kit', 'run.mjs');
+const BROWSER_MJS = join(dirname(RUN), 'browser.mjs');
 
 const MAX = 15;
 const STEP_S = 2.7, PICK_S = 3;
@@ -600,7 +601,7 @@ function gateBlock() {
   console.log(`  Module theo thứ tự dựng: ${topo().map(m => { const fs = features.filter(f => f.module === m.id); return `${m.name} (${fs.length} chức năng · ${fs.filter(isMust).length} Must · ${fs.filter(f => f.status === 'hoan').length} hoãn)`; }).join(' → ')}`);
 }
 
-function cmdCheck() {
+async function cmdCheck() {
   checkFeatures();
   if (!block.length) inventory();
   if (flags.has('--brief')) brief();
@@ -625,7 +626,7 @@ function cmdCheck() {
     console.log('MAP.md: map/MAP.md · khung bấm thử: map/index.html · đủ chi tiết: map/check.json');
     if (flags.has('--shots')) {
       if (block.length) console.log('Ảnh: chưa chụp, còn mục chặn.');
-      else { gateBlock(); code = shots() || code; }
+      else { gateBlock(); code = (await shots()) || code; }
     }
   }
   writeFileSync(join(mapDir, 'check.json'), JSON.stringify({ block, warn, metrics: M }, null, 1));
@@ -633,8 +634,11 @@ function cmdCheck() {
   process.exit(code);
 }
 
-// Chụp trang chủ của mỗi vai trên khung bấm thử. Trả 4 khi không có trình duyệt
-function shots() {
+// Chụp trang chủ của mỗi vai trên khung bấm thử, hai khổ qua một trình duyệt chung (browser.mjs). Trả 4 khi không có trình duyệt
+async function shots() {
+  const browser = await import(pathToFileURL(BROWSER_MJS).href).then(m => m.startBrowser()).catch(() => null);
+  const env = { ...process.env, ...(browser ? { QA_CDP: browser.url } : {}) };
+  const done = async v => { if (browser) await browser.close(); return v; };
   const out = join(mapDir, '_shots');
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
@@ -647,8 +651,8 @@ function shots() {
     const steps = rs.map(r => ({ name: r.id, js: `MAP_SHELL.setRole(${JSON.stringify(r.id)}); MAP_SHELL.go(${JSON.stringify(r.home)}, { keepFocus: true })`, shot: `${r.id}-${w}` }));
     const sf = join(tmp, `steps-${w}.json`);
     writeFileSync(sf, JSON.stringify({ steps }));
-    const res = spawnSync(process.execPath, [RUN, join(mapDir, 'index.html'), sf, out, w, h, mobile], { encoding: 'utf8', timeout: 180000 });
-    if (res.status === 4 || /Không tìm thấy Edge/.test(res.stdout + res.stderr)) { rmSync(tmp, { recursive: true, force: true }); console.log('Ảnh: không tìm thấy Edge hay Chrome để chụp.'); return 4; }
+    const res = spawnSync(process.execPath, [RUN, join(mapDir, 'index.html'), sf, out, w, h, mobile], { encoding: 'utf8', timeout: 180000, env });
+    if (res.status === 4 || /Không tìm thấy Edge/.test(res.stdout + res.stderr)) { rmSync(tmp, { recursive: true, force: true }); console.log('Ảnh: không tìm thấy Edge hay Chrome để chụp.'); return done(4); }
     let rep = [];
     try { rep = JSON.parse(res.stdout); } catch { problems.push(`run.mjs ${w}: ${(res.stderr || res.stdout).trim().split(/\r?\n/)[0]}`); }
     for (const st of rep) {
@@ -666,7 +670,7 @@ function shots() {
   if (busy) console.log(`Mở một ảnh: ${proto.replace(/\\/g, '/')}/map/_shots/${busy.id}-1440.png (vai có nhiều việc hằng ngày nhất); ảnh còn lại để trình ở cổng`);
   for (const p of problems.slice(0, MAX)) console.log(`  Khung bấm thử: ${p}`);
   if (problems.length) W('khung', `khung bấm thử có ${problems.length} lỗi khi chụp (lỗi của khuôn map-shell.html, báo lại cho kit)`);
-  return 0;
+  return done(0);
 }
 
 function cmdVisible() {
@@ -892,7 +896,7 @@ function cmdMerge() {
   console.log('Sửa map/features.js (gộp trùng, skip, mục chặn): Read map/features.js trước khi Edit, vì file vừa do merge ghi; sửa bằng Edit, không bằng script.');
 }
 
-if (cmd === 'check') cmdCheck();
+if (cmd === 'check') await cmdCheck();
 else if (cmd === 'merge') cmdMerge();
 else if (cmd === 'visible') cmdVisible();
 else if (cmd === 'coverage') cmdCoverage();

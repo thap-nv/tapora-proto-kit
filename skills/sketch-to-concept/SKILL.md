@@ -6,7 +6,7 @@ description: >-
 
 # Sketch to Concept · Settle the concept before building the prototype
 
-> **v1.6 (08/10/2026)** · Gate 2 opens one page (the board, or the hub of several) and says what to look at before asking. Change history: `CHANGELOG.md` at the repo root.
+> **v1.7 (09/10/2026)** · The board keeps its *Trộn* box (view bar + matrix) at the top while the preview scrolls under it. Change history: `CHANGELOG.md` at the repo root.
 > **Language:** talk to the user in the language they write in: gate questions and options, progress notes, reports. Files the user reads (`DECISIONS.md`, `CONCEPT.md`, the board, names, ideas, axes and `why` in `concepts.js`) are in that language too; the templates are in Vietnamese. Screen content follows the language of the brief.
 > **Paths:** `<skills>` is the parent of the folder holding this SKILL.md. Read referenced skills by path, never through the Skill tool (convention at the top of `sketch-to-site`). On Windows, give `node` and `python` paths with the drive letter and forward slashes (`W:/…`), never Git Bash's `/w/…`: they cannot read it.
 > The job: bring the user to a concept that is **theirs**. Non-designers struggle to describe a concept but react well to options they can see, so the skill builds 3 real concepts, then **stops** for the user to choose.
@@ -95,7 +95,7 @@ Several boards: `Read` each board's `concepts.js`, run the command in each `conc
 
 Above the questions, at most 8 lines in the user's language, naming the board's own labels:
 - the board is open in the browser, with a Markdown link to it;
-- how to look: several boards have a tab each at the top · click each concept in the left list (after a new round the new ones sit under *Vòng n*) · switch *Khổ màn* 1440/390, and *Bề mặt* when there are several · try each concept's signature interaction, named per concept · open *So trục* to compare axes · to mix, pick layers in the *Trộn* matrix and press *Sao chép* for the code;
+- how to look: several boards have a tab each at the top · click each concept in the left list (new rounds under *Vòng n*); *Concept ▾* shows all their shots side by side · switch *Khổ màn* 1440/390, and *Bề mặt* when there are several · try each concept's signature interaction, named per concept · open *So trục* to compare axes · to mix, pick layers in the *Trộn* matrix and press *Sao chép* for the code;
 - the recommendation and its reason from the brief, one line;
 - notes: a concept still ≤ 5 after rework (score and reason), warnings still open;
 - the questions below wait until they have looked: no need to answer now.
@@ -158,7 +158,7 @@ One board per portal: each board in `concept/<dir>/`; `concept/` keeps only the 
 
 | Level | Skill | Used in | If missing |
 |---|---|---|---|
-| 🔴 **Required** | `sketch-to-site` | Templates `DECISIONS.md`, `theme.js`, `color.js`, `sketch-to-site/templates/mobile/` · `reference-intake.md`, `style-catalogue.md`, `mobile-app.md` · `preflight.py` · `qa-kit/run.mjs` for `scripts/shots.mjs` and the tests | **Broken**: no font checks, no style catalogue |
+| 🔴 **Required** | `sketch-to-site` | Templates `DECISIONS.md`, `theme.js`, `color.js`, `sketch-to-site/templates/mobile/` · `reference-intake.md`, `style-catalogue.md`, `mobile-app.md` · `preflight.py` · `qa-kit/run.mjs`, `launch.mjs`, `browser.mjs` for `scripts/shots.mjs` and the tests | **Broken**: no font checks, no style catalogue |
 | 🔴 | `ui-ux-pro-max` | A2 colour and type lookups · font data for `preflight.py` and `check.mjs` | **Broken**: no lookups, P07 becomes P15 |
 | 🟠 **Recommended** | `huashu-design` | Real benchmarks (`design-styles.md`) · real brands (`brand-asset-protocol.md`) · self-critique (`critique-guide.md`) | Light: the core is distilled into `references/concept-method.md` |
 

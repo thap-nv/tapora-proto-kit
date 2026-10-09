@@ -14,12 +14,13 @@ import { spawn, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const S2S = resolve(HERE, '..');
 const RUN = join(S2S, 'templates', 'qa-kit', 'run.mjs');
+const { startBrowser } = await import(pathToFileURL(join(dirname(RUN), 'browser.mjs')).href);
 const PYTHON = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
 const MAX = 8;
 
@@ -87,14 +88,17 @@ const STATE = `JSON.stringify({demo:document.querySelectorAll('[data-system-demo
 const runPage = (name, query, steps, w, h, mobile) => new Promise(done => {
   const sf = join(work, `${name}.json`);
   writeFileSync(sf, JSON.stringify({ query, steps }));
-  const p = spawn(process.execPath, [RUN, join(site, '_system.html'), sf, outDir, String(w), String(h), mobile ? '1' : '0'], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const p = spawn(process.execPath, [RUN, join(site, '_system.html'), sf, outDir, String(w), String(h), mobile ? '1' : '0'], { stdio: ['ignore', 'pipe', 'pipe'], env: runEnv });
   let out = '', err = '';
   p.stdout.on('data', d => { out += d; });
   p.stderr.on('data', d => { err += d; });
   p.on('close', code => done({ code, out, err }));
 });
 
-// Mỗi theme hai trình duyệt song song (1440 và 390), lần lượt từng theme: máy yếu không phải mở 2 × số theme trình duyệt cùng lúc
+// Một trình duyệt chung cho cả lệnh (browser.mjs), mỗi lần run.mjs một ngữ cảnh riêng; không mở được thì mỗi lần tự mở như cũ.
+// Mỗi theme hai lần chạy song song (1440 và 390), lần lượt từng theme: máy yếu không phải chạy 2 × số theme cùng lúc
+const browser = await startBrowser().catch(() => null);
+const runEnv = { ...process.env, ...(browser ? { QA_CDP: browser.url } : {}) };
 const results = [];
 for (const [n, q] of themes) {
   const pair = await Promise.all([
@@ -104,6 +108,7 @@ for (const [n, q] of themes) {
     runPage(`${n}-390`, q, [{ name: 'view', wait: 600 }], 390, 844, true)]);
   results.push([n, 1440, pair[0]], [n, 390, pair[1]]);
 }
+if (browser) await browser.close();
 for (const [n, w, r] of results) {
   if (r.code === 4) { console.log((r.err || '').trim()); rmSync(work, { recursive: true, force: true }); process.exit(4); }
   let rep;

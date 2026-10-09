@@ -6,6 +6,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+// Một trình duyệt chung cho cả file (QA_CDP), thay vì mỗi lần run.mjs một trình duyệt
+require('./shared-browser')();
 
 const RUN = path.resolve(__dirname, '..', 'templates', 'qa-kit', 'run.mjs');
 const HEAD = '<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>T</title>';

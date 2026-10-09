@@ -8,7 +8,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
+// Một trình duyệt chung cho cả file (QA_CDP), thay vì mỗi lần run.mjs một trình duyệt
+require('./shared-browser')();
 
 const S2S = path.resolve(__dirname, '..');
 const T = f => path.join(S2S, 'templates', f);
@@ -28,11 +30,12 @@ const pngSize = f => { const b = fs.readFileSync(f); return [b.readUInt32BE(16),
 const LONG = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Dài</title>
 <style>body{margin:0}h2{margin:0}section{height:700px;border-bottom:1px solid #ccc}</style></head><body>${'<section><h2>Khối</h2></section>'.repeat(4)}</body></html>`;
 
-function runMjs(t, page, steps, { flags = [], w = '1440', h = '900', steps: extra = {} } = {}) {
+function runMjs(t, page, steps, { flags = [], w = '1440', h = '900', steps: extra = {}, env: more = {} } = {}) {
   const dir = tmp(t, 'run-');
   fs.writeFileSync(path.join(dir, 'p.html'), page);
   fs.writeFileSync(path.join(dir, 'steps.json'), JSON.stringify({ ...extra, steps }));
-  const r = spawnSync(process.execPath, [...flags, RUN, path.join(dir, 'p.html'), path.join(dir, 'steps.json'), path.join(dir, 'out'), w, h], { encoding: 'utf8', timeout: 90000 });
+  const r = spawnSync(process.execPath, [...flags, RUN, path.join(dir, 'p.html'), path.join(dir, 'steps.json'), path.join(dir, 'out'), w, h],
+    { encoding: 'utf8', timeout: 90000, env: { ...process.env, ...more } });
   return { r, out: path.join(dir, 'out') };
 }
 
@@ -55,6 +58,135 @@ test('run.mjs: "full" chụp cả trang một ảnh, "slices" chụp từng màn
   // "slices" có trần: trang dài hơn thì chỉ chụp số màn đầu
   const capped = runMjs(t, LONG, [{ name: 'man', shot: 'man', slices: 2 }]);
   assert.deepEqual(fs.readdirSync(capped.out).filter(f => f.startsWith('man')).sort(), ['man-2.png', 'man.png']);
+});
+
+// Mỗi lần chạy mở trình duyệt với hồ sơ tạm cdp-* trong thư mục tạm. Lần chạy lỗi giữa chừng hay bị giết (hết giờ, Ctrl+C) để hồ sơ lại:
+// 09/10/2026 máy laptop còn 633 hồ sơ từ 01/10, khoảng 12 MB mỗi cái
+test('run.mjs xoá hồ sơ tạm cả khi lỗi giữa chừng, và dọn hồ sơ cdp-* sót lại quá 2 giờ', t => {
+  const temp = tmp(t, 'qa-temp-');
+  const old = path.join(temp, 'cdp-AbC123'), fresh = path.join(temp, 'cdp-XyZ789'), other = path.join(temp, 'cdp-cua-cong-cu-khac');
+  const t3h = new Date(Date.now() - 3 * 3600e3);
+  for (const d of [old, fresh, other]) { fs.mkdirSync(d); fs.writeFileSync(path.join(d, 'Local State'), '{}'); }
+  for (const d of [old, other]) fs.utimesSync(d, t3h, t3h);
+  // Ảnh ghi vào thư mục con không có: lỗi ENOENT khi trình duyệt đã mở
+  const { r } = runMjs(t, LONG, [{ name: 'xem', shot: 'khong-co/anh' }], { env: { QA_CDP: '', TEMP: temp, TMP: temp, TMPDIR: temp } });
+  if (r.status === 4) return t.skip('không có trình duyệt');
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /ENOENT/);
+  // Còn hồ sơ mới (có thể của lần chạy khác đang chạy) và thư mục không đúng dạng tên của mkdtemp
+  assert.deepEqual(fs.readdirSync(temp).filter(f => f.startsWith('cdp-')).sort(), ['cdp-XyZ789', 'cdp-cua-cong-cu-khac']);
+});
+
+// QA_BROWSERS: số trình duyệt mở cùng lúc trên cả máy, mọi lần chạy cộng lại. Bộ test mở nhiều trình duyệt song song làm laptop lag
+test('run.mjs: QA_BROWSERS=1 thì hai lần chạy song song lần lượt mở trình duyệt', async t => {
+  const steps = [{ name: 'dau', check: 'Date.now()' }, { name: 'cuoi', wait: 1500, check: 'Date.now()' }];
+  const one = () => new Promise(done => {
+    const dir = tmp(t, 'run-');
+    fs.writeFileSync(path.join(dir, 'p.html'), LONG);
+    fs.writeFileSync(path.join(dir, 'steps.json'), JSON.stringify({ steps }));
+    const p = spawn(process.execPath, [RUN, path.join(dir, 'p.html'), path.join(dir, 'steps.json'), path.join(dir, 'out'), '800', '600'],
+      { env: { ...process.env, QA_CDP: '', QA_BROWSERS: '1' } });
+    let out = '', err = '';
+    p.stdout.on('data', d => { out += d; });
+    p.stderr.on('data', d => { err += d; });
+    p.on('close', code => done({ code, out, err }));
+  });
+  const runs = await Promise.all([one(), one()]);
+  if (runs.some(r => r.code === 4)) return t.skip('không có trình duyệt');
+  const spans = runs.map(r => {
+    assert.equal(r.code, 0, r.err);
+    const rep = JSON.parse(r.out);
+    return ['dau', 'cuoi'].map(s => rep.find(x => x.step === s).check);
+  });
+  const [a, b] = spans;
+  assert.ok(a[1] <= b[0] || b[1] <= a[0], `hai trình duyệt mở cùng lúc: ${JSON.stringify(spans)}`);
+});
+
+// Một trình duyệt chung cho cả lệnh (browser.mjs): mở một lần, các lần run.mjs gắn vào qua QA_CDP, mỗi lần một ngữ cảnh riêng.
+// Đo 09/10/2026: khởi động trình duyệt chiếm 1,6 của 5,2 giây-lõi mỗi lần chạy, cộng phần tạo/xoá hồ sơ 12 MB không đo được
+const BROWSER_MJS = T(path.join('qa-kit', 'browser.mjs'));
+const alive = async url => { try { await fetch(url + '/json/version', { signal: AbortSignal.timeout(1500) }); return true; } catch { return false; } };
+// Mở browser.mjs như một tiến trình con, hồ sơ trong thư mục tạm riêng (b.temp) để đếm được; trả null khi không có trình duyệt.
+// Hook tắt trình duyệt đăng ký trước khi tạo thư mục tạm, để lúc dọn thì trình duyệt tắt xong rồi mới xoá thư mục
+function startBrowser(t) {
+  let p, exit;
+  t.after(async () => { if (p) { try { p.stdin.end(); } catch {} await exit; } });
+  const temp = tmp(t, 'qa-temp-');
+  return new Promise(done => {
+    p = spawn(process.execPath, [BROWSER_MJS], { env: { ...process.env, TEMP: temp, TMP: temp, TMPDIR: temp }, stdio: ['pipe', 'pipe', 'pipe'] });
+    exit = new Promise(r => p.on('close', r));
+    let out = '', err = '';
+    p.stderr.on('data', d => { err += d; });
+    p.stdout.on('data', d => { out += d; if (out.includes('\n')) done({ url: out.split('\n')[0].trim(), proc: p, temp, exit }); });
+    p.on('close', code => done(code === 4 ? null : { url: '', proc: p, err, temp, exit }));
+  });
+}
+
+test('browser.mjs: in một dòng URL, trả lời /json/version; đóng stdin thì thoát 0, tắt trình duyệt, xoá hồ sơ', async t => {
+  const b = await startBrowser(t);
+  if (!b) return t.skip('không có trình duyệt');
+  const temp = b.temp;
+  assert.match(b.url, /^http:\/\/127\.0\.0\.1:\d+$/, b.err);
+  assert.ok(await alive(b.url));
+  assert.equal(fs.readdirSync(temp).filter(f => f.startsWith('cdp-')).length, 1, 'một hồ sơ cdp-* của trình duyệt chung');
+  b.proc.stdin.end();
+  assert.equal(await b.exit, 0);
+  assert.ok(!(await alive(b.url)), 'trình duyệt còn trả lời sau khi đóng');
+  assert.deepEqual(fs.readdirSync(temp).filter(f => f.startsWith('cdp-')), []);
+});
+
+test('run.mjs gắn vào trình duyệt chung (QA_CDP): mỗi lần một ngữ cảnh riêng, localStorage trống, không tạo hồ sơ cdp-*', async t => {
+  const b = await startBrowser(t);
+  if (!b) return t.skip('không có trình duyệt');
+  const temp = tmp(t, 'qa-temp-');
+  const env = { QA_CDP: b.url, TEMP: temp, TMP: temp, TMPDIR: temp };
+  const one = runMjs(t, LONG, [{ name: 'ghi', js: 'localStorage.setItem("k", "1")', check: 'localStorage.getItem("k")' }], { env });
+  assert.equal(one.r.status, 0, one.r.stderr);
+  assert.equal(JSON.parse(one.r.stdout).find(s => s.step === 'ghi').check, '1');
+  const two = runMjs(t, LONG, [{ name: 'doc', check: 'String(localStorage.getItem("k"))', shot: 'a' }], { env });
+  assert.equal(two.r.status, 0, two.r.stderr);
+  const rep = JSON.parse(two.r.stdout);
+  assert.equal(rep.find(s => s.step === 'doc').check, 'null');
+  assert.deepEqual(pngSize(path.join(two.out, 'a.png')), [1440, 900]);
+  assert.deepEqual(fs.readdirSync(temp).filter(f => f.startsWith('cdp-')), [], 'lần gắn không được tạo hồ sơ hay để lại thư mục tải');
+  // Trình duyệt chung chỉ còn trang about:blank ban đầu: ngữ cảnh của hai lần chạy đã huỷ
+  const pages = (await (await fetch(b.url + '/json/list')).json()).filter(x => x.type === 'page');
+  assert.equal(pages.length, 1, JSON.stringify(pages.map(x => x.url)));
+});
+
+test('run.mjs gắn: hai lần song song ở hai khổ, mỗi báo cáo đúng khổ của mình', async t => {
+  const b = await startBrowser(t);
+  if (!b) return t.skip('không có trình duyệt');
+  const run = (w, h) => new Promise(done => {
+    const dir = tmp(t, 'run-');
+    fs.writeFileSync(path.join(dir, 'p.html'), LONG);
+    fs.writeFileSync(path.join(dir, 'steps.json'), JSON.stringify({ steps: [{ name: 'a', wait: 800, check: 'innerWidth' }, { name: 'b', wait: 800, check: 'innerWidth' }] }));
+    const p = spawn(process.execPath, [RUN, path.join(dir, 'p.html'), path.join(dir, 'steps.json'), path.join(dir, 'out'), String(w), String(h)], { env: { ...process.env, QA_CDP: b.url } });
+    let out = '', err = '';
+    p.stdout.on('data', d => { out += d; }); p.stderr.on('data', d => { err += d; });
+    p.on('close', code => done({ code, out, err }));
+  });
+  const [a, m] = await Promise.all([run(1440, 900), run(390, 844)]);
+  assert.equal(a.code, 0, a.err); assert.equal(m.code, 0, m.err);
+  assert.deepEqual(JSON.parse(a.out).filter(s => s.dims).map(s => [s.check, s.dims.cw]), [[1440, 1440], [1440, 1440]]);
+  assert.deepEqual(JSON.parse(m.out).filter(s => s.dims).map(s => [s.check, s.dims.cw]), [[390, 390], [390, 390]]);
+});
+
+test('run.mjs gắn: lỗi giữa chừng thì thoát khác 0, huỷ ngữ cảnh của mình, trình duyệt chung vẫn sống', async t => {
+  const b = await startBrowser(t);
+  if (!b) return t.skip('không có trình duyệt');
+  const { r } = runMjs(t, LONG, [{ name: 'xem', shot: 'khong-co/anh' }], { env: { QA_CDP: b.url } });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /ENOENT/);
+  assert.ok(await alive(b.url), 'trình duyệt chung bị đóng theo');
+  const pages = (await (await fetch(b.url + '/json/list')).json()).filter(x => x.type === 'page');
+  assert.equal(pages.length, 1, JSON.stringify(pages.map(x => x.url)));
+});
+
+test('run.mjs gắn: QA_CDP không có trình duyệt thì thoát 2 và nêu QA_CDP', t => {
+  const { r } = runMjs(t, LONG, [{ name: 'xem' }], { env: { QA_CDP: 'http://127.0.0.1:1' } });
+  assert.equal(r.status, 2, r.stderr);
+  assert.match(r.stderr, /QA_CDP/);
 });
 
 // Đo ba skill sửa (05/10/2026): _system ở 390 cao 23 856px (28 màn) mà bộ khói chụp 16 màn và cắt ở 15 000px, nên mục Component

@@ -5,6 +5,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+// Một trình duyệt chung cho cả file (QA_CDP), thay vì mỗi lần run.mjs một trình duyệt
+require('./shared-browser')();
 const C = require('../templates/color.js');
 
 const S2S = path.resolve(__dirname, '..');

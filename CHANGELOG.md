@@ -1,5 +1,55 @@
 # Changelog
 
+## 1.7.2 (2026-10-09)
+
+- Skills: `sketch-to-concept` 1.7.
+- The concept board shows the mix without scrolling away from the matrix. Why: on a 12-concept, two-surface board, the large preview started about 480px down a 1,050px window. To see a mix, the user scrolled down, and the matrix scrolled off the top.
+  - The *Trộn* box holds the view bar (*Bề mặt*, *Concept*/*Bản trộn*, *Mã trộn*, *Sao chép*, *Mở màn riêng*) and the matrix. It sticks to the top while the page scrolls, on windows at least 1000px wide and 640px tall.
+  - Once stuck, the box condenses to one line, about 45px. Why: on a laptop screen, the 160px box still hid the bottom of the preview.
+    - Four small chips show the current mix (screen, colour, type, button), with *Đổi trộn*. *Đổi trộn* drops the matrix over the preview. Picking a cell keeps it open. A click outside, Esc, or scrolling back to the top closes it.
+    - A margin makes up for the height the box gives back, so the preview does not jump when the box condenses.
+    - A scroll that stops while that margin still shows finishes on its own, in the direction it was going (`scrollend`, one event per finished scroll, not a scroll listener).
+      - Going down, the page settles where the preview meets the bottom of the condensed box, with the preview's header in view. Going up, it settles where the box is full again.
+      - Why: a wheel notch moves about 100px, so the page rarely stopped at that point. Condensing as soon as the box stuck left an empty band about 110px high. Condensing later hid the preview's header under the box.
+      - Browsers without `scrollend` skip this step.
+    - An `IntersectionObserver` on a mark near the top of the board decides when to condense. Preflight P04 forbids scroll listeners.
+    - The page turns off scroll anchoring (`html{overflow-anchor:none}`). Why: on the real board, Chromium picked an anchor inside a sticky area and pulled the page back to the top every time the box condensed. The box then opened and condensed in a loop, which looked like a jerk.
+    - The margin goes up before the box condenses. Why: measuring the condensed box briefly made the page shorter, and on a short page the browser pulled the scroll position up.
+    - A click on the preview also closes the dropped matrix and the brief. The click lands inside the iframe, so the board only sees its window lose focus to that iframe.
+  - The full box is lower: about 160px for 12 concepts, down from about 220px.
+    - The letter row on top repeated the *Màn và ý* row, so it is gone. A concept that borrows a screen shows its letter, muted, next to that screen's letter (`D màn B`).
+    - Matrix cells are 24px tall, the minimum touch target size. The bar uses 13px text and lower buttons.
+  - A ▾ button next to *Concept X* opens an overview under the *Trộn* box, as wide as the box. Why: the left column's thumbnails are about 220px wide, too small to compare concepts.
+    - It shows every concept's screenshot (`shots/`, for the *Bề mặt* and *Khổ màn* on show), about 330px wide, three or four to a row.
+    - Rounds come newest first, each with its feedback. Each card has its labels (*Khuyến nghị*, borrowed screen, warnings). A card without a shot names the missing file.
+    - Clicking a card shows that concept and closes the overview. A click outside, Esc, or opening the caption or the matrix also closes it.
+    - The overview is built only when it opens and cleared when it closes. The screenshots come from the files `shots.mjs` already took, and the left column's cards are never doubled (`shots.mjs` reads the board's warnings from `[data-card]`).
+    - The left column stays. A board without it was tried and dropped: the preview took the full width, so it grew taller than the window and needed more scrolling.
+  - The recommended concept has a green dot next to its letter in the *Màn và ý* row, and the left column says *Khuyến nghị: X* under the concept count.
+  - Inside the hub, the board drops its title row, because the hub's tab bar already names the project and the portal. The *Trộn* box sits right under the tab bar. The hub loads each board with `?hub`.
+    - The concept count, *Brief concept*, *Nền* and *Khổ màn* move to the top of the left column, above the concept list. The column sticks with the box, and only the list scrolls. Opened on its own, the board keeps its title row with the project name.
+    - *Brief concept* opens as a drop-down over the board. A click outside it, or Esc, closes it.
+    - The board tells the hub its *Nền* (`postMessage`), so the tab bar has the same background as the board on show. The hub only takes messages from its own board frames. Before, the tab bar followed the OS (dark) while the board was light.
+  - The caption moves into the *Trộn* bar, after *Mở màn riêng*, so the preview has no caption row above it (about 32px higher). Why: at 2 lines, then 1, the long idea of a concept still pushed the preview down under the condensed box.
+    - It shows one line, cut with an ellipsis. A click drops the whole sentence over the preview. A click outside, Esc, or opening the matrix closes it. When the bar is full, the caption wraps to a line of its own.
+    - On *Bản trộn* it gives the idea of the concept whose screen the mix uses. The layers are already in *Mã trộn* next to it.
+  - Hovering or focusing a cell of the *Màn và ý* row shows that concept's screenshot (`shots/<screen>-<width>.png` from `shots.mjs`) under the matrix, lined up with the cell. It follows *Bề mặt* and *Khổ màn*. Without a shot it says which file is missing. The light shot is used even on a dark board, because dark shots exist only when the user asked for dark mode.
+- *Sao chép* works on a board inside the hub. Why: inside the hub's frame (`file://`), the browser blocks `navigator.clipboard`. Every click showed *Trình duyệt chặn chép*, and the long message pushed *Mở màn riêng* onto a second line.
+  - The button copies with `execCommand('copy')` within the click. Otherwise it tries `navigator.clipboard`. If both fail, it selects the code for a manual copy.
+  - The result shows on the button itself: *Đã chép* for 2 seconds, or *Chép tay* for 4 when it selected the code. Then the label returns to *Sao chép*. The button keeps its width, so nothing covers the matrix and the bar does not shift. Screen readers hear the full sentence from a hidden status line.
+- The QA kit's `run.mjs` no longer slows the machine down or fills the temp folder. Why: on a laptop, the test suite opened many headless browsers at once and the machine lagged. The temp folder also held 633 leftover `cdp-*` profiles from over a week (about 12 MB each), left by runs stopped midway.
+  - It runs at below-normal priority, and lowers every browser process once a second. Why: the browser raises its page processes back to normal and its GPU process to above normal (measured with Edge). `QA_PRIORITY=normal` keeps normal priority.
+  - The browser starts without the work a fresh profile does on first launch: built-in extensions, component updates, background networking, translation, sync. Why: below-normal priority still lets the suite take every idle core, so the CPU stayed at 100%. Measured with Edge on a two-step page: 11.8 core-seconds of CPU per run, down to 5.2, and 8 page processes, down to 2. A run takes the same time.
+  - `QA_BROWSERS=n` limits the headless browsers open at once on the machine, across all commands. A command over the limit waits for a free slot.
+  - One command, one browser. Why: with the lean flags, one `run.mjs` run still cost about 5.2 core-seconds, and starting the browser plus creating and deleting its 12 MB profile was more than half of it (measured: start 1.6, page load 0.8, the steps 0.4, node 0.3, the rest in the profile). The test suite started a browser hundreds of times; `handover.py run` started one per suite per theme.
+    - New `_qa/launch.mjs` holds the browser start and stop that `run.mjs` had. New `_qa/browser.mjs` starts one browser for a command, prints its URL, and closes it when its stdin closes, so a killed command leaves no browser behind. `qa_init.py` copies both; a kit with either file changed reruns every suite.
+    - `run.mjs` with `QA_CDP=http://127.0.0.1:<port>` attaches to that browser in a browser context of its own (empty `localStorage`, cookies and cache, as with a fresh profile) and a window of its own, and disposes them at the end, also after an error. Its command line, output and exit codes are unchanged, so a kit installed before this still runs.
+    - `run_all.py`, `quick.py`, `handover.py`, `breaktest.py` (through `run_all.shared_browser()`), `qa-check.py`, `shots.mjs`, `system-check.mjs`, `map.mjs --shots` and the test files that run `run.mjs` open one browser each. A command that cannot (old kit without `browser.mjs`, no browser found) runs as before. A command started under another one reuses its browser.
+    - Tests: `browser.mjs` prints the URL and closes on stdin; two attached runs do not see each other's `localStorage` and leave no `cdp-*` folder; two attached runs at 1440 and 390 in parallel each measure their own width; an attached run that fails leaves the shared browser alive; a `QA_CDP` with no browser exits 2; `qalib.shared_browser()` sets and clears `QA_CDP`, stops the browser, reuses a parent's, and enters and leaves quietly when `browser.mjs` is missing.
+  - The profile is deleted after an error or Ctrl+C too. A run killed outright cannot do that, so each run deletes up to 20 `cdp-*` profiles that have not changed for 2 hours.
+  - Tests: a run that fails midway leaves no profile, old profiles are swept, and with `QA_BROWSERS=1` two parallel runs open their browsers one after the other.
+- Tests: the box condenses and the preview does not jump, a scroll that stops mid-way settles with the preview right under the box, going down or up, the page is not pulled back when the box condenses, *Đổi trộn* opens and closes the matrix (a click on the preview closes it), *Sao chép* falls back when the clipboard is blocked, the box sticks after scrolling, the overview shows each concept's shot newest round first without doubling the left column's cards, names a missing shot, follows *Khổ màn*, and closes on a pick, Esc or a click outside, the recommended concept is marked, the board drops its title row with `?hub`, the hub follows the board's *Nền* and ignores other messages, the brief does not push the board down, the caption sits in the bar on one line and drops the whole sentence on a click, the screenshot shows on hover and on focus, and the box does not stick at 390.
+
 ## 1.7.1 (2026-10-08)
 
 - Skills: `sketch-to-concept` 1.6, `sketch-to-site` 4.8, `sketch-to-map` 1.1.

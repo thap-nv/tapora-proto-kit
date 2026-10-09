@@ -24,4 +24,5 @@ Chạy từ `<thư-mục-prototype>`, thư mục chứa `_qa/`. Cần Python 3, 
   - Mỗi bước có dạng `{name, js, wait, check, shot, jpeg}`; `check` là biểu thức JS.
   - Trả chuỗi bắt đầu bằng `FAIL` là lỗi. Có `check` mà không trả giá trị cũng tính là lỗi.
 - **`run.mjs` thoát mã 2:** trình duyệt đã chạy nhưng không trả lời; dòng cuối của thông báo là lỗi của chính trình duyệt. Trên Linux hay container, thêm cờ qua `QA_BROWSER_ARGS`, ví dụ `QA_BROWSER_ARGS="--no-sandbox"`.
+- **Máy lag khi chạy bộ kiểm:** mỗi lệnh (`quick.py`, `handover.py`, `breaktest.py`, `run_all.py`) chỉ mở một trình duyệt headless ở mức ưu tiên thấp cho mọi bộ của nó, mỗi bộ một ngữ cảnh riêng. Đặt `QA_BROWSERS=2` để cả máy chỉ mở tối đa 2 trình duyệt cùng lúc; lệnh vượt số này đợi tới lượt.
 - **`run.mjs` thoát mã 3:** chỉ gặp khi đặt `CDP_PORT` bằng tay mà cổng đó đang bị một trình duyệt khác giữ (không đặt thì hệ điều hành tự chọn cổng). Tắt các trình duyệt headless còn sót (hồ sơ `cdp-*` trong thư mục tạm) rồi chạy lại.

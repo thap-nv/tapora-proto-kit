@@ -14,9 +14,10 @@
 #   "check"  biểu thức trả 'PASS' khi đúng, chuỗi bắt đầu bằng "FAIL:" khi sai, ví dụ
 #            "document.querySelectorAll('#lots li').length === 2 ? 'PASS' : 'FAIL: cần 2 lô'"; không trả gì là bước im lặng
 #   "shot"   tên ảnh chụp sau bước; "jpeg": true để chụp jpg; "clip": "<css selector>" chỉ chụp khung đó, "scale" phóng ảnh clip
-# Mỗi bộ chạy trong một hồ sơ trình duyệt mới: localStorage trống lúc bắt đầu bộ. File tải xuống (nút xuất) nằm trong hồ sơ đó
+# Mỗi bộ chạy trong một ngữ cảnh trình duyệt mới: localStorage trống lúc bắt đầu bộ. File tải xuống (nút xuất) nằm trong thư mục tạm của bộ
 # và bị xoá khi bộ chạy xong, không rơi vào thư mục Downloads của máy; bước kiểm tính năng xuất bằng giao diện (toast, trạng thái).
-import hashlib, json, os, re, subprocess, sys
+# Cả lệnh dùng chung một trình duyệt (browser.mjs, biến QA_CDP), không mở mỗi bộ một trình duyệt.
+import contextlib, hashlib, json, os, re, subprocess, sys, threading
 from concurrent.futures import ThreadPoolExecutor
 sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -38,6 +39,50 @@ def node_cmd():
 
 
 NODE = node_cmd()
+
+
+def _stop_browser(p):
+    try:
+        p.stdin.close()
+    except Exception:
+        pass
+    try:
+        p.wait(10)
+    except Exception:
+        p.kill()
+
+
+@contextlib.contextmanager
+def shared_browser():
+    # Một trình duyệt chung cho cả lệnh (browser.mjs): mở một lần, mọi run.mjs con gắn vào qua QA_CDP, mỗi lần một ngữ cảnh riêng.
+    # Mở mỗi bộ một trình duyệt thì khởi động cộng tạo/xoá hồ sơ chiếm hơn nửa CPU của một lần chạy (đo 09/10/2026).
+    # Đã có QA_CDP (lệnh cha mở rồi) thì dùng lại. Không mở được (bộ kiểm cũ thiếu file, không có trình duyệt) thì chạy như cũ, run.mjs tự báo
+    if os.environ.get('QA_CDP'):
+        yield
+        return
+    bm = os.path.join(HERE, 'browser.mjs')
+    p, url = None, ''
+    if os.path.exists(bm):
+        try:
+            p = subprocess.Popen(NODE + [bm], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, encoding='utf-8')
+            box = []
+            th = threading.Thread(target=lambda: box.append(p.stdout.readline()), daemon=True)
+            th.start()
+            th.join(20)
+            url = (box[0] if box else '').strip()
+        except Exception:
+            url = ''
+    if not url.startswith('http://'):
+        if p:
+            _stop_browser(p)
+        yield
+        return
+    os.environ['QA_CDP'] = url
+    try:
+        yield
+    finally:
+        os.environ.pop('QA_CDP', None)
+        _stop_browser(p)
 
 
 def run(s, out, deep=False):
@@ -135,7 +180,7 @@ if __name__ == '__main__':
     todo = [s for s in SUITES if flt in s[0]]
     if os.environ.get('QA_QUERY'):
         todo = [s for s in todo if not s[0].startswith(THEME_PREFIX)]
-    with ThreadPoolExecutor(4) as ex:
+    with shared_browser(), ThreadPoolExecutor(4) as ex:
         res = list(ex.map(lambda s: run(s, out), todo))
     summary = {}
     for name, r in res:

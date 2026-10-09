@@ -9,6 +9,8 @@ const os = require('node:os');
 const path = require('node:path');
 const vm = require('node:vm');
 const { spawnSync } = require('node:child_process');
+// Một trình duyệt chung cho cả file (QA_CDP), thay vì mỗi lần run.mjs một trình duyệt
+require('../../sketch-to-site/tests/shared-browser')();
 const { build } = require('./big-fixture.js');
 
 const SKILL = path.resolve(__dirname, '..');

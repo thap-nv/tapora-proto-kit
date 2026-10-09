@@ -115,7 +115,7 @@ def read_site(site):
     return out
 
 
-KIT_FILES = ['run.mjs', 'run_all.py', 'qalib.py', 'quick.py', 'handover.py', 'breaktest.py', 'compare.py', 'probes.js', 'qadiff.py', 'deep.mjs']
+KIT_FILES = ['run.mjs', 'launch.mjs', 'browser.mjs', 'run_all.py', 'qalib.py', 'quick.py', 'handover.py', 'breaktest.py', 'compare.py', 'probes.js', 'qadiff.py', 'deep.mjs']
 # Lõi màu dùng chung nằm ở templates/ của skill (bảng concept, themes.mjs, _system.html cùng dùng), không ở qa-kit/
 SHARED_FILES = [('color.js', os.path.join(SKILL, 'templates', 'color.js'))]
 GITIGNORE = '# Kết quả chạy, sinh lại được. last-green/ nên commit để cả nhóm dùng chung một mốc\nhandover/\ncurrent/\n.quick-run/\n.recheck/\n.tdd/\n.thumbs/\n__pycache__/\n.kit-source\n'

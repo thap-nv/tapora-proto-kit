@@ -22,7 +22,7 @@ SUITE_NAMES = [s[0] for s in run_all.SUITES]
 # Bước tự đổi giá trị giữa 2 lần chạy dù không ai sửa gì (đồng hồ chạy thật, số ngẫu nhiên): [bộ, bước]
 NOISY = {tuple(x) for x in CFG.get('noisy', [])}
 # Mã của bộ kiểm chạy trong trang: đổi một file trong số này thì mọi bộ có thể đổi kết quả
-KIT_CODE = ('run.mjs', 'probes.js', 'color.js', 'deep.mjs')
+KIT_CODE = ('run.mjs', 'launch.mjs', 'browser.mjs', 'probes.js', 'color.js', 'deep.mjs')
 
 
 def find_preflight():
@@ -50,6 +50,7 @@ def find_preflight():
 
 
 PREFLIGHT = find_preflight()
+shared_browser = run_all.shared_browser
 
 
 def shown(p):
@@ -148,14 +149,15 @@ def run_suites(names, out_root, themes, shots, deep=False):
     # Theme sau theme mặc định bỏ các bộ tự đổi theme, giống run_all.py khi có QA_QUERY. shots: chụp ảnh ở mọi theme.
     # deep: bật lượt kiểm sâu cho các bộ trong DEEP_SUITES (run_all.run chỉ nhận quyết định, không tự chọn bộ)
     res = {}
-    for th in themes:
-        os.environ['QA_QUERY'] = THEMES[th]
-        os.environ['QA_NOSHOT'] = '' if shots else '1'
-        todo = [s for s in run_all.SUITES if s[0] in names and not (th != DEFAULT_THEME and s[0].startswith(run_all.THEME_PREFIX))]
-        with ThreadPoolExecutor(4) as ex:
-            for name, r in ex.map(lambda s: run_all.run(s, os.path.join(out_root, th), deep and s[0] in DEEP_SUITES), todo):
-                if r is not None:
-                    res[(th, name)] = r
+    with shared_browser():
+        for th in themes:
+            os.environ['QA_QUERY'] = THEMES[th]
+            os.environ['QA_NOSHOT'] = '' if shots else '1'
+            todo = [s for s in run_all.SUITES if s[0] in names and not (th != DEFAULT_THEME and s[0].startswith(run_all.THEME_PREFIX))]
+            with ThreadPoolExecutor(4) as ex:
+                for name, r in ex.map(lambda s: run_all.run(s, os.path.join(out_root, th), deep and s[0] in DEEP_SUITES), todo):
+                    if r is not None:
+                        res[(th, name)] = r
     os.environ['QA_QUERY'] = ''
     os.environ['QA_NOSHOT'] = ''
     return res

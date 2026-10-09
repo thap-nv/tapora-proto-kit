@@ -9,7 +9,7 @@
 //   Ảnh ghi vào <thư-mục-concept>/shots/<tên>-<khổ>.png, chỉ khung đầu (không chụp cả trang).
 //   Màn có phần tử [data-signature] (khối của tương tác đặc trưng): cuộn tới và chụp riêng khối đó, <tên>-<khổ>-sig.png.
 //   QA_QUERY="?theme=dark": chụp nền tối, tên ảnh thêm đuôi -dark. Chỉ dùng khi người dùng đã xin chế độ tối.
-// Dùng run.mjs của sketch-to-site (CDP): khổ 390 là khổ thật. Edge/Chrome headless với --window-size không thu cửa sổ
+// Dùng run.mjs của sketch-to-site (CDP) qua một trình duyệt chung cho cả lệnh (browser.mjs): khổ 390 là khổ thật. Edge/Chrome headless với --window-size không thu cửa sổ
 // dưới khoảng 500px, nên ảnh "390" chụp cách đó thật ra là trang rộng hơn bị cắt.
 // Mỗi dòng: tràn ngang, chữ tràn hoặc bị cắt, tương phản dưới ngưỡng, màu sai ý định, lỗi console; kèm tối đa 3 chi tiết.
 // Dòng 1440 của màn riêng (không phải màn mượn) ghi thêm "dài: …" khi màn vượt ngân sách: quá 25% trang ngoài khung đầu và khối
@@ -21,11 +21,12 @@ import { spawn } from 'node:child_process';
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, rmSync, mkdtempSync, existsSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname, basename } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import vm from 'node:vm';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const RUN = join(HERE, '..', '..', 'sketch-to-site', 'templates', 'qa-kit', 'run.mjs');
+const { startBrowser } = await import(pathToFileURL(join(dirname(RUN), 'browser.mjs')).href);
 const args = process.argv.slice(2);
 const ri = args.indexOf('--round');
 const roundArg = ri >= 0 ? +args[ri + 1] : null;
@@ -121,7 +122,7 @@ function runOne({ file, w, as, query }) {
        { name: 'sig', js: `document.querySelector('${SIG}')?.scrollIntoView({ block: 'start' })`, wait: 300, shot: `${name}-sig`, clip: SIG }];
   writeFileSync(steps, JSON.stringify({ ...(query ? { query } : {}), steps: list }));
   return new Promise(done => {
-    const p = spawn(process.execPath, [...flags, RUN, join(dir, file), steps, shotsDir, ...SIZES[w]], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const p = spawn(process.execPath, [...flags, RUN, join(dir, file), steps, shotsDir, ...SIZES[w]], { stdio: ['ignore', 'pipe', 'pipe'], env: runEnv });
     let out = '', err = '';
     p.stdout.on('data', d => { out += d; });
     p.stderr.on('data', d => { err += d; });
@@ -172,13 +173,17 @@ function summarize({ file, w, as, name, code, out, err }) {
   return { bad: parts.length > 0, text: `${head}: ${parts.length ? parts.join(' · ') : 'OK'}${tail} → ${outFiles.join(' · ')}` + (details.length ? '\n' + details.join('\n') : '') };
 }
 
-// Chạy song song tối đa 3 trình duyệt: mỗi lần run.mjs tự chọn cổng trống và hồ sơ riêng
+// Một trình duyệt chung cho cả lệnh (browser.mjs): các lần run.mjs gắn vào qua QA_CDP, mỗi lần một ngữ cảnh riêng, tối đa 3 cùng lúc.
+// Không mở được thì mỗi lần run.mjs tự mở trình duyệt như cũ (và tự báo mã 4 khi không có)
+const browser = await startBrowser().catch(() => null);
+const runEnv = { ...process.env, ...(browser ? { QA_CDP: browser.url } : {}) };
 const results = new Array(jobs.length);
 let next = 0;
 await Promise.all(Array.from({ length: Math.min(3, jobs.length) }, async () => {
   while (next < jobs.length) { const i = next++; results[i] = await runOne(jobs[i]); }
 }));
 rmSync(tmp, { recursive: true, force: true });
+if (browser) await browser.close();
 if (results.some(r => r.code === 4)) { console.error('Không tìm thấy Edge, Chrome hay Chromium. Đặt biến QA_BROWSER.'); process.exit(4); }
 const lines = results.map(summarize).concat(missing.map(text => ({ bad: true, text })));
 console.log(lines.map(l => l.text).join('\n'));

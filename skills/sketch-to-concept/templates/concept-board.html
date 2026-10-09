@@ -6,8 +6,11 @@
 <title>Bảng concept</title>
 <!-- Mẫu từ sketch-to-concept/templates/concept-board.html. Chép thành concept/index.html, KHÔNG sửa file này:
      mọi nội dung lấy từ concepts.js. Cùng thư mục cần: concepts.js, color.js, tokens.js, theme.js và màn của mỗi concept có màn riêng (a.html…,
-     cộng a-<key>.html cho mỗi bề mặt khai trong CONCEPTS.surfaces).
-     Bố cục: danh sách concept theo vòng bên trái · ma trận trộn · màn xem trước lớn · chi tiết và So trục gập lại. -->
+     cộng a-<key>.html cho mỗi bề mặt khai trong CONCEPTS.surfaces). Ảnh chụp ở shots/ (shots.mjs) hiện ở bảng tổng quan và khi rê chuột.
+     Bố cục: cột trái (số concept, khuyến nghị, Brief thả xuống, Nền, Khổ màn, rồi danh sách concept theo vòng) · hộp Trộn (thanh xem:
+     Concept ▾ mở bảng tổng quan ảnh chụp theo vòng, chú thích một dòng; ma trận) dính trên đỉnh khi cuộn, thu còn một dòng (Đổi trộn mở
+     ma trận) · màn xem trước lớn · chi tiết và So trục gập lại. Trang gom mở bảng với ?hub: bảng bỏ dòng tiêu đề và báo Nền đang chọn
+     cho trang gom (postMessage). -->
 <script src="theme.js"></script>
 <script src="concepts.js"></script>
 <script src="color.js"></script>
@@ -16,20 +19,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   /* Màu của khung bảng dùng tiền tố --ui- để không đè token của concept (--bg, --ink, --primary…) */
-  :root{--ui-bg:#F6F6F4;--ui-surface:#FFFFFF;--ui-ink:#1A1A19;--ui-muted:#5E5E5A;--ui-line:#E2E2DE;--ui-focus:#2459C7;--ui-warn-bg:#FFF4D6;--ui-warn-ink:#5C4200;--ui-ok-bg:#E3F4E8;--ui-ok-ink:#14532D;--ui-bad:#B3261E}
-  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ui-bg:#111110;--ui-surface:#1A1A19;--ui-ink:#EDEDEA;--ui-muted:#A1A19C;--ui-line:#2C2C2A;--ui-focus:#8AB4FF;--ui-warn-bg:#3A2E0A;--ui-warn-ink:#FFE2A0;--ui-ok-bg:#12301E;--ui-ok-ink:#A7E3BC;--ui-bad:#FF8A80}}
-  :root[data-theme="dark"]{--ui-bg:#111110;--ui-surface:#1A1A19;--ui-ink:#EDEDEA;--ui-muted:#A1A19C;--ui-line:#2C2C2A;--ui-focus:#8AB4FF;--ui-warn-bg:#3A2E0A;--ui-warn-ink:#FFE2A0;--ui-ok-bg:#12301E;--ui-ok-ink:#A7E3BC;--ui-bad:#FF8A80}
+  :root{--ui-bg:#F6F6F4;--ui-surface:#FFFFFF;--ui-ink:#1A1A19;--ui-muted:#5E5E5A;--ui-line:#E2E2DE;--ui-focus:#2459C7;--ui-warn-bg:#FFF4D6;--ui-warn-ink:#5C4200;--ui-ok-bg:#E3F4E8;--ui-ok-ink:#14532D;--ui-bad:#B3261E;--ui-shadow:0 8px 24px rgba(0,0,0,.12)}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ui-bg:#111110;--ui-surface:#1A1A19;--ui-ink:#EDEDEA;--ui-muted:#A1A19C;--ui-line:#2C2C2A;--ui-focus:#8AB4FF;--ui-warn-bg:#3A2E0A;--ui-warn-ink:#FFE2A0;--ui-ok-bg:#12301E;--ui-ok-ink:#A7E3BC;--ui-bad:#FF8A80;--ui-shadow:0 8px 24px rgba(0,0,0,.5)}}
+  :root[data-theme="dark"]{--ui-bg:#111110;--ui-surface:#1A1A19;--ui-ink:#EDEDEA;--ui-muted:#A1A19C;--ui-line:#2C2C2A;--ui-focus:#8AB4FF;--ui-warn-bg:#3A2E0A;--ui-warn-ink:#FFE2A0;--ui-ok-bg:#12301E;--ui-ok-ink:#A7E3BC;--ui-bad:#FF8A80;--ui-shadow:0 8px 24px rgba(0,0,0,.5)}
   *{box-sizing:border-box}
+  /* Tắt neo cuộn của trang: trang có hai vùng dính (cột trái, hộp Trộn), Chromium lấy phần tử trong vùng dính làm mốc và tính sai
+     khi hộp Trộn thu lại, kéo trang về đầu, hộp mở ra rồi thu lại liên tục (giật) */
+  html{overflow-anchor:none}
   body{margin:0;background:var(--ui-bg);color:var(--ui-ink);font:15px/1.55 'Be Vietnam Pro',system-ui,sans-serif}
   a{color:inherit}
   :focus-visible{outline:2px solid var(--ui-focus);outline-offset:2px}
   [hidden]{display:none!important}
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-  .wrap{max-width:1600px;margin:0 auto;padding:20px 16px 64px}
-  .top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
+  .wrap{max-width:1600px;margin:0 auto;padding:20px 16px 0}
   h1{margin:0;font-size:24px;line-height:1.2}
-  .project{margin:2px 0 0;color:var(--ui-muted);font-size:14px}
-  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  /* Trong trang gom (?hub): thanh tab của trang gom đã có tên dự án và portal, nên bảng bỏ dòng tiêu đề; hộp Trộn nằm ngay dưới thanh tab */
+  :root[data-hub] .wrap{padding-top:0}
+  :root[data-hub] .top{display:none}
+  :root[data-hub] .layout{margin-top:12px}
   .seg{display:inline-flex;border:1px solid var(--ui-line);border-radius:8px;overflow:hidden}
   .seg>span{padding:6px 10px;color:var(--ui-muted);font-size:13px}
   .seg button{border:0;border-left:1px solid var(--ui-line);background:var(--ui-surface);color:var(--ui-ink);padding:6px 12px;font:inherit;font-size:14px;cursor:pointer}
@@ -38,31 +45,75 @@
   .banner{margin:16px 0 0;padding:12px 16px;border-radius:8px;background:var(--ui-warn-bg);color:var(--ui-warn-ink)}
   details.fold{background:var(--ui-surface);border:1px solid var(--ui-line);border-radius:10px;padding:10px 14px}
   details.fold>summary{cursor:pointer;font-weight:600}
-  details.brief{margin:12px 0 0}
-  .brief dl{display:grid;grid-template-columns:minmax(90px,max-content) 1fr;gap:6px 16px;margin:12px 0 0}
+  /* Công cụ của bảng nằm đầu cột trái, trên danh sách concept: số concept, khuyến nghị, Brief, Nền, Khổ màn */
+  .tools{display:flex;flex-direction:column;gap:8px}
+  .tools .count{margin:0;color:var(--ui-muted);font-size:13px}
+  .pair{display:flex;flex-wrap:wrap;gap:6px 10px}
+  .ctl{display:flex;flex-direction:column;gap:2px}
+  .ctl>span{color:var(--ui-muted);font-size:12px}
+  .tools .seg button{padding:3px 10px;font-size:13px;line-height:1.4}
+  /* Concept khuyến nghị: chấm xanh cạnh chữ cái ở hàng Màn và ý, cùng chấm với dòng Khuyến nghị ở đầu cột trái */
+  .dot{display:inline-block;width:7px;height:7px;margin:0 4px;border-radius:50%;background:var(--ui-ok-ink);vertical-align:middle}
+  /* Brief mở ra thì thả xuống đè lên bảng, không đẩy danh sách hay hộp Trộn xuống */
+  .brief{position:relative}
+  .brief>summary{padding:4px 10px;border:1px solid var(--ui-line);border-radius:8px;background:var(--ui-surface);font-size:13px;cursor:pointer}
+  .brief[open]>summary{border-color:var(--ui-ink)}
+  .brief dl{position:absolute;left:0;top:100%;width:min(860px,calc(100vw - 48px));z-index:5;display:grid;grid-template-columns:minmax(90px,max-content) 1fr;gap:6px 16px;margin:8px 0 0;padding:14px 16px;max-height:70vh;overflow:auto;background:var(--ui-surface);border:1px solid var(--ui-line);border-radius:10px;box-shadow:var(--ui-shadow)}
   .brief dt,.facts dt{color:var(--ui-muted)}
   .brief dd,.facts dd{margin:0;overflow-wrap:anywhere}
   .brief small{color:var(--ui-muted)}
   .empty{margin:24px 0 0;padding:16px;border:1px dashed var(--ui-line);border-radius:10px;color:var(--ui-muted)}
   .layout{display:grid;gap:20px;margin-top:16px;grid-template-columns:minmax(0,1fr)}
+  .side{display:flex;flex-direction:column;gap:14px;min-width:0}
+  /* Khoảng trống cuối trang nằm trong cột phải: hàng lưới cao thêm, cột trái dính tới hết trang mà không bị đẩy lên khi cuộn tới đáy */
+  .layout>.stack{padding-bottom:64px}
   .list{display:flex;flex-direction:column;gap:14px;min-width:0}
+  /* Cột trái dính cùng hộp Trộn; chỉ danh sách cuộn. z-index trên hộp Trộn để Brief thả xuống đè lên hộp.
+     Cột trái làm màn lớn hẹp lại, nên màn lớn thấp hơn và ít phải cuộn hơn */
   @media (min-width:1000px){
     .layout{grid-template-columns:240px minmax(0,1fr)}
-    .list{position:sticky;top:12px;align-self:start;max-height:calc(100dvh - 24px);overflow-y:auto;padding:2px 6px 2px 2px}
+    .side{position:sticky;top:12px;z-index:3;align-self:start;max-height:calc(100dvh - 24px)}
+    .list{min-height:0;overflow-y:auto;padding:2px 6px 2px 2px}
   }
-  .round{display:flex;flex-direction:column;gap:10px}
-  .round h2{margin:0;font-size:14px}
-  .round h2 button{display:flex;justify-content:space-between;gap:8px;width:100%;padding:8px 0 4px;border:0;border-top:1px solid var(--ui-line);background:none;color:var(--ui-ink);font:inherit;font-weight:600;text-align:left;cursor:pointer}
-  .note{margin:-6px 0 0;color:var(--ui-muted);font-size:13px}
-  .cards{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
-  .item{position:relative;background:var(--ui-surface);border:1px solid var(--ui-line);border-radius:10px;padding:8px}
-  .item:has(.view[aria-current="true"]){border-color:var(--ui-focus);box-shadow:0 0 0 1px var(--ui-focus)}
-  .item .frame{pointer-events:none}
-  .view{display:block;margin:8px 0 0;padding:0;border:0;background:none;color:var(--ui-ink);font:inherit;font-weight:600;font-size:14px;text-align:left;cursor:pointer}
-  .view::after{content:"";position:absolute;inset:0;border-radius:10px}
-  .view:focus-visible{outline:none}
-  .view:focus-visible::after{outline:2px solid var(--ui-focus);outline-offset:2px}
-  .labels{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+  .list .round{display:flex;flex-direction:column;gap:10px}
+  .list .round h2{margin:0;font-size:14px}
+  .list .round h2 button{display:flex;justify-content:space-between;gap:8px;width:100%;padding:8px 0 4px;border:0;border-top:1px solid var(--ui-line);background:none;color:var(--ui-ink);font:inherit;font-weight:600;text-align:left;cursor:pointer}
+  .list .note{margin:-6px 0 0;color:var(--ui-muted);font-size:13px}
+  .list .cards{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+  .list .item{position:relative;background:var(--ui-surface);border:1px solid var(--ui-line);border-radius:10px;padding:8px}
+  .list .item:has(.view[aria-current="true"]){border-color:var(--ui-focus);box-shadow:0 0 0 1px var(--ui-focus)}
+  .list .item .frame{pointer-events:none}
+  .list .view{display:block;margin:8px 0 0;padding:0;border:0;background:none;color:var(--ui-ink);font:inherit;font-weight:600;font-size:14px;text-align:left;cursor:pointer}
+  .list .view::after{content:"";position:absolute;inset:0;border-radius:10px}
+  .list .view:focus-visible{outline:none}
+  .list .view:focus-visible::after{outline:2px solid var(--ui-focus);outline-offset:2px}
+  .labels{display:flex;flex-wrap:wrap;gap:4px}
+  .list .labels{margin-top:4px}
+  /* Tổng quan concept: nút ▾ cạnh "Concept X" mở bảng ảnh chụp lớn của mọi concept (shots/ của shots.mjs, theo bề mặt và khổ đang
+     xem) ngay dưới hộp Trộn, phủ bề ngang hộp, đè lên màn lớn, để lướt và so. Theo vòng, vòng mới nhất trên cùng, kèm góp ý của vòng
+     và nhãn. Bấm một ảnh thì xem concept đó. Cột trái giữ ảnh nhỏ để chọn nhanh */
+  .mix .seg .caret{display:inline-flex;align-items:center;padding:3px 9px 3px 7px}
+  .caret::before{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-2px) rotate(45deg)}
+  .caret[aria-expanded="true"]::before{transform:translateY(2px) rotate(-135deg)}
+  .seg [data-tab="concept"][aria-pressed="true"]+.caret{background:var(--ui-ink);color:var(--ui-bg);border-left-color:var(--ui-muted)}
+  .menu{position:absolute;top:100%;left:-1px;right:-1px;z-index:6;margin-top:6px;overflow:auto;padding:6px 14px 14px;
+    background:var(--ui-surface);border:1px solid var(--ui-line);border-radius:10px;box-shadow:var(--ui-shadow)}
+  .menu .round+.round{margin-top:12px;padding-top:8px;border-top:1px solid var(--ui-line)}
+  .menu h3{display:flex;gap:8px;align-items:baseline;margin:4px 0 2px;font-size:13px;font-weight:600}
+  .menu h3 span{color:var(--ui-muted);font-weight:400}
+  .menu .note{margin:0;color:var(--ui-muted);font-size:12px;line-height:1.4}
+  .menu .cards{list-style:none;margin:6px -6px 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px}
+  .menu.tall .cards{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  .menu .item{position:relative;display:flex;flex-direction:column;gap:4px;padding:6px;border-radius:8px}
+  .menu .item:hover{background:var(--ui-bg)}
+  .menu .view{display:flex;flex-direction:column;gap:6px;padding:0;border:0;background:none;color:var(--ui-ink);font:inherit;font-size:13px;font-weight:600;line-height:1.4;text-align:left;cursor:pointer}
+  .menu .view::after{content:"";position:absolute;inset:0;border-radius:8px}
+  .menu .view:focus-visible{outline:none}
+  .menu .view:focus-visible::after{outline:2px solid var(--ui-focus);outline-offset:-2px}
+  .shot{display:grid;place-items:center;overflow:hidden;border:1px solid var(--ui-line);border-radius:6px;background:var(--ui-bg);color:var(--ui-muted);font-size:12px;font-weight:400;text-align:center}
+  .shot img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+  .shot.miss{padding:8px;overflow-wrap:anywhere}
+  .menu .item:has(.view[aria-current="true"]) .shot{outline:2px solid var(--ui-focus);outline-offset:1px}
   .lab{font-size:12px;line-height:1.4;padding:1px 6px;border-radius:4px;border:1px solid var(--ui-line);color:var(--ui-muted)}
   .lab.rec{background:var(--ui-ok-bg);color:var(--ui-ok-ink);border-color:transparent}
   .lab.warn{background:var(--ui-warn-bg);color:var(--ui-warn-ink);border-color:transparent}
@@ -70,13 +121,42 @@
   .frame iframe{position:absolute;top:0;left:0;border:0;transform-origin:0 0;background:#FFFFFF} /* color-ok: nền của khung trước khi màn xem trước tải xong */
   .stack{display:flex;flex-direction:column;gap:12px;min-width:0}
   .box{background:var(--ui-surface);border:1px solid var(--ui-line);border-radius:10px;padding:10px 12px}
+  /* Hộp Trộn (thanh xem + ma trận) dính trên đỉnh khi cuộn xuống xem màn lớn: chọn ô và thấy màn đổi cùng lúc.
+     Dải nền trên và dưới che phần trang cuộn qua. Màn hẹp hoặc thấp thì không dính, để hộp không chiếm gần hết màn */
+  @media (min-width:1000px) and (min-height:640px){
+    .dock{position:sticky;top:0;z-index:2;margin:-12px 0 -8px;padding:12px 0 8px;background:var(--ui-bg)}
+  }
+  /* Hộp Trộn gọn hơn phần còn lại của bảng: nút và ô thấp, chữ 13px, để màn lớn còn nhiều chỗ khi hộp dính trên đỉnh.
+     Ô ma trận vẫn cao 24px, đủ cỡ chạm tối thiểu */
+  .box.mix{padding:8px 12px}
+  .mix .bar{gap:6px 12px;margin-bottom:2px;font-size:13px}
+  .mix h2{margin:0;font-size:14px}
+  .mix .seg>span{padding:3px 8px;font-size:12px}
+  .mix .seg button{padding:3px 10px;font-size:13px;line-height:1.4}
+  .mix .code output{padding:2px 8px;line-height:1.4}
+  .mix .code button{padding:2px 10px;font-size:13px;line-height:1.4}
+  /* Đã dính (người dùng cuộn xuống xem màn lớn): hộp thu còn một dòng, màn lớn gần như hiện trọn. Ma trận ẩn; nút Đổi trộn
+     hiện bản trộn đang chọn bằng 4 ô nhỏ, bấm thì ma trận thả xuống đè lên màn lớn. Mã trộn ẩn vì 4 ô đã nói thay */
+  .box.mix{position:relative}
+  .layout{position:relative}
+  .dock-mark{position:absolute;top:24px;left:0;width:1px;height:1px;pointer-events:none}
+  .pick{display:none;align-items:center;gap:6px;padding:2px 8px;border:1px solid var(--ui-line);border-radius:8px;background:var(--ui-surface);color:var(--ui-ink);font:inherit;font-size:13px;line-height:1.4;cursor:pointer}
+  .pick[aria-expanded="true"]{border-color:var(--ui-ink)}
+  .pick>span{display:inline-flex;gap:4px;align-items:center}
+  .pick .glyph{max-width:80px;font-size:13px}
+  .pick .nut{max-width:80px;padding:1px 6px;font-size:11px}
+  .pick .pal{width:44px;height:14px}
+  .stuck .pick{display:inline-flex}
+  .stuck .mix .bar{margin-bottom:0}
+  .stuck .code>span:first-child,.stuck .code output{display:none}
+  .stuck .mix .scroll{display:none}
+  .stuck.open .mix .scroll{display:block;position:absolute;left:-1px;right:-1px;top:100%;margin-top:4px;padding:4px 12px;background:var(--ui-surface);border:1px solid var(--ui-line);border-radius:10px;box-shadow:var(--ui-shadow)}
   .scroll{position:relative;overflow-x:auto} /* position: chữ ẩn (.sr-only) của ô trống trong ma trận cuộn theo khung, không kéo rộng trang */
-  .matrix{border-collapse:separate;border-spacing:6px 4px;font-size:13px}
+  .matrix{border-collapse:separate;border-spacing:6px 2px;font-size:13px;line-height:1.3}
   .matrix th{font-weight:600;color:var(--ui-muted);white-space:nowrap;padding:0 6px 0 0;text-align:left}
-  .matrix thead th{text-align:center;color:var(--ui-ink)}
-  .matrix th[scope="row"],.matrix thead th:first-child{position:sticky;left:0;z-index:1;background:var(--ui-surface)}
+  .matrix th[scope="row"]{position:sticky;left:0;z-index:1;background:var(--ui-surface)}
   .matrix td{text-align:center;min-width:76px}
-  .cell{position:relative;display:flex;align-items:center;justify-content:center;min-height:30px;padding:4px;border:1px solid var(--ui-line);border-radius:6px;background:var(--ui-surface);cursor:pointer}
+  .cell{position:relative;display:flex;align-items:center;justify-content:center;min-height:24px;padding:1px 4px;border:1px solid var(--ui-line);border-radius:6px;background:var(--ui-surface);cursor:pointer}
   .cell input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
   .cell:has(input:checked){outline:2px solid var(--ui-focus);outline-offset:1px}
   .cell:has(input:focus-visible){box-shadow:0 0 0 4px var(--ui-focus)}
@@ -84,13 +164,24 @@
   .let{font-weight:700}
   .pal{display:flex;width:64px;height:16px;border-radius:3px;overflow:hidden;border:1px solid var(--line)}
   .pal span{flex:1}
-  .glyph{display:inline-block;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px 6px;border-radius:3px;background:var(--bg);color:var(--ink);font-family:var(--font-display);font-size:16px;line-height:1.2}
-  .nut{display:inline-block;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 10px;background:var(--primary);color:var(--on-primary);border:var(--border-width,1px) solid var(--line);border-radius:var(--radius-md);box-shadow:var(--shadow);font:500 12px/1.2 var(--font-body)}
+  .glyph{display:inline-block;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px;border-radius:3px;background:var(--bg);color:var(--ink);font-family:var(--font-display);font-size:14px;line-height:1.25}
+  .nut{display:inline-block;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px 8px;background:var(--primary);color:var(--on-primary);border:var(--border-width,1px) solid var(--line);border-radius:var(--radius-md);box-shadow:var(--shadow);font:500 12px/1.2 var(--font-body)}
   .bar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
   .code{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:0}
   .code output{font-family:ui-monospace,Consolas,monospace;padding:4px 8px;border-radius:6px;background:var(--ui-bg);border:1px solid var(--ui-line);overflow-wrap:anywhere}
   .code button,.more{border:1px solid var(--ui-line);background:var(--ui-surface);color:var(--ui-ink);border-radius:8px;padding:4px 10px;font:inherit;font-size:14px;cursor:pointer}
-  .caption{margin:0;color:var(--ui-muted);font-size:14px}
+  /* Chú thích của màn đang xem nằm cuối thanh Trộn, không chiếm dòng riêng trên màn lớn: một dòng, bấm thì cả câu thả xuống đè lên
+     màn lớn. Thanh chật thì chú thích xuống dòng riêng. Trình đọc màn hình vẫn đọc đủ câu ở summary */
+  .caption{position:relative;flex:1 1 200px;min-width:0;height:24px;color:var(--ui-muted);font-size:13px}
+  .caption>summary{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:24px;cursor:pointer}
+  .caption[open]>summary{position:absolute;z-index:4;top:-5px;right:-9px;width:max(calc(100% + 18px),min(560px,calc(100vw - 48px)));padding:4px 8px;
+    white-space:normal;line-height:1.5;color:var(--ui-ink);background:var(--ui-surface);border:1px solid var(--ui-line);border-radius:8px;box-shadow:var(--ui-shadow)}
+  /* Rê chuột hoặc focus vào ô của hàng Màn và ý: ảnh chụp màn của concept đó (shots/, do shots.mjs chụp) hiện ngay dưới ma trận,
+     đè lên màn lớn, thẳng cột với ô. Ảnh ở khổ và bề mặt đang xem; chưa chụp thì báo thiếu ảnh */
+  .peek{position:absolute;z-index:5;padding:6px;background:var(--ui-surface);border:1px solid var(--ui-line);border-radius:10px;box-shadow:var(--ui-shadow);pointer-events:none}
+  .peek img{display:block;width:360px;max-width:calc(100vw - 64px);height:auto;border-radius:6px;background:var(--ui-bg)}
+  .peek.tall img{width:180px}
+  .peek p{margin:4px 2px 0;font-size:12px;line-height:1.4;color:var(--ui-muted)}
   .detail{display:flex;flex-direction:column;gap:12px;margin-top:10px}
   .idea{margin:0;font-size:16px}
   .facts{display:grid;grid-template-columns:minmax(120px,max-content) minmax(0,1fr);gap:4px 12px;margin:0;font-size:13px}
@@ -138,35 +229,43 @@
 </head>
 <body>
 <div class="wrap">
-  <header class="top">
-    <div>
-      <h1 data-project>Bảng concept</h1>
-      <p class="project" data-summary></p>
-    </div>
-    <div class="controls">
-      <div class="seg" role="group" aria-label="Nền"><span>Nền</span><button type="button" data-set-theme="light">Sáng</button><button type="button" data-set-theme="dark">Tối</button></div>
-      <div class="seg" role="group" aria-label="Khổ màn xem trước"><span>Khổ màn</span><button type="button" data-set-width="1440">1440</button><button type="button" data-set-width="390">390</button></div>
-    </div>
-  </header>
+  <header class="top"><h1 data-project>Bảng concept</h1></header>
   <div data-banner-slot></div>
   <div class="warn" role="alert" data-board-error hidden></div>
-  <details class="fold brief"><summary>Brief concept</summary><dl data-brief></dl></details>
   <p class="empty" data-empty hidden>Chưa có concept nào. Viết concept vào concepts.js (references/vong-dau.md, A3 bước 2) rồi mở lại trang này.</p>
   <main class="layout">
-    <nav class="list" aria-label="Các concept" data-list></nav>
-    <div class="stack">
-      <section class="box" aria-labelledby="mix-h">
-        <h2 id="mix-h" class="sr-only">Trộn</h2>
-        <div class="scroll"><table class="matrix" data-matrix></table></div>
-      </section>
-      <section class="stack" aria-label="Màn xem trước">
-        <div class="bar">
-          <div class="seg" role="group" aria-label="Bề mặt" data-surface-seg hidden><span>Bề mặt</span></div>
-          <div class="seg" role="group" aria-label="Đang xem"><button type="button" data-tab="concept">Concept <span data-tab-concept></span></button><button type="button" data-tab="mix">Bản trộn</button></div>
-          <p class="code">Mã trộn: <output data-mix-code></output><button type="button" data-copy>Sao chép</button><span role="status" data-copy-status></span></p>
-          <span data-open-slot></span>
+    <div class="side">
+      <div class="tools">
+        <p class="count" data-summary></p>
+        <p class="count" data-rec hidden></p>
+        <details class="brief"><summary>Brief concept</summary><dl data-brief></dl></details>
+        <div class="pair">
+          <div class="ctl"><span id="ctl-nen">Nền</span><div class="seg" role="group" aria-labelledby="ctl-nen"><button type="button" data-set-theme="light">Sáng</button><button type="button" data-set-theme="dark">Tối</button></div></div>
+          <div class="ctl"><span id="ctl-kho">Khổ màn</span><div class="seg" role="group" aria-labelledby="ctl-kho"><button type="button" data-set-width="1440">1440</button><button type="button" data-set-width="390">390</button></div></div>
         </div>
-        <p class="caption" data-preview-caption></p>
+      </div>
+      <nav class="list" aria-label="Các concept" data-list></nav>
+    </div>
+    <div class="stack">
+      <div class="dock" data-dock>
+        <section class="box mix" aria-labelledby="mix-h">
+          <div class="bar">
+            <h2 id="mix-h">Trộn</h2>
+            <div class="seg" role="group" aria-label="Bề mặt" data-surface-seg hidden><span>Bề mặt</span></div>
+            <div class="views">
+              <div class="seg" role="group" aria-label="Đang xem"><button type="button" data-tab="concept">Concept <span data-tab-concept></span></button><button type="button" class="caret" data-choose aria-expanded="false" aria-controls="concept-menu" aria-label="Tổng quan concept"></button><button type="button" data-tab="mix">Bản trộn</button></div>
+              <nav class="menu" id="concept-menu" aria-label="Tổng quan concept" data-overview hidden></nav>
+            </div>
+            <button type="button" class="pick" data-pick aria-expanded="false" aria-controls="mix-matrix"><span data-pick-chips></span>Đổi trộn</button>
+            <p class="code"><span>Mã trộn:</span> <output data-mix-code></output><button type="button" data-copy>Sao chép</button><span role="status" class="sr-only" data-copy-status></span></p>
+            <span data-open-slot></span>
+            <details class="caption"><summary data-preview-caption></summary></details>
+          </div>
+          <div class="scroll" id="mix-matrix"><table class="matrix" data-matrix></table></div>
+          <div class="peek" data-peek aria-hidden="true" hidden><img alt="" data-peek-img><p data-peek-note></p></div>
+        </section>
+      </div>
+      <section class="stack" aria-label="Màn xem trước">
         <div class="frame" data-frame="preview"><iframe data-preview title="Màn xem trước" tabindex="-1"></iframe></div>
       </section>
       <details class="fold" data-details><summary>Chi tiết của <span data-detail-name></span></summary><div data-detail-slot></div></details>
@@ -182,12 +281,15 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  // Trang gom mở bảng với ?hub: bỏ dòng tiêu đề (thanh tab đã có tên dự án và portal)
+  const inHub = new URLSearchParams(location.search).has('hub');
+  if (inHub) document.documentElement.dataset.hub = '';
   // Thiếu file hoặc dữ liệu sai quy ước: báo rõ rồi dừng, không dựng bảng dở dang
   const fail = msgs => {
     const box = $('[data-board-error]');
     box.innerHTML = `<strong>Chưa dựng được bảng concept.</strong><ul>${msgs.map(m => `<li>${esc(m)}</li>`).join('')}</ul>`;
     box.hidden = false;
-    $('details.brief').hidden = true;
+    $('.tools').hidden = true;
     $('main').hidden = true;
   };
   const missing = [];
@@ -217,6 +319,8 @@
   const widthOf = key => (SURF.find(s => s.key === key) || {}).width || 1440;
   let width = widthOf('');
   const mode = () => (window.theme ? window.theme.get() : 'light');
+  // Báo Nền đang chọn cho trang gom, để thanh tab cùng nền với bảng
+  const tellHub = () => { if (inHub) parent.postMessage({ conceptBoardTheme: mode() }, '*'); };
   const palette = c => (mode() === 'dark' && c.colors.dark) || c.colors.light || c.colors.dark;
   // Chế độ của bảng màu đang hiện (concept chỉ có một nền thì là nền đó): vai dẫn xuất đo theo đúng chế độ này
   const paletteMode = c => (mode() === 'dark' && c.colors.dark) ? 'dark' : (c.colors.light ? 'light' : 'dark');
@@ -233,9 +337,9 @@
   if (D.example) $('[data-banner-slot]').innerHTML = '<p class="banner" data-example-banner>Đang hiện dữ liệu mẫu của khuôn. Dữ liệu của dự án viết vào concepts.js theo khung trống.</p>';
   $('[data-brief]').innerHTML = (D.brief || []).map(b => `<dt>${esc(b.label)}</dt><dd>${esc(b.text)} <small>(${esc(b.source)})</small></dd>`).join('');
   if (!cs.length) { $('[data-empty]').hidden = false; $('main').hidden = true; return; }
-  $('[data-summary]').textContent = `Bảng concept · ${cs.length} concept qua ${rounds.length} vòng`;
+  $('[data-summary]').textContent = `${cs.length} concept qua ${rounds.length} vòng`;
 
-  // Token của mỗi concept áp cho mọi vùng mang data-c="<id>": thẻ ở danh sách, ô ma trận, khối chi tiết
+  // Token của mỗi concept áp cho mọi vùng mang data-c="<id>": thẻ ở danh sách, ô ma trận, 4 ô của Đổi trộn, khối chi tiết
   const scoped = document.createElement('style');
   scoped.textContent = cs.map(c => T.cssText(c, `[data-c="${c.id}"]`)).join('\n');
   document.head.appendChild(scoped);
@@ -245,6 +349,9 @@
   }
 
   const rec = cs.find(c => c.recommended === true) || cs[0];
+  // Chấm xanh của concept khuyến nghị: ở hàng đầu có chữ, ở hàng Màn và ý chỉ có chấm
+  const dot = c => (c.recommended === true ? '<span class="dot" aria-hidden="true"></span>' : '');
+  if (rec.recommended === true) { const r = $('[data-rec]'); r.innerHTML = `${dot(rec)}Khuyến nghị: ${L(rec.id)}`; r.hidden = false; }
   const seed = c => ({ man: T.screenOf(c), mau: c.id, chu: c.id, nut: c.id });
   // mixed: người dùng đã chọn ô trong ma trận. Chưa chọn thì bản trộn đi theo concept đang xem.
   // folded, showAll: trạng thái người dùng đặt, giữ qua lần dựng lại khi đổi nền
@@ -264,9 +371,12 @@
     return out;
   }
 
+  const labelsOf = c => (c.recommended === true ? '<span class="lab rec">Khuyến nghị</span>' : '') + (c.screen ? `<span class="lab">màn ${L(c.screen)}</span>` : '') +
+    warnings(c).map(([k, t]) => `<span class="lab warn" data-card-warning="${k}">${esc(t)}</span>`).join('');
+
+  // Thẻ ở cột trái: ảnh nhỏ (màn chính ở 1440), tên, nhãn. data-card và data-card-warning: shots.mjs đọc cảnh báo của bảng từ đây
   function card(c) {
-    const labels = (c.recommended === true ? '<span class="lab rec">Khuyến nghị</span>' : '') + (c.screen ? `<span class="lab">màn ${L(c.screen)}</span>` : '') +
-      warnings(c).map(([k, t]) => `<span class="lab warn" data-card-warning="${k}">${esc(t)}</span>`).join('');
+    const labels = labelsOf(c);
     return `<li class="item" data-card="${esc(c.id)}" data-c="${esc(c.id)}">
       <div class="frame" data-frame="thumb"><iframe data-screen="${esc(c.id)}" src="${esc(conceptSrc(c))}" title="Màn của concept ${L(c.id)}" tabindex="-1" loading="lazy"></iframe></div>
       <button type="button" class="view" data-view="${esc(c.id)}" aria-current="${c.id === state.view}">${L(c.id)} · ${esc(c.name)}</button>
@@ -286,6 +396,27 @@
     }).join('');
   }
 
+  // Bảng tổng quan (nút ▾ cạnh "Concept X"): ảnh chụp lớn theo vòng, vòng mới nhất trên cùng, kèm góp ý của vòng.
+  // Chỉ dựng khi mở (ảnh theo bề mặt và khổ đang xem), đóng thì xoá, nên thẻ ở đây không trùng với thẻ ở cột trái
+  function overview() {
+    const el = $('[data-overview]'), [w, h] = SIZE[width];
+    el.classList.toggle('tall', h > w);
+    el.innerHTML = [...rounds].reverse().map(n => {
+      const items = cs.filter(c => roundOf(c) === n), note = noteOf(n);
+      return `<section class="round" data-ov-round="${n}">
+        <h3>Vòng ${n}<span>${items.length} concept</span></h3>
+        ${note ? `<p class="note" data-ov-note>Góp ý: ${esc(note)}</p>` : ''}
+        <ul class="cards">${items.map(c => { const labels = labelsOf(c).replace(/ data-card-warning="[^"]*"/g, '');
+          return `<li class="item" data-ov="${esc(c.id)}">
+            <button type="button" class="view" data-view="${esc(c.id)}" aria-current="${c.id === state.view}">` +
+              `<span class="shot" style="aspect-ratio:${w}/${h}"><img alt="" src="${esc(`shots/${T.pageOf(c.id, state.surface)}-${width}.png`)}" width="${w}" height="${h}"></span>` +
+              `<span>${L(c.id)} · ${esc(c.name)}</span></button>
+            ${labels ? `<span class="labels">${labels}</span>` : ''}
+          </li>`; }).join('')}</ul>
+      </section>`;
+    }).join('');
+  }
+
   const sample = String((D.content && D.content.headline) || 'Aa').split(/\s+/).slice(0, 2).join(' ');
   const cta = (D.content && D.content.cta) || 'Nút';
   // Phần nhìn của ô ẩn với trình đọc màn hình: tên của ô radio chỉ là "<lớp> của <concept>" trong .sr-only
@@ -295,13 +426,14 @@
     if (k === 'chu') return `<span class="glyph" aria-hidden="true">${esc(sample)}</span>`;
     return `<span class="nut" aria-hidden="true">${esc(cta)}</span>`;
   }
+  // Hàng Màn và ý mang chữ cái của mọi cột nên ma trận không cần hàng tiêu đề riêng (hộp Trộn thấp hơn một hàng).
+  // Concept mượn màn: ô không chọn được, hiện chữ cái mờ kèm màn nó mượn để cột vẫn có tên
   function matrix() {
-    const head = `<thead><tr><th scope="col">Trộn</th>${cs.map(c => `<th scope="col">${L(c.id)}</th>`).join('')}</tr></thead>`;
     const body = LAYERS.map(([k, label]) => `<tr><th scope="row">${label}</th>${cs.map(c => (k === 'man' && c.screen)
-      ? `<td class="none"><span aria-hidden="true">·</span><span class="sr-only">${L(c.id)} dùng màn của ${L(c.screen)}</span></td>`
-      : `<td><label class="cell" data-c="${esc(c.id)}"><input type="radio" name="mix-${k}" value="${esc(c.id)}"${state.mix[k] === c.id ? ' checked' : ''}>` +
-        `${cellBody(k, c)}<span class="sr-only">${label} của ${L(c.id)}</span></label></td>`).join('')}</tr>`).join('');
-    $('[data-matrix]').innerHTML = head + `<tbody>${body}</tbody>`;
+      ? `<td class="none" data-shot="${esc(c.id)}"><span aria-hidden="true"><span class="let">${L(c.id)}</span>${dot(c)} màn ${L(c.screen)}</span><span class="sr-only">${L(c.id)} dùng màn của ${L(c.screen)}</span></td>`
+      : `<td${k === 'man' ? ` data-shot="${esc(c.id)}"` : ''}><label class="cell" data-c="${esc(c.id)}"><input type="radio" name="mix-${k}" value="${esc(c.id)}"${state.mix[k] === c.id ? ' checked' : ''}>` +
+        `${cellBody(k, c)}${k === 'man' ? dot(c) : ''}<span class="sr-only">${label} của ${L(c.id)}${k === 'man' && c.recommended === true ? ', khuyến nghị' : ''}</span></label></td>`).join('')}</tr>`).join('');
+    $('[data-matrix]').innerHTML = `<tbody>${body}</tbody>`;
   }
 
   function detail(c) {
@@ -360,11 +492,13 @@
     const s = state.tab === 'concept' ? conceptSrc(c, state.surface) : src(m.man, code, state.surface);
     const fr = $('iframe[data-preview]');
     if (fr.getAttribute('src') !== s) fr.setAttribute('src', s);
-    $('[data-preview-caption]').textContent = state.tab === 'concept'
-      ? `${L(c.id)} · ${c.name}: ${yOf(c, 'idea')}`
-      : `Màn của ${L(m.man)} · màu của ${L(m.mau)} · chữ của ${L(m.chu)} · nút và hình của ${L(m.nut)}. ${byId(m.man).idea || ''}`;
+    // Bản trộn: ý đi theo màn, nên chú thích là của concept có màn; các lớp đã có ở Mã trộn ngay cạnh
+    const who = state.tab === 'concept' ? c : byId(m.man);
+    $('[data-preview-caption]').textContent = `${L(who.id)} · ${who.name}: ${yOf(who, 'idea')}`;
     $('[data-open-slot]').innerHTML = `<a href="${esc(s)}" target="_blank" rel="noopener">Mở màn riêng</a>`;
     $('[data-tab-concept]').textContent = L(c.id);
+    $('[data-pick-chips]').innerHTML = LAYERS.map(([k]) => `<span data-c="${esc(m[k])}">${cellBody(k, byId(m[k]))}</span>`).join('');
+    $('[data-pick]').setAttribute('aria-label', `Đổi trộn: màn ${L(m.man)}, màu ${L(m.mau)}, chữ ${L(m.chu)}, nút và hình ${L(m.nut)}`);
     for (const b of $$('[data-tab]')) b.setAttribute('aria-pressed', String(b.dataset.tab === state.tab));
     $('[data-detail-name]').textContent = `${L(c.id)} · ${c.name}`;
     for (const sec of $$('[data-tile]')) sec.hidden = sec.dataset.tile !== c.id;
@@ -394,10 +528,150 @@
     preview();
     pressed();
     fit();
+    placeMark();
   }
 
   const pick = i => { state.mix[i.name.slice(4)] = i.value; state.mixed = true; state.tab = 'mix'; preview(); };
+  // Brief thả xuống đè lên bảng: bấm ra ngoài hoặc nhấn Esc thì đóng
+  const brief = $('details.brief');
+  // Chú thích thả xuống (cuối thanh Trộn): bấm ra ngoài, nhấn Esc, hoặc mở ma trận thì đóng
+  const capBox = $('details.caption');
+  // Bảng tổng quan: bấm ra ngoài, nhấn Esc, chọn một concept, hoặc mở chú thích hay ma trận thì đóng.
+  // Ảnh chưa chụp: ô ghi thiếu file nào (lỗi tải ảnh không nổi bọt, nên nghe ở pha bắt)
+  const views = $('.views'), menu = $('[data-overview]'), chooseBtn = $('[data-choose]');
+  menu.addEventListener('error', e => {
+    if (e.target.tagName !== 'IMG') return;
+    const s = e.target.parentElement;
+    s.classList.add('miss');
+    s.textContent = `Chưa có ảnh chụp ${e.target.getAttribute('src')}`;
+  }, true);
+  // Ảnh chụp khi rê chuột hoặc focus vào ô của hàng Màn và ý: shots/<màn>-<khổ>.png của shots.mjs, nền sáng
+  // (ảnh -dark chỉ có khi người dùng xin chế độ tối).
+  // Ảnh nằm dưới ma trận, thẳng cột với ô; khoảng hở giữa các ô không làm ảnh tắt rồi hiện lại
+  const box = $('.box.mix'), peek = $('[data-peek]'), shot = $('[data-peek-img]'), peekNote = $('[data-peek-note]');
+  let peekAt = null;
+  const hidePeek = () => { peek.hidden = true; peekAt = null; };
+  const placePeek = () => {
+    const b = box.getBoundingClientRect(), r = peekAt.getBoundingClientRect(), w = peek.offsetWidth;
+    const m = $('#mix-matrix').getBoundingClientRect();
+    peek.style.top = `${Math.round(m.bottom - b.top + 4)}px`;
+    peek.style.left = `${Math.round(Math.max(0, Math.min(r.left + r.width / 2 - b.left - w / 2, b.width - w)))}px`;
+  };
+  function showPeek(el) {
+    if (el === peekAt) return;
+    peekAt = el;
+    const c = byId(el.dataset.shot), [w, h] = SIZE[width], base = `shots/${T.pageOf(c.id, state.surface)}-${width}`;
+    Object.assign(shot, { width: w, height: h, hidden: false });
+    peek.classList.toggle('tall', h > w);
+    peekNote.textContent = `${L(c.id)} · ${c.name}`;
+    // Chưa chụp: hộp chỉ còn dòng chữ, hẹp lại, nên đặt lại cho thẳng cột
+    shot.onerror = () => {
+      shot.hidden = true;
+      peekNote.textContent = `${L(c.id)} · ${c.name}: chưa có ảnh chụp ${base}.png`;
+      if (peekAt === el) placePeek();
+    };
+    shot.src = `${base}.png`;
+    peek.hidden = false;
+    placePeek();
+  }
+  const grid = $('[data-matrix]');
+  grid.addEventListener('mouseover', e => {
+    const td = e.target.closest('td');
+    if (td && td.dataset.shot) showPeek(td); else if (td || e.target.closest('th')) hidePeek();
+  });
+  grid.addEventListener('mouseleave', hidePeek);
+  grid.addEventListener('focusin', e => { const td = e.target.closest('td[data-shot]'); if (td) showPeek(td); });
+  grid.addEventListener('focusout', hidePeek);
+  // Hộp Trộn thu còn một dòng khi đã dính trên đỉnh và mốc .dock-mark đã cuộn khỏi màn.
+  // Chỗ hộp nhường lại bù bằng margin để màn lớn không nhảy lên lúc hộp thu.
+  // Ma trận thả xuống (Đổi trộn) đóng khi bấm ra ngoài hộp, nhấn Esc, hoặc cuộn về đầu trang
+  const dock = $('[data-dock]'), pickBtn = $('[data-pick]'), canStick = matchMedia('(min-width:1000px) and (min-height:640px)');
+  const openPick = on => { dock.classList.toggle('open', on); pickBtn.setAttribute('aria-expanded', String(on)); if (!on) hidePeek(); };
+  // Mở bảng tổng quan: dựng lại với ảnh của bề mặt và khổ đang xem, cao vừa phần màn còn lại dưới hộp Trộn,
+  // focus vào concept đang xem
+  function openMenu(on) {
+    if (on === !menu.hidden) return;
+    menu.hidden = !on;
+    chooseBtn.setAttribute('aria-expanded', String(on));
+    hidePeek();
+    if (!on) { menu.innerHTML = ''; return; }
+    openPick(false);
+    capBox.open = false;
+    overview();
+    menu.style.maxHeight = `${Math.max(320, Math.floor(innerHeight - box.getBoundingClientRect().bottom - 18))}px`;
+    const cur = menu.querySelector('[data-view][aria-current="true"]');
+    if (cur) { cur.focus({ preventScroll: true }); cur.scrollIntoView({ block: 'nearest' }); }
+  }
+  chooseBtn.addEventListener('click', () => openMenu(menu.hidden));
+  capBox.addEventListener('toggle', () => { if (capBox.open) { openPick(false); openMenu(false); } });
+  const mark = document.createElement('div');
+  mark.className = 'dock-mark';
+  $('main').prepend(mark);
+  // Mốc nằm ngay trên chỗ hộp bắt đầu dính: cuộn xuống một chút là hộp thu.
+  // alignAt: chỗ cuộn mà màn lớn vừa chạm đáy hộp thu. Từ mốc tới alignAt, giữa hộp thu và màn lớn còn hở một dải (phần
+  // margin bù chưa cuộn qua); cuộn qua alignAt thì màn lớn chui dần dưới hộp. Mỗi nấc con lăn khoảng 100px nên trang hiếm khi
+  // dừng đúng alignAt: thu muộn thì che mất header của màn lớn, thu sớm thì hở. Vì vậy trang dừng giữa mốc và alignAt thì tự trôi
+  // nốt theo hướng đang cuộn (settle ở dưới).
+  // Đo hộp thu bằng cách thu thử rồi bỏ, trong cùng một lần chạy nên không vẽ ra; margin tăng trước để trang không ngắn đi.
+  // Vị trí đo theo màn xem trước ngay sau hộp: offsetTop của chính hộp (sticky) đã cộng phần lệch lúc dính
+  let markAt = 0, alignAt = 0;
+  function placeMark() {
+    if (!canStick.matches || dock.classList.contains('stuck')) return;
+    const mb = parseFloat(getComputedStyle(dock).marginBottom) || 0, gap = parseFloat(getComputedStyle(dock.parentElement).rowGap) || 0;
+    const full = dock.offsetHeight;
+    dock.style.marginBottom = `${mb + full}px`;
+    dock.classList.add('stuck');
+    const small = dock.offsetHeight;
+    dock.classList.remove('stuck');
+    dock.style.marginBottom = '';
+    const next = dock.nextElementSibling.offsetTop - mb - gap, mainAt = Math.round($('main').getBoundingClientRect().top + scrollY);
+    const top = Math.max(1 - mainAt, Math.round(next - full) - 8);
+    mark.style.top = `${top}px`;
+    markAt = mainAt + top;
+    alignAt = mainAt + Math.round(next - small);
+  }
+  let above = false;
+  function condense() {
+    const stuck = canStick.matches && above;
+    if (stuck === dock.classList.contains('stuck')) return;
+    openPick(false);
+    if (!stuck) { dock.classList.remove('stuck'); dock.style.marginBottom = ''; return; }
+    // Tăng margin trước rồi mới thu: lúc đo, trang không ngắn đi (trang ngắn đi thì trình duyệt kéo chỗ cuộn lên cho vừa)
+    const mb = parseFloat(getComputedStyle(dock).marginBottom) || 0, full = dock.offsetHeight;
+    dock.style.marginBottom = `${mb + full}px`;
+    dock.classList.add('stuck');
+    dock.style.marginBottom = `${mb + full - dock.offsetHeight}px`;
+  }
+  new IntersectionObserver(([e]) => { above = !e.isIntersecting && e.boundingClientRect.top < 0; condense(); }).observe(mark);
+  // Cuộn dừng giữa mốc và alignAt (còn hở giữa hộp thu và màn lớn): trôi nốt theo hướng vừa cuộn, xuống thì tới alignAt
+  // (màn lớn sát đáy hộp, đủ header), lên thì về trên mốc (hộp đầy đủ). scrollend phát một lần mỗi lần cuộn xong, không phải
+  // nghe scroll (P04). Trình duyệt chưa có scrollend thì bỏ qua: chỉ còn dải hở khi dừng đúng khoảng đó
+  const motion = matchMedia('(prefers-reduced-motion: reduce)');
+  let lastY = scrollY;
+  addEventListener('scrollend', () => {
+    const y = scrollY, down = y >= lastY;
+    lastY = y;
+    if (!canStick.matches || y <= markAt || y >= alignAt - 1) return;
+    scrollTo({ top: down ? alignAt : Math.max(0, markAt - 2), behavior: motion.matches ? 'auto' : 'smooth' });
+  });
+  pickBtn.addEventListener('click', () => openPick(!dock.classList.contains('open')));
+  // Bấm vào màn lớn (khung iframe) không phát click ở trang này, chỉ làm trang mất focus: lúc đó đóng ma trận và brief
+  addEventListener('blur', () => setTimeout(() => {
+    if (document.activeElement && document.activeElement.tagName === 'IFRAME') { openPick(false); openMenu(false); brief.open = false; capBox.open = false; }
+  }));
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    hidePeek();
+    if (brief.open) { brief.open = false; brief.querySelector('summary').focus(); }
+    if (capBox.open) { capBox.open = false; capBox.querySelector('summary').focus(); }
+    if (!menu.hidden) { openMenu(false); chooseBtn.focus(); }
+    if (dock.classList.contains('open')) { openPick(false); pickBtn.focus(); }
+  });
   document.addEventListener('click', e => {
+    if (!brief.contains(e.target)) brief.open = false;
+    if (!capBox.contains(e.target)) capBox.open = false;
+    if (!dock.contains(e.target)) openPick(false);
+    if (!views.contains(e.target)) openMenu(false);
     const radio = e.target.closest('input[type="radio"][name^="mix-"]');
     if (radio) return pick(radio);
     const v = e.target.closest('[data-view]');
@@ -405,6 +679,7 @@
       state.view = v.dataset.view;
       state.tab = 'concept';
       if (!state.mixed) state.mix = seed(byId(state.view));
+      if (menu.contains(v)) { openMenu(false); chooseBtn.focus(); }
       return preview();
     }
     const tab = e.target.closest('[data-tab]');
@@ -430,17 +705,42 @@
   });
   // Đổi ô bằng phím mũi tên trong một hàng radio
   document.addEventListener('change', e => { const i = e.target.closest('input[type="radio"][name^="mix-"]'); if (i) pick(i); });
-  for (const b of $$('[data-set-theme]')) b.addEventListener('click', () => { window.theme.set(b.dataset.setTheme); render(); });
+  for (const b of $$('[data-set-theme]')) b.addEventListener('click', () => { window.theme.set(b.dataset.setTheme); render(); tellHub(); });
   for (const b of $$('[data-set-width]')) b.addEventListener('click', () => { width = +b.dataset.setWidth; pressed(); fit(); });
   // Đổi bề mặt thì khổ màn theo khổ của bề mặt đó (HLV trên điện thoại: 390)
-  for (const b of $$('[data-set-surface]')) b.addEventListener('click', () => { state.surface = b.dataset.setSurface; width = widthOf(state.surface); preview(); pressed(); fit(); });
-  $('[data-copy]').addEventListener('click', async () => {
-    const code = $('[data-mix-code]').textContent, st = $('[data-copy-status]');
-    try { await navigator.clipboard.writeText(code); st.textContent = 'Đã chép.'; }
-    catch (e) { st.textContent = 'Trình duyệt chặn chép. Chọn mã rồi chép tay.'; }
+  for (const b of $$('[data-set-surface]')) b.addEventListener('click', () => { state.surface = b.dataset.setSurface; width = widthOf(state.surface); preview(); pressed(); fit(); placeMark(); });
+  // Chép mã trộn. Bảng nằm trong khung của trang gom (file://) thì trình duyệt chặn navigator.clipboard,
+  // nên chép bằng execCommand ngay trong cú bấm; hỏng thì thử clipboard; vẫn hỏng thì chọn sẵn mã để chép tay
+  // Kết quả hiện ngay trên nút rồi tự trở lại "Sao chép": không đè lên ma trận, thanh không đổi bề rộng.
+  // Trình đọc màn hình nghe câu đầy đủ ở dòng trạng thái ẩn
+  let copyTimer;
+  $('[data-copy]').addEventListener('click', async e => {
+    const btn = e.currentTarget, out = $('[data-mix-code]'), code = out.textContent, st = $('[data-copy-status]');
+    const say = (label, text, ms) => {
+      btn.style.minWidth = btn.style.minWidth || btn.offsetWidth + 'px';
+      btn.textContent = label;
+      st.textContent = text;
+      clearTimeout(copyTimer);
+      copyTimer = setTimeout(() => { btn.textContent = 'Sao chép'; st.textContent = ''; }, ms);
+    };
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (err) {}
+    ta.remove();
+    btn.focus();
+    if (!ok) try { await navigator.clipboard.writeText(code); ok = true; } catch (err) {}
+    if (ok) return say('Đã chép', 'Đã chép mã trộn.', 2000);
+    getSelection().selectAllChildren(out);
+    say('Chép tay', 'Trình duyệt chặn chép. Mã đã được chọn sẵn, chép tay.', 4000);
   });
-  addEventListener('resize', fit);
+  addEventListener('resize', () => { hidePeek(); openMenu(false); fit(); placeMark(); condense(); });
   render();
+  tellHub();
 })();
 </script>
 </body>

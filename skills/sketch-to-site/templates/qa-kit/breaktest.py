@@ -45,15 +45,16 @@ def run_set(sub):
 
 
 print(f'Bẻ {n} chỗ trong {rel}')
-try:
-    open(path, 'wb').write(text.replace(old, new).encode('utf-8'))
-    broke = run_set('khi-be')
-finally:
-    open(path, 'wb').write(raw)
-same = open(path, 'rb').read() == raw
-if same:
-    os.remove(bak)
-back = run_set('tra-lai')
+with run_all.shared_browser():
+    try:
+        open(path, 'wb').write(text.replace(old, new).encode('utf-8'))
+        broke = run_set('khi-be')
+    finally:
+        open(path, 'wb').write(raw)
+    same = open(path, 'rb').read() == raw
+    if same:
+        os.remove(bak)
+    back = run_set('tra-lai')
 
 print('Khi bẻ:')
 for name, r in broke:

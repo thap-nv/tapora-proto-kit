@@ -314,7 +314,7 @@ def cmd_thumbs(a):
             else:
                 fresh += 1
     shutil.rmtree(os.path.join(THUMBS, 'out'), ignore_errors=True)
-    with ThreadPoolExecutor(4) as ex:
+    with Q.shared_browser(), ThreadPoolExecutor(4) as ex:
         res = list(ex.map(shoot, jobs))
     shutil.rmtree(os.path.join(THUMBS, 'out'), ignore_errors=True)
     nob = next((err for _, err, no in res if no), None)

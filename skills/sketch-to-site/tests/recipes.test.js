@@ -52,6 +52,49 @@ test('kiểm trước, dựng sau: bộ của tính năng đỏ khi chưa dựng
   assert.match(green.stdout, /^tinh-nang-xuat-excel: \d+ bước · console 0 · .*FAIL 0 +· im lặng 0/m);
 });
 
+// Một trình duyệt chung cho cả lệnh (browser.mjs qua qalib.shared_browser): run_all.py, quick.py, handover.py, breaktest.py không mở
+// mỗi bộ một trình duyệt nữa. Đo 09/10/2026: khởi động cộng tạo/xoá hồ sơ chiếm hơn nửa CPU của một lần run.mjs
+test('qalib.shared_browser(): trong with có QA_CDP và trình duyệt trả lời, sau with biến mất và trình duyệt tắt; thiếu browser.mjs thì vẫn vào ra êm', t => {
+  const dir = prototype(t);
+  const init = spawnSync(PYTHON, [QA_INIT, dir], { cwd: dir, encoding: 'utf8' });
+  assert.equal(init.status, 0, init.stdout + init.stderr);
+  assert.ok(fs.existsSync(path.join(dir, '_qa', 'browser.mjs')), 'qa_init.py phải chép browser.mjs');
+  assert.ok(fs.existsSync(path.join(dir, '_qa', 'launch.mjs')), 'qa_init.py phải chép launch.mjs');
+  // Không mang QA_CDP của trình duyệt chung của file test này vào: test này kiểm chính việc mở trình duyệt
+  const noCdp = { ...process.env, PYTHONIOENCODING: 'utf-8' }; delete noCdp.QA_CDP;
+  const py = `
+import json, os, sys, urllib.request
+sys.path.insert(0, os.path.join(sys.argv[1], '_qa'))
+os.chdir(sys.argv[1])
+import qalib
+def ping(url):
+    try: urllib.request.urlopen(url + '/json/version', timeout=2); return True
+    except Exception: return False
+with qalib.shared_browser():
+    url = os.environ.get('QA_CDP', '')
+    inside = {'url': url, 'alive': ping(url) if url else None}
+    with qalib.shared_browser():
+        inside['nested_same'] = os.environ.get('QA_CDP') == url
+print(json.dumps({'inside': inside, 'after': os.environ.get('QA_CDP'), 'alive_after': ping(url) if url else None}))
+`;
+  const r = spawnSync(PYTHON, ['-c', py, dir], { cwd: dir, encoding: 'utf8', timeout: 60000, env: noCdp });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const o = JSON.parse(r.stdout.trim().split('\n').pop());
+  if (o.inside.url === '' && /Không tìm thấy Edge/.test(r.stderr)) return t.skip('không có trình duyệt');
+  assert.match(o.inside.url, /^http:\/\/127\.0\.0\.1:\d+$/);
+  assert.equal(o.inside.alive, true);
+  assert.equal(o.inside.nested_same, true, 'lồng nhau phải dùng lại trình duyệt đã mở');
+  assert.equal(o.after, null);
+  assert.equal(o.alive_after, false, 'trình duyệt phải tắt sau with');
+  // Bộ kiểm cũ chưa có browser.mjs: vẫn chạy, chỉ không dùng chung
+  fs.rmSync(path.join(dir, '_qa', 'browser.mjs'));
+  const r2 = spawnSync(PYTHON, ['-c', py, dir], { cwd: dir, encoding: 'utf8', timeout: 60000, env: noCdp });
+  assert.equal(r2.status, 0, r2.stdout + r2.stderr);
+  const o2 = JSON.parse(r2.stdout.trim().split('\n').pop());
+  assert.equal(o2.inside.url, '');
+  assert.equal(o2.after, null);
+});
+
 test('run.mjs: bước js chuyển trang thì đợi trang mới tải xong, không sập khi đo bố cục', t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nav-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
