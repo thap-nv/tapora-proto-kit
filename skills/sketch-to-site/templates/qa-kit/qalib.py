@@ -23,6 +23,11 @@ SUITE_NAMES = [s[0] for s in run_all.SUITES]
 NOISY = {tuple(x) for x in CFG.get('noisy', [])}
 # Mã của bộ kiểm chạy trong trang: đổi một file trong số này thì mọi bộ có thể đổi kết quả
 KIT_CODE = ('run.mjs', 'launch.mjs', 'browser.mjs', 'probes.js', 'color.js', 'deep.mjs')
+# Cấu hình cũng vào manifest: đổi khổ, theme, noisy, page_themes là mọi bộ có thể đổi kết quả (chạy tăng dần của handover.py cần biết)
+CONFIG = 'qa.config.json'
+# Theme theo trang: {"<trang hay tiền tố thư mục>": [theme, ...]}, khoá dài nhất thắng; trang không khớp chạy mọi theme.
+# Hệ nhiều bề mặt: bề mặt chỉ dùng một theme thì không chạy theme kia (đo 10/10/2026: tích theme × bộ gần gấp đôi số lượt cần)
+PAGE_THEMES = CFG.get('page_themes') or {}
 
 
 def find_preflight():
@@ -76,7 +81,7 @@ def manifest():
             p = os.path.join(base, n)
             out[os.path.relpath(p, ROOT).replace('\\', '/')] = sha(p)
     for n in os.listdir(HERE):
-        if (n.startswith('steps-') and n.endswith('.json')) or n in KIT_CODE:
+        if (n.startswith('steps-') and n.endswith('.json')) or n in KIT_CODE or n == CONFIG:
             out['_qa/' + n] = sha(os.path.join(HERE, n))
     return out
 
@@ -112,7 +117,7 @@ def affected_suites(changed):
                           for f in d if f.endswith(('.html', '.js', '.css')) and os.path.exists(os.path.join(ROOT, f)))
     pages, suites = set(), set()
     for f in changed:
-        if f in {'_qa/' + n for n in KIT_CODE}:
+        if f in {'_qa/' + n for n in KIT_CODE} or f == '_qa/' + CONFIG:
             return list(SUITE_NAMES)
         if f.startswith('_qa/steps-'):
             key = f[len('_qa/steps-'):-len('.json')]
@@ -145,16 +150,63 @@ DEEP_BY_PAGE = deep_suites()
 DEEP_SUITES = frozenset(DEEP_BY_PAGE.values())
 
 
-def run_suites(names, out_root, themes, shots, deep=False):
-    # Theme sau theme mặc định bỏ các bộ tự đổi theme, giống run_all.py khi có QA_QUERY. shots: chụp ảnh ở mọi theme.
-    # deep: bật lượt kiểm sâu cho các bộ trong DEEP_SUITES (run_all.run chỉ nhận quyết định, không tự chọn bộ)
+_theme_warned = set()
+
+
+def suite_themes(name):
+    # Theme mà bộ này chạy: page_themes của trang (khoá dài nhất khớp trang hay thư mục cha), không có thì mọi theme;
+    # bộ tự đổi theme (theme-*) chỉ chạy ở theme mặc định. Tên bộ không có trong cấu hình: mọi theme, để bộ đã xoá vẫn thành bộ mất
+    page = next((s[1] for s in run_all.SUITES if s[0] == name), None)
+    out = list(THEMES)
+    if page is not None and PAGE_THEMES:
+        keys = [k for k in PAGE_THEMES if page == k.rstrip('/') or page.startswith(k.rstrip('/') + '/')]
+        if keys:
+            k = max(keys, key=len)
+            want = [t for t in (PAGE_THEMES[k] or [])]
+            bad = [t for t in want if t not in THEMES]
+            if bad and k not in _theme_warned:
+                _theme_warned.add(k)
+                print(f'CẢNH BÁO page_themes "{k}": theme {", ".join(bad)} không có trong "themes" của qa.config.json, bỏ qua')
+            out = [t for t in THEMES if t in want] or out
+    if name.startswith(run_all.THEME_PREFIX):
+        out = [t for t in out if t == DEFAULT_THEME]
+    return out
+
+
+def suite_pairs(names, themes):
+    # [(theme, bộ)] sẽ chạy: theo thứ tự theme rồi thứ tự bộ trong cấu hình, chỉ cặp mà suite_themes cho phép
+    return [(th, s) for th in themes for s in run_all.SUITES if s[0] in names and th in suite_themes(s[0])]
+
+
+def reuse_report(th, name, out_root):
+    # Bộ không đổi so với last-green (handover.py chạy tăng dần): chép report.json của mốc sang thư mục chạy, tóm tắt như vừa chạy.
+    # Không có ảnh mới. None khi mốc thiếu report hay file bước không còn
+    src = os.path.join(GREEN, th, name, 'report.json')
+    key = next((s[2] for s in run_all.SUITES if s[0] == name), None)
+    sf = os.path.join(HERE, f'steps-{key}.json') if key else ''
+    if not (os.path.exists(src) and sf and os.path.exists(sf)):
+        return None
+    d = os.path.join(out_root, th, name)
+    os.makedirs(d, exist_ok=True)
+    shutil.copyfile(src, os.path.join(d, 'report.json'))
+    rep = load_json(src)
+    r = run_all.summarize(name, rep, json.load(open(sf, encoding='utf-8'))['steps'])
+    r['reused'] = True
+    return r
+
+
+def run_suites(names, out_root, themes, shots, deep=False, only=None):
+    # Theme theo bộ (suite_themes): bộ tự đổi theme chỉ ở theme mặc định, trang khai page_themes chỉ ở theme của nó. shots: chụp ảnh ở mọi theme.
+    # deep: bật lượt kiểm sâu cho các bộ trong DEEP_SUITES (run_all.run chỉ nhận quyết định, không tự chọn bộ).
+    # only: tập (theme, tên bộ) được chạy; cặp khác bỏ (handover.py chạy tăng dần lấy lại từ mốc)
     res = {}
+    pairs = suite_pairs(names, themes)
     with shared_browser():
         for th in themes:
             os.environ['QA_QUERY'] = THEMES[th]
             os.environ['QA_NOSHOT'] = '' if shots else '1'
-            todo = [s for s in run_all.SUITES if s[0] in names and not (th != DEFAULT_THEME and s[0].startswith(run_all.THEME_PREFIX))]
-            with ThreadPoolExecutor(4) as ex:
+            todo = [s for t, s in pairs if t == th and (only is None or (th, s[0]) in only)]
+            with ThreadPoolExecutor(run_all.WORKERS) as ex:
                 for name, r in ex.map(lambda s: run_all.run(s, os.path.join(out_root, th), deep and s[0] in DEEP_SUITES), todo):
                     if r is not None:
                         res[(th, name)] = r

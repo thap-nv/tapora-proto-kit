@@ -351,7 +351,7 @@ test('tweak-site 1.2: đổi màu qua themes.json và themes.mjs; nợ cũ khôn
 
 test('handover-check 1.2: bảng đọc kết quả có phép đo mới và nợ cũ; cổng hỏi nợ cũ', () => {
   const md = read('skills/handover-check/SKILL.md');
-  assert.match(md, /^> \*\*v1\.5 \(/m);
+  assert.match(md, /^> \*\*v1\.6 \(/m);
   const b4 = section(md, '### B4 · Đọc kết quả', '### B5');
   assert.match(b4, /\*\*Tương phản, ý định, mã lộ, sâu\*\*[^\n]*lối tắt/);
   assert.match(b4, /^\| \*\*Bố cục\*\* \|/m);
@@ -365,6 +365,32 @@ test('sketch-to-concept 1.2 (lõi màu chung color.js) có trong CHANGELOG', () 
   const v120 = read('CHANGELOG.md').split(/^## /m).find(s => s.startsWith('1.2.0 ('));
   assert.match(v120, /`sketch-to-concept` 1\.2/);
   assert.match(v120, /color\.js/);
+});
+
+// 1.7.3: bài học hiệu năng 10/10/2026 (dự án 63 trang): lệnh dài chạy nền ngay từ đầu, chạy tăng dần, ảnh chỉ của bộ đã chạy, review theo đợt
+test('1.7.3: hướng dẫn hiệu năng nằm ở AGENTS-qa.md, handover-check B1/B3/B4/B7, sketch-to-site B4 và qa-gate mục 2, 7, README', () => {
+  const a = read('skills/sketch-to-site/templates/AGENTS-qa.md');
+  for (const s of ['run --dry', '`--full`', 'QA_WORKERS', '`page_themes`', 'chạy nền ngay từ đầu', 'qa-check.log', 'mở lại cửa sổ VS Code', 'QA_RG_WATCHDOG', 'máy thiếu bộ nhớ']) assert.ok(a.includes(s), `AGENTS-qa.md thiếu ${s}`);
+  const h = read('skills/handover-check/SKILL.md');
+  assert.match(section(h, '### B1', '### B2'), /handover\.py run --dry/);
+  const b3 = section(h, '### B3', '### B4');
+  assert.doesNotMatch(b3, /Vẫn hết giờ thì chạy nền/);
+  for (const s of ['Từ 8 phút thì chạy nền ngay từ đầu', '_qa/qa-check.log', '`--full`', 'Lấy lại từ last-green']) assert.ok(b3.includes(s), `handover-check B3 thiếu ${s}`);
+  const b4 = section(h, '### B4 · Đọc kết quả', '### B5');
+  assert.match(b4, /^\| \*\*Lấy lại từ last-green\*\* \|/m);
+  assert.match(b4, /^\| \*\*máy thiếu bộ nhớ, k bộ chưa chạy\*\* \|/m);
+  assert.doesNotMatch(section(h, '### B7', '\n## '), /Hỏi người dùng trước khi xoá/);
+  const s4 = section(read(R2), '### B4 · Tự kiểm', '### 🛑 Cổng 4');
+  assert.match(s4, /1\. \*\*Kiểm một lệnh\*\*[^\n]*`--dry`[^\n]*Từ 8 phút: chạy nền ngay từ đầu/);
+  assert.match(s4, /2\. \*\*Mở ảnh trong một lượt\*\*[^\n]*\*\*mà lệnh liệt kê\*\*[^\n]*Dự án lớn ở lần chạy đầu/);
+  assert.match(s4, /5\. \*\*Review bằng góc nhìn mới\*\*[^\n]*đợt 15–20 trang/);
+  assert.match(s4, /trên 30 trang hay trên 150 bộ/);
+  const qg = read('skills/sketch-to-site/references/qa-gate.md');
+  assert.match(section(qg, '## 2.', '## 3.'), /Lấy lại từ last-green/);
+  assert.match(section(qg, '## 7. Review bằng góc nhìn mới', '\n## 8.'), /đợt 15–20 trang/);
+  const readme = read('README.md');
+  for (const s of ['`page_themes`', '`workers`', 'QA_MIN_FREE_MB', 'QA_RG_WATCHDOG', 'files.watcherExclude', 'run --dry']) assert.ok(readme.includes(s), `README thiếu ${s}`);
+  assert.match(read('CHANGELOG.md').split(/^## /m).find(s => s.startsWith('1.7.3 (')), /`handover-check` 1\.6/);
 });
 
 test('chế độ tối chỉ khi người dùng xin: không mặc định theo hệ thống; B2 thêm theme thứ hai chỉ khi Cổng 2 ghi người dùng xin', () => {

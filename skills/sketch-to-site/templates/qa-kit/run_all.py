@@ -16,8 +16,9 @@
 #   "shot"   tên ảnh chụp sau bước; "jpeg": true để chụp jpg; "clip": "<css selector>" chỉ chụp khung đó, "scale" phóng ảnh clip
 # Mỗi bộ chạy trong một ngữ cảnh trình duyệt mới: localStorage trống lúc bắt đầu bộ. File tải xuống (nút xuất) nằm trong thư mục tạm của bộ
 # và bị xoá khi bộ chạy xong, không rơi vào thư mục Downloads của máy; bước kiểm tính năng xuất bằng giao diện (toast, trạng thái).
-# Cả lệnh dùng chung một trình duyệt (browser.mjs, biến QA_CDP), không mở mỗi bộ một trình duyệt.
-import contextlib, hashlib, json, os, re, subprocess, sys, threading
+# Cả lệnh dùng chung một trình duyệt (browser.mjs, biến QA_CDP), không mở mỗi bộ một trình duyệt. QA_WORKERS=n (hay "workers" trong qa.config.json):
+# số bộ chạy song song. RAM trống dưới ngưỡng (QA_MIN_FREE_MB) thì tạm nghỉ, quá QA_MEM_WAIT giây thì các bộ còn lại báo "máy thiếu bộ nhớ".
+import contextlib, hashlib, json, os, re, subprocess, sys, threading, time
 from concurrent.futures import ThreadPoolExecutor
 sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -27,6 +28,97 @@ SIZES = {k: tuple(str(x) for x in v) for k, v in CFG.get('sizes', {'desktop': [1
 SUITES = [(s[0], s[1], s[2], SIZES[s[3]]) for s in CFG['suites']]
 # Bộ tự đổi theme (tên bắt đầu bằng tiền tố này) không chạy lại khi đã ép theme bằng QA_QUERY
 THEME_PREFIX = CFG.get('theme_switch_prefix', 'theme-')
+
+
+# Hạ ưu tiên tiến trình điều phối (handover.py, quick.py, run_all.py, breaktest.py đều import file này): con (node, trình duyệt) kế thừa.
+# Đo 10/10/2026: chỉ node và trình duyệt ở BelowNormal, Python chạy Normal nên phải hạ tay từ PowerShell. QA_PRIORITY=normal giữ mức thường (cùng khoá với launch.mjs)
+def lower_priority():
+    if os.environ.get('QA_PRIORITY') == 'normal':
+        return
+    try:
+        if sys.platform == 'win32':
+            import ctypes
+            k = ctypes.windll.kernel32
+            k.GetCurrentProcess.restype = ctypes.c_void_p  # handle giả -1 là 64 bit: để mặc định thì bị cắt còn 32 bit, gọi không ăn
+            k.SetPriorityClass(ctypes.c_void_p(k.GetCurrentProcess()), 0x4000)  # BELOW_NORMAL_PRIORITY_CLASS
+        elif os.nice(0) < 10:
+            os.nice(10 - os.nice(0))
+    except Exception:
+        pass
+
+
+lower_priority()
+
+
+def _workers():
+    # Số bộ chạy song song: QA_WORKERS, rồi "workers" trong qa.config.json, rồi 4 khi máy từ 8 lõi, không thì 2.
+    # Không lấy lõi // 4: laptop 8 lõi còn 2 luồng, chậm gấp đôi mà vấn đề là RAM, không phải CPU; RAM thiếu thì wait_for_memory hãm
+    for v in (os.environ.get('QA_WORKERS'), CFG.get('workers')):
+        try:
+            if v is not None and v != '' and int(v) >= 1:
+                return int(v)
+        except (TypeError, ValueError):
+            pass
+    return 4 if (os.cpu_count() or 4) >= 8 else 2
+
+
+WORKERS = _workers()
+OOM_MSG = 'máy thiếu bộ nhớ'
+# Đặt khi máy thiếu RAM quá QA_MEM_WAIT giây: các bộ chưa chạy trả crash OOM_MSG thay vì hàng trăm bộ "lỗi chạy" rỗng (đo 10/10/2026: 582 bộ rỗng)
+ABORT = threading.Event()
+_mem_lock = threading.Lock()
+_mem_said = [False]
+
+
+def free_mem_mb():
+    # (RAM trống, RAM tổng) tính bằng MB; None khi không đo được (macOS, hệ lạ). Không cần psutil
+    try:
+        if sys.platform == 'win32':
+            import ctypes
+            class S(ctypes.Structure):
+                _fields_ = [('dwLength', ctypes.c_ulong), ('dwMemoryLoad', ctypes.c_ulong)] + [(n, ctypes.c_ulonglong) for n in
+                            ('ullTotalPhys', 'ullAvailPhys', 'ullTotalPageFile', 'ullAvailPageFile', 'ullTotalVirtual', 'ullAvailVirtual', 'ullAvailExtendedVirtual')]
+            s = S(); s.dwLength = ctypes.sizeof(S)
+            if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(s)):
+                return s.ullAvailPhys // 2**20, s.ullTotalPhys // 2**20
+        elif os.path.exists('/proc/meminfo'):
+            kv = {}
+            for l in open('/proc/meminfo'):
+                k, _, v = l.partition(':')
+                kv[k.strip()] = int(v.split()[0])
+            return kv['MemAvailable'] // 1024, kv['MemTotal'] // 1024
+    except Exception:
+        pass
+    return None
+
+
+def wait_for_memory():
+    # Trước mỗi bộ: RAM trống dưới ngưỡng (QA_MIN_FREE_MB, mặc định min(4 GB, 15 % tổng)) thì tạm nghỉ, in một dòng; quá QA_MEM_WAIT giây
+    # (mặc định 120) thì đặt ABORT. Trả False khi phải bỏ bộ này. Đo 10/10/2026: bộ kiểm chạy tiếp khi commit 52/52,7 GB, trình duyệt chết hàng loạt
+    if ABORT.is_set():
+        return False
+    m = free_mem_mb()
+    if m is None:
+        return True
+    free, total = m
+    limit = int(os.environ.get('QA_MIN_FREE_MB') or min(4096, total * 15 // 100))
+    if free >= limit:
+        return True
+    wait = float(os.environ.get('QA_MEM_WAIT') or 120)
+    with _mem_lock:
+        if not _mem_said[0]:
+            _mem_said[0] = True
+            print(f'Tạm nghỉ: RAM trống {free} MB dưới ngưỡng {limit} MB, đợi tối đa {wait:g} giây (đóng bớt chương trình, hoặc QA_WORKERS nhỏ hơn)', flush=True)
+    t0 = time.time()
+    while time.time() - t0 < wait:
+        if ABORT.is_set():
+            return False
+        time.sleep(min(5, max(0.2, wait / 10)))
+        m = free_mem_mb()
+        if m and m[0] >= limit:
+            return True
+    ABORT.set()
+    return False
 
 
 def node_cmd():
@@ -85,24 +177,52 @@ def shared_browser():
         _stop_browser(p)
 
 
+# Lỗi vì trình duyệt chung không nối được hay tắt giữa chừng (chuỗi của run.mjs): chạy lại một lần; sau 3 lần liên tiếp thì thôi,
+# trình duyệt chết hẳn không nên nhân đôi thời gian của lần chạy
+BROWSER_ERR = ('Không nối được trình duyệt chung', 'Trình duyệt đóng giữa chừng')
+_browser_fails = [0]
+
+
+def _node(args, env):
+    return subprocess.run(NODE + args, capture_output=True, text=True, encoding='utf-8', env=env)
+
+
 def run(s, out, deep=False):
     name, page, steps, size = s
     sf = os.path.join(HERE, 'steps-' + steps + '.json')
     if not os.path.exists(sf):
         return name, None
+    if not wait_for_memory():
+        return name, {'crash': OOM_MSG}
     od = os.path.join(out, name)
     os.makedirs(od, exist_ok=True)
     # Không đặt CDP_PORT: run.mjs để hệ điều hành chọn cổng gỡ lỗi cho từng bộ, nên không bao giờ trùng cổng với bộ khác (CDP_PORT chỉ là ép tay, tuỳ chọn)
     env = dict(os.environ)
     # Lượt kiểm sâu (deep.mjs): handover.py bật, qalib.py chọn bộ (DEEP_SUITES: mỗi trang một bộ khổ desktop); ở đây chỉ nhận quyết định
     env['QA_DEEP'] = '1' if deep else ''
-    r = subprocess.run(NODE + [os.path.join(HERE, 'run.mjs'), os.path.join(SITE, page + '.html'), sf, od] + list(size), capture_output=True, text=True, encoding='utf-8', env=env)
+    args = [os.path.join(HERE, 'run.mjs'), os.path.join(SITE, page + '.html'), sf, od] + list(size)
+    r = _node(args, env)
+    rep = None
     try:
         rep = json.loads(r.stdout)
     except Exception:
+        err = (r.stderr or r.stdout)
+        if any(x in err for x in BROWSER_ERR) and _browser_fails[0] < 3 and not ABORT.is_set():
+            _browser_fails[0] += 1
+            r = _node(args, env)
+            try:
+                rep = json.loads(r.stdout)
+            except Exception:
+                pass
+    if rep is None:
         return name, {'crash': (r.stderr or r.stdout)[:400]}
+    _browser_fails[0] = 0
     json.dump(rep, open(os.path.join(od, 'report.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-    steps_def = json.load(open(sf, encoding='utf-8'))['steps']
+    return name, summarize(name, rep, json.load(open(sf, encoding='utf-8'))['steps'])
+
+
+def summarize(name, rep, steps_def):
+    # Dòng tóm tắt của một bộ từ báo cáo: run() dùng sau khi chạy, qalib.reuse_report dùng cho báo cáo lấy lại từ mốc
     has_check = {x['name'] for x in steps_def if x.get('check')}
     # Lỗi console của lượt sâu tính vào "sâu" (handover.py so với mốc), không vào "console"
     errs = sum(len(x['errors']) for x in rep if x['step'] != 'deep')
@@ -118,8 +238,8 @@ def run(s, out, deep=False):
     ds = next((x for x in rep if x['step'] == 'deep'), None)
     dp = (ds or {}).get('deep') or {}
     deepn = sum(len(dp.get(k) or []) for k in ('states', 'keyboard', 'interactive', 'shortcuts')) + len((ds or {}).get('errors') or [])
-    return name, {'steps': sum(1 for x in rep if x['step'] not in ('load', 'deep')), 'errors': errs, 'overflow': over, 'cut': cut,
-                  'contrast': contrast, 'intent': intent, 'deep': deepn, 'deep_ran': ds is not None, 'fails': fails, 'silent': silent}
+    return {'steps': sum(1 for x in rep if x['step'] not in ('load', 'deep')), 'errors': errs, 'overflow': over, 'cut': cut,
+            'contrast': contrast, 'intent': intent, 'deep': deepn, 'deep_ran': ds is not None, 'fails': fails, 'silent': silent}
 
 
 def summary_line(name, r):
@@ -180,7 +300,7 @@ if __name__ == '__main__':
     todo = [s for s in SUITES if flt in s[0]]
     if os.environ.get('QA_QUERY'):
         todo = [s for s in todo if not s[0].startswith(THEME_PREFIX)]
-    with shared_browser(), ThreadPoolExecutor(4) as ex:
+    with shared_browser(), ThreadPoolExecutor(WORKERS) as ex:
         res = list(ex.map(lambda s: run(s, out), todo))
     summary = {}
     for name, r in res:

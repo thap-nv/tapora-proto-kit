@@ -8,18 +8,33 @@
 #    In các dòng số và kết luận; mỗi danh sách tối đa 15 dòng, đủ danh sách ở handover.json của lần chạy.
 # 3. Liệt kê ảnh của lần chạy theo theme và bộ, để mở cùng một lượt.
 # 4. Có bản đồ (map/features.js của sketch-to-map): độ phủ trên trang đã dựng, map.mjs coverage. Thiếu data-feature hay mã lạ thì chưa sạch.
+# --dry: cập nhật bộ kiểm rồi chỉ in ước lượng và checklist của handover.py run --dry, không mở trình duyệt. --full: chạy mọi bộ, không lấy lại từ mốc.
 # Thoát 0 khi sạch, 1 khi còn lỗi (theo handover.py hay độ phủ), 2 khi thiếu thư mục trang, 4 khi không có trình duyệt.
 import argparse, atexit, json, os, re, subprocess, sys, threading
 sys.stdout.reconfigure(encoding='utf-8')
+# Hạ ưu tiên như run_all.py của bộ kiểm (lệnh này không import bộ kiểm trước khi gọi con): con kế thừa
+if os.environ.get('QA_PRIORITY') != 'normal':
+    try:
+        if sys.platform == 'win32':
+            import ctypes
+            _k = ctypes.windll.kernel32; _k.GetCurrentProcess.restype = ctypes.c_void_p
+            _k.SetPriorityClass(ctypes.c_void_p(_k.GetCurrentProcess()), 0x4000)
+        elif os.nice(0) < 10:
+            os.nice(10 - os.nice(0))
+    except Exception:
+        pass
 HERE = os.path.dirname(os.path.abspath(__file__))
 QA_INIT = os.path.join(os.path.dirname(HERE), 'templates', 'qa-kit', 'qa_init.py')
 MAX = 15
 ENV = dict(os.environ, PYTHONIOENCODING='utf-8')
-NOTE = ('CẢNH BÁO', 'themes.json có theme chưa khai', 'Có site/_system.html mà', 'Nền tối bật bằng', 'màn app mobile')
+NOTE = ('CẢNH BÁO', 'themes.json có theme chưa khai', 'Có site/_system.html mà', 'Nền tối bật bằng', 'màn app mobile', 'đã thêm')
+JSONC = 'có chú thích hay lỗi cú pháp'   # dòng bắt đầu bằng đường dẫn settings.json, theo sau là mẫu JSON cần dán
 
 ap = argparse.ArgumentParser()
 ap.add_argument('prototype')
 ap.add_argument('--site', default='site')
+ap.add_argument('--dry', action='store_true')
+ap.add_argument('--full', action='store_true')
 a = ap.parse_args()
 proto = os.path.abspath(a.prototype)
 fwd = lambda p: p.replace('\\', '/')
@@ -37,9 +52,12 @@ if fresh:
     print('Bộ kiểm: cài mới · ' + made[len('tạo qa.config.json: '):])
 else:
     print(f'Bộ kiểm: đã có, cập nhật script ({sum(l.startswith("chép đè") for l in lines)} file chép đè; qa.config.json, file bước, mốc giữ nguyên)')
-for l in lines:
-    if l.startswith(NOTE):
+for i, l in enumerate(lines):
+    if l.startswith(NOTE) or JSONC in l:
         print('  ' + l)
+    if JSONC in l:                                   # mẫu JSON cần dán theo sau, in nguyên
+        print('\n'.join('  ' + x for x in lines[i + 1:] if x.startswith(('{', ' ', '}'))))
+        break
 
 
 def has_shots():
@@ -54,7 +72,7 @@ def has_shots():
 
 # 1a. Một trình duyệt chung cho cả thumbs lẫn run (browser.mjs): hai lệnh con gắn vào qua QA_CDP. Không mở được thì mỗi lệnh tự lo
 bm = os.path.join(proto, '_qa', 'browser.mjs')
-if not ENV.get('QA_CDP') and os.path.exists(bm):
+if not a.dry and not ENV.get('QA_CDP') and os.path.exists(bm):
     try:
         bp = subprocess.Popen(['node', bm], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, encoding='utf-8')
         box = []
@@ -69,7 +87,7 @@ if not ENV.get('QA_CDP') and os.path.exists(bm):
 
 # 1b. Ảnh lối vào: không khai báo thì không in gì. Dòng từng ảnh (thụt lề) bỏ, chỉ in cảnh báo, lỗi, dòng tổng
 thumbs_bad = False
-if has_shots():
+if has_shots() and not a.dry:
     th = subprocess.run([sys.executable, os.path.join('_qa', 'handover.py'), 'thumbs'], cwd=proto,
                         capture_output=True, text=True, encoding='utf-8', env=ENV)
     tl = (th.stdout + th.stderr).splitlines()
@@ -82,7 +100,7 @@ if has_shots():
     thumbs_bad = th.returncode != 0
 
 # 2. handover.py run
-run = subprocess.run([sys.executable, os.path.join('_qa', 'handover.py'), 'run'], cwd=proto,
+run = subprocess.run([sys.executable, os.path.join('_qa', 'handover.py'), 'run'] + (['--dry'] if a.dry else []) + (['--full'] if a.full else []), cwd=proto,
                      capture_output=True, text=True, encoding='utf-8', env=ENV)
 out = (run.stdout + run.stderr).splitlines()
 browser = next((l for l in out if 'Không tìm thấy Edge' in l), None)
@@ -123,8 +141,10 @@ root = os.path.join(proto, run_dir) if run_dir else ''
 if root and os.path.isdir(root):
     sys.path.insert(0, os.path.join(proto, '_qa'))
     import run_all
+    # Bộ lấy lại từ last-green (chạy tăng dần) không có ảnh mới: không liệt kê, để B4 chỉ mở ảnh của bộ đã chạy
+    reused = set((json.load(open(os.path.join(root, 'handover.json'), encoding='utf-8')) if os.path.exists(os.path.join(root, 'handover.json')) else {}).get('reused') or [])
     dirs = [f'{th}/{suite}' for th in sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d)))
-            for suite in sorted(os.listdir(os.path.join(root, th))) if os.path.isdir(os.path.join(root, th, suite))]
+            for suite in sorted(os.listdir(os.path.join(root, th))) if os.path.isdir(os.path.join(root, th, suite)) and f'{th}/{suite}' not in reused]
     for l in run_all.shot_lines(root, dirs):
         print(l)
 
@@ -133,7 +153,7 @@ code = run.returncode
 if thumbs_bad:
     print('Kết luận: CHƯA SẠCH: ảnh lối vào, xem dòng LỖI ảnh lối vào ở đầu')
     code = code or 1
-if os.path.exists(os.path.join(proto, 'map', 'features.js')):
+if os.path.exists(os.path.join(proto, 'map', 'features.js')) and not a.dry:
     MAP = os.path.join(os.path.dirname(os.path.dirname(HERE)), 'sketch-to-map', 'scripts', 'map.mjs')
     if not os.path.exists(MAP):
         print('Độ phủ: bỏ qua, không thấy sketch-to-map/scripts/map.mjs cạnh sketch-to-site')

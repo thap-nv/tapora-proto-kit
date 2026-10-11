@@ -40,7 +40,7 @@ open(bak, 'wb').write(raw)
 
 
 def run_set(sub):
-    with ThreadPoolExecutor(4) as ex:
+    with ThreadPoolExecutor(run_all.WORKERS) as ex:
         return [(name, r) for name, r in ex.map(lambda s: run_all.run(s, os.path.join(out, sub)), todo) if r is not None]
 
 

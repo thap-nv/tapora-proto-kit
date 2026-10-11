@@ -6,7 +6,7 @@ description: >-
 
 # Handover Check · Kiểm tổng trước bàn giao
 
-> **v1.5 (08/10/2026)** · Ảnh lối vào cũ do `qa-check.py` chụp lại ở B3, không gọi riêng `thumbs`. Ít lượt: B1 đọc nhật ký bằng một lệnh `handover.py ledger`; B3 chạy tổng bằng một lệnh `qa-check.py` *(cài hoặc cập nhật bộ kiểm, chạy tổng, in kết quả gọn và tên từng ảnh)*; bảng UX và luật sửa in đúng mục. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
+> **v1.6 (10/10/2026)** · Lần chạy tổng chỉ chạy bộ có file đổi, bộ khác lấy lại từ mốc; B1 in ước lượng bằng `handover.py run --dry`, từ 8 phút thì B3 chạy nền ngay từ đầu. Ít lượt: B1 đọc nhật ký bằng một lệnh `handover.py ledger`; B3 chạy tổng bằng một lệnh `qa-check.py` *(cài hoặc cập nhật bộ kiểm, chạy tổng, in kết quả gọn và tên từng ảnh)*; bảng UX và luật sửa in đúng mục. Lịch sử phiên bản ở `CHANGELOG.md` của kit.
 > **Đường dẫn:** `<skills>` là thư mục chứa các skill của bộ, tức thư mục cha của thư mục chứa SKILL.md này. Trên Windows, đường dẫn đưa cho `node` và `python` viết có ổ đĩa và gạch xuôi (`W:/…`), không viết kiểu Git Bash `/w/…`: hai chương trình này không đọc được. Lệnh `python` tự viết mà in tiếng Việt thì đặt `PYTHONIOENCODING=utf-8` trước lệnh: console Windows (cp1252) dừng giữa chừng với `UnicodeEncodeError`.
 > Lệnh dưới đây là của bộ kiểm trong `<skills>/sketch-to-site/templates/qa-kit/`. Lệnh `python _qa/…` chạy từ thư mục prototype, tức thư mục chứa `_qa/`. Dự án ghi lệnh riêng trong `AGENTS.md` hoặc `CLAUDE.md` thì theo đó.
 
@@ -42,9 +42,10 @@ Bộ kiểm khói chỉ bắt lỗi console, tràn ngang, chữ tràn hoặc b�
 ### B1 · Đọc nhật ký *(không chạy trình duyệt)*
 Một lượt: `Read` `FEATURE-DECISIONS.md`, cùng lúc với lệnh:
 ```bash
-python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype> --update; cd <thư-mục-prototype> && python _qa/handover.py ledger
+python <skills>/sketch-to-site/templates/qa-kit/qa_init.py <thư-mục-prototype> --update; cd <thư-mục-prototype> && python _qa/handover.py ledger && python _qa/handover.py run --dry
 ```
-- `--update` chép đè script của bộ kiểm bằng bản của kit đang dùng, không đụng cấu hình, file bước, mốc, nhật ký.
+- `--update` chép đè script của bộ kiểm bằng bản của kit đang dùng, không đụng cấu hình, file bước, mốc, nhật ký. In *đã thêm n mẫu vào `.vscode/settings.json`* thì nhắc người dùng **mở lại cửa sổ VS Code** trước B3.
+- `run --dry` in dòng `Ước lượng` *(bộ chạy, bộ lấy lại từ mốc, phút, ảnh)* và checklist *(`rg.exe` của VS Code, hồ sơ trình duyệt sót, lần chạy dở)*; không mở trình duyệt. Số phút quyết định cách gọi ở B3.
 - `ledger` in mỗi lần sửa từ lần bàn giao trước một dòng *(giờ, ghi chú, file, số `check` đổi)*, rồi trang sửa trực tiếp, trang chỉ đổi qua file dùng chung, ảnh lối vào có trang đã đụng, trang tổng quan app, và file đổi sau lần kiểm nhanh cuối mà chưa vào nhật ký. Dòng `Ảnh lối vào` luôn có: không khai báo thì không có ảnh lối vào để xem lại, khỏi mở `qa.config.json` hay `index.html`. Đừng đọc `ledger.jsonl`: nó giữ cả giá trị từng `check`, có thể rất dài.
 
 Rút ra, cùng các dòng của `FEATURE-DECISIONS.md` từ lần bàn giao trước: màn nào đã đụng · dòng nào ghi *chưa có bước kiểm* · màn trong ảnh lối vào có đổi không · có tính năng thêm hay bỏ không. File chưa vào nhật ký là sửa ngoài quy trình: xử ở B4.
@@ -62,7 +63,11 @@ Rút ra, cùng các dòng của `FEATURE-DECISIONS.md` từ lần bàn giao trư
 - chạy `python _qa/handover.py run`: preflight và mọi bộ ở mọi theme khai báo trong `qa.config.json`, lượt kiểm sâu, chụp ảnh ở mọi theme, so với `_qa/last-green/`, gán từng khác biệt cho một dòng nhật ký. Kết quả nằm trong `_qa/handover/<ngày-giờ>/` *(dòng `Thư mục chạy`)*;
 - in dòng số theo theme, mỗi danh sách tối đa 15 dòng *(đủ danh sách ở `handover.json` của thư mục chạy)*, kết luận, rồi thư mục ảnh và tên từng ảnh.
 
-Thoát 0 khi sạch, 1 khi còn lỗi hay khác biệt không gán được, 2 khi thiếu thư mục trang, 4 khi không có trình duyệt. Lệnh mất nhiều phút: gọi với thời gian chờ dài nhất công cụ cho phép *(Claude Code: `timeout` 600000)*. Vẫn hết giờ thì chạy nền và chờ báo xong, không thăm dò.
+Thoát 0 khi sạch, 1 khi còn lỗi hay khác biệt không gán được, 2 khi thiếu thư mục trang, 4 khi không có trình duyệt.
+
+**Cách gọi theo dòng `Ước lượng` của B1:** dưới 8 phút thì gọi thường với thời gian chờ dài nhất công cụ cho phép *(Claude Code: `timeout` 600000)*. **Từ 8 phút thì chạy nền ngay từ đầu**, kết quả ra file: `python <skills>/sketch-to-site/scripts/qa-check.py <thư-mục-prototype> > _qa/qa-check.log 2>&1` *(Claude Code: `run_in_background`)*, chờ báo xong rồi đọc file log, không thăm dò. Không gọi thường rồi đợi hết giờ: lệnh bị cắt để lại trình duyệt sót và thư mục dở *(đo 10/10/2026: ba lần đứt phiên trong một ngày)*.
+
+Có mốc thì lệnh chỉ chạy bộ có file đổi so với `last-green` và lấy lại báo cáo của bộ khác *(dòng `Lấy lại từ last-green (không đổi): n bộ`)*; ảnh chỉ có ở bộ đã chạy. Lần chốt cuối của một đợt lớn, hay khi người dùng muốn chạy hết: thêm `--full`.
 
 ### B4 · Đọc kết quả
 
@@ -78,6 +83,8 @@ Thoát 0 khi sạch, 1 khi còn lỗi hay khác biệt không gán được, 2 k
 | **Khác biệt không gán được** | Chạy lại riêng bộ đó một lần để loại nhiễu: `python _qa/run_all.py _qa/.recheck <tên bộ>`. Còn lệch → lỗi lan. Tìm lần sửa gây ra: file đổi của trang đó giao với nhật ký. Nếu các lần sửa đã commit riêng thì chạy bộ đó trên commit cũ bằng `git worktree` |
 | **File không có trong ledger** | Có người sửa ngoài quy trình. Xem `git diff` của file đó rồi xếp vào một trong hai loại trên |
 | **Bộ mất** | Bộ có ở mốc mà lần này không chạy. Hỏi vì sao trước khi chốt |
+| **Lấy lại từ last-green** | Không phải lỗi: bộ không có file nào đổi, báo cáo chép từ mốc, không có ảnh mới. Nghi ngờ thì chạy lại với `--full` |
+| **máy thiếu bộ nhớ, k bộ chưa chạy** | Lần chạy dừng vì RAM. Nhắc người dùng đóng bớt chương trình, hay đặt `QA_WORKERS=2`, rồi chạy lại B3 |
 
 Mọi mục đều in kể cả khi bằng 0: `nợ cũ n` ở dòng của từng theme, các dòng `Bộ mới`, `Bộ có trong last-green mà lần này không chạy`, `Khác biệt KHÔNG gán được`, `Nợ cũ`, `Lỗi`. Bảng số của B6 lấy từ đó, không cần mở `handover.json`. Danh sách bị cắt ở 15 dòng: phần còn lại tìm trong `handover.json` của thư mục chạy bằng `grep`, chỉ khi cần cho một mục cụ thể.
 
@@ -117,4 +124,4 @@ Không có công cụ `AskUserQuestion` *(ví dụ Codex)*: viết câu hỏi v�
 - **Chốt** → `python _qa/handover.py promote _qa/handover/<ngày-giờ>`. Lần chạy đó thành mốc bàn giao mới, nhật ký chuyển vào thư mục chạy, `current` làm lại từ đầu.
 - **Sửa** → soát danh sách theo `sketch-to-site/references/rules-and-conflicts.md` mục F *(in: `sed -n '/^## F\./,$p' <skills>/sketch-to-site/references/rules-and-conflicts.md`)*, sửa bằng `tweak-site` hoặc `evolve-site` tuỳ cấp, rồi quay lại **B3** (chạy tổng lại, vì `promote` cần một lần chạy khớp với file hiện tại).
 - Không tự commit. Có thể gợi ý commit sau khi promote.
-- Thư mục `_qa/handover/` cũ hơn lần vừa chốt có thể xoá cho nhẹ đĩa. Hỏi người dùng trước khi xoá.
+- Thư mục `_qa/handover/` cũ: lần chạy sau tự bỏ ảnh của các lần cũ *(giữ 2 lần gần nhất, giữ mọi báo cáo và nhật ký)*. Không cần dọn tay.

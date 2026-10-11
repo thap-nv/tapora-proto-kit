@@ -29,7 +29,10 @@ test('manifest plugin nói về bước concept, bỏ "five decision gates"', ()
 
 test('CHANGELOG ghi phiên bản mới của các skill', () => {
   const entries = read('CHANGELOG.md').split(/^## /m);
-  const v172 = entries[1];
+  const v173 = entries[1];
+  for (const s of ['`sketch-to-site` 4.9', '`handover-check` 1.6', 'qa-run-*', 'Lấy lại từ last-green', '`page_themes`', 'QA_WORKERS', 'QA_MIN_FREE_MB', 'files.watcherExclude', 'QA_RG_WATCHDOG', '--dry', '--full'])
+    assert.ok(v173.includes(s), `CHANGELOG 1.7.3 thiếu ${s}`);
+  const v172 = entries.find(s => s.startsWith('1.7.2 ('));
   for (const s of ['`sketch-to-concept` 1.7', 'Trộn', 'Brief concept', '390', 'execCommand', 'QA_BROWSERS', 'QA_PRIORITY', 'QA_CDP', 'browser.mjs', 'launch.mjs']) assert.ok(v172.includes(s), `CHANGELOG 1.7.2 thiếu ${s}`);
   const v171 = entries.find(s => s.startsWith('1.7.1 ('));
   for (const s of ['`sketch-to-concept` 1.6', '`sketch-to-site` 4.8', '`sketch-to-map` 1.1', 'Start-Process', 'IDE', 'surfaces', 'templates/concept-hub.html', 'concept/boards.js'])
@@ -67,7 +70,7 @@ test('ghi nguồn superpowers, README chạy test ở cả hai thư mục, SKILL
   assert.ok(lic.includes('| [obra/superpowers](https://github.com/obra/superpowers) | © 2025 Jesse Vincent |'), 'thiếu dòng ghi nguồn superpowers');
   assert.ok(read('README.md').includes('node --test skills/sketch-to-concept/tests/ skills/sketch-to-site/tests/'), 'README thiếu lệnh test hai thư mục');
   assert.ok(lic.includes('| [plugin87/ux-ui-agent-skills](https://github.com/plugin87/ux-ui-agent-skills) | © 2026 Thientan Soparat |'), 'thiếu dòng ghi nguồn ux-ui-agent-skills');
-  for (const [f, v] of [['sketch-to-site', 'v4.8'], ['sketch-to-concept', 'v1.7'], ['evolve-site', 'v1.11'], ['tweak-site', 'v1.5'], ['handover-check', 'v1.5'], ['sketch-to-map', 'v1.1']]) {
+  for (const [f, v] of [['sketch-to-site', 'v4.9'], ['sketch-to-concept', 'v1.7'], ['evolve-site', 'v1.11'], ['tweak-site', 'v1.5'], ['handover-check', 'v1.6'], ['sketch-to-map', 'v1.1']]) {
     assert.ok(read(`skills/${f}/SKILL.md`).split('\n').some(l => l.startsWith(`> **${v} (`)), `${f} thiếu ghi chú ${v}`);
   }
 });
@@ -85,9 +88,9 @@ test('mọi SKILL.md: name trùng thư mục, description tối đa 1.024 ký t�
   }
 });
 
-test('phát hành 1.7.2: hai manifest cùng phiên bản, CHANGELOG có mục 1.7.2 ở đầu, mô tả plugin nhắc sketch-to-map', () => {
-  for (const f of ['.claude-plugin/plugin.json', '.codex-plugin/plugin.json']) assert.equal(JSON.parse(read(f)).version, '1.7.2', f);
-  assert.ok(read('CHANGELOG.md').split(/^## /m)[1].startsWith('1.7.2 ('), 'mục đầu của CHANGELOG phải là 1.7.2');
+test('phát hành 1.7.3: hai manifest cùng phiên bản, CHANGELOG có mục 1.7.3 ở đầu, mô tả plugin nhắc sketch-to-map', () => {
+  for (const f of ['.claude-plugin/plugin.json', '.codex-plugin/plugin.json']) assert.equal(JSON.parse(read(f)).version, '1.7.3', f);
+  assert.ok(read('CHANGELOG.md').split(/^## /m)[1].startsWith('1.7.3 ('), 'mục đầu của CHANGELOG phải là 1.7.3');
   assert.match(JSON.parse(read('.codex-plugin/plugin.json')).interface.longDescription, /sketch-to-map/);
 });
 
