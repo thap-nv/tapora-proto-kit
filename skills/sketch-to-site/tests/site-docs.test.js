@@ -45,7 +45,7 @@ test('SKILL.md chỉ giữ luật chung và lối vào: ≤ 18 000 ký tự, đ�
   const md = SKILL();
   assert.ok(md.length <= 18000, `SKILL.md dài ${md.length} ký tự`);
   assert.deepEqual(md.split('\n').filter(l => /^## \d\. /.test(l)).map(l => l.slice(0, 5)), ['## 0.', '## 1.', '## 2.', '## 3.', '## 4.', '## 5.', '## 6.', '## 7.', '## 8.', '## 9.']);
-  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v4.8 ('], 'lịch sử phiên bản ở CHANGELOG');
+  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v4.9 ('], 'lịch sử phiên bản ở CHANGELOG');
   assert.doesNotMatch(md, /^### B[0-4] · /m, 'các bước ở references/b0-b2.md và b3-b4.md');
   assert.match(section(md, '## 9.', '\n## '), /`references\/phu-thuoc\.md`/);
   assert.ok(fs.existsSync(path.join(S2S, 'references', 'phu-thuoc.md')));
@@ -97,7 +97,7 @@ test('B4 in đúng phần của qa-gate.md mà B4 dùng: danh sách soát ảnh,
   assert.match(out, /^\*\*Mở từng ảnh ra xem\*\*/m);
   for (const x of ['## 3.', '## 4.', '## 5.', '## 7.']) assert.ok(heads(out).includes(x), `thiếu ${x}`);
   assert.doesNotMatch(out, /`P01`|\*\*Lượt kiểm sâu\*\*|Cấm làm im bộ kiểm/);
-  assert.ok(out.length < 9000, `in ${out.length} ký tự`);
+  assert.ok(out.length < 9200, `in ${out.length} ký tự`);  // 1.7.3: mục 7 thêm hai câu về review theo đợt
 });
 
 test('b0-b2.md: B1 thử concept trên _system.html, không dựng trang thử; B2 và Cổng 3 dùng system-check.mjs', () => {

@@ -135,7 +135,7 @@ test('tweak-site 1.3: một ghi chú phiên bản; tìm, đọc, sửa, kiểm m
 
 test('handover-check 1.3: B1 đọc nhật ký bằng handover.py ledger; B3 chạy tổng bằng qa-check.py; UX in đúng nhóm F', () => {
   const md = HAND();
-  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v1.5 (']);
+  assert.deepEqual(md.split('\n').filter(l => l.startsWith('> **v')).map(l => l.slice(0, 10)), ['> **v1.6 (']);
   assert.match(md, /`W:\/…`[^\n]*`\/w\/…`/);
   assert.match(section(md, '## 1.', '## 2.'), /\*\*Ít lượt\.\*\*/);
   const b1 = section(md, '### B1 ·', '### B2');

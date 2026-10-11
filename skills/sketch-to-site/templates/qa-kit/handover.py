@@ -1,9 +1,14 @@
 # Kiểm tổng trước bàn giao (skill handover-check). Chạy từ thư mục prototype (thư mục chứa _qa/):
-#   python _qa/handover.py run [--themes <theme1>,<theme2>]
-#       preflight + mọi bộ ở mọi theme trong qa.config.json (chụp ảnh ở mọi theme), lượt kiểm sâu (trạng thái, bàn phím, tương tác)
-#       ở bộ khói khổ desktop của mỗi trang (dự án không có bộ khói: bộ khổ desktop đầu tiên của trang), vào _qa/handover/<ngày-giờ>/,
-#       so với _qa/last-green/, gán từng khác biệt cho một dòng trong _qa/current/ledger.jsonl.
+#   python _qa/handover.py run [--themes <theme1>,<theme2>] [--full] [--dry]
+#       preflight + mọi bộ ở mọi theme trong qa.config.json (chụp ảnh ở mọi theme; trang khai "page_themes" chỉ ở theme của nó),
+#       lượt kiểm sâu (trạng thái, bàn phím, tương tác) ở bộ khói khổ desktop của mỗi trang (dự án không có bộ khói: bộ khổ desktop
+#       đầu tiên của trang), vào _qa/handover/<ngày-giờ>/, so với _qa/last-green/, gán từng khác biệt cho một dòng trong _qa/current/ledger.jsonl.
+#       Có last-green: chỉ chạy bộ có trang, file nạp, file bước, cấu hình hay mã bộ kiểm đổi so với mốc; bộ khác lấy lại report của mốc
+#       (dòng "Lấy lại từ last-green", không có ảnh mới). --full chạy mọi bộ. Lần chạy ghi ra thư mục tạm của máy, chỉ chuyển vào
+#       _qa/handover/ khi xong; đầu mỗi lần chạy, lần chạy cũ bị bỏ ảnh (giữ 2 lần gần nhất, giữ mọi report), lần chạy dở bị xoá.
+#       --dry: in ước lượng (số bộ, phút, ảnh) và checklist trước lệnh dài rồi thoát, không mở trình duyệt. Dòng ước lượng in cả khi chạy thật.
 #       Thoát mã 1 khi có lỗi hoặc có khác biệt không gán được. Nợ cũ in gộp, mỗi mục một dòng; handover.json giữ đủ danh sách.
+#       QA_RG_WATCHDOG=1 (Windows): mỗi 15 giây dừng rg.exe của VS Code sống quá 20 giây, chỉ rg, in một dòng tổng ở cuối; =dry chỉ đếm.
 #   python _qa/handover.py promote _qa/handover/<ngày-giờ>
 #       sau khi người dùng chốt: lần chạy đó thành last-green, current làm lại từ đó, ledger chuyển vào thư mục chạy.
 #   python _qa/handover.py thumbs [--all | --missing]
@@ -17,7 +22,7 @@
 #   python _qa/handover.py usage <lớp> [<lớp> …]
 #       số chỗ dùng từng lớp ở mỗi trang (B6: số chỗ gọi component trong DESIGN.md): đếm lớp trong thuộc tính class,
 #       cả khuôn HTML trong <script>; bỏ <style> và chú thích, nên luật CSS cùng tên không bị đếm.
-import argparse, datetime, json, math, os, re, shutil, subprocess, sys
+import argparse, datetime, json, math, os, re, shutil, subprocess, sys, tempfile, threading, time
 from concurrent.futures import ThreadPoolExecutor
 from html.parser import HTMLParser
 import qalib as Q
@@ -30,18 +35,204 @@ def read_ledger():
     return [json.loads(l) for l in open(p, encoding='utf-8') if l.strip()]
 
 
+RUN_DIR = re.compile(r'^\d{8}-\d{4}$')
+KEEP_RUNS = 2            # lần chạy hoàn chỉnh gần nhất còn giữ ảnh; lần cũ hơn chỉ giữ report, manifest, handover.json, ledger
+TMP_PREFIX = 'qa-run-'   # thư mục tạm của một lần chạy (ghi ở ngoài workspace để VS Code không quét từng ảnh)
+IMG_EXT = ('.jpg', '.png')
+PER_RUN_SEC = 36.0       # giây cho một lượt bộ ở một luồng khi chưa có số đo (dự án 63 trang, 10/10/2026: 598 lượt, 90 phút, 4 luồng)
+LONG_MIN = 8             # từ đây trở lên: chạy nền
+
+
+def prune_runs():
+    # Đo 10/10/2026: tám lần chạy cũ không ai dọn là 17 nghìn file, 664 MB, thứ làm rg của VS Code quét chậm. Thư mục chạy là lịch sử
+    # (promote chuyển ledger.jsonl vào đó) nên chỉ bỏ ảnh, giữ report; lần chạy dở (không có handover.json) thì xoá hẳn
+    root = os.path.join(Q.HERE, 'handover')
+    if not os.path.isdir(root):
+        return
+    dirs = sorted((d for d in os.listdir(root) if RUN_DIR.match(d) and os.path.isdir(os.path.join(root, d))), reverse=True)
+    complete, gone = [], 0
+    for d in dirs:
+        p = os.path.join(root, d)
+        if os.path.exists(os.path.join(p, 'handover.json')):
+            complete.append(p)
+        else:
+            shutil.rmtree(p, ignore_errors=True); gone += 1
+    stripped, size = 0, 0
+    for p in complete[KEEP_RUNS:]:
+        n = 0
+        for base, _, files in os.walk(p):
+            for f in files:
+                if f.endswith(IMG_EXT) or f == 'slices.json':
+                    fp = os.path.join(base, f)
+                    try:
+                        size += os.path.getsize(fp); os.remove(fp); n += 1
+                    except OSError:
+                        pass
+        stripped += bool(n)
+    if stripped or gone:
+        print('Dọn: ' + ' · '.join(([f'{stripped} lần chạy cũ bỏ ảnh, {size // 2**20} MB'] if stripped else []) + ([f'{gone} lần chạy dở xoá'] if gone else [])))
+
+
+def tmp_root():
+    return os.environ.get('QA_TMP') or tempfile.gettempdir()
+
+
+def leftover_tmp():
+    # Thư mục qa-run-* còn trong thư mục tạm: lần chạy bị giết giữa chừng (có manifest.json là của bộ kiểm)
+    try:
+        return [os.path.join(tmp_root(), n) for n in os.listdir(tmp_root()) if n.startswith(TMP_PREFIX)
+                and os.path.exists(os.path.join(tmp_root(), n, 'manifest.json'))]
+    except OSError:
+        return []
+
+
+def clean_tmp():
+    # Xoá lần chạy dở trong thư mục tạm khi không có gì ghi vào quá 2 giờ (mtime của riêng thư mục gốc không thấy ghi trong thư mục con;
+    # lần chạy khác đang chạy vẫn ghi nên còn)
+    for p in leftover_tmp():
+        try:
+            newest = max(os.path.getmtime(os.path.join(b, f)) for b, _, fs in os.walk(p) for f in fs)
+        except ValueError:
+            newest = os.path.getmtime(p)
+        if time.time() - newest > 2 * 3600:
+            shutil.rmtree(p, ignore_errors=True)
+
+
+def last_timing():
+    # Số đo của lần chạy gần nhất có chạy thật (handover.json "timing": giây quanh run_suites, số lượt, số luồng), và thư mục của nó
+    root = os.path.join(Q.HERE, 'handover')
+    if not os.path.isdir(root):
+        return None, None
+    for d in sorted((d for d in os.listdir(root) if RUN_DIR.match(d)), reverse=True):
+        hj = Q.load_json(os.path.join(root, d, 'handover.json')) or {}
+        t = hj.get('timing') or {}
+        if t.get('runs'):
+            return t, os.path.join(root, d)
+    return None, None
+
+
+def estimate(to_run):
+    # (phút, ảnh): thời gian theo số đo của lần trước, không có thì PER_RUN_SEC; ảnh đếm ở lần chạy trước, bộ chưa có thì đếm bước "shot"
+    t, d = last_timing()
+    per = t['seconds'] * t.get('workers', Q.run_all.WORKERS) / t['runs'] if t else PER_RUN_SEC
+    minutes = len(to_run) * per / Q.run_all.WORKERS / 60
+    shots = 0
+    key_of = {s[0]: s[2] for s in Q.run_all.SUITES}
+    for th, name in to_run:
+        p = os.path.join(d, th, name) if d else ''
+        n = sum(1 for f in os.listdir(p) if f.endswith(IMG_EXT)) if p and os.path.isdir(p) else 0
+        if not n:
+            st = Q.load_json(os.path.join(Q.HERE, f'steps-{key_of.get(name)}.json')) or {}
+            n = sum(1 for x in st.get('steps') or [] if x.get('shot'))
+        shots += n
+    return minutes, shots
+
+
+def count_rg():
+    if sys.platform != 'win32':
+        return 0
+    try:
+        r = subprocess.run(['tasklist', '/FI', 'IMAGENAME eq rg.exe', '/NH'], capture_output=True, text=True, timeout=15)
+        return sum(1 for l in r.stdout.splitlines() if l.lower().startswith('rg.exe'))
+    except Exception:
+        return 0
+
+
+def count_profiles():
+    try:
+        return sum(1 for n in os.listdir(tempfile.gettempdir()) if re.match(r'^cdp-(dl-)?[A-Za-z0-9]{6}$', n))
+    except OSError:
+        return 0
+
+
+# Watchdog rg (QA_RG_WATCHDOG=1, chỉ Windows): mỗi 15 giây dừng rg.exe con của Code.exe sống quá 20 giây. Chỉ rg: giết cả conhost mồ côi
+# từng kéo node của bộ kiểm chết theo (599 bộ rỗng trong 4 phút, 10/10/2026). Lưới an toàn; cách chữa là ghi ảnh ra thư mục tạm và
+# loại thư mục ảnh khỏi watcher (qa_init.py)
+# QA_RG_WATCHDOG=dry: chỉ đếm, không dừng (xem watchdog sẽ dừng gì; bộ test dùng)
+RG_PS = ("$all = Get-CimInstance Win32_Process; $code = @($all | Where-Object Name -eq 'Code.exe' | ForEach-Object ProcessId); "
+         "$n = 0; foreach ($p in $all) { if ($p.Name -eq 'rg.exe' -and $code -contains $p.ParentProcessId -and $p.CreationDate "
+         "-and ((Get-Date) - $p.CreationDate).TotalSeconds -gt 20) { if (%s) { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue }; $n++ } }; $n")
+
+
+def rg_watchdog(stop, killed):
+    while not stop.is_set():
+        try:
+            r = subprocess.run(['powershell', '-NoProfile', '-NonInteractive', '-Command', RG_PS % ('$false' if os.environ.get('QA_RG_WATCHDOG') == 'dry' else '$true')], capture_output=True, text=True, timeout=30)
+            killed[0] += int((r.stdout or '0').strip().splitlines()[-1] or 0)
+        except Exception:
+            pass
+        stop.wait(15)
+
+
 def cmd_run(a):
     themes = [t for t in (a.themes or ','.join(Q.THEMES)).split(',') if t]
-    out = os.path.join(Q.HERE, 'handover', datetime.datetime.now().strftime('%Y%m%d-%H%M'))
-    shutil.rmtree(out, ignore_errors=True)
+    if not a.dry:
+        prune_runs(); clean_tmp()
     start = Q.manifest()
+    green = Q.load_json(os.path.join(Q.GREEN, 'manifest.json'))
+    # Chạy tăng dần: có last-green thì chỉ chạy bộ của trang nạp file đã đổi (affected_suites, như quick.py), bộ có file bước đổi,
+    # bộ mốc chưa có, và bộ sâu mà report của mốc chưa có lượt sâu; đổi cấu hình hay mã bộ kiểm thì mọi bộ. Còn lại lấy lại report của mốc.
+    # Đo 10/10/2026: bốn lần 90 phút trong một ngày dù mỗi đợt sửa vài file
+    pairs = Q.suite_pairs(Q.SUITE_NAMES, themes)
+    all_pairs = {(th, s[0]) for th, s in pairs}
+    if green is None or a.full:
+        to_run = set(all_pairs)
+    else:
+        changed = Q.changed_files(green, start)
+        try:
+            names = set(Q.affected_suites(changed))
+        except FileNotFoundError as e:
+            print(f'CẢNH BÁO: không đọc được {e.filename}: trang trong qa.config.json đã mất? Chạy mọi bộ.')
+            names = set(Q.SUITE_NAMES)
+        to_run = set()
+        for th, name in all_pairs:
+            rep = Q.load_json(os.path.join(Q.GREEN, th, name, 'report.json'))
+            if name in names or rep is None or (name in Q.DEEP_SUITES and not any(x.get('step') == 'deep' for x in rep)):
+                to_run.add((th, name))
+    reused_pairs = sorted(all_pairs - to_run)
+    minutes, shots = estimate(to_run)
+    print(f'Ước lượng: {len(to_run)} bộ chạy · {len(reused_pairs)} lấy lại từ last-green · ~{max(1, round(minutes))} phút với {Q.run_all.WORKERS} luồng · ~{shots} ảnh'
+          + (f' · quá {LONG_MIN} phút: chạy nền ngay từ đầu, log ra file, chờ báo xong' if minutes >= LONG_MIN else ''))
+    if a.dry:
+        # Checklist trước lệnh dài: thứ lần chạy trước để lại làm lần này đứt (đo 10/10/2026: 718 rg, 28 trình duyệt sót, thư mục dở)
+        rg, prof, left = count_rg(), count_profiles(), leftover_tmp()
+        print('Checklist trước khi chạy:')
+        if sys.platform == 'win32':
+            print(f'  rg.exe đang chạy: {rg}' + (' (VS Code quét file; nhiều và không giảm sau vài giây thì taskkill /IM rg.exe /F, cân nhắc QA_RG_WATCHDOG=1)' if rg > 24 else ''))
+        print(f'  hồ sơ trình duyệt sót (cdp-* trong thư mục tạm): {prof}' + (' (lần mở trình duyệt sau tự dọn hồ sơ quá 2 giờ)' if prof else ''))
+        print(f'  lần chạy dở trong thư mục tạm: {len(left)}' + (' (tự xoá khi quá 2 giờ không ghi)' if left else ''))
+        print(f'  từ {LONG_MIN} phút: chạy nền ngay từ đầu, kết quả ra file log, chờ báo xong rồi đọc file; không gọi thường rồi đợi hết giờ')
+        print('  qa_init.py vừa báo đã thêm mẫu vào .vscode/settings.json: mở lại cửa sổ VS Code trước khi chạy')
+        return
+    ts = datetime.datetime.now().strftime('%Y%m%d-%H%M')
+    final = os.path.join(Q.HERE, 'handover', ts)
+    # Ghi ra thư mục tạm của máy, chuyển vào _qa/handover/ khi xong: mỗi file ghi vào workspace là một cụm rg của VS Code (đo 10/10/2026:
+    # 25 459 rg trong một lần chạy 3 100 ảnh); lần chạy bị giết không để lại thư mục dở trong workspace
+    out = tempfile.mkdtemp(prefix=TMP_PREFIX, dir=os.environ.get('QA_TMP') or None)
     Q.save_json(os.path.join(out, 'manifest.json'), start)
     pf_ok, pf_line = Q.preflight()
-    res = Q.run_suites(Q.SUITE_NAMES, out, themes, shots=True, deep=True)
+    stop, killed = threading.Event(), [0]
+    dog = sys.platform == 'win32' and os.environ.get('QA_RG_WATCHDOG') in ('1', 'dry')
+    dog_thread = threading.Thread(target=rg_watchdog, args=(stop, killed), daemon=True) if dog else None
+    if dog_thread:
+        dog_thread.start()
+    t0 = time.time()
+    res = Q.run_suites(Q.SUITE_NAMES, out, themes, shots=True, deep=True, only=to_run)
+    timing = {'seconds': round(time.time() - t0, 1), 'runs': len(to_run), 'workers': Q.run_all.WORKERS}
+    stop.set()
+    if dog_thread:
+        dog_thread.join(40)  # đợi lệnh PowerShell cuối xong: tiến trình con còn giữ thư mục làm việc thì bên gọi không xoá được
+    for th, name in reused_pairs:
+        r = Q.reuse_report(th, name, out)
+        if r is not None:
+            res[(th, name)] = r
     if Q.manifest() != start:
         print('CẢNH BÁO: file của site hoặc bộ kiểm đổi trong lúc chạy. Chạy lại.')
+    os.makedirs(os.path.dirname(final), exist_ok=True)
+    shutil.rmtree(final, ignore_errors=True)
+    shutil.move(out, final)
+    out = final
 
-    green = Q.load_json(os.path.join(Q.GREEN, 'manifest.json'))
     known = Q.known_lines(Q.GREEN)
     ledger = read_ledger()
     step_owner = {}
@@ -57,10 +248,14 @@ def cmd_run(a):
     per_theme = {th: {'suites': 0, 'steps': 0, 'errors': 0, 'fails': 0, 'silent': 0, 'over': 0, 'cut': 0, 'contrast': 0, 'intent': 0, 'codes': 0, 'deep': 0, 'changed': 0} for th in themes}
     lay_reports = []
     new_suites, lost_suites, debt, debt_rows = [], [], [], []
+    oom = 0
     for (th, name), r in sorted(res.items()):
         t = per_theme[th]
         if 'crash' in r:
-            bad.append(f'LỖI CHẠY {th}/{name}: {r["crash"][:200]}')
+            if r['crash'] == Q.run_all.OOM_MSG:
+                oom += 1
+            else:
+                bad.append(f'LỖI CHẠY {th}/{name}: {r["crash"][:200]}')
             continue
         rep = Q.load_json(os.path.join(out, th, name, 'report.json'))
         base = Q.load_json(os.path.join(Q.GREEN, th, name, 'report.json'))
@@ -102,11 +297,17 @@ def cmd_run(a):
         for th in themes:
             gdir = os.path.join(Q.GREEN, th)
             for name in (sorted(os.listdir(gdir)) if os.path.isdir(gdir) else []):
-                if (th, name) not in res:
+                if (th, name) not in res and th in Q.suite_themes(name):
                     lost_suites.append(f'{th}/{name}')
 
+    if oom:
+        bad.append(f'{Q.run_all.OOM_MSG}, {oom} bộ chưa chạy: đóng bớt chương trình hay đặt QA_WORKERS nhỏ hơn rồi chạy lại')
+    if killed[0] or dog:
+        print(f'Watchdog rg: {killed[0]} ' + ('sẽ dừng (dry)' if os.environ.get('QA_RG_WATCHDOG') == 'dry' else 'đã dừng'))
     print(f'Thư mục chạy: {os.path.relpath(out, Q.ROOT)}')
     print(f'preflight: {pf_line}' + (f'  ({Q.shown(Q.PREFLIGHT)})' if Q.PREFLIGHT else ''))
+    if green is not None:
+        print(f'Lấy lại từ last-green (không đổi): {len(reused_pairs)} bộ' + (' · bộ lấy lại không có ảnh mới' if reused_pairs else '') + (' (--full)' if a.full else ''))
     # Nợ cũ của từng theme đếm theo mục đã gộp, như dòng Nợ cũ bên dưới: QA.md cần cột này cho từng theme
     for th, t in per_theme.items():
         nd = Q.debt_count(Q.group_debt([x for x in debt_rows if x[0] == th]))
@@ -169,7 +370,8 @@ def cmd_run(a):
         print(f'  … còn {len(lay) - 15} dòng: đủ ở handover.json')
     Q.save_json(os.path.join(out, 'handover.json'), {'preflight': [pf_ok, pf_line], 'themes': per_theme, 'bad': bad,
                                                       'unattributed': unattributed, 'debt': debt, 'new_suites': new_suites, 'lost_suites': lost_suites,
-                                                      'deep_suites': deep_ran, 'layout': [{'line': l, 'where': w} for l, w in lay]})
+                                                      'deep_suites': deep_ran, 'layout': [{'line': l, 'where': w} for l, w in lay],
+                                                      'reused': [f'{th}/{n}' for th, n in reused_pairs], 'timing': timing, 'rg_killed': killed[0]})
     ok = pf_ok and not bad and not unattributed and not lost_suites
     tail = f', còn {ndebt} mục nợ cũ: hỏi người dùng sửa hay nhận vào mốc' if debt else ''
     print('\nKết luận:', f'SẠCH{tail}, chờ người dùng chốt rồi promote' if ok else 'CHƯA SẠCH, xem các mục trên')
@@ -314,7 +516,7 @@ def cmd_thumbs(a):
             else:
                 fresh += 1
     shutil.rmtree(os.path.join(THUMBS, 'out'), ignore_errors=True)
-    with Q.shared_browser(), ThreadPoolExecutor(4) as ex:
+    with Q.shared_browser(), ThreadPoolExecutor(Q.run_all.WORKERS) as ex:
         res = list(ex.map(shoot, jobs))
     shutil.rmtree(os.path.join(THUMBS, 'out'), ignore_errors=True)
     nob = next((err for _, err, no in res if no), None)
@@ -399,7 +601,7 @@ def cmd_usage(a):
 
 ap = argparse.ArgumentParser()
 sub = ap.add_subparsers(dest='cmd', required=True)
-p = sub.add_parser('run'); p.add_argument('--themes', default=''); p.set_defaults(f=cmd_run)
+p = sub.add_parser('run'); p.add_argument('--themes', default=''); p.add_argument('--full', action='store_true'); p.add_argument('--dry', action='store_true'); p.set_defaults(f=cmd_run)
 p = sub.add_parser('ledger'); p.set_defaults(f=cmd_ledger)
 p = sub.add_parser('usage'); p.add_argument('cls', nargs='*'); p.set_defaults(f=cmd_usage)
 p = sub.add_parser('promote'); p.add_argument('dir'); p.set_defaults(f=cmd_promote)

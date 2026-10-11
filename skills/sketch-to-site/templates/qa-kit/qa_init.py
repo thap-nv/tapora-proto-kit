@@ -14,6 +14,8 @@
 # Trang có trạng thái theo tham số (giờ, ngày…): <meta name="qa-states" content="?gio=7:00 | ?thu=2">, bộ khói đo và chụp màn đầu từng trạng thái.
 # Trang nạp store.js: thêm bộ du-lieu-rong-<trang> (?data=empty) và du-lieu-dai-<trang> (?data=stress).
 # _qa/.kit-source ghi thư mục skill đã cài bộ kiểm, để bộ kiểm gọi đúng preflight.py của bản skill đó.
+# .vscode/settings.json của workspace (thư mục có .vscode/ hay .git/ gần nhất phía trên): thêm thư mục ảnh và mốc của bộ kiểm vào
+# files.watcherExclude và search.exclude, gộp vào khoá đã có; đổi thì in dòng "mở lại cửa sổ VS Code". File có chú thích (JSONC) thì không ghi, in mẫu cần dán.
 import argparse, filecmp, html as html_lib, json, os, re, shutil, sys
 sys.stdout.reconfigure(encoding='utf-8')
 KIT = os.path.dirname(os.path.abspath(__file__))
@@ -118,7 +120,54 @@ def read_site(site):
 KIT_FILES = ['run.mjs', 'launch.mjs', 'browser.mjs', 'run_all.py', 'qalib.py', 'quick.py', 'handover.py', 'breaktest.py', 'compare.py', 'probes.js', 'qadiff.py', 'deep.mjs']
 # Lõi màu dùng chung nằm ở templates/ của skill (bảng concept, themes.mjs, _system.html cùng dùng), không ở qa-kit/
 SHARED_FILES = [('color.js', os.path.join(SKILL, 'templates', 'color.js'))]
-GITIGNORE = '# Kết quả chạy, sinh lại được. last-green/ nên commit để cả nhóm dùng chung một mốc\nhandover/\ncurrent/\n.quick-run/\n.recheck/\n.tdd/\n.thumbs/\n__pycache__/\n.kit-source\n'
+GITIGNORE = '# Kết quả chạy, sinh lại được. last-green/ nên commit để cả nhóm dùng chung một mốc\nhandover/\ncurrent/\n.quick-run/\n.recheck/\n.tdd/\n.thumbs/\n__pycache__/\n.kit-source\nqa-check.log\n'
+# Thư mục bộ kiểm ghi nhiều file: mỗi file mới trong workspace là một cụm rg --files của VS Code (đo 10/10/2026: 3 100 ảnh một lần chạy,
+# 25 459 rg, 25 GB, phiên đứt ba lần). Loại khỏi watcher và tìm kiếm; chỉ có hiệu lực sau khi mở lại cửa sổ VS Code
+VSCODE_EXCLUDE = ['**/_qa/handover/**', '**/_qa/current/**', '**/_qa/last-green/**', '**/_qa/.thumbs/**', '**/_qa/.quick-run/**',
+                  '**/_qa/.recheck/**', '**/_qa/.tdd/**', '**/_shots/**']
+VSCODE_KEYS = ('files.watcherExclude', 'search.exclude')
+
+
+def workspace_root(proto):
+    d = proto
+    while True:
+        if os.path.isdir(os.path.join(d, '.vscode')) or os.path.isdir(os.path.join(d, '.git')):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            return proto
+        d = parent
+
+
+def vscode_settings(proto):
+    ws = workspace_root(proto)
+    f = os.path.join(ws, '.vscode', 'settings.json')
+    shown = os.path.relpath(f, proto).replace(os.sep, '/') if f.startswith(proto + os.sep) else f.replace(os.sep, '/')
+    want = {k: {p: True for p in VSCODE_EXCLUDE} for k in VSCODE_KEYS}
+    cfg = {}
+    if os.path.exists(f):
+        try:
+            cfg = json.loads(open(f, encoding='utf-8-sig').read() or '{}')
+            if not isinstance(cfg, dict):
+                raise ValueError('không phải object')
+        except Exception:
+            print(f'{shown} có chú thích hay lỗi cú pháp, không tự sửa. Dán vào đó rồi mở lại cửa sổ VS Code:\n'
+                  + json.dumps(want, ensure_ascii=False, indent=1))
+            return
+    added = 0
+    for k in VSCODE_KEYS:
+        cur = cfg.get(k)
+        if not isinstance(cur, dict):
+            cur = {}
+        for p in VSCODE_EXCLUDE:
+            if cur.get(p) is not True:
+                cur[p] = True; added += 1
+        cfg[k] = cur
+    if not added:
+        return
+    os.makedirs(os.path.dirname(f), exist_ok=True)
+    open(f, 'w', encoding='utf-8').write(json.dumps(cfg, ensure_ascii=False, indent=2) + '\n')
+    print(f'đã thêm {added} mẫu vào {shown}: mở lại cửa sổ VS Code để có hiệu lực')
 
 ap = argparse.ArgumentParser()
 ap.add_argument('prototype')
@@ -177,6 +226,14 @@ if os.path.exists(cfg_path):
         else:
             print(f'{os.path.basename(sf)} ghi "query": "{st["query"]}" khác qa-query của trang ("{q}"): '
                   f'xoá khoá "query" để dùng qa-query của trang, hoặc giữ nếu cố ý')
+    pt = cfg.get('page_themes') or {}
+    for k, v in (pt.items() if isinstance(pt, dict) else []):
+        bad = [t for t in (v or []) if t not in cfg.get('themes', {})]
+        if bad:
+            print(f'CẢNH BÁO page_themes "{k}": theme {", ".join(bad)} không có trong "themes"')
+    w = cfg.get('workers')
+    if w is not None and not (isinstance(w, int) and w >= 1):
+        print(f'CẢNH BÁO "workers": {w!r} không phải số nguyên dương, bộ kiểm dùng mặc định')
     if os.path.exists(os.path.join(site, '_system.html')) and '_system' not in cfg.get('pages', []):
         print('Có site/_system.html mà qa.config.json chưa có trang _system: thêm "_system" vào "pages", các bộ smoke-_system-<khổ> vào "suites", '
               'và _qa/steps-smoke-_system.json với các bước system-demo, system-pairs (chép từ SYSTEM_STEPS trong qa_init.py).')
@@ -265,10 +322,11 @@ gi = os.path.join(qa, '.gitignore')
 if not os.path.exists(gi):
     open(gi, 'w', encoding='utf-8').write(GITIGNORE); print('tạo _qa/.gitignore')
 else:
-    for entry in ('.kit-source', '.tdd/'):                    # dòng thêm ở các bản sau: .gitignore cũ chưa có
+    for entry in ('.kit-source', '.tdd/', 'qa-check.log'):    # dòng thêm ở các bản sau: .gitignore cũ chưa có
         old = open(gi, encoding='utf-8').read()
         if entry not in old.split('\n'):
             open(gi, 'a', encoding='utf-8').write(('' if not old or old.endswith('\n') else '\n') + entry + '\n'); print(f'thêm {entry} vào _qa/.gitignore')
+vscode_settings(proto)
 
 try:
     rel = os.path.relpath(proto)

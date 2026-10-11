@@ -56,7 +56,8 @@ Thoát mã `1` khi còn **LỖI**. Cảnh báo thì phải **đọc từng dòng
 
 **Bộ kiểm tự chụp** *(B4: `scripts/qa-check.py`, tức `qa_init.py` rồi `handover.py run`)*:
 - Trang web ở 1440, 768, 390, **hết trang theo từng màn**: `<trang>.jpg`, `<trang>-2.jpg`, … tối đa 8 ảnh *(bước `slices` của `run.mjs`; `_system` tới 16)*, và màn đầu của từng trạng thái khai ở `<meta name="qa-states">`: `<trang>@<trạng thái>.jpg` *(mỗi trạng thái còn được đo như một bước)*; màn app ở 1440 *(khung máy)* và 390, một ảnh.
-- Chụp ở **mọi theme** trong `qa.config.json`, ảnh ở `_qa/handover/<ngày-giờ>/<theme>/<bộ>/`.
+- Chụp ở **mọi theme** trong `qa.config.json` *(trang khai `page_themes` chỉ ở theme của nó)*, ảnh ở `_qa/handover/<ngày-giờ>/<theme>/<bộ>/`. Lần chạy ghi ra thư mục tạm của máy, chỉ chuyển vào `_qa/handover/` khi xong; lần chạy cũ tự bị bỏ ảnh *(giữ 2 lần gần nhất, giữ báo cáo)*.
+- Đã có mốc `last-green`: chỉ bộ có trang, file nạp, file bước, cấu hình hay mã bộ kiểm đổi mới chạy; bộ khác lấy lại báo cáo của mốc, không có ảnh mới *(dòng `Lấy lại từ last-green`)*. `--full` chạy hết.
 - Nền sáng/tối theo `?theme=` của từng theme, không theo máy đang chạy: bộ chạy ép `prefers-color-scheme` theo tham số đó.
 
 Mỗi bước, bộ chạy tự đo:
@@ -223,6 +224,8 @@ Chạy trên **từng trang**, đọc code thật, mỗi điểm ✅/❌ kèm `f
 > Dùng ở B4 bước 5 của `sketch-to-site`, khi có công cụ tạo subagent và phiên cho phép. Người dựng tự soát thường sót đúng chỗ đã sót lúc dựng. Rút từ `superpowers` *(requesting-code-review)*, và cách nhìn của agent `design-critic` trong `plugin87/ux-ui-agent-skills`.
 >
 > Gọi subagent loại chỉ đọc *(`subagent_type: "Explore"`: khởi đầu nhẹ hơn `general-purpose` khoảng 14k token, đọc và chạy lệnh đủ cho việc này)* và **chờ kết quả**, không chạy nền: review về sau khi đã bàn giao là bỏ phí, còn sửa file trong lúc review chạy thì review đọc bản cũ. Thay `{danh sách ảnh}` bằng phần *Ảnh* mà `scripts/qa-check.py` vừa in.
+>
+> **Trên 30 trang hay 150 bộ:** chia đợt 15–20 trang, mỗi đợt một subagent cùng prompt với `{danh sách ảnh}` của đợt, gộp bảng. Sau đợt sửa chỉ review trang có bộ đổi.
 
 ```text
 Bạn review prototype {tên dự án} trước khi nghiệm thu, như một giám đốc thiết kế nhận bản của người khác. Bạn không dựng nó. Chỉ đọc, không sửa file nào. Mặc định bản này chưa đạt cho tới khi ảnh chứng minh ngược lại; qua bộ kiểm không phải bằng chứng về gu.

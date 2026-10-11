@@ -52,7 +52,7 @@ names = list(Q.SUITE_NAMES) if a.all else Q.affected_suites(changed)
 # Bộ chưa có trong mốc (bộ mới thêm vào qa.config.json) thì chạy luôn
 for th in themes:
     for n in Q.SUITE_NAMES:
-        if n not in names and not (th != Q.DEFAULT_THEME and n.startswith(Q.run_all.THEME_PREFIX)) and not os.path.exists(os.path.join(Q.CUR, th, n, 'report.json')):
+        if n not in names and th in Q.suite_themes(n) and not os.path.exists(os.path.join(Q.CUR, th, n, 'report.json')):
             names.append(n)
 names = [n for n in Q.SUITE_NAMES if n in names]
 
